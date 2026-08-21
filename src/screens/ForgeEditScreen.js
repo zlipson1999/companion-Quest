@@ -10,6 +10,7 @@ import { useGame } from '../state';
 import { moduleStateFor } from '../modules';
 import { analysePlan, suggestionsFor } from '../modules/forge/analysis';
 import { EQUIPMENT, EQUIPMENT_IDS, MOVEMENTS, PATTERNS, PATTERN_IDS, getMovement, searchMovements } from '../data/movements';
+import { MAX_WEIGHT, WEIGHT_STEP, unitLabel, weightOf } from '../modules/forge/weight';
 import { MUSCLES } from '../data/muscles';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
@@ -17,7 +18,7 @@ import { playSfx } from '../audio';
 const FORGE_ID = 'forge';
 const MAX_BLOCKS = 12;
 
-function Stepper({ label, value, onChange, step = 1, min = 1, max = 99 }) {
+function Stepper({ label, value, onChange, step = 1, min = 1, max = 99, zeroLabel }) {
   const set = (v) => {
     playSfx('cursor');
     onChange(Math.max(min, Math.min(max, v)));
@@ -27,8 +28,8 @@ function Stepper({ label, value, onChange, step = 1, min = 1, max = 99 }) {
       <PixelText size="tiny" color={palette.windowTextDim}>{label}</PixelText>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 5 }}>
         <PixelButton label="-" tone="plain" size="tiny" sound={null} onPress={() => set(value - step)} style={{ paddingVertical: 5, paddingHorizontal: 9 }} />
-        <PixelText size="small" color={palette.windowText} style={{ minWidth: 30, textAlign: 'center' }}>
-          {value}
+        <PixelText size="small" color={palette.windowText} style={{ minWidth: 38, textAlign: 'center' }}>
+          {value === 0 && zeroLabel ? zeroLabel : value}
         </PixelText>
         <PixelButton label="+" tone="plain" size="tiny" sound={null} onPress={() => set(value + step)} style={{ paddingVertical: 5, paddingHorizontal: 9 }} />
       </View>
@@ -43,6 +44,7 @@ export default function ForgeEditScreen({ params }) {
   const modState = moduleStateFor(state.modules, FORGE_ID);
   const plans = modState.plans || [];
   const original = plans.find((p) => p.id === params.planId) || null;
+  const units = unitLabel(state.settings);
 
   const [draft, setDraft] = useState(() => (original ? { ...original, blocks: [...original.blocks] } : null));
   // The library is large enough that browsing it needs real filtering.
@@ -281,6 +283,18 @@ export default function ForgeEditScreen({ params }) {
                   min={mv.unit === 'seconds' ? 5 : 1}
                   max={mv.unit === 'seconds' ? 180 : 50}
                   onChange={(v) => setBlock(i, { amount: v })}
+                />
+                {/* Offered on every movement, not just barbell ones — weighted
+                    pull-ups and a loaded carry are the whole point of the
+                    field. Zero reads as "body", which is the default. */}
+                <Stepper
+                  label={units}
+                  value={weightOf(b)}
+                  step={WEIGHT_STEP}
+                  min={0}
+                  max={MAX_WEIGHT}
+                  zeroLabel="body"
+                  onChange={(v) => setBlock(i, { weight: v || undefined })}
                 />
               </View>
             </Window>

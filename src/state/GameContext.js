@@ -62,7 +62,7 @@ const FRESH = {
   dex: {},
   modules: {},
   history: {},
-  settings: { muted: false, bgmMuted: false },
+  settings: { muted: false, bgmMuted: false, units: 'lb' },
   meta: { createdAt: today(), lastPlayedDate: today() },
 };
 

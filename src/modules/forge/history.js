@@ -8,6 +8,9 @@
 // Lives inside the Forge's own module state (module-owned data, persisted via
 // MODULE_PATCH), so nothing outside src/modules learns about workout logs.
 
+import { getMovement } from '../../data/movements';
+import { beatsRecord, weightOf } from './weight';
+
 export const KEEP_SESSIONS = 120;
 
 // One entry per logged session. Blocks are copied so a later edit to the plan
@@ -32,7 +35,14 @@ export function sessionEntry(plan, analysis, date, load, bankedXp) {
     xp: bankedXp == null ? analysis.reward.xp : bankedXp,
     partial: !!plan.partial,
     load: load || 0,
-    blocks: (plan.blocks || []).map((b) => ({ movementId: b.movementId, sets: b.sets, amount: b.amount })),
+    // weight is carried through so a record knows what was on the bar. Blocks
+    // logged before weight existed simply have none, and read as bodyweight.
+    blocks: (plan.blocks || []).map((b) => ({
+      movementId: b.movementId,
+      sets: b.sets,
+      amount: b.amount,
+      weight: weightOf(b) || undefined,
+    })),
   };
 }
 
@@ -43,11 +53,17 @@ export function recordSession(modState, entry) {
   const records = { ...((modState && modState.records) || {}) };
 
   entry.blocks.forEach((b) => {
+    // A record is the best single set, not the biggest day — comparing total
+    // volume would let a long easy session beat a hard one. What "best" means
+    // depends on whether the set carried load; beatsRecord owns that rule.
     const prev = records[b.movementId];
-    // A record is the heaviest single set: most reps (or longest hold) done in
-    // one set. Comparing total volume would let a long easy day beat a hard one.
-    if (!prev || b.amount > prev.amount || (b.amount === prev.amount && b.sets > prev.sets)) {
-      records[b.movementId] = { amount: b.amount, sets: b.sets, date: entry.date };
+    if (beatsRecord(b, prev, getMovement(b.movementId))) {
+      records[b.movementId] = {
+        amount: b.amount,
+        sets: b.sets,
+        weight: weightOf(b) || undefined,
+        date: entry.date,
+      };
     }
   });
 
@@ -89,14 +105,21 @@ export function prTargets(modState, plan) {
   const records = (modState && modState.records) || {};
   return (plan.blocks || []).map((b) => {
     const pr = records[b.movementId];
-    return { movementId: b.movementId, amount: b.amount, pr: pr || null, beats: !!pr && b.amount > pr.amount, isFirst: !pr };
+    return {
+      movementId: b.movementId,
+      amount: b.amount,
+      weight: weightOf(b) || undefined,
+      pr: pr || null,
+      beats: !!pr && beatsRecord(b, pr, getMovement(b.movementId)),
+      isFirst: !pr,
+    };
   });
 }
 
 // New bests set by a session that has just been recorded.
 export function prsSetBy(before, entry) {
   const prev = (before && before.records) || {};
-  return entry.blocks.filter((b) => !prev[b.movementId] || b.amount > prev[b.movementId].amount);
+  return entry.blocks.filter((b) => beatsRecord(b, prev[b.movementId], getMovement(b.movementId)));
 }
 
 export function daysBetweenKeys(a, b) {
