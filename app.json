@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Companion Quest",
+    "slug": "companion-quest",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "companionquest",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0f0f1b",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMotionUsageDescription": "Companion Quest reads your real step count so your companion grows as you move.",
+        "NSLocationWhenInUseUsageDescription": "Companion Quest uses your location during a run to measure real distance."
+      }
+    },
+    "android": {
+      "permissions": [
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.HIGH_SAMPLING_RATE_SENSORS",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

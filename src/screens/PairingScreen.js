@@ -1,0 +1,49 @@
+// The "meet your companion" beat. Reveals the original starter with a little
+// flourish while Coach introduces them, then heads to the hub.
+
+import React, { useMemo } from 'react';
+import { View } from 'react-native';
+import { DualPane, DialogueBox, PixelText, PixelSprite, Screen } from '../components';
+import { palette, space } from '../theme';
+import { useNav } from './navContext';
+import { getGoal } from '../data/goals';
+import { getCreature } from '../data/creatures';
+import { pairingLines } from '../coach';
+
+export default function PairingScreen({ params }) {
+  const { navigate } = useNav();
+  const goal = getGoal(params.goalId);
+  const companion = getCreature(params.starterId);
+
+  const lines = useMemo(() => pairingLines(companion.name, goal.name), [companion.name, goal.name]);
+
+  const top = (
+    <View style={{ flex: 1, backgroundColor: palette.bgAlt, alignItems: 'center', justifyContent: 'center' }}>
+      <PixelText size="small" color={palette.secondary}>
+        A new friend!
+      </PixelText>
+      <View style={{ marginTop: space.lg, alignItems: 'center' }}>
+        <PixelSprite spriteKey={companion.sprite} palette={companion.palette} size={120} bob />
+        <View style={{ width: 90, height: 8, backgroundColor: palette.inkSoft, marginTop: 6 }} />
+      </View>
+      <PixelText size="label" color={palette.windowFill} style={{ marginTop: space.lg }}>
+        {companion.name}
+      </PixelText>
+      <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6 }}>
+        {companion.species}
+      </PixelText>
+    </View>
+  );
+
+  const bottom = (
+    <View style={{ flex: 1, justifyContent: 'flex-end', padding: space.md }}>
+      <DialogueBox lines={lines} onComplete={() => navigate('hub')} />
+    </View>
+  );
+
+  return (
+    <Screen padTop={false}>
+      <DualPane top={top} bottom={bottom} />
+    </Screen>
+  );
+}
