@@ -89,6 +89,7 @@ export default function HubScreen() {
             { label: 'Train', value: 'workout', sublabel: 'workouts' },
             { label: 'Rest', value: 'rest', sublabel: 'heal team' },
             { label: 'Team', value: 'party', sublabel: 'companions' },
+            { label: 'Habits', value: 'habits', sublabel: 'daily life' },
             { label: 'Coach', value: 'coach', sublabel: 'AI chat' },
             { label: 'Bag', value: 'bag', sublabel: 'items' },
             { label: 'Status', value: 'summary', sublabel: 'stats' },

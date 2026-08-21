@@ -172,3 +172,29 @@ export function companionFledLines(wildName) {
 export function swapLine(name) {
   return `Come back! Go, ${name}!`;
 }
+
+// --- Phase 3: life modules (habits) ---
+
+const habitCheers = [
+  'Logged! That counts for both of us.',
+  'Small thing, real thing. Nice.',
+  'I felt that one. Keep stacking them.',
+  'Honest log, honest growth.',
+];
+
+export function habitLogged() {
+  return habitCheers[Math.floor(Math.random() * habitCheers.length)];
+}
+
+export function habitGoalLine(moduleName) {
+  return `${moduleName} goal complete for today! That is the good stuff.`;
+}
+
+export function habitStreakLine(days) {
+  if (days <= 1) return 'Day one of a new streak. I like where this is going.';
+  return `${days} days running. Consistency is the real superpower.`;
+}
+
+export function habitsIntro() {
+  return 'Your everyday choices count here too. Log them honestly — I only grow from what really happened.';
+}

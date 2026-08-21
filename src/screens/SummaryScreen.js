@@ -5,9 +5,10 @@ import React from 'react';
 import { ScrollView, View } from 'react-native';
 import { Screen, Window, ProgressBar, HPBar, PixelText, PixelButton, PixelSprite } from '../components';
 import { palette, space } from '../theme';
-import { useGame, useCompanion } from '../state';
+import { useGame, useCompanion, useModules } from '../state';
 import { useNav } from './navContext';
 import { getGoal } from '../data/goals';
+import { moduleSprite } from '../modules';
 
 function StatCell({ label, value, color }) {
   return (
@@ -26,6 +27,7 @@ export default function SummaryScreen() {
   const { state } = useGame();
   const companion = useCompanion();
   const { navigate } = useNav();
+  const modules = useModules();
   const goal = getGoal(state.goalId);
   const s = state.stats;
 
@@ -86,9 +88,31 @@ export default function SummaryScreen() {
             <StatCell label="Battles lost" value={s.battlesLost} />
             <StatCell label="Workouts" value={s.workoutsDone} color={palette.accentDark} />
             <StatCell label="Items found" value={s.itemsCollected} />
+            <StatCell label="Habit logs" value={s.habitLogs || 0} color={palette.primaryDark} />
+            <StatCell label="Goals met" value={s.habitGoalsHit || 0} color={palette.success} />
             <StatCell label="Day streak" value={`${s.streak} days`} color={palette.accentDark} />
             <StatCell label="Days active" value={s.daysActive} />
           </View>
+        </Window>
+
+        <Window tone="cream" pad={12} style={{ marginTop: space.md }}>
+          <PixelText size="small" color={palette.accentDark} style={{ marginBottom: 6 }}>
+            Daily Habits
+          </PixelText>
+          {modules.map(({ module, state: modState, progress }) => (
+            <View key={module.id} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+              <PixelSprite spriteKey={moduleSprite(module)} palette={module.spritePalette} size={22} />
+              <PixelText size="tiny" color={palette.windowText} style={{ flex: 1, marginLeft: space.sm }}>
+                {module.name}
+              </PixelText>
+              <PixelText size="tiny" color={progress.done ? palette.success : palette.windowTextDim}>
+                {progress.value}/{progress.goal}
+              </PixelText>
+              <PixelText size="tiny" color={palette.accentDark} style={{ width: 62, textAlign: 'right' }}>
+                {modState.streak}d streak
+              </PixelText>
+            </View>
+          ))}
         </Window>
       </ScrollView>
 

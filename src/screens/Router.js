@@ -22,6 +22,8 @@ import SummaryScreen from './SummaryScreen';
 import IndexScreen from './IndexScreen';
 import BagScreen from './BagScreen';
 import PartyScreen from './PartyScreen';
+import HabitsScreen from './HabitsScreen';
+import HabitLogScreen from './HabitLogScreen';
 import CoachChatScreen from './CoachChatScreen';
 import OptionsScreen from './OptionsScreen';
 import LoadingScreen from './LoadingScreen';
@@ -40,12 +42,15 @@ const SCREENS = {
   index: IndexScreen,
   bag: BagScreen,
   party: PartyScreen,
+  habits: HabitsScreen,
+  habit: HabitLogScreen,
   coach: CoachChatScreen,
   options: OptionsScreen,
 };
 
 const TOWN_BGM = new Set([
   'title', 'intro', 'goal', 'pairing', 'hub', 'rest', 'workout', 'summary', 'index', 'bag', 'party', 'coach', 'options',
+  'habits', 'habit',
 ]);
 
 export default function Router() {

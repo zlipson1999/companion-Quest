@@ -62,9 +62,9 @@ should grow the companion dispatches the SAME reducer actions
 plug into that same flow without touching battle/route code. The Route and
 Workouts modules are the first two examples of the pattern.
 
-**State shape** (persisted to AsyncStorage, auto-migrated by `version`):
-`{ started, goalId, party:[{id,baseId,xp,bond,hp}], activeIndex, stats, bag,
-dex, settings, meta }`. Companion XP is a lifetime total; level/HP are derived
+**State shape** (persisted to AsyncStorage, auto-migrated by `version`, currently
+3): `{ started, goalId, party:[{id,baseId,xp,bond,hp}], activeIndex, stats, bag,
+dex, modules, settings, meta }`. Companion XP is a lifetime total; level/HP are derived
 (`src/state/leveling.js`). `useCompanion()` returns the active party member;
 `useParty()` returns the whole team. Distance is in miles (`stats.distanceMi`);
 the Route auto-advances and rolls grass encounters off real distance.
@@ -77,6 +77,10 @@ new screens in `Router.js` (SCREENS map + TOWN_BGM) and add a hub menu entry in
 **Data-driven:** creatures/goals/items/exercises/obstacles/wild/workouts/maps all
 live in `src/data/*` as plain objects. Add content there.
 
+**Life modules:** `src/modules/*` — see "Phase 3" below. `src/modules/daily.js`
+owns the calendar (day roll, streaks, reward math) and is pure/testable;
+`src/modules/index.js` is the registry.
+
 ## What's already built
 
 - **Phase 1** — intro (title → coach dialogue → pick goal → paired with starter)
@@ -86,41 +90,65 @@ live in `src/data/*` as plain objects. Add content there.
   `expo-location`, `src/state/useDistance.js`); tall-grass wild encounters
   (`src/data/wild.js`); **catch wild companions with a Bond Token + build a team
   of 6** (Catch/Swap in `BattleScreen`, Team screen); goal-tuned pacing.
+- **Phase 3** — **pluggable life modules** (`src/modules/`): a registry + shared
+  daily/streak engine feeding the same XP/bond reducer path, with **Hydration**
+  and **Nourish** shipped as the example modules, a **Habits** hub + per-module
+  log screen, daily reset, and a save migration to `version: 3`.
 - **Phase 2** — domain-locked AI Companion Coach chat (`src/screens/CoachChatScreen.js`,
   `src/coach/{persona,guardrail,api}.js`). Pre-send guardrail refuses off-domain /
   jailbreak in-character; the Anthropic key stays server-side in `server/` (uses
   the official `@anthropic-ai/sdk`, default model `claude-opus-5`, override via
   `COACH_MODEL`). Client reads the proxy URL from `EXPO_PUBLIC_COACH_API_URL`.
 
-## Phase 3 — BUILD THIS NEXT: pluggable life modules
+## Phase 3 — DONE: pluggable life modules
 
-Goal: formalize the module-agnostic progression into a real **life-module plugin
-system**, then ship **diet/hydration as the first example** module(s).
+The module-agnostic progression is now a real plugin system, with **Hydration**
+and **Nourish (diet)** as the two example modules.
 
-Design intent:
-1. `src/modules/` with a registry (`src/modules/index.js`). Each module is an
-   object implementing a common interface, e.g.
-   `{ id, name, sprite, blurb, dailyGoal, initialState(), progress(modState),
-   actions:[{label, apply(modState)->modState, reward:{xp,bond}}], summary() }`.
-   Keep it generic so sleep / meditation / reading / chores / social check-ins can
-   be added later by dropping in a new module object — no core changes.
-2. State: add `state.modules = { [id]: moduleState }` with **daily reset** logic
-   (reset the day's counts on a new date in HYDRATE, preserve streaks). Add
-   reducer actions `MODULE_LOG` / `MODULE_RESET_DAY` that update
-   `state.modules[id]` AND feed the shared progression (dispatch the module
-   action's `reward` through the same GAIN_XP/GAIN_BOND path). Bump the save
-   `version` and migrate old saves (default `modules: {}`).
-3. First modules (the example): **Hydration** (log glasses of water toward a
-   daily goal → small XP/bond per log, bonus on hitting goal) and **Diet** (log
-   meals / healthy-eating check-ins, or simple calorie targets → rewards). The
-   brief says "diet/hydration module first as the example."
-4. UI: a **"Habits" / "Life" hub** screen listing installed modules as bordered
-   cards (reuse `Window`, `ProgressBar`, `PixelButton`, `PixelText`, `PixelSprite`)
-   showing today's progress; tapping opens the module's log screen. Add a hub
-   menu entry + Router registration. Keep the DS aesthetic.
-5. Original art for any new module icons via `tools/make_sprites.py`
-   (water drop / apple already exist as items — reuse or add module icons).
-6. Verify it bundles; keep everything original; give a short "how to test" note.
+**`src/modules/`**
+- `daily.js` — the calendar + reward engine, shared by every module and by the
+  reducer. Pure functions, no React: `todayKey()` (LOCAL date, not UTC),
+  `rollDay()`, `normalizeDay()`, `progressFor()`, `applyLog()`. A streak survives
+  a day roll only if the goal was met today or yesterday.
+- `index.js` — the registry. `MODULES` is the install list; helpers
+  (`getModule`, `moduleStateFor`, `rollAllModules`, `modulesNeedRoll`,
+  `logModuleAction`, `moduleProgress/Summary/Cheer`, `moduleSprite`) are what the
+  reducer and UI call. Nothing outside `src/modules` names a specific module.
+- `hydration.js`, `diet.js` — the reference modules.
+
+**Adding a life module (sleep, meditation, reading, chores, check-ins…):** write
+one object with `{ id, name, tagline, blurb, sprite, spritePalette, color, unit,
+dailyGoal, actions:[{id,label,sublabel,amount,reward:{xp,bond}, apply?}],
+goalReward:{xp,bond}, progress?(day), summary?(day), cheer?(day) }` and add it to
+`MODULES`. That's it — the Habits hub, log screen, progress bars, streaks, daily
+reset, save migration and Status readout all pick it up. Art is optional: a
+module with no `sprite` falls back to `mod_check`.
+
+**State:** `state.modules = { [id]: { date, count, entries, goalHit, streak,
+bestStreak, lastGoalDate, goalDays, totalCount, totalLogs } }`. Save `version`
+bumped to 3; v1/v2 saves get zeroed buckets for every registered module, and
+HYDRATE stamps the current version. The daily reset happens in HYDRATE via
+`rollAllModules`, plus a `MODULE_RESET_DAY` self-heal from the Habits screens so
+a session left open past midnight starts the new day clean.
+
+**Reducer:** `MODULE_LOG` updates `state.modules[id]` and hands the action's
+reward (plus the once-a-day `goalReward` bonus) to the SAME `applyEffect` path
+that workouts and battles use — a module never learns how progression works.
+`MODULE_RESET_DAY` rolls one module or all of them.
+
+**UI:** `HabitsScreen` (hub, one bordered card per installed module) and
+`HabitLogScreen` (a module's actions, today's bar, streaks, today's log tape),
+registered in `Router.js` as `habits` / `habit` with a "Habits" hub menu entry.
+The Status screen grew a "Daily Habits" block plus habit-log stats.
+
+**Art:** three new original 16×16 icons in `tools/make_sprites.py` —
+`mod_droplet`, `mod_plate`, and `mod_check` (the art-less-module fallback). No
+new audio: logs reuse `item`/`milestone`/`levelup`.
+
+## Phase 4 — ideas, not committed
+
+Sleep / meditation / reading modules (should be pure `src/modules/*` additions);
+weekly rollups; letting the Coach read module state for grounded encouragement.
 
 ## Conventions & guardrails
 
@@ -128,5 +156,5 @@ Design intent:
 - Comments explain intent, not the obvious.
 - Don't ship secrets in the client — the coach key stays in `server/`.
 - After a phase, add a short "how to test" note and ask what to tune.
-- Branch is `claude/wizardly-allen-j0413v` (or whatever the session assigns); the
-  history so far is 3 commits (Phase 1, 1.5, fixes+Phase 2).
+- Branch is whatever the session assigns (Phase 3 landed on
+  `claude/phase-3-life-modules-584f0k`).
