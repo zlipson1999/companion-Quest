@@ -45,27 +45,60 @@ function normalizeHeat(muscle) {
   return out;
 }
 
-function addBox(group, pos, size, color, mirror) {
-  const geo = new THREE.BoxGeometry(size[0], size[1], size[2]);
-  const mat = new THREE.MeshLambertMaterial({ color, flatShading: true });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(pos[0], pos[1], pos[2]);
-  group.add(mesh);
-  if (mirror) {
-    const m2 = new THREE.Mesh(geo, mat);
-    m2.position.set(-pos[0], pos[1], pos[2]);
-    group.add(m2);
-  }
+// Each mesh owns its geometry and material so disposal is 1:1 — a mirrored pair
+// sharing them would be disposed twice when the plan changes.
+function addBox(group, pos, size, color, mirror, collect) {
+  const make = (x) => {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(size[0], size[1], size[2]),
+      new THREE.MeshLambertMaterial({ color, flatShading: true })
+    );
+    mesh.position.set(x, pos[1], pos[2]);
+    group.add(mesh);
+    if (collect) collect.push(mesh);
+  };
+  make(pos[0]);
+  if (mirror) make(-pos[0]);
 }
 
 function GLBody({ heat, onFail, spinRef }) {
   const rafRef = useRef(null);
   const teardown = useRef(null);
+  const bodyRef = useRef(null);
+  const platesRef = useRef([]);
+  const heatRef = useRef(heat);
 
   useEffect(() => () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     if (teardown.current) teardown.current();
   }, []);
+
+  // The GL context is created once, but the plan behind it changes every time
+  // the player edits it. Swap the muscle plates in place rather than leaving a
+  // body that no longer describes the plan on screen.
+  const paintPlates = () => {
+    const body = bodyRef.current;
+    if (!body) return;
+    platesRef.current.forEach((mesh) => {
+      body.remove(mesh);
+      if (mesh.geometry) mesh.geometry.dispose();
+      if (mesh.material) mesh.material.dispose();
+    });
+    platesRef.current = [];
+    MUSCLE_IDS.forEach((id) => {
+      const c = heatColor(heatRef.current[id] || 0);
+      if (c == null) return;
+      const m = MUSCLES[id].mesh;
+      addBox(body, m.pos, m.size, c, m.mirror, platesRef.current);
+    });
+  };
+
+  useEffect(() => {
+    heatRef.current = heat;
+    paintPlates();
+    // paintPlates reads through refs; re-running it is the whole point.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [heat]);
 
   const onContextCreate = (gl) => {
     try {
@@ -106,15 +139,11 @@ function GLBody({ heat, onFail, spinRef }) {
 
       const body = new THREE.Group();
       BODY_FRAME.forEach((p) => addBox(body, p.pos, p.size, FRAME_COLOR, p.mirror));
-      MUSCLE_IDS.forEach((id) => {
-        const t = heat[id] || 0;
-        const c = heatColor(t);
-        if (c == null) return;
-        const m = MUSCLES[id].mesh;
-        addBox(body, m.pos, m.size, c, m.mirror);
-      });
       body.position.y = -0.62;
       scene.add(body);
+      bodyRef.current = body;
+      platesRef.current = [];
+      paintPlates();
 
       teardown.current = () => {
         scene.traverse((o) => {
