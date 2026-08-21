@@ -125,6 +125,11 @@ PALETTE_SPECS = {
     'bloom':   {'body': ('#1a5c44', '#8ce8b0'), 'leaf': ('#a8285e', '#ffb8d8'), 'belly': ('#c49a1e', '#fff0a8')},
     'pyre':    {'body': ('#6b1408', '#ff9440'), 'leaf': ('#c47a0a', '#ffe066'), 'belly': ('#8c2a0e', '#ffb870')},
     'tide':    {'body': ('#0a2f52', '#7fd4ff'), 'leaf': ('#1a7a8c', '#a8f4ff'), 'belly': ('#14507a', '#c8f0ff')},
+    # Third-stage forms. Deeper and richer than the stage they grow out of —
+    # a final form that is merely a brighter recolour reads as the same creature.
+    'grove':   {'body': ('#14402a', '#7ad98e'), 'leaf': ('#5c3a18', '#d9a860'), 'belly': ('#a8801e', '#ffe89a')},
+    'cinder':  {'body': ('#5c1005', '#ff8a3d'), 'leaf': ('#8a1f06', '#ffd45e'), 'belly': ('#2a1410', '#c96a3a')},
+    'maels':   {'body': ('#04203f', '#6cc4ff'), 'leaf': ('#0d5c7a', '#9fe8ff'), 'belly': ('#123a5e', '#d0f2ff')},
 }
 
 RAMP_STEPS = 7
@@ -444,6 +449,79 @@ def bloomtail(pal='bloom'):
     c.eye(18, 26, 3.1)
     c.eye(31, 26, 3.1)
     c.blob(24.5, 32, 2.6, 1.5, 'leaf', 0.3)
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def groveheart(pal='grove'):
+    """Bloomtail grown into a standing grove: a broad canopy over a trunk-like
+    body, with the flower kept as a crown so the line still reads as one
+    creature."""
+    c = new_creature(pal)
+    c.shadow(24, 45, 17, 3)
+    c.rect(21, 20, 27, 42, 'leaf', 0.24)                 # trunk body
+    c.rect(21, 20, 22, 42, 'leaf', 0.42)                 # lit side
+    c.rect(17, 40, 31, 44, 'leaf', 0.20)                 # roots spreading
+    for lx, ly, lr in ((14, 14, 9), (34, 14, 9), (24, 8, 10), (24, 18, 9)):
+        c.sphere(lx, ly, lr, lr * 0.86, 'body', ambient=0.44)
+    c.sphere(16, 9, 5.5, 4.2, 'body', ambient=0.74)      # sunlit lobe
+    for ang in range(0, 360, 72):                        # the crown flower
+        px = 24 + math.cos(math.radians(ang)) * 4.4
+        py = 7 + math.sin(math.radians(ang)) * 3.2
+        c.sphere(px, py, 2.6, 2.1, 'belly')
+    c.eye(19, 27, 3.2)
+    c.eye(30, 27, 3.2)
+    c.blob(24.5, 33, 3.0, 1.6, 'leaf', 0.16)             # mouth
+    for lx, ly in ((10, 20), (38, 20), (24, 2)):
+        c.put(lx, ly, 'body', 0.98)
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def cindermane(pal='cinder'):
+    """Pyrelynx at full burn: the mane is the silhouette, so it reads as a
+    different creature from across the screen rather than a recoloured lynx."""
+    c = new_creature(pal)
+    c.shadow(24, 44, 15, 3)
+    for ang in range(0, 360, 30):                        # the mane, drawn first
+        r = 17 if ang % 60 == 0 else 13
+        px = 24 + math.cos(math.radians(ang)) * r
+        py = 25 + math.sin(math.radians(ang)) * (r * 0.86)
+        c.sphere(px, py, 6.0, 5.4, 'leaf', ambient=0.40)
+    c.poly([(11, 16), (15, 3), (19, 15)], 'leaf', 0.9)   # ear flames
+    c.poly([(29, 15), (33, 3), (37, 16)], 'leaf', 0.9)
+    c.sphere(24, 26, 12.5, 11.5, 'body')                 # face
+    c.sphere(24, 32, 7.5, 5.2, 'belly', ambient=0.5)     # muzzle
+    c.eye(18.5, 24, 3.2)
+    c.eye(29.5, 24, 3.2)
+    c.blob(24, 33, 1.7, 1.2, 'eye', 0.0)                 # nose
+    c.blob(20, 38, 3.6, 2.2, 'body', 0.30)               # paws
+    c.blob(28, 38, 3.6, 2.2, 'body', 0.30)
+    for lx, ly in ((13, 12), (35, 12), (24, 8)):
+        c.put(lx, ly, 'leaf', 1.0)
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def maelstride(pal='maels'):
+    """Tidewade become a moving current: a long body trailing into spray, so its
+    silhouette is horizontal where the earlier stages are round."""
+    c = new_creature(pal)
+    c.shadow(24, 44, 16, 3)
+    c.sphere(20, 24, 14, 13, 'body')                     # head of the current
+    for i, (tx, ty, tr) in enumerate(((33, 30, 8.5), (39, 35, 6.5), (44, 39, 4.5))):
+        c.sphere(tx, ty, tr, tr * 0.82, 'body', ambient=0.34 + i * 0.06)
+    c.poly([(16, 10), (20, 1), (24, 11)], 'leaf', 0.92)  # crest
+    c.poly([(24, 11), (28, 4), (31, 13)], 'leaf', 0.78)
+    c.sphere(20, 30, 8.5, 5.5, 'belly', ambient=0.52)    # pale underside
+    c.eye(14.5, 22, 3.2)
+    c.eye(25.5, 22, 3.2)
+    c.blob(20, 31, 2.4, 1.4, 'eye', 0.0)
+    for sx, sy in ((36, 26), (42, 31), (46, 35), (30, 20)):
+        c.blob(sx, sy, 1.6, 1.4, 'leaf', 1.0)            # spray
     c.rim('leaf')
     c.outline()
     return c
@@ -1093,6 +1171,8 @@ def build_all():
     add('sproutle', sproutle()); add('bloomtail', bloomtail())
     add('emberkit', emberkit()); add('pyrelynx', pyrelynx())
     add('dewbble', dewbble()); add('tidewade', tidewade())
+    add('groveheart', groveheart()); add('cindermane', cindermane())
+    add('maelstride', maelstride())
     add('pebblepup', pebblepup()); add('wispurr', wispurr()); add('sporelet', sporelet())
     add('sludgewad', sludgewad()); add('snoozeghoul', snoozeghoul())
     add('couchlurk', couchlurk()); add('achefang', achefang())

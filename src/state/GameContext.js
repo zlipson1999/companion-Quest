@@ -14,6 +14,7 @@ import { xpProgress, levelFromXp, maxHpFor } from './leveling';
 import { loadGame, saveGame, clearGame } from './storage';
 import { stamp, trim } from './history';
 import { computeRecovery } from './recovery';
+import { pointsFor } from './evolution';
 import {
   MODULES,
   getModule,
@@ -28,7 +29,7 @@ import {
 const today = todayKey;
 const STARTING_TOKENS = 3;
 const MAX_PARTY = 6;
-const SAVE_VERSION = 4;
+const SAVE_VERSION = 5;
 
 function daysBetween(a, b) {
   if (!a || !b) return 0;
@@ -101,6 +102,10 @@ function applyEffect(member, effect) {
   const next = { ...member };
   if (effect.xp) next.xp += effect.xp;
   if (effect.bond) next.bond += effect.bond;
+  // Evolve points ride the same path as XP and bond, so a new source only has
+  // to name a reward — it never learns how progression works. Points are per
+  // companion: the one that did the work is the one that grows.
+  if (effect.evo) next.evo = (next.evo || 0) + effect.evo;
   if (effect.heal) {
     const maxHp = memberMaxHp(next);
     next.hp = clamp((next.hp == null ? maxHp : next.hp) + effect.heal, 0, maxHp);
@@ -124,7 +129,11 @@ function reducer(state, action) {
       // Migrate a v1 single-companion save into a party.
       let party = Array.isArray(saved.party) ? saved.party : null;
       if ((!party || !party.length) && saved.companion) party = [saved.companion];
-      merged.party = party || [];
+      // v5: evolve points. Older saves have companions with no `evo`, and
+      // starting them at zero is the honest choice — the app was not recording
+      // the work that would have earned them, and inventing a balance would
+      // hand out an evolution nobody trained for.
+      merged.party = (party || []).map((m) => ({ ...m, evo: m.evo || 0 }));
       merged.activeIndex = clamp(saved.activeIndex || 0, 0, Math.max(0, merged.party.length - 1));
       delete merged.companion;
 
@@ -165,7 +174,7 @@ function reducer(state, action) {
         ...state,
         started: true,
         goalId,
-        party: [{ id: starterId, baseId: starterId, xp: 0, bond: 0, hp: maxHp }],
+        party: [{ id: starterId, baseId: starterId, xp: 0, bond: 0, evo: 0, hp: maxHp }],
         activeIndex: 0,
         dex: { ...state.dex, [starterId]: 'owned' },
         bag: { ...state.bag, token: (state.bag.token || 0) + STARTING_TOKENS },
@@ -180,12 +189,17 @@ function reducer(state, action) {
       const pacing = pacingForGoal(state.goalId);
       let routeMi = state.stats.routeMi + mi;
       let milestonesReached = state.stats.milestonesReached;
+      let hitMilestones = 0;
       while (routeMi >= pacing.milestoneMi) {
         routeMi -= pacing.milestoneMi;
         milestonesReached += 1;
+        hitMilestones += 1;
       }
+      const withEvo = hitMilestones
+        ? updateActive(state, (m) => applyEffect(m, { evo: pointsFor('milestone', hitMilestones) }))
+        : state;
       return {
-        ...state,
+        ...withEvo,
         history: remember(state, { distanceMi: mi, load: mi * LOAD_PER_MILE }),
         stats: {
           ...state.stats,
@@ -236,7 +250,7 @@ function reducer(state, action) {
     case 'WIN_BATTLE': {
       const { xp = 0, bond = 0, targetId, companionHp } = action.payload;
       const next = updateActive(state, (m) => ({
-        ...m,
+        ...applyEffect(m, { evo: pointsFor('battle') }),
         xp: m.xp + xp,
         bond: m.bond + bond,
         hp: clamp(companionHp != null ? companionHp : (m.hp == null ? memberMaxHp(m) : m.hp), 0, memberMaxHp(m)),
@@ -257,7 +271,7 @@ function reducer(state, action) {
         return { ...state, dex };
       }
       const maxHp = maxHpFor(getCreature(creatureId), levelFromXp(xp));
-      const member = { id: creatureId, baseId: creatureId, xp, bond, hp: hp != null ? hp : maxHp };
+      const member = { id: creatureId, baseId: creatureId, xp, bond, evo: 0, hp: hp != null ? hp : maxHp };
       return { ...state, party: [...state.party, member], dex, stats: { ...state.stats, caught: state.stats.caught + 1 } };
     }
 
@@ -287,7 +301,10 @@ function reducer(state, action) {
       if (!module) return state;
       const result = logModuleAction(module, moduleStateFor(state.modules, moduleId), actionId, today(), capped);
       if (!result) return state;
-      const next = updateActive(state, (m) => applyEffect(m, result.reward));
+      const evo =
+        pointsFor(module.training ? 'session' : 'habit') +
+        (result.goalJustHit ? pointsFor('habit') : 0);
+      const next = updateActive(state, (m) => applyEffect(m, { ...result.reward, evo }));
       return {
         ...next,
         modules: { ...state.modules, [moduleId]: result.state },
@@ -345,7 +362,9 @@ function reducer(state, action) {
     case 'COMPLETE_WORKOUT': {
       const { xp = 0, bond = 0 } = action.payload.reward || {};
       const mult = pacingForGoal(state.goalId).workoutXpMult || 1;
-      const next = updateActive(state, (m) => ({ ...m, xp: m.xp + Math.round(xp * mult), bond: m.bond + bond }));
+      const next = updateActive(state, (m) =>
+        applyEffect({ ...m, xp: m.xp + Math.round(xp * mult), bond: m.bond + bond }, { evo: pointsFor('session') })
+      );
       return {
         ...next,
         history: remember(state, {
@@ -356,6 +375,15 @@ function reducer(state, action) {
         }),
         stats: { ...state.stats, workoutsDone: state.stats.workoutsDone + 1 },
       };
+    }
+
+    // Hitting a new max is the clearest evidence in the app that something
+    // actually changed, so it is worth the most and gets its own action rather
+    // than being folded into the session that contained it.
+    case 'RECORD_PR': {
+      const n = Math.max(0, action.payload.count || 0);
+      if (!n) return state;
+      return updateActive(state, (m) => applyEffect(m, { evo: pointsFor('pr', n) }));
     }
 
     case 'EVOLVE': {

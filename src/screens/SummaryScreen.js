@@ -4,6 +4,7 @@
 import React from 'react';
 import { ScrollView, View } from 'react-native';
 import { Screen, Window, ProgressBar, HPBar, PixelText, PixelButton, PixelSprite } from '../components';
+import { EVO_SOURCES, evolveHint, evolveProgress } from '../state/evolution';
 import { palette, space } from '../theme';
 import { useGame, useCompanion, useModules } from '../state';
 import { useNav } from './navContext';
@@ -29,6 +30,7 @@ export default function SummaryScreen() {
   const { navigate } = useNav();
   const modules = useModules();
   const goal = getGoal(state.goalId);
+  const evo = evolveProgress(companion, companion.creature, companion.level);
   const s = state.stats;
 
   return (
@@ -60,6 +62,31 @@ export default function SummaryScreen() {
           <View style={{ marginTop: space.sm }}>
             <ProgressBar value={companion.xpInto} max={companion.xpNeeded} color={palette.xp} height={12} label="XP to next level" />
           </View>
+          {/* Evolve points: what the real-world work is actually building
+              toward. Shown next to XP because they are different things and the
+              difference matters — XP comes from playing, this comes from doing. */}
+          {evo ? (
+            <View style={{ marginTop: space.sm }}>
+              <ProgressBar
+                value={Math.min(evo.points, evo.needPoints)}
+                max={evo.needPoints}
+                color={palette.success}
+                height={12}
+                label={`Evolve points  ${evo.points}/${evo.needPoints}`}
+                showText={false}
+              />
+              <PixelText size="tiny" color={evo.ready ? palette.secondary : palette.windowBorderLight} style={{ marginTop: 5, lineHeight: 13 }}>
+                {evolveHint(companion, companion.creature, companion.level)}
+              </PixelText>
+              <PixelText size="tiny" color={palette.windowBorderLight} style={{ marginTop: 5, lineHeight: 13 }}>
+                Earned from {Object.values(EVO_SOURCES).map((s) => s.label).join(', ')}.
+              </PixelText>
+            </View>
+          ) : (
+            <PixelText size="tiny" color={palette.secondary} style={{ marginTop: space.sm }}>
+              Final form — nothing left to grow into.
+            </PixelText>
+          )}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.sm }}>
             <PixelText size="tiny" color={palette.accent}>
               Bond {companion.bond}
