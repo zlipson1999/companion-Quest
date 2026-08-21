@@ -35,6 +35,23 @@ EXPO_OFFLINE=1 CI=1 npx expo export --platform android --output-dir /tmp/cq
 It should end with `Android Bundled ... index.js (N modules)`. The Phase 2
 server is standalone (not part of the Metro graph): `node --check server/index.js`.
 
+**Web build / GitHub Pages.** The app also runs in a browser, which is how it
+gets shown to someone without installing Expo Go:
+```bash
+npx expo export --platform web --output-dir dist
+```
+`.github/workflows/web.yml` does this on every push to `main` and publishes to
+Pages. Two settings make it work and are easy to break:
+- `web.output` is **`single`** (an SPA). `static` is an expo-router feature and
+  this app ships its own router (`src/screens/Router.js`) — setting it fails the
+  export with `Unable to resolve expo-router/node/render.js`.
+- `experiments.baseUrl` must equal `/<repo-name>`. A project Pages site serves
+  from a subpath, so without it the page loads and then 404s fetching its bundle.
+
+On the web there is no pedometer, so `useDistance` reports none available and the
+Route falls back to its distance injector — the loop stays playable, but the real
+engine is only there on a phone.
+
 ## Original assets are GENERATED, not hand-placed as image/audio files
 
 - **Pixel art** — `tools/make_sprites.py` **draws** the art; it no longer stores

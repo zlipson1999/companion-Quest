@@ -32,7 +32,8 @@
       ]
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "output": "single"
     },
     "plugins": [
       [
@@ -41,6 +42,9 @@
           "cameraPermission": "Companion Quest can show your front camera as a mirror during a set so you can check your own form. Video is never recorded, stored or sent anywhere."
         }
       ]
-    ]
+    ],
+    "experiments": {
+      "baseUrl": "/companion-Quest"
+    }
   }
 }

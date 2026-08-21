@@ -1,0 +1,64 @@
+# Build the Expo app for the web and publish it to GitHub Pages, so the game
+# can be played from a link without installing Expo Go.
+#
+# Two things about this build are worth knowing:
+#   * web.output is "single" (an SPA), not "static" — static rendering is an
+#     expo-router feature and this app ships its own router.
+#   * experiments.baseUrl in app.json must match the repository name, because a
+#     project Pages site is served from /<repo>/ rather than the domain root.
+#
+# Pages has to be enabled once by hand: Settings -> Pages -> Source: GitHub Actions.
+
+name: Deploy web build to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; let an in-flight one finish rather than cancelling
+# it, so Pages is not left serving a half-uploaded build.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Export the web bundle
+        run: npx expo export --platform web --output-dir dist
+
+      - name: Add .nojekyll
+        # Without it Pages runs the output through Jekyll, which drops every
+        # directory beginning with an underscore — including _expo, which is
+        # where the entire JS bundle lives.
+        run: touch dist/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
