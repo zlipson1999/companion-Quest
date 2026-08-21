@@ -85,8 +85,8 @@ export default function DialogueBox({ lines, onComplete, speed = 30, style }) {
   return (
     <Pressable onPress={handlePress} style={style}>
       {speaker ? (
-        <View style={{ flexDirection: 'row', marginBottom: -3, marginLeft: space.sm, zIndex: 2 }}>
-          <Window pad={6}>
+        <View style={{ flexDirection: 'row', marginBottom: -5, marginLeft: space.sm, zIndex: 2 }}>
+          <Window pad={6} studs={false}>
             <PixelText size="small" color={palette.accentDark}>
               {speaker}
             </PixelText>
@@ -97,7 +97,17 @@ export default function DialogueBox({ lines, onComplete, speed = 30, style }) {
         <PixelText size="body" color={palette.windowText} style={{ lineHeight: 22 }}>
           {full.slice(0, shown)}
         </PixelText>
-        <Animated.View style={{ position: 'absolute', right: 12, bottom: 10, opacity: arrow }}>
+        <Animated.View
+          style={{
+            position: 'absolute',
+            right: 12,
+            bottom: 10,
+            opacity: arrow,
+            // it bobs as well as blinks — a static blinking arrow reads as a
+            // cursor, a bobbing one reads as "there is more, tap me"
+            transform: [{ translateY: arrow.interpolate({ inputRange: [0, 1], outputRange: [2, -2] }) }],
+          }}
+        >
           <Triangle direction="down" size={6} color={palette.accentDark} />
         </Animated.View>
       </Window>

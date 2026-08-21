@@ -4,6 +4,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, View } from 'react-native';
 import PixelText from './PixelText';
+import BarFill from './BarFill';
 import { palette } from '../theme';
 
 export default function HPBar({ hp, maxHp, width = 120, showNumbers = true, label = 'HP' }) {
@@ -22,9 +23,7 @@ export default function HPBar({ hp, maxHp, width = 120, showNumbers = true, labe
         <PixelText size="tiny" color={palette.secondary} style={{ marginRight: 6 }}>
           {label}
         </PixelText>
-        <View style={{ width, height: 12, backgroundColor: palette.barTrack, borderWidth: 2, borderColor: palette.ink }}>
-          <Animated.View style={{ height: '100%', backgroundColor: color, width: anim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }} />
-        </View>
+        <BarFill ratioAnim={anim} color={color} height={12} style={{ width }} />
       </View>
       {showNumbers ? (
         <PixelText size="tiny" color={palette.windowFill} align="right" style={{ marginTop: 4 }}>

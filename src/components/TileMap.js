@@ -17,7 +17,7 @@ import { SPRITES } from '../data/sprites';
 const TILE_SPRITES = {
   '.': ['tile_grass', 'tile_grass_b'],
   ',': ['tile_flowers'],
-  '#': ['tile_path'],
+  '#': ['tile_path', 'tile_path_b'],
   G: ['tile_gate'],
   T: ['tile_tree'],
   '~': ['tile_water', 'tile_water_b'],
@@ -40,12 +40,15 @@ function variantFor(x, y, count) {
   return ((x * 7 + y * 13) >>> 0) % count === 0 ? 1 : 0;
 }
 
-function Tile({ code, s, frame, x, y }) {
+export function Tile({ code, s, frame, x, y }) {
   const keys = TILE_SPRITES[code] || TILE_SPRITES['.'];
   const key = keys.length > 1 && code === '~' ? keys[frame % keys.length] : keys[variantFor(x, y, keys.length)];
   const sprite = SPRITES[key];
   if (!sprite) return <View style={{ width: s, height: s, backgroundColor: palette.grass }} />;
-  const px = Math.max(1, Math.round(s / sprite.grid[0].length));
+  // Fractional, not rounded: at a 24px tile a 16px sprite needs 1.5px cells.
+  // Rounding to 2 rendered a 32px tile and clipped a quarter of it away, which
+  // chopped the right-hand and bottom edges off every tile on the map.
+  const px = s / sprite.grid[0].length;
   return (
     <View style={{ width: s, height: s, overflow: 'hidden' }}>
       <PixelArt grid={sprite.grid} palette={sprite.palette} pixelSize={px} />

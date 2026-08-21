@@ -48,21 +48,60 @@ def rgb_to_hex(c):
     return '#%02x%02x%02x' % tuple(max(0, min(255, int(round(v)))) for v in c)
 
 
+def rgb_to_hsv(c):
+    r, g, b = [v / 255.0 for v in c]
+    mx, mn = max(r, g, b), min(r, g, b)
+    d = mx - mn
+    if d == 0:
+        h = 0.0
+    elif mx == r:
+        h = (60 * ((g - b) / d)) % 360
+    elif mx == g:
+        h = 60 * ((b - r) / d) + 120
+    else:
+        h = 60 * ((r - g) / d) + 240
+    return h, (0 if mx == 0 else d / mx), mx
+
+
+def hsv_to_rgb(h, s, v):
+    h = h % 360
+    c = v * s
+    x = c * (1 - abs((h / 60.0) % 2 - 1))
+    m = v - c
+    r, g, b = ((c, x, 0), (x, c, 0), (0, c, x), (0, x, c), (x, 0, c), (c, 0, x))[int(h // 60)]
+    return ((r + m) * 255, (g + m) * 255, (b + m) * 255)
+
+
 def mix(a, b, t):
     ca, cb = hex_to_rgb(a), hex_to_rgb(b)
     return rgb_to_hex(tuple(ca[i] + (cb[i] - ca[i]) * t for i in range(3)))
 
 
-def ramp(dark, light, steps=6, gamma=0.85):
-    """A shading ramp from shadow to highlight.
+# Shadows drift cool and gain saturation; highlights drift warm and lose it.
+# This is the single biggest difference between a ramp that looks like pixel art
+# and one that looks like a mechanical fade — straight RGB interpolation between
+# a dark and a light version of the same hue reads muddy and plastic.
+SHADOW_HUE = -30      # degrees toward blue/violet at the dark end
+LIGHT_HUE = 22        # degrees toward yellow at the light end
+SHADOW_SAT = 1.22
+LIGHT_SAT = 0.62
 
-    Gamma below 1 spends more steps in the lights, where the eye actually reads
-    form; an even split wastes half the ramp on shadow nobody can see.
-    """
-    return [mix(dark, light, (i / (steps - 1.0)) ** gamma) for i in range(steps)]
+
+def ramp(dark, light, steps=6, gamma=0.82):
+    hd, sd, vd = rgb_to_hsv(hex_to_rgb(dark))
+    hl, sl, vl = rgb_to_hsv(hex_to_rgb(light))
+    out = []
+    for i in range(steps):
+        t = (i / (steps - 1.0)) ** gamma
+        # value and saturation interpolate; hue swings through the base
+        v = vd + (vl - vd) * t
+        s_ = (sd * SHADOW_SAT) + ((sl * LIGHT_SAT) - (sd * SHADOW_SAT)) * t
+        h = (hd + SHADOW_HUE) + (((hl + LIGHT_HUE) - (hd + SHADOW_HUE)) * t)
+        out.append(rgb_to_hex(hsv_to_rgb(h, max(0.0, min(1.0, s_)), max(0.0, min(1.0, v)))))
+    return out
 
 
-INK = '#140f22'      # every outline in the game
+INK = '#140f22'
 WHITE = '#fdfdff'
 EYE_DARK = '#1b1430'
 
@@ -96,9 +135,16 @@ def build_palette(spec):
     colors = [None]          # 0 is always transparent
     index = {}
     for name in ('body', 'leaf', 'belly'):
-        for i, c in enumerate(ramp(*spec[name], steps=RAMP_STEPS)):
+        steps = ramp(*spec[name], steps=RAMP_STEPS)
+        for i, c in enumerate(steps):
             index[(name, i)] = len(colors)
             colors.append(c)
+        # A keyline that is merely the ramp's darkest step reads as a coloured
+        # halo — a red fringe around warm hair, cyan around blue cloth. Pull it
+        # most of the way to ink: enough hue survives to tie the line to the
+        # surface, not enough to glow.
+        index[(name, 'line')] = len(colors)
+        colors.append(mix(steps[0], INK, 0.62))
     for name, c in (('ink', INK), ('white', WHITE), ('eye', EYE_DARK)):
         index[(name, 0)] = len(colors)
         colors.append(c)
@@ -112,80 +158,138 @@ for _k, _spec in PALETTE_SPECS.items():
 
 
 # ----------------------------------------------------------------- canvas ---
+# Hard value bands, not a smooth gradient. A continuous ramp reads airbrushed;
+# handheld sprite work bands into a few clear steps and lets the boundaries do
+# the describing. Four bands plus the specular is the classic budget.
+BANDS = 5
+
+# 4x4 ordered dither, used only in a narrow zone either side of a band edge so
+# transitions break up instead of banding as a hard contour line.
+BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
+DITHER_ZONE = 0.30
+
+SS = 2   # supersamples per axis when rasterising, for edge coverage
+
+
 class Canvas:
     """An indexed-colour drawing surface.
 
-    Pixels hold (ramp_name, shade) until `resolve()` maps them through the
-    sprite's palette. Keeping them symbolic until the end is what lets the same
-    silhouette be recoloured for an evolution without redrawing it.
+    Pixels hold (ramp, shade, coverage) until `resolve()` bands them through the
+    sprite's palette. Coverage comes from supersampling the shape, which is what
+    gives curved edges their anti-aliased step instead of a hard staircase.
+
+    Authoring coordinates are independent of output resolution: pass `scale` and
+    the same drawing code emits a bigger, smoother sprite.
     """
 
-    def __init__(self, w, h, palette):
-        self.w, self.h = w, h
+    def __init__(self, w, h, palette, scale=1):
+        self.scale = scale
+        self.w, self.h = w * scale, h * scale
         self.palette = palette
-        self.px = [[None] * w for _ in range(h)]
+        self.px = [[None] * self.w for _ in range(self.h)]
+
+    # -- low level ----------------------------------------------------------
+    def _set(self, x, y, ramp_name, shade, cov=1.0, lit=False):
+        if 0 <= x < self.w and 0 <= y < self.h:
+            prev = self.px[y][x]
+            if prev is not None and cov < 1.0 and prev[2] >= cov:
+                return
+            # `lit` marks a pixel that came off a shaded surface. Only those get
+            # dithered: running the dither over a FLAT fill turns a solid colour
+            # into a checkerboard, which is what made the grass and the roofs
+            # read as woven fabric rather than ground and shingles.
+            self.px[y][x] = (ramp_name, max(0.0, min(1.0, shade)), cov, lit)
 
     def put(self, x, y, ramp_name, shade):
-        if 0 <= x < self.w and 0 <= y < self.h:
-            self.px[y][x] = (ramp_name, max(0.0, min(1.0, shade)))
-
-    def get(self, x, y):
-        if 0 <= x < self.w and 0 <= y < self.h:
-            return self.px[y][x]
-        return None
+        """Author-space pixel — fills a scale x scale block."""
+        S = self.scale
+        for dy in range(S):
+            for dx in range(S):
+                self._set(int(x) * S + dx, int(y) * S + dy, ramp_name, shade)
 
     def filled(self, x, y):
-        return self.get(x, y) is not None
+        return 0 <= x < self.w and 0 <= y < self.h and self.px[y][x] is not None
 
     # -- primitives ---------------------------------------------------------
-    def sphere(self, cx, cy, rx, ry, ramp_name, light=LIGHT, ambient=0.30, squash=1.0):
-        """A lit ellipsoid — the workhorse. Shade comes from a real normal."""
+    def sphere(self, cx, cy, rx, ry, ramp_name, light=LIGHT, ambient=0.26, squash=1.0):
+        """A lit ellipsoid, supersampled so its edge anti-aliases."""
+        S = self.scale
+        cx, cy, rx, ry = cx * S, cy * S, rx * S, ry * S
         lx, ly, lz = light
         n = math.sqrt(lx * lx + ly * ly + lz * lz)
         lx, ly, lz = lx / n, ly / n, lz / n
         for y in range(int(cy - ry) - 1, int(cy + ry) + 2):
             for x in range(int(cx - rx) - 1, int(cx + rx) + 2):
-                u = (x + 0.5 - cx) / rx
-                v = (y + 0.5 - cy) / ry
-                d = u * u + v * v
-                if d > 1.0:
+                hits, acc = 0, 0.0
+                for sy in range(SS):
+                    for sx in range(SS):
+                        u = (x + (sx + 0.5) / SS - cx) / rx
+                        v = (y + (sy + 0.5) / SS - cy) / ry
+                        d = u * u + v * v
+                        if d > 1.0:
+                            continue
+                        hits += 1
+                        nz = math.sqrt(max(0.0, 1.0 - d)) * squash
+                        acc += max(0.0, u * lx + v * ly + nz * lz)
+                if not hits:
                     continue
-                nz = math.sqrt(max(0.0, 1.0 - d)) * squash
-                lam = u * lx + v * ly + nz * lz
-                self.put(x, y, ramp_name, ambient + (1 - ambient) * max(0.0, lam))
+                lam = acc / hits
+                self._set(x, y, ramp_name, ambient + (1 - ambient) * lam, hits / float(SS * SS), lit=True)
 
     def blob(self, cx, cy, rx, ry, ramp_name, shade=0.62):
-        """Flat fill — for shapes that should not read as round."""
+        S = self.scale
+        cx, cy, rx, ry = cx * S, cy * S, rx * S, ry * S
         for y in range(int(cy - ry) - 1, int(cy + ry) + 2):
             for x in range(int(cx - rx) - 1, int(cx + rx) + 2):
-                u = (x + 0.5 - cx) / rx
-                v = (y + 0.5 - cy) / ry
-                if u * u + v * v <= 1.0:
-                    self.put(x, y, ramp_name, shade)
+                hits = 0
+                for sy in range(SS):
+                    for sx in range(SS):
+                        u = (x + (sx + 0.5) / SS - cx) / rx
+                        v = (y + (sy + 0.5) / SS - cy) / ry
+                        if u * u + v * v <= 1.0:
+                            hits += 1
+                if hits:
+                    self._set(x, y, ramp_name, shade, hits / float(SS * SS))
 
     def rect(self, x0, y0, x1, y1, ramp_name, shade=0.6):
-        for y in range(int(y0), int(y1) + 1):
-            for x in range(int(x0), int(x1) + 1):
-                self.put(x, y, ramp_name, shade)
+        S = self.scale
+        for y in range(int(y0) * S, (int(y1) + 1) * S):
+            for x in range(int(x0) * S, (int(x1) + 1) * S):
+                self._set(x, y, ramp_name, shade)
 
     def poly(self, points, ramp_name, shade=0.6):
-        ys = [p[1] for p in points]
+        S = self.scale
+        pts = [(px * S, py * S) for px, py in points]
+        ys = [p[1] for p in pts]
         for y in range(int(min(ys)), int(max(ys)) + 1):
             xs = []
-            for i in range(len(points)):
-                (x0, y0), (x1, y1) = points[i], points[(i + 1) % len(points)]
+            for i in range(len(pts)):
+                (x0, y0), (x1, y1) = pts[i], pts[(i + 1) % len(pts)]
                 if (y0 <= y < y1) or (y1 <= y < y0):
                     xs.append(x0 + (y - y0) * (x1 - x0) / float(y1 - y0))
             xs.sort()
             for i in range(0, len(xs) - 1, 2):
                 for x in range(int(round(xs[i])), int(round(xs[i + 1])) + 1):
-                    self.put(x, y, ramp_name, shade)
+                    self._set(x, y, ramp_name, shade)
 
     def eye(self, cx, cy, r=2, look=(0, 0)):
-        """Sclera, pupil, and the specular dot that makes a creature alive."""
-        self.blob(cx, cy, r, r + 0.3, 'white', 1.0)
-        self.blob(cx + look[0], cy + look[1], r * 0.62, r * 0.72, 'eye', 0.0)
-        self.put(int(cx - r * 0.45), int(cy - r * 0.45), 'white', 1.0)
+        """Sclera, lid shadow, pupil, specular.
+
+        A white dot with a black dot in it reads as a bead. What sells an eye at
+        this size is the lid shadow across the top and a specular that is big
+        enough to survive — one pixel of highlight disappears the moment the
+        sprite is scaled down."""
+        S = self.scale
+        self.blob(cx, cy, r, r + 0.35, 'white', 1.0)
+        self.blob(cx, cy - r * 0.66, r * 0.95, r * 0.36, 'eye', 0.0)     # lid shadow
+        self.blob(cx + look[0], cy + look[1] + r * 0.20, r * 0.58, r * 0.68, 'eye', 0.0)
+        # specular: a 2x2 block up and left of the pupil, inside the sclera
+        hx, hy = int((cx - r * 0.40) * S), int((cy - r * 0.40) * S)
+        for dy in range(max(2, S)):
+            for dx in range(max(2, S)):
+                self._set(hx + dx, hy + dy, 'white', 1.0)
+        # a smaller bounce light low-right keeps the eye from looking painted on
+        self._set(int((cx + r * 0.34) * S), int((cy + r * 0.44) * S), 'white', 1.0)
 
     # -- finishing passes ---------------------------------------------------
     def rim(self, ramp_name='leaf', strength=1.0):
@@ -193,39 +297,57 @@ class Canvas:
         add = []
         for y in range(self.h):
             for x in range(self.w):
-                if not self.filled(x, y):
-                    continue
                 cur = self.px[y][x]
-                if cur[0] in ('white', 'eye', 'ink'):
+                if cur is None or cur[0] in ('white', 'eye', 'ink'):
                     continue
                 if not self.filled(x + 1, y) or not self.filled(x, y + 1):
-                    add.append((x, y, cur[0]))
-        for x, y, rn in add:
-            old = self.px[y][x][1]
-            self.px[y][x] = (rn, min(1.0, old + 0.30 * strength))
+                    add.append((x, y))
+        for x, y in add:
+            rn, sh, cov, lit = self.px[y][x]
+            self.px[y][x] = (rn, min(1.0, sh + 0.34 * strength), cov, lit)
 
-    def outline(self):
-        """One-pixel ink border around the silhouette, drawn outside it."""
-        edge = []
+    def outline(self, ink_below=True):
+        """A COLOURED outline: each edge pixel takes the keyline of whatever ramp
+        it borders, with true ink kept for the underside so the sprite still has
+        a contact edge. A uniform black keyline around everything is the fastest
+        way to make sprites look like clip art; a keyline that is simply the
+        ramp's darkest colour is the fastest way to make them glow."""
+        edge = {}
         for y in range(self.h):
             for x in range(self.w):
                 if self.filled(x, y):
                     continue
-                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                    if self.filled(x + dx, y + dy):
-                        edge.append((x, y))
+                best = None
+                for dx, dy in ((0, 1), (1, 0), (-1, 0), (0, -1)):
+                    if not (0 <= y + dy < self.h and 0 <= x + dx < self.w):
+                        continue
+                    nb = self.px[y + dy][x + dx]
+                    if nb is None or nb[0] == 'ink':
+                        continue
+                    # dy == 1 means the neighbour is BELOW us, i.e. we are its
+                    # top edge; the underside of the sprite is dy == -1.
+                    if ink_below and dy < 0:
+                        best = 'ink'
                         break
-        for x, y in edge:
-            self.put(x, y, 'ink', 0)
+                    if best is None:
+                        best = nb[0]
+                if best:
+                    edge[(x, y)] = best
+        for (x, y), rn in edge.items():
+            if rn == 'ink' or rn in ('white', 'eye'):
+                self._set(x, y, 'ink', 0.0)
+            else:
+                self._set(x, y, rn + '|line', 0.0)
 
     def shadow(self, cx, cy, rx, ry):
-        """A contact shadow so the sprite sits on the ground rather than floats."""
+        S = self.scale
+        cx, cy, rx, ry = cx * S, cy * S, rx * S, ry * S
         for y in range(int(cy - ry) - 1, int(cy + ry) + 2):
             for x in range(int(cx - rx) - 1, int(cx + rx) + 2):
                 u = (x + 0.5 - cx) / rx
                 v = (y + 0.5 - cy) / ry
                 if u * u + v * v <= 1.0 and not self.filled(x, y):
-                    self.put(x, y, 'ink', 0)
+                    self._set(x, y, 'ink', 0)
 
     # -- output -------------------------------------------------------------
     def resolve(self):
@@ -238,12 +360,38 @@ class Canvas:
                 if p is None:
                     row += TRANSPARENT
                     continue
-                name, shade = p
+                name, shade, cov, lit = p
                 if name in ('ink', 'white', 'eye'):
                     row += DIGITS[idx[(name, 0)]]
+                    continue
+                if name.endswith('|line'):
+                    row += DIGITS[idx[(name[:-5], 'line')]]
+                    continue
+                # Partial coverage darkens the edge pixel — that step is the
+                # anti-aliasing, and it is why curves stop reading as staircases.
+                sh = shade * (0.45 + 0.55 * cov)
+                if not lit:
+                    # A flat fill is authored intent — the shade IS the colour
+                    # choice. Band it and a tile artist loses half the values
+                    # they were picking between, so take the ramp step directly.
+                    step = int(round(sh * (RAMP_STEPS - 1)))
                 else:
-                    step = int(round(shade * (RAMP_STEPS - 1)))
-                    row += DIGITS[idx[(name, max(0, min(RAMP_STEPS - 1, step)))]]
+                    pos = sh * (BANDS - 1)
+                    band = int(pos)
+                    frac = pos - band
+                    # dither only near a band edge, so lit flats stay clean
+                    if DITHER_ZONE > 0 and band < BANDS - 1:
+                        lo, hi = 0.5 - DITHER_ZONE / 2, 0.5 + DITHER_ZONE / 2
+                        if lo < frac < hi:
+                            t = (frac - lo) / (hi - lo)
+                            if t > (BAYER[y % 4][x % 4] + 0.5) / 16.0:
+                                band += 1
+                        elif frac >= hi:
+                            band += 1
+                    band = max(0, min(BANDS - 1, band))
+                    step = int(round(band * (RAMP_STEPS - 1) / float(BANDS - 1)))
+                step = max(0, min(RAMP_STEPS - 1, step))
+                row += DIGITS[idx[(name, step)]]
             rows.append(row)
         return rows
 
@@ -528,21 +676,35 @@ def hero(facing='down', step=0):
     side = facing in ('left', 'right')
     c.shadow(12, 30, 7, 2)
 
-    # legs — the swing is big enough to see at 24px
-    c.rect(8, 23, 10, 29 + max(0, swing), 'leaf', 0.22)
-    c.rect(13, 23, 15, 29 + max(0, -swing), 'leaf', 0.22)
-    c.rect(7, 29 + max(0, swing), 10, 30 + max(0, swing), 'ink', 0)     # shoes
-    c.rect(13, 29 + max(0, -swing), 16, 30 + max(0, -swing), 'ink', 0)
+    # Legs are trousers, not bare sticks: same ramp as the shirt, several steps
+    # darker. Drawn wide enough to survive being scaled down to a 16px tile.
+    def leg(x0, x1, lift):
+        top, sole = 23, 29 + lift
+        c.rect(x0, top, x1, sole - 1, 'body', 0.24)
+        c.rect(x0, top, x0, sole - 1, 'body', 0.34)          # inner highlight
+        c.rect(x0 - 1, sole, x1 + 1, sole + 1, 'ink', 0)     # shoe
+        c.rect(x0 - 1, sole, x1, sole, 'body', 0.16)         # laces catch light
+
+    leg(7, 10, max(0, swing))
+    leg(13, 16, max(0, -swing))
 
     # body: narrower in profile so the turn reads on silhouette alone
     c.sphere(12, 19, 5.5 if side else 7, 6, 'body')
+    c.rect(5 if not side else 7, 24, 19 if not side else 17, 24, 'body', 0.30)   # shirt hem
     if side:
         # only the near arm is visible, and it swings
         ax = 8 if facing == 'left' else 16
         c.sphere(ax, 19 + swing, 2.4, 4.2, 'body', ambient=0.38)
+        c.blob(ax, 22 + swing, 1.5, 1.6, 'belly', 0.78)      # hand
     else:
         c.sphere(4.5, 18 + swing, 2.6, 4.2, 'body', ambient=0.38)
         c.sphere(19.5, 18 - swing, 2.6, 4.2, 'body', ambient=0.38)
+        c.blob(4.5, 21.5 + swing, 1.6, 1.7, 'belly', 0.78)
+        c.blob(19.5, 21.5 - swing, 1.6, 1.7, 'belly', 0.78)
+
+    # neck — without it the head sits straight on the shoulders and the figure
+    # reads as a snowman
+    c.rect(10, 14, 14, 15, 'belly', 0.42)
 
     # head
     c.sphere(12, 10, 7.5 if side else 8, 8, 'belly')
@@ -691,121 +853,230 @@ def tile(palette):
     return Canvas(TILE, TILE, palette)
 
 
+def hsh(x, y, seed=0):
+    """Deterministic per-cell noise in [0,1).
+
+    Texture has to be stable: a tile regenerated with different speckles every
+    run would make the whole overworld shimmer between builds. This is a cheap
+    integer hash, not a random number generator.
+    """
+    n = (x * 374761393 + y * 668265263 + seed * 2147483647) & 0xffffffff
+    n = (n ^ (n >> 13)) * 1274126177 & 0xffffffff
+    return ((n ^ (n >> 16)) & 0xffff) / 65536.0
+
+
+def mottle(c, ramp_name, base, spread, seed, cell=2):
+    """Low-frequency value noise in CLUSTERS.
+
+    Per-pixel noise at tile scale is a screen door: it reads as a woven texture
+    and it shimmers when the map scrolls. Clumping the noise into 2x2 cells is
+    what makes ground read as ground.
+    """
+    for y in range(0, TILE, cell):
+        for x in range(0, TILE, cell):
+            v = base + (hsh(x // cell, y // cell, seed) - 0.5) * 2 * spread
+            for dy in range(cell):
+                for dx in range(cell):
+                    c.put(x + dx, y + dy, ramp_name, v)
+
+
 def tile_grass(variant=0):
+    """Grass is 90% of what the player looks at, so it has to hold up flat.
+
+    A base value, clustered mottle for depth, and a handful of blades with a
+    dark pixel behind each so the tuft reads as standing up off the ground.
+    """
     c = tile('terra')
-    c.rect(0, 0, 15, 15, 'body', 0.62)
-    tufts = ((3, 4), (11, 7), (6, 12), (13, 13)) if variant == 0 else ((8, 3), (2, 9), (12, 10))
-    for tx, ty in tufts:
-        c.put(tx, ty, 'body', 0.85)
-        c.put(tx, ty - 1, 'body', 0.85)
-        c.put(tx + 1, ty, 'body', 0.42)
+    seed = 11 + variant * 7
+    # Spread is deliberately small: at seven ramp steps most cells land on the
+    # same colour and only a few break away, which is depth. Widen it and the
+    # tile turns into visible 2x2 squares.
+    mottle(c, 'body', 0.58, 0.042, seed)
+    blades = ((3, 5), (10, 3), (6, 11), (13, 9)) if variant == 0 else ((8, 4), (2, 10), (12, 12), (5, 7))
+    for bx, by in blades:
+        c.put(bx, by - 2, 'body', 0.92)
+        c.put(bx, by - 1, 'body', 0.88)
+        c.put(bx, by, 'body', 0.78)
+        c.put(bx + 1, by - 1, 'body', 0.30)  # the blade's own shadow
+        c.put(bx + 1, by, 'body', 0.34)
+        c.put(bx - 1, by, 'body', 0.70)      # a second, shorter leaf
+    if variant == 1:                          # a couple of pebbles, sparingly
+        for px_, py_ in ((14, 4), (4, 13)):
+            c.put(px_, py_, 'leaf', 0.62)
+            c.put(px_, py_ + 1, 'leaf', 0.3)
     return c
 
 
 def tile_tallgrass():
+    """Has to read as TALLER than the field it sits in, at a glance, because
+    walking into it is what starts an encounter.
+
+    Three clumps, not five evenly spaced columns: a picket fence of stems every
+    three pixels turns a field of these into corduroy.
+    """
     c = tile('terra')
-    c.rect(0, 0, 15, 15, 'body', 0.5)
-    for bx in range(1, 15, 4):
-        for by in (3, 10):
-            c.rect(bx, by, bx, by + 4, 'body', 0.88)
-            c.rect(bx + 1, by + 1, bx + 1, by + 4, 'body', 0.34)
-            c.put(bx - 1, by + 2, 'body', 0.72)
+    mottle(c, 'body', 0.40, 0.04, 31)              # shaded ground between clumps
+    for cx, cy, n in ((3, 9, 3), (9, 6, 4), (13, 12, 2)):
+        for i in range(n):
+            bx = cx + i * 2 - n
+            top = cy - 5 + (i % 2) * 2
+            c.rect(bx, top, bx, cy, 'body', 0.90)          # stem
+            c.rect(bx + 1, top + 1, bx + 1, cy, 'body', 0.28)   # its shadow
+            c.put(bx, top - 1, 'body', 0.98)               # tip catches the sun
+        c.rect(cx - n, cy + 1, cx + n - 1, cy + 1, 'body', 0.20)   # contact shadow
     return c
 
 
-def tile_path():
+def tile_path(variant=0):
+    """Two variants, scattered by coordinate. One pebble layout repeated down a
+    whole trail draws visible rows of identical dashes."""
     c = tile('terra')
-    c.rect(0, 0, 15, 15, 'leaf', 0.72)
-    for gx, gy in ((2, 3), (9, 2), (5, 8), (12, 10), (7, 13)):
-        c.put(gx, gy, 'leaf', 0.52)
-        c.put(gx + 1, gy, 'leaf', 0.9)
-    c.rect(0, 0, 15, 0, 'leaf', 0.88)
-    c.rect(0, 15, 15, 15, 'leaf', 0.5)
+    mottle(c, 'leaf', 0.62, 0.06, 5 + variant * 17)
+    stones = ((2, 4), (9, 2), (12, 11), (7, 14)) if variant == 0 else ((5, 3), (13, 6), (3, 12), (10, 9))
+    for gx, gy in stones:
+        c.put(gx, gy, 'leaf', 0.86)             # pebble top catches the light
+        c.put(gx + 1, gy, 'leaf', 0.74)
+        c.put(gx, gy + 1, 'leaf', 0.34)         # and casts a short shadow
+        c.put(gx + 1, gy + 1, 'leaf', 0.40)
+    c.rect(0, 0, 15, 0, 'leaf', 0.86)           # lit lip at the top edge
+    c.rect(0, 15, 15, 15, 'leaf', 0.46)         # shadowed lip at the bottom
     return c
 
 
 def tile_tree():
-    """Trunk and canopy have to be different VALUES, not just different shapes —
-    a dark-green ball on a mid-green field is a green square from two feet away."""
+    """Trees are laid edge to edge to fence the map in, so this tile has to read
+    as a piece of FOREST, not as one tree on a lawn.
+
+    Two mistakes in the first pass: a single circular canopy left green ground
+    showing at all four corners, so a wall of trees read as polka dots; and a
+    wide trunk across the bottom read as a red brick under every one of them.
+    The canopy is four overlapping lobes filling the tile, and the trunk is two
+    pixels of dark bark peeking out beneath.
+    """
     c = tile('terra')
-    c.rect(0, 0, 15, 15, 'body', 0.34)           # shaded ground under the tree
-    c.rect(6, 9, 9, 15, 'leaf', 0.22)            # trunk, warm and dark
-    c.rect(6, 9, 6, 15, 'leaf', 0.34)
-    c.sphere(8, 6, 8, 7, 'body', ambient=0.5)    # canopy, clearly lighter
-    c.sphere(5, 4, 3.5, 3, 'body', ambient=0.72)
-    for lx, ly in ((11, 3), (13, 8), (2, 7), (9, 1)):
-        c.put(lx, ly, 'body', 1.0)
+    mottle(c, 'body', 0.22, 0.03, 3)             # deep shade under the branches
+    # Only a hint of trunk in deep shadow. A lit bark stripe under every tile
+    # drew a dotted red line along the whole tree border.
+    c.rect(7, 12, 8, 15, 'leaf', 0.08)
+    c.rect(6, 14, 9, 15, 'leaf', 0.06)
+    for lx, ly, lr in ((4, 5, 5.6), (11, 5, 5.6), (8, 2, 5.0), (8, 9, 5.4), (13, 10, 3.6), (2, 10, 3.6)):
+        c.sphere(lx, ly, lr, lr * 0.92, 'body', ambient=0.44)
+    c.sphere(5, 3, 3.6, 3.0, 'body', ambient=0.74)   # the lobe the sun lands on
+    for lx, ly in ((3, 2), (10, 1), (13, 6), (7, 6)):
+        c.put(lx, ly, 'body', 0.98)                  # leaf speculars
+    for lx, ly in ((8, 7), (5, 9), (12, 8), (2, 6)):
+        c.put(lx, ly, 'body', 0.24)                  # gaps between the lobes
     return c
 
 
 def tile_water(frame=0):
-    """Horizontal crests with a dark trough under each — scattered dots read as
-    noise, not as water."""
+    """Crests with a dark trough under each, staggered across the tile. Evenly
+    spaced dashes read as road markings; scattered dots read as noise."""
     c = tile('dew')
-    c.rect(0, 0, 15, 15, 'body', 0.42)
-    off = frame * 4
-    for wy in (2, 7, 12):
-        for wx in range(0, 16, 8):
-            x = (wx + off) % 16
-            for k in range(5):
-                c.put((x + k) % 16, wy, 'leaf', 1.0)
-                c.put((x + k) % 16, wy + 1, 'body', 0.22)
+    for y in range(TILE):                        # depth gradient, top is deeper
+        c.rect(0, y, 15, y, 'body', 0.34 + 0.14 * (y / 15.0))
+    off = frame * 5
+    for row, (wy, phase) in enumerate(((1, 0), (5, 6), (9, 3), (13, 9))):
+        x0 = (phase + off) % 16
+        length = 4 + (row % 2) * 2
+        for k in range(length):
+            x = (x0 + k) % 16
+            c.put(x, wy, 'leaf', 0.94)           # crest
+            c.put(x, wy + 1, 'body', 0.20)       # trough beneath it
+        c.put((x0 - 1) % 16, wy, 'leaf', 0.62)   # the crest tapers off
+        c.put((x0 + length) % 16, wy, 'leaf', 0.62)
+    c.put((3 + off) % 16, 7, 'leaf', 1.0)        # a glint
     return c
 
 
 def tile_flowers():
     c = tile_grass(0)
-    for fx, fy, rampn in ((4, 5, 'leaf'), (11, 9, 'belly'), (7, 12, 'leaf')):
-        c.put(fx, fy - 1, rampn, 1.0)
-        c.put(fx - 1, fy, rampn, 1.0)
-        c.put(fx + 1, fy, rampn, 1.0)
-        c.put(fx, fy + 1, rampn, 1.0)
-        c.put(fx, fy, 'belly', 1.0)
+    for fx, fy, petal in ((4, 5, 'leaf'), (11, 9, 'belly'), (8, 13, 'leaf')):
+        c.put(fx, fy - 1, petal, 0.95)
+        c.put(fx - 1, fy, petal, 0.95)
+        c.put(fx + 1, fy, petal, 0.78)
+        c.put(fx, fy + 1, petal, 0.70)
+        c.put(fx, fy, 'belly', 1.0)              # bright centre
+        c.put(fx + 1, fy + 1, 'body', 0.32)      # shadow on the grass
     return c
 
 
 def tile_roof(pal):
+    """Shingle courses: a lit top lip, a body, a dark bottom lip, and vertical
+    seams staggered course to course."""
     c = tile(pal)
-    c.rect(0, 0, 15, 15, 'body', 0.6)
-    for ry in range(0, 16, 4):                   # shingle courses
-        c.rect(0, ry, 15, ry, 'body', 0.85)
-        c.rect(0, ry + 3, 15, ry + 3, 'body', 0.34)
-        for rx in range((0 if (ry // 4) % 2 == 0 else 4), 16, 8):
-            c.rect(rx, ry + 1, rx, ry + 2, 'body', 0.42)
+    for ry in range(0, 16, 4):
+        course = ry // 4
+        # The course above overlaps this one, so the dark line belongs at the
+        # TOP. Putting a highlight there instead is what turns shingles into
+        # brickwork, which is the mistake the first pass made.
+        c.rect(0, ry, 15, ry, 'body', 0.22)                  # overlap shadow
+        c.rect(0, ry + 1, 15, ry + 1, 'body', 0.54)
+        c.rect(0, ry + 2, 15, ry + 2, 'body', 0.66)
+        c.rect(0, ry + 3, 15, ry + 3, 'body', 0.84)          # lit tab edge
+        for rx in range((0 if course % 2 == 0 else 4), 16, 8):
+            c.rect(rx, ry + 1, rx, ry + 3, 'body', 0.30)     # tab seam
+        for tx in range(3, 16, 5):                            # weathering
+            c.put((tx + course * 3) % 16, ry + 2, 'body', 0.58)
     return c
 
 
 def tile_wall(pal):
     c = tile(pal)
-    c.rect(0, 0, 15, 15, 'belly', 0.78)
-    for by in range(0, 16, 5):                   # brick courses
-        c.rect(0, by, 15, by, 'belly', 0.55)
-        for bx in range((0 if (by // 5) % 2 == 0 else 4), 16, 8):
-            c.rect(bx, by, bx, by + 4, 'belly', 0.55)
+    for by in range(0, 16, 5):
+        course = by // 5
+        for bx in range(16):
+            # each brick gets its own value so the wall is not one flat plane
+            brick = (bx + (0 if course % 2 == 0 else 4)) // 8
+            c.rect(bx, by, bx, by + 4, 'belly', 0.74 + (hsh(brick, course, 9) - 0.5) * 0.14)
+        c.rect(0, by, 15, by, 'belly', 0.46)                 # mortar course
+        for bx in range((0 if course % 2 == 0 else 4), 16, 8):
+            c.rect(bx, by, bx, by + 4, 'belly', 0.46)        # mortar joint
+            c.rect(bx + 1, by + 1, bx + 1, by + 4, 'belly', 0.88)
     return c
 
 
 def tile_window(pal):
     c = tile_wall(pal)
-    c.rect(3, 4, 12, 11, 'leaf', 0.3)
-    c.rect(4, 5, 11, 10, 'leaf', 0.92)
-    c.rect(7, 5, 8, 10, 'leaf', 0.3)
-    c.rect(4, 7, 11, 8, 'leaf', 0.3)
+    c.rect(2, 3, 13, 12, 'leaf', 0.24)                       # frame
+    c.rect(3, 4, 12, 11, 'leaf', 0.88)                       # glass
+    c.rect(3, 4, 12, 5, 'leaf', 0.96)                        # sky reflected up top
+    for k in range(5):                                        # diagonal glint
+        c.put(5 + k, 9 - k, 'leaf', 1.0)
+    c.rect(7, 4, 8, 11, 'leaf', 0.28)                        # mullions
+    c.rect(3, 7, 12, 8, 'leaf', 0.28)
+    c.rect(1, 13, 14, 13, 'leaf', 0.40)                      # sill
+    c.rect(1, 12, 14, 12, 'leaf', 0.70)
     return c
 
 
 def tile_door(pal):
     c = tile_wall(pal)
-    c.rect(3, 3, 12, 15, 'body', 0.25)
-    c.rect(4, 4, 11, 15, 'body', 0.45)
-    c.put(10, 9, 'leaf', 1.0)                    # handle
+    c.rect(2, 2, 13, 15, 'body', 0.22)                       # frame
+    c.rect(3, 3, 12, 15, 'body', 0.46)                       # door face
+    c.rect(3, 3, 3, 15, 'body', 0.62)                        # lit edge
+    for py0, py1 in ((5, 8), (10, 13)):                      # recessed panels
+        c.rect(5, py0, 10, py1, 'body', 0.30)                # inset shadow
+        c.rect(6, py0 + 1, 9, py1 - 1, 'body', 0.52)         # panel face
+        c.rect(6, py1, 10, py1, 'body', 0.64)                # lit lower lip
+    c.put(11, 9, 'leaf', 1.0)                                # handle
+    c.put(11, 10, 'leaf', 0.4)
     return c
 
 
 def tile_gate():
+    """The way out of town. Two stone posts either side of the path, so it reads
+    as a gap you walk through rather than a decoration."""
     c = tile_path()
-    c.poly([(8, 3), (13, 10), (3, 10)], 'belly', 1.0)
-    c.poly([(8, 5), (11, 9), (5, 9)], 'leaf', 0.35)
+    for px_ in (0, 13):
+        c.rect(px_, 2, px_ + 2, 15, 'leaf', 0.30)            # post
+        c.rect(px_, 2, px_, 15, 'leaf', 0.48)                # lit face
+        c.rect(px_ + 2, 2, px_ + 2, 15, 'leaf', 0.16)        # shadow face
+        c.rect(px_, 1, px_ + 2, 1, 'leaf', 0.58)             # cap
+        for k in range(4, 15, 5):                            # grain
+            c.put(px_ + 1, k, 'leaf', 0.22)
+    c.rect(2, 3, 13, 4, 'leaf', 0.42)                        # rail across the top
+    c.rect(2, 5, 13, 5, 'leaf', 0.18)
     return c
 
 
@@ -843,7 +1114,8 @@ def build_all():
     # tiles
     add('tile_grass', tile_grass(0)); add('tile_grass_b', tile_grass(1))
     add('tile_tallgrass', tile_tallgrass())
-    add('tile_path', tile_path()); add('tile_tree', tile_tree())
+    add('tile_path', tile_path(0)); add('tile_path_b', tile_path(1))
+    add('tile_tree', tile_tree())
     add('tile_water', tile_water(0)); add('tile_water_b', tile_water(1))
     add('tile_flowers', tile_flowers())
     add('tile_roof_rest', tile_roof('ache')); add('tile_roof_gym', tile_roof('hero'))

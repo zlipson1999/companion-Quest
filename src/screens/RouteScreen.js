@@ -3,10 +3,10 @@
 // encounters (befriendable companions or bad-habit obstacles). Milestones drop
 // items. No pedometer? A dev injector lets you simulate distance.
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Screen, DualPane, Window, ProgressBar, PixelText, PixelSprite, PixelButton } from '../components';
+import { Screen, DualPane, Window, ProgressBar, PixelText, PixelSprite, PixelButton, Tile } from '../components';
 import { palette, space, screen } from '../theme';
 import { useGame, useCompanion, useDistance } from '../state';
 import { useNav } from './navContext';
@@ -17,31 +17,82 @@ import { rollWildEncounter } from '../data/wild';
 import { getCreature } from '../data/creatures';
 import { routeCheer, pickupLine } from '../coach';
 
+// The trail itself.
+//
+// This used to be three flat rectangles with a dashed centre line — it read as
+// a road-safety diagram, and it was the last screen in the app still drawing
+// scenery out of coloured Views. It is a real tile field now: the same grass,
+// path, tall grass and tree tiles the overworld uses, scrolling past you.
+const ROUTE_TS = 22;
+
+// A deterministic strip, so the trail looks the same every time you walk it and
+// nothing reshuffles under you on a re-render.
+function routeRow(r, cols) {
+  const laneW = Math.max(3, Math.round(cols * 0.3));
+  const lane0 = Math.floor((cols - laneW) / 2);
+  const h = (r * 2654435761) >>> 0;
+  let row = '';
+  for (let x = 0; x < cols; x += 1) {
+    const n = ((h ^ (x * 2246822519)) >>> 0) % 100;
+    if (x >= lane0 && x < lane0 + laneW) {
+      row += '#';
+    } else if (x < 1 || x > cols - 2) {
+      row += 'T';
+    } else if (x < 2 || x > cols - 3) {
+      row += n < 62 ? 'T' : '^';
+    } else {
+      row += n < 14 ? '^' : n < 22 ? ',' : '.';
+    }
+  }
+  return row;
+}
+
 function ScrollingScene({ width, height, moving }) {
   const offset = useRef(new Animated.Value(0)).current;
+  const cols = Math.ceil(width / ROUTE_TS);
+  const rows = Math.ceil(height / ROUTE_TS) + 1;
+  const [frame, setFrame] = useState(0);
+
   useEffect(() => {
     let loop;
     if (moving) {
-      loop = Animated.loop(Animated.timing(offset, { toValue: 1, duration: 700, useNativeDriver: true }));
+      // One full tile-row per cycle, then reset — two stacked copies of the
+      // strip make the wrap invisible.
+      offset.setValue(0);
+      loop = Animated.loop(Animated.timing(offset, { toValue: 1, duration: 620, useNativeDriver: true }));
       loop.start();
+    } else {
+      offset.setValue(0);
     }
     return () => loop && loop.stop();
   }, [offset, moving]);
-  const dashH = 20;
-  const translate = offset.interpolate({ inputRange: [0, 1], outputRange: [0, dashH * 2] });
-  const laneW = Math.floor(width * 0.34);
+
+  useEffect(() => {
+    const t = setInterval(() => setFrame((f) => f + 1), 620);
+    return () => clearInterval(t);
+  }, []);
+
+  const translate = offset.interpolate({ inputRange: [0, 1], outputRange: [0, ROUTE_TS] });
+
+  const strip = useMemo(
+    () =>
+      Array.from({ length: rows * 2 }).map((_, r) => (
+        <View key={r} style={{ flexDirection: 'row' }}>
+          {routeRow(r % rows, cols)
+            .split('')
+            .map((code, x) => (
+              <Tile key={x} code={code} s={ROUTE_TS} frame={frame} x={x} y={r} />
+            ))}
+        </View>
+      )),
+    [rows, cols, frame]
+  );
+
   return (
-    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center' }}>
-      {/* grass tufts on the sides */}
-      <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: width * 0.3, backgroundColor: palette.grassDark, opacity: 0.5 }} />
-      <View style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: width * 0.3, backgroundColor: palette.grassDark, opacity: 0.5 }} />
-      <View style={{ width: laneW, height, backgroundColor: palette.path }}>
-        <Animated.View style={{ transform: [{ translateY: translate }] }}>
-          {Array.from({ length: Math.ceil(height / (dashH * 2)) + 2 }).map((_, i) => (
-            <View key={i} style={{ width: 6, height: dashH, backgroundColor: palette.pathDark, alignSelf: 'center', marginVertical: dashH / 2 }} />
-          ))}
-        </Animated.View>
-      </View>
+    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden', backgroundColor: palette.grassDark }}>
+      <Animated.View style={{ position: 'absolute', top: -ROUTE_TS * rows, transform: [{ translateY: translate }] }}>
+        {strip}
+      </Animated.View>
     </View>
   );
 }

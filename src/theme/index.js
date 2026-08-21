@@ -1,4 +1,4 @@
-export { palette, spritePalettes, default as colors } from './colors';
+export { palette, spritePalettes, shade, default as colors } from './colors';
 export { fonts, FONT_FAMILY } from './typography';
 export { screen, TILE, space, border } from './metrics';
 

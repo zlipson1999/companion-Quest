@@ -37,3 +37,6 @@ yarn-error.*
 # build artifacts
 *.bundle
 tools/sprite_preview.png
+
+# Python bytecode from tools/
+__pycache__/
