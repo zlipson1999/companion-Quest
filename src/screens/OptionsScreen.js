@@ -19,6 +19,31 @@ function Toggle({ label, value, onToggle }) {
   );
 }
 
+// Which unit the Forge writes weights in. Purely a label — the number you type
+// is stored as typed, so switching does not silently reinterpret a saved plan.
+function UnitPicker({ value, onPick }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <PixelText size="body" color={palette.windowFill}>
+        Weight units
+      </PixelText>
+      <View style={{ flexDirection: 'row' }}>
+        {['lb', 'kg'].map((u) => (
+          <PixelButton
+            key={u}
+            label={u}
+            tone={value === u ? 'primary' : 'dark'}
+            size="small"
+            sound={null}
+            style={{ minWidth: 52, marginLeft: 6 }}
+            onPress={() => onPick(u)}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export default function OptionsScreen() {
   const { state, dispatch } = useGame();
   const { navigate } = useNav();
@@ -49,6 +74,13 @@ export default function OptionsScreen() {
       <Window tone="dark" pad={16}>
         <Toggle label="Sound FX" value={sfxOn} onToggle={toggleSfx} />
         <Toggle label="Music" value={bgmOn} onToggle={toggleBgm} />
+        <UnitPicker
+          value={state.settings.units || 'lb'}
+          onPick={(u) => {
+            playSfx('confirm');
+            dispatch({ type: 'SET_SETTING', payload: { key: 'units', value: u } });
+          }}
+        />
       </Window>
 
       <Window tone="dark" pad={14} style={{ marginTop: space.md }}>

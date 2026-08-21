@@ -17,6 +17,7 @@ import { moduleStateFor, getModule, todayKey, logModuleAction } from '../modules
 import { analysePlan, suggestionsFor } from '../modules/forge/analysis';
 import { emptyPlan } from '../modules/forge';
 import { agoLabel, historyFor, lastSession, prTargets, prsSetBy, progressionFor, recordSession, sessionEntry } from '../modules/forge/history';
+import { MAX_WEIGHT, WEIGHT_STEP, beatsRecord, formatRecord, formatSet, unitLabel, weightOf } from '../modules/forge/weight';
 import { loadOf } from '../state/recovery';
 import { useRecovery } from '../state';
 import { getMovement } from '../data/movements';
@@ -43,10 +44,37 @@ function PerkChip({ perk }) {
   );
 }
 
-function BlockRow({ block, index, done, onToggle, onForm, pr, lastAmount }) {
+// A live stepper for what you are actually doing right now, as opposed to what
+// the plan asked for.
+function LiveStepper({ label, value, onChange, step = 1, min = 0, max = 999, zeroLabel }) {
+  const set = (v) => {
+    playSfx('cursor');
+    onChange(Math.max(min, Math.min(max, v)));
+  };
+  return (
+    <View style={{ alignItems: 'center' }}>
+      <PixelText size="tiny" color={palette.windowTextDim}>{label}</PixelText>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+        <PixelButton label="-" tone="plain" size="tiny" sound={null} onPress={() => set(value - step)} style={{ paddingVertical: 4, paddingHorizontal: 8 }} />
+        <PixelText size="small" color={palette.windowText} style={{ minWidth: 38, textAlign: 'center' }}>
+          {value === 0 && zeroLabel ? zeroLabel : value}
+        </PixelText>
+        <PixelButton label="+" tone="plain" size="tiny" sound={null} onPress={() => set(value + step)} style={{ paddingVertical: 4, paddingHorizontal: 8 }} />
+      </View>
+    </View>
+  );
+}
+
+// One movement during a session.
+//
+// The plan is a target, not a transcript. What gets logged — and what sets a
+// personal record — is what you actually did, so the numbers here are editable
+// and start at whatever the plan asked for. Ticking a block off without touching
+// them means "as written", which is the common case.
+function BlockRow({ block, performed, index, done, onToggle, onForm, onEdit, pr, last, units }) {
   const mv = getMovement(block.movementId);
   if (!mv) return null;
-  const unit = mv.unit === 'seconds' ? 's' : '';
+  const changed = performed.amount !== block.amount || weightOf(performed) !== weightOf(block);
   return (
     <Window tone="cream" pad={11} style={{ marginBottom: space.sm }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -57,19 +85,49 @@ function BlockRow({ block, index, done, onToggle, onForm, pr, lastAmount }) {
               {index + 1}. {mv.name}
             </PixelText>
             <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 5 }}>
-              {block.sets} x {block.amount} {mv.unit === 'reps' ? 'reps' : mv.unit === 'seconds' ? 'sec' : mv.unit}
-              {lastAmount != null ? `   (last: ${lastAmount}${unit})` : ''}
+              target {formatSet(block, mv, units)}
+              {last ? `   (last: ${formatRecord(last, mv, units)})` : ''}
             </PixelText>
           </View>
         </Pressable>
-        <PixelButton label="Form" tone="dark" size="tiny" onPress={onForm} style={{ paddingVertical: 7, paddingHorizontal: 10 }} />
+        {/* A real tap target. This was a tiny chip jammed against the right
+            edge — small enough that hitting it was luck rather than aim. */}
+        <PixelButton label="Mirror" tone="dark" size="small" onPress={onForm} style={{ paddingVertical: 11, paddingHorizontal: 14, minWidth: 76 }} />
       </View>
-      <PixelText size="tiny" color={palette.accentDark} style={{ marginTop: 8, lineHeight: 14 }}>
+
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 10 }}>
+        <LiveStepper
+          label={mv.unit === 'seconds' ? 'seconds' : 'reps'}
+          value={performed.amount}
+          step={mv.unit === 'seconds' ? 5 : 1}
+          min={1}
+          max={mv.unit === 'seconds' ? 600 : 100}
+          onChange={(v) => onEdit({ amount: v })}
+        />
+        <LiveStepper
+          label={units}
+          value={weightOf(performed)}
+          step={WEIGHT_STEP}
+          min={0}
+          max={MAX_WEIGHT}
+          zeroLabel="body"
+          onChange={(v) => onEdit({ weight: v || undefined })}
+        />
+      </View>
+      {changed ? (
+        <PixelText size="tiny" color={palette.accentDark} style={{ marginTop: 7 }}>
+          Logging {formatSet(performed, mv, units)} — what you did, not the target.
+        </PixelText>
+      ) : null}
+
+      {/* A coaching cue is help, not an error. In accentDark it was the same
+          colour the app uses for damage and danger, and read as a warning. */}
+      <PixelText size="tiny" color={palette.primaryDark} style={{ marginTop: 8, lineHeight: 14 }}>
         {mv.cues[0]}
       </PixelText>
-      {pr && block.amount > pr.amount ? (
+      {pr && beatsRecord(performed, pr, mv) ? (
         <PixelText size="tiny" color={palette.success} style={{ marginTop: 6 }}>
-          Beats your best of {pr.amount}{unit}.
+          Beats your best of {formatRecord(pr, mv, units)}.
         </PixelText>
       ) : null}
     </Window>
@@ -96,10 +154,17 @@ export default function ForgeScreen({ params }) {
   const [phase, setPhase] = useState(resume ? 'session' : 'list');
   const [selectedId, setSelectedId] = useState(resume ? resume.planId : null);
   const [checked, setChecked] = useState(resume ? resume.checked || {} : {});
+  // What was ACTUALLY done, per block index, overriding the plan's target.
+  // Empty means "exactly as written", which is the common case.
+  const [actual, setActual] = useState(resume ? resume.actual || {} : {});
   const [resultLines, setResultLines] = useState([]);
 
   const plan = plans.find((p) => p.id === selectedId) || null;
   const analysis = useMemo(() => (plan ? analysePlan(plan) : null), [plan]);
+  const units = unitLabel(state.settings);
+
+  // The plan's block merged with anything edited during the session.
+  const performedBlock = (b, i) => ({ ...b, ...(actual[i] || {}) });
 
   const open = (p) => {
     playSfx('confirm');
@@ -124,7 +189,10 @@ export default function ForgeScreen({ params }) {
     // Log what was DONE, not what was planned. Ticking one block of five and
     // pressing "Log 1/5" used to record the whole plan: full volume into
     // recovery, and a personal best on every movement you skipped.
-    const doneBlocks = plan.blocks.filter((_b, i) => checked[i]);
+    // ...and log the numbers as edited during the session, not the plan's
+    // targets. Writing the target down when you actually managed three of the
+    // five reps would mint a personal best you never earned.
+    const doneBlocks = plan.blocks.map(performedBlock).filter((_b, i) => checked[i]);
     if (!doneBlocks.length) return;
     const performed = { ...plan, blocks: doneBlocks, partial: doneBlocks.length < plan.blocks.length };
     const done = analysePlan(performed);
@@ -228,15 +296,18 @@ export default function ForgeScreen({ params }) {
             <BlockRow
               key={`${b.movementId}-${i}`}
               block={b}
+              performed={performedBlock(b, i)}
               index={i}
               done={!!checked[i]}
+              units={units}
               onToggle={() => {
                 playSfx('cursor');
                 setChecked((c) => ({ ...c, [i]: !c[i] }));
               }}
+              onEdit={(patch) => setActual((a) => ({ ...a, [i]: { ...(a[i] || {}), ...patch } }))}
               pr={records[b.movementId]}
-              lastAmount={prev ? (prev.blocks.filter((x) => x.movementId === b.movementId)[0] || {}).amount : null}
-              onForm={() => navigate('formcheck', { movementId: b.movementId, planId: plan.id, checked, from })}
+              last={prev ? prev.blocks.filter((x) => x.movementId === b.movementId)[0] || null : null}
+              onForm={() => navigate('formcheck', { movementId: b.movementId, planId: plan.id, checked, actual, from })}
             />
           ))}
         </ScrollView>
@@ -380,7 +451,7 @@ export default function ForgeScreen({ params }) {
 
         <View style={{ flexDirection: 'row', marginTop: space.sm }}>
           <PixelButton label="Back" tone="plain" sound="cancel" style={{ flex: 1, marginRight: 6 }} onPress={() => setPhase('list')} />
-          <PixelButton label="Start Session" tone="gold" disabled={!analysis.sets} style={{ flex: 1, marginLeft: 6 }} onPress={() => { setChecked({}); setPhase('session'); }} />
+          <PixelButton label="Start Session" tone="gold" disabled={!analysis.sets} style={{ flex: 1, marginLeft: 6 }} onPress={() => { setChecked({}); setActual({}); setPhase('session'); }} />
         </View>
       </Screen>
     );
