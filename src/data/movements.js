@@ -8,6 +8,8 @@
 //
 // `unit`: 'reps' | 'seconds' | 'steps'
 // `load`: 1 easy .. 3 hard — relative systemic cost per set.
+
+import { MUSCLES } from './muscles';
 //
 // Movement ids are PERMANENT: a saved plan stores them, so renaming or removing
 // one silently breaks somebody's workout. Add freely; never rename.
@@ -457,7 +459,7 @@ export const MOVEMENTS = [
   { id: 'calfmachine', name: 'Standing Calf Machine', pattern: 'squat', equipment: 'machine', unit: 'reps', load: 2,
     primary: ['calves'], secondary: [],
     cues: ['Balls of the feet on the platform', 'Drop the heels for a full stretch', 'Rise to the very top', 'Pause at both ends'] },
-  { id: 'backextmachine', name: 'Back Extension', pattern: 'hinge', equipment: 'machine', unit: 'reps', load: 2,
+  { id: 'backextmachine', name: 'Hyperextension', pattern: 'hinge', equipment: 'machine', unit: 'reps', load: 2,
     primary: ['lowerBack', 'glutes'], secondary: ['hamstrings'],
     cues: ['Pads just below the hip bones', 'Hinge, do not round and crunch', 'Rise to a straight line, no further', 'Slow both directions'] },
 
@@ -500,21 +502,35 @@ export function movementsByEquipment(equipment) {
   return MOVEMENTS.filter((m) => m.equipment === equipment);
 }
 
-// Free-text search across name, pattern, equipment and the muscles trained, so
-// "shoulder", "kb" and "pull" all find something useful in a 130-item library.
+// Free-text search across the words a player can actually see: the movement
+// name, its pattern, its equipment (full name or the abbreviation the filter
+// chips teach), and the DISPLAY NAMES of the muscles it trains — "lower back"
+// has to work, not just the `lowerBack` key nobody is shown. Raw ids are matched
+// only exactly; substring-matching them made "db" return Dead Bug and "bb"
+// return half the dumbbell rack.
 export function searchMovements(query, filters) {
   const q = (query || '').trim().toLowerCase();
   const eq = filters && filters.equipment;
   const pat = filters && filters.pattern;
+
+  // An exact abbreviation means THAT kit and nothing else. Left to fall through
+  // to substring matching, "bb" also matches the word "dumbbells" and returns
+  // the whole dumbbell rack.
+  const kitCode = EQUIPMENT_IDS.filter((id) => EQUIPMENT[id].short.toLowerCase() === q)[0];
+
   return MOVEMENTS.filter((m) => {
     if (eq && m.equipment !== eq) return false;
     if (pat && m.pattern !== pat) return false;
     if (!q) return true;
+    if (kitCode) return m.equipment === kitCode;
     if (m.name.toLowerCase().includes(q)) return true;
-    if (m.id.includes(q)) return true;
+    if (m.id === q) return true;
     if (PATTERNS[m.pattern].name.toLowerCase().includes(q)) return true;
     if (EQUIPMENT[m.equipment].name.toLowerCase().includes(q)) return true;
-    return musclesOf(m).some((id) => id.toLowerCase().includes(q));
+    return musclesOf(m).some((id) => {
+      const muscle = MUSCLES[id];
+      return id.toLowerCase() === q || (muscle && muscle.name.toLowerCase().includes(q));
+    });
   });
 }
 

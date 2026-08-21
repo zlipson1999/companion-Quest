@@ -24,6 +24,12 @@ import { habitGoalLine, levelUpLine } from '../coach';
 
 const FORGE_ID = 'forge';
 
+// A resume hop carries its own origin so the round trip through Form Check
+// doesn't lose which hub you started from.
+function resumeFrom(params) {
+  return params && params.resume && params.resume.from;
+}
+
 function PerkChip({ perk }) {
   return (
     <View style={{ backgroundColor: palette.ink, borderWidth: 2, borderColor: palette[perk.color] || palette.secondary, paddingHorizontal: 7, paddingVertical: 5, marginRight: 6, marginTop: 6 }}>
@@ -72,6 +78,9 @@ export default function ForgeScreen({ params }) {
   // Coming back from the form-check screen re-enters the session exactly where
   // it was left — the router unmounts us, so the session carries its own state
   // across in params rather than being silently thrown away.
+  // Back should return you where you came from: the Forge is reachable both
+  // from the Hub menu and from the Habits hub.
+  const from = (params && params.from) || (resumeFrom(params)) || 'hub';
   const resume = (params && params.resume) || null;
   const [phase, setPhase] = useState(resume ? 'session' : 'list');
   const [selectedId, setSelectedId] = useState(resume ? resume.planId : null);
@@ -181,7 +190,7 @@ export default function ForgeScreen({ params }) {
                 playSfx('cursor');
                 setChecked((c) => ({ ...c, [i]: !c[i] }));
               }}
-              onForm={() => navigate('formcheck', { movementId: b.movementId, planId: plan.id, checked })}
+              onForm={() => navigate('formcheck', { movementId: b.movementId, planId: plan.id, checked, from })}
             />
           ))}
         </ScrollView>
@@ -328,7 +337,13 @@ export default function ForgeScreen({ params }) {
       </ScrollView>
 
       <PixelButton label="New Plan" tone="gold" onPress={createPlan} style={{ marginTop: space.sm }} />
-      <PixelButton label="Back" tone="plain" sound="cancel" onPress={() => navigate('habits')} style={{ marginTop: 6 }} />
+      <PixelButton
+        label={from === 'habits' ? 'Back to Habits' : 'Back to Town'}
+        tone="plain"
+        sound="cancel"
+        onPress={() => navigate(from)}
+        style={{ marginTop: 6 }}
+      />
     </Screen>
   );
 }

@@ -25,7 +25,7 @@ export default function FormCheckScreen({ params }) {
   const movement = getMovement(params.movementId);
   // Return to the session we came from, carrying its progress back with us.
   const goBack = () =>
-    navigate('forge', params.planId ? { resume: { planId: params.planId, checked: params.checked || {} } } : {});
+    navigate('forge', params.planId ? { resume: { planId: params.planId, checked: params.checked || {}, from: params.from } } : {});
   const [permission, requestPermission] = useCameraPermissions();
   const [mirror, setMirror] = useState(false);
   const [cue, setCue] = useState(0);

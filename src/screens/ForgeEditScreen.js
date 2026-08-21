@@ -3,13 +3,13 @@
 // the point being that you can see what a choice is worth before committing.
 
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { Screen, Window, BodyMap3D, PixelText, PixelButton } from '../components';
 import { palette, space, FONT_FAMILY } from '../theme';
 import { useGame } from '../state';
 import { moduleStateFor } from '../modules';
 import { analysePlan, suggestionsFor } from '../modules/forge/analysis';
-import { EQUIPMENT, EQUIPMENT_IDS, PATTERNS, PATTERN_IDS, getMovement, searchMovements } from '../data/movements';
+import { EQUIPMENT, EQUIPMENT_IDS, MOVEMENTS, PATTERNS, PATTERN_IDS, getMovement, searchMovements } from '../data/movements';
 import { MUSCLES } from '../data/muscles';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
@@ -53,6 +53,8 @@ export default function ForgeEditScreen({ params }) {
   const startedEmpty = useMemo(() => !!original && original.blocks.length === 0, []);
 
   const analysis = useMemo(() => (draft ? analysePlan(draft) : null), [draft]);
+  // 140 rows re-filtered on every keystroke is worth memoising.
+  const picked = useMemo(() => searchMovements(query, { pattern, equipment }), [query, pattern, equipment]);
 
   if (!draft || !analysis) {
     return (
@@ -99,7 +101,6 @@ export default function ForgeEditScreen({ params }) {
 
   // ------------------------------------------------------- movement picker
   if (picking) {
-    const list = searchMovements(query, { pattern, equipment });
     const chip = (label, active, onPress) => (
       <Pressable
         key={label}
@@ -132,7 +133,7 @@ export default function ForgeEditScreen({ params }) {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Search 140 movements..."
+          placeholder={`Search ${MOVEMENTS.length} movements...`}
           placeholderTextColor={palette.windowTextDim}
           style={{
             fontFamily: FONT_FAMILY,
@@ -156,13 +157,28 @@ export default function ForgeEditScreen({ params }) {
         </View>
 
         <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, marginBottom: space.sm }}>
-          {list.length} {list.length === 1 ? 'movement' : 'movements'}
+          {picked.length} {picked.length === 1 ? 'movement' : 'movements'}
         </PixelText>
 
-        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          {list.map((mv) => (
-            <Window key={mv.id} tone="cream" pad={11} style={{ marginBottom: 6 }}>
-              <View onTouchEnd={() => addMovement(mv)}>
+        <FlatList
+          data={picked}
+          keyExtractor={(mv) => mv.id}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={12}
+          windowSize={7}
+          removeClippedSubviews
+          ListEmptyComponent={
+            <Window tone="cream" pad={14}>
+              <PixelText size="tiny" color={palette.windowText} style={{ lineHeight: 15 }}>
+                Nothing matches that. Try a muscle name, or clear the filters.
+              </PixelText>
+            </Window>
+          }
+          ListFooterComponent={<View style={{ height: space.sm }} />}
+          renderItem={({ item: mv }) => (
+            <Pressable onPress={() => addMovement(mv)} style={{ marginBottom: 6 }}>
+              <Window tone="cream" pad={11}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <PixelText size="small" color={palette.windowText} style={{ flex: 1 }}>
                     {mv.name}
@@ -174,18 +190,10 @@ export default function ForgeEditScreen({ params }) {
                 <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 14 }}>
                   {PATTERNS[mv.pattern].name}  ·  {mv.primary.map((id) => MUSCLES[id].name).join(', ')}
                 </PixelText>
-              </View>
-            </Window>
-          ))}
-          {!list.length ? (
-            <Window tone="cream" pad={14}>
-              <PixelText size="tiny" color={palette.windowText} style={{ lineHeight: 15 }}>
-                Nothing matches that. Try a muscle name, or clear the filters.
-              </PixelText>
-            </Window>
-          ) : null}
-          <View style={{ height: space.sm }} />
-        </ScrollView>
+              </Window>
+            </Pressable>
+          )}
+        />
 
         <PixelButton label="Back" tone="plain" sound="cancel" onPress={() => setPicking(false)} style={{ marginTop: space.sm }} />
       </Screen>

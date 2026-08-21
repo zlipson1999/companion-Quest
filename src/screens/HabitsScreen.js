@@ -124,7 +124,7 @@ export default function HabitsScreen() {
             module={module}
             state={modState}
             progress={progress}
-            onPress={() => navigate(moduleScreen(module), { moduleId: module.id })}
+            onPress={() => navigate(moduleScreen(module), { moduleId: module.id, from: 'habits' })}
           />
         ))}
         <PixelText size="tiny" color={palette.windowTextDim} align="center" style={{ marginTop: space.xs, lineHeight: 14 }}>
