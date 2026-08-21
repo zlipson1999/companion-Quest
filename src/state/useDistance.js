@@ -6,11 +6,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import { Pedometer } from 'expo-sensors';
+import { Accelerometer, Pedometer } from 'expo-sensors';
 import * as Location from 'expo-location';
 import { STEPS_PER_MILE } from '../data/route';
+import { createStepDetector } from './stepDetector';
 
 const METERS_PER_MILE = 1609.34;
+
+// 25 Hz. Enough to resolve a 4 steps/sec sprint, cheap enough not to matter.
+const MOTION_INTERVAL_MS = 40;
 
 function haversineMeters(a, b) {
   const R = 6371000;
@@ -29,6 +33,9 @@ export function useDistance() {
   // exception away and set a boolean, so a dead sensor on a real phone was
   // indistinguishable from a simulator and there was nothing to debug with.
   const [pedDiag, setPedDiag] = useState(null);
+  // Which sensor is actually feeding steps: the OS step counter, our own
+  // accelerometer detector, or nothing.
+  const [source, setSource] = useState('none');
   const [miles, setMiles] = useState(0);
   const [steps, setSteps] = useState(0);
   const [running, setRunning] = useState(false);
@@ -39,6 +46,8 @@ export function useDistance() {
   const lastStepRef = useRef(0);
   const runningRef = useRef(false);
   const pedSubRef = useRef(null);
+  const motionSubRef = useRef(null);
+  const detectorRef = useRef(null);
   const gpsSubRef = useRef(null);
   const lastCoordRef = useRef(null);
 
@@ -85,6 +94,7 @@ export function useDistance() {
       if (ok) {
         try {
           if (Pedometer.requestPermissionsAsync) await Pedometer.requestPermissionsAsync();
+          setSource('pedometer');
           pedSubRef.current = Pedometer.watchStepCount((res) => {
             const total = res.steps || 0;
             const delta = total - lastStepRef.current;
@@ -99,13 +109,48 @@ export function useDistance() {
           if (mounted) {
             setPedAvailable(false);
             setPedDiag((d) => ({ ...(d || {}), available: false, error: `watch failed: ${String((e && e.message) || e)}` }));
+            await startMotionFallback();
           }
         }
+      } else {
+        // No OS step counter. Count them ourselves off the accelerometer, which
+        // needs no permission and works even inside Expo Go. Foreground only —
+        // see the note in stepDetector.js.
+        await startMotionFallback();
       }
     })();
+    async function startMotionFallback() {
+      try {
+        const has = await Accelerometer.isAvailableAsync();
+        if (!has || !mounted) {
+          if (mounted) setPedDiag((d) => ({ ...(d || {}), fallback: 'accelerometer unavailable too' }));
+          return;
+        }
+        detectorRef.current = createStepDetector();
+        Accelerometer.setUpdateInterval(MOTION_INTERVAL_MS);
+        let t = 0;
+        motionSubRef.current = Accelerometer.addListener(({ x, y, z }) => {
+          // The listener carries no timestamp, and the delivery interval is
+          // what we asked for, so advance our own clock by it.
+          t += MOTION_INTERVAL_MS;
+          if (!detectorRef.current.push(x, y, z, t)) return;
+          stepsRef.current += 1;
+          setSteps(stepsRef.current);
+          if (!runningRef.current) addMiles(1 / STEPS_PER_MILE);
+        });
+        if (mounted) {
+          setSource('motion');
+          setPedDiag((d) => ({ ...(d || {}), fallback: 'counting steps from the accelerometer' }));
+        }
+      } catch (e) {
+        if (mounted) setPedDiag((d) => ({ ...(d || {}), fallback: `accelerometer failed: ${String((e && e.message) || e)}` }));
+      }
+    }
+
     return () => {
       mounted = false;
       if (pedSubRef.current && pedSubRef.current.remove) pedSubRef.current.remove();
+      if (motionSubRef.current && motionSubRef.current.remove) motionSubRef.current.remove();
     };
   }, []);
 
@@ -162,6 +207,7 @@ export function useDistance() {
   return {
     pedAvailable,
     pedDiag,
+    source,
     miles,
     steps,
     running,
@@ -169,7 +215,10 @@ export function useDistance() {
     startRun,
     stopRun,
     injectSteps,
-    showInjector: pedAvailable === false && !running,
+    // Only when nothing at all can count steps. The accelerometer fallback is
+    // a real step source, not a stand-in, so it must not put the manual
+    // buttons on screen beside it.
+    showInjector: source === 'none' && !running,
   };
 }
 

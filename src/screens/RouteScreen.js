@@ -259,10 +259,15 @@ export default function RouteScreen() {
       ) : (
         <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
           <PixelText size="tiny" color={palette.hpHigh}>
-            Movement detected — walk or run to advance!
+            {dist.source === 'pedometer' ? 'Step counter connected — walk to advance!' : 'Counting your steps — keep the app open and walk!'}
           </PixelText>
+          {/* Which source is running, stated plainly. The two are not equivalent
+              and the difference is one the player feels: the OS step counter
+              keeps counting in your pocket, ours cannot. */}
           <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 12 }}>
-            Steps become miles. Tap Start Run for GPS-tracked distance.
+            {dist.source === 'pedometer'
+              ? 'Your phone counts steps even with the screen off. Tap Start Run for GPS distance.'
+              : 'No step counter on this build, so the app is reading motion itself — that only works while this screen is open. Start Run uses GPS instead and works better outdoors.'}
           </PixelText>
         </Window>
       )}
