@@ -13,6 +13,7 @@ import { getGoal } from '../data/goals';
 import { classifyMessage } from '../coach/guardrail';
 import { greeting, refusal, JAILBREAK_LINE } from '../coach/persona';
 import { sendCoachMessage, isCoachConfigured } from '../coach/api';
+import { answerLocally, hasLocalAnswer } from '../coach/local';
 import { buildCoachContext, groundedGreeting } from '../coach/context';
 
 function Bubble({ role, text, companion }) {
@@ -75,6 +76,22 @@ export default function CoachChatScreen() {
       return;
     }
 
+    // Answer from the save first. Two reasons, and both hold even when a
+    // server IS configured: the local answer is instant and free, and for
+    // anything factual — your records, your streaks, your load — the save
+    // knows and a language model would guess.
+    const local = answerLocally(text, state, companion);
+    if (local && (hasLocalAnswer(text) || !isCoachConfigured())) {
+      setLoading(true);
+      scrollDown();
+      setTimeout(() => {
+        setLoading(false);
+        playSfx('blip');
+        push({ role: 'assistant', text: local });
+      }, 260);
+      return;
+    }
+
     setLoading(true);
     scrollDown();
     const history = [...messages, { role: 'user', text }]
@@ -110,7 +127,9 @@ export default function CoachChatScreen() {
             <PixelButton label="Back" tone="plain" size="small" sound="cancel" onPress={() => navigate('hub')} />
           </View>
           <PixelText size="tiny" color={palette.windowTextDim} style={{ marginBottom: space.sm, lineHeight: 12 }}>
-            {isCoachConfigured() ? 'Fitness, food, hydration & recovery only. Not medical advice.' : 'Offline demo — set EXPO_PUBLIC_COACH_API_URL for live chat.'}
+            {isCoachConfigured()
+              ? 'Fitness, food, hydration & recovery only. Not medical advice.'
+              : 'Answers come from what you have logged. Not medical advice.'}
           </PixelText>
 
           <ScrollView ref={scrollRef} style={{ flex: 1 }} showsVerticalScrollIndicator={false} onContentSizeChange={scrollDown}>
