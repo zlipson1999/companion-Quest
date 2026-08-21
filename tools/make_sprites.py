@@ -118,8 +118,12 @@ EYE_DARK = '#1b1430'
 # a ramp and a shade; the flat index list is generated, so nothing has to be
 # mirrored by hand anywhere else.
 PALETTE_SPECS = {
-    'sprout':  {'body': ('#0d3320', '#b6f7c2'), 'leaf': ('#1b5426', '#dcff9e'), 'belly': ('#2c5624', '#eaffd2')},
-    'ember':   {'body': ('#331306', '#ffd89c'), 'leaf': ('#b8431c', '#ffe3a0'), 'belly': ('#7a3c1e', '#ffdcae')},
+    # belly was ('#2c5624', ...) — its midtones landed on khaki, so the pale
+    # front read as a dirty stain rather than lighter fur.
+    'sprout':  {'body': ('#0d3320', '#b6f7c2'), 'leaf': ('#1b5426', '#dcff9e'), 'belly': ('#5a7a3e', '#f6ffe4')},
+    # belly was ('#7a3c1e', ...) — hue-shifted into rose, so the chest patch and
+    # the muzzle both read as bare pink skin instead of pale fur.
+    'ember':   {'body': ('#331306', '#ffd89c'), 'leaf': ('#b8431c', '#ffe3a0'), 'belly': ('#6b4a24', '#fff2d4')},
     'dew':     {'body': ('#07223d', '#c8f2ff'), 'leaf': ('#0f4a72', '#eafcff'), 'belly': ('#134a68', '#f0ffff')},
     'sludge':  {'body': ('#2e3d18', '#b6d16a'), 'leaf': ('#46561f', '#d6e88a'), 'belly': ('#3d4a22', '#c6dd7c')},
     'snooze':  {'body': ('#2a2650', '#b9b6ee'), 'leaf': ('#413a72', '#d5d2ff'), 'belly': ('#38346a', '#c9c6f7')},
@@ -566,6 +570,139 @@ class Canvas:
 
 
 # =========================================================================
+# BODY — one surface, lit once.
+#
+# The previous model drew a creature as a union of independently lit parts: each
+# sphere and capsule computed its own normal as if it were alone in space, and a
+# contact pass then drew a dark seam wherever two of them met. The result read
+# exactly as what it was — connected shapes, not a creature.
+#
+# This builds a HEIGHT FIELD instead. Every part contributes how far it stands
+# off the page, the parts are combined with a SMOOTH maximum so they fuse into
+# one continuous surface, and the normal is taken from the gradient of that
+# combined field. Lighting happens once, over the whole body.
+#
+# Two things follow for free. Limbs flow out of the torso instead of being stuck
+# on, because the blend actually merges the surfaces. And the valley where two
+# forms meet is shaded by the same light as everything else, which is what real
+# contact shading is — no seam pass required.
+# =========================================================================
+
+
+def smax(a, b, k):
+    """Smooth maximum. `k` is the blend radius: how far either side of a join
+    the two surfaces are allowed to influence each other."""
+    if k <= 0:
+        return max(a, b)
+    h = max(0.0, k - abs(a - b)) / k
+    return max(a, b) + h * h * k * 0.25
+
+
+class Body:
+    """A creature as one blended surface."""
+
+    def __init__(self, palette, size=48, scale=2, bands=14, blend=2.6):
+        self.palette = palette
+        self.size = size
+        self.scale = scale
+        self.bands = bands
+        self.blend = blend * scale
+        self.parts = []          # (kind, args, ramp)
+
+    # -- parts ---------------------------------------------------------------
+    def ball(self, cx, cy, rx, ry, rz, ramp='body'):
+        S = self.scale
+        self.parts.append(('ball', (cx * S, cy * S, rx * S, ry * S, rz * S), ramp))
+
+    def tube(self, x0, y0, x1, y1, r0, r1, ramp='body', rz=None):
+        S = self.scale
+        self.parts.append(('tube', (x0 * S, y0 * S, x1 * S, y1 * S, r0 * S, r1 * S,
+                                    (rz if rz is not None else (r0 + r1) * 0.5) * S), ramp))
+
+    # -- field ---------------------------------------------------------------
+    def _part_height(self, kind, a, x, y):
+        if kind == 'ball':
+            cx, cy, rx, ry, rz = a
+            u = (x - cx) / rx
+            v = (y - cy) / ry
+            d = u * u + v * v
+            if d >= 1.0:
+                return None
+            return rz * math.sqrt(1.0 - d)
+        x0, y0, x1, y1, r0, r1, rz = a
+        dx, dy = x1 - x0, y1 - y0
+        seg2 = dx * dx + dy * dy or 1.0
+        t = max(0.0, min(1.0, ((x - x0) * dx + (y - y0) * dy) / seg2))
+        cx, cy = x0 + dx * t, y0 + dy * t
+        r = r0 + (r1 - r0) * t
+        if r <= 0:
+            return None
+        ox, oy = x - cx, y - cy
+        d = math.sqrt(ox * ox + oy * oy) / r
+        if d >= 1.0:
+            return None
+        return rz * math.sqrt(1.0 - d * d)
+
+    def _field(self, w, h):
+        """Combined height and the ramp that owns each pixel."""
+        H = [[0.0] * w for _ in range(h)]
+        R = [[None] * w for _ in range(h)]
+        best = [[-1e9] * w for _ in range(h)]
+        for kind, a, ramp in self.parts:
+            for y in range(h):
+                row_h, row_r, row_b = H[y], R[y], best[y]
+                for x in range(w):
+                    ph = self._part_height(kind, a, x + 0.5, y + 0.5)
+                    if ph is None:
+                        continue
+                    row_h[x] = smax(row_h[x], ph, self.blend) if row_r[x] is not None else ph
+                    # The ramp belongs to whichever part stands tallest here, so
+                    # a pale belly stays pale where it bulges through the torso.
+                    if ph > row_b[x]:
+                        row_b[x] = ph
+                        row_r[x] = ramp
+        return H, R
+
+    # -- output --------------------------------------------------------------
+    def to_canvas(self, ambient=0.12, backlight=1.0, gamma=1.25):
+        w = h = self.size * self.scale
+        c = Canvas(self.size, self.size, self.palette, scale=self.scale, bands=self.bands)
+        H, R = self._field(w, h)
+
+        lx, ly, lz = LIGHT
+        n = math.sqrt(lx * lx + ly * ly + lz * lz)
+        lx, ly, lz = lx / n, ly / n, lz / n
+        bx, by = -lx, -ly
+
+        for y in range(h):
+            for x in range(w):
+                if R[y][x] is None:
+                    continue
+                # Normal from the gradient of the COMBINED field — this is the
+                # whole point. A limb and the torso share one surface here, so
+                # the light runs across the join instead of stopping at it.
+                hl = H[y][x - 1] if x > 0 and R[y][x - 1] is not None else 0.0
+                hr = H[y][x + 1] if x < w - 1 and R[y][x + 1] is not None else 0.0
+                hu = H[y - 1][x] if y > 0 and R[y - 1][x] is not None else 0.0
+                hd = H[y + 1][x] if y < h - 1 and R[y + 1][x] is not None else 0.0
+                nx, ny, nz = (hl - hr), (hu - hd), 2.0
+                m = math.sqrt(nx * nx + ny * ny + nz * nz) or 1.0
+                nx, ny, nz = nx / m, ny / m, nz / m
+
+                lam = max(0.0, nx * lx + ny * ly + nz * lz)
+                shade = ambient + (1.0 - ambient) * (lam ** gamma)
+
+                # rim from the same surface, on the side facing away
+                rim = max(0.0, nx * bx + ny * by)
+                edge = 1.0 - min(1.0, H[y][x] / (self.blend * 1.1))
+                shade += backlight * (rim ** 3) * (edge ** 1.5)
+
+                c.px[y][x] = (R[y][x], max(0.0, min(1.0, shade)), 1.0, True)
+                c.lay[y][x] = 1
+        return c
+
+
+# =========================================================================
 # CREATURES — 48x48. Each is a few lit forms plus its own distinguishing
 # features. All original designs.
 # =========================================================================
@@ -591,46 +728,39 @@ def new_creature(palette):
 def sproutle(pal='sprout'):
     """Seedling companion.
 
-    Built to turn in the light: a rounded torso with a distinct chest, tapered
-    limbs that thicken at the shoulder and hip, a backlit rim down the right,
-    and speculars on the crown of the head and the top of each leaf.
+    One surface: the arms and legs are tubes that the height field fuses into
+    the torso, so they read as part of the body rather than pushed into it. The
+    sprout is the only thing deliberately separate — a stem should look grown,
+    not moulded.
     """
-    c = new_creature(pal)
-    c.shadow(24, 45, 12.5, 3)
+    b = Body(pal, blend=2.4)
 
-    # --- sprout ---------------------------------------------------------
-    c.limb(24, 17, 24, 9, 1.5, 1.1, 'leaf', ambient=0.34)
-    c.sphere(17.0, 7.0, 6.4, 3.4, 'leaf', ambient=0.30)
-    c.sphere(31.0, 6.0, 5.8, 3.1, 'leaf', ambient=0.34)
+    b.tube(24, 18, 24, 9, 1.6, 1.2, 'leaf')            # stem
+    b.ball(17.2, 7.0, 6.4, 3.3, 2.6, 'leaf')           # leaves
+    b.ball(30.8, 6.0, 5.8, 3.0, 2.4, 'leaf')
 
-    # --- legs, planted and slightly apart -------------------------------
-    c.limb(18, 35, 15.5, 43, 3.2, 2.6, 'body', ambient=0.18)
-    c.limb(30, 35, 32.5, 43, 3.2, 2.6, 'body', ambient=0.18)
-    c.sphere(15.0, 44.5, 4.0, 2.3, 'body', ambient=0.24)
-    c.sphere(33.0, 44.5, 4.0, 2.3, 'body', ambient=0.24)
+    b.tube(18.5, 34, 16.0, 43, 3.2, 2.7)               # legs
+    b.tube(29.5, 34, 32.0, 43, 3.2, 2.7)
+    b.ball(15.4, 44.4, 4.0, 2.3, 2.2)
+    b.ball(32.6, 44.4, 4.0, 2.3, 2.2)
 
-    # --- torso: a pear, wider at the hips than the shoulders -------------
-    c.sphere(24, 28, 13.0, 12.5, 'body', ambient=0.20)
-    c.sphere(24, 33, 11.0, 9.0, 'body', ambient=0.22)
-    c.sphere(24, 33.5, 7.6, 6.2, 'belly', ambient=0.34)
+    b.ball(24, 28, 13.2, 12.8, 12.0)                   # torso — a pear
+    b.ball(24, 33, 11.2, 9.4, 11.0)
+    b.ball(24, 34.8, 7.6, 4.8, 12.4, 'belly')          # pale front, proud
 
-    # --- arms ------------------------------------------------------------
-    c.limb(13.5, 27, 9.5, 34, 2.7, 2.0, 'body', ambient=0.24)
-    c.limb(34.5, 27, 38.5, 34, 2.7, 2.0, 'body', ambient=0.26)
-    c.sphere(9.0, 35.5, 2.7, 2.5, 'body', ambient=0.30)
-    c.sphere(39.0, 35.5, 2.7, 2.5, 'body', ambient=0.34)
+    b.tube(14.0, 27, 10.0, 34, 3.0, 2.2)               # arms
+    b.tube(34.0, 27, 38.0, 34, 3.0, 2.2)
+    b.ball(9.4, 35.4, 2.8, 2.6, 2.4)
+    b.ball(38.6, 35.4, 2.8, 2.6, 2.4)
 
-    c.occlude(0.34)
-    c.backlight(width=2, strength=0.80)
+    c = b.to_canvas(ambient=0.11, backlight=1.0, gamma=1.25)
+    c.spec(18.6, 21.5, 4.8, strength=0.42)
+    c.spec(15.2, 5.9, 2.8, 'leaf', strength=0.45)
 
-    # --- speculars: where the form turns hardest into the light -----------
-    c.spec(18.5, 21.5, 5.0, strength=0.55)
-    c.spec(15.0, 5.8, 3.0, 'leaf', strength=0.55)
-    c.spec(29.5, 4.9, 2.6, 'leaf', strength=0.50)
-
-    c.eye(19, 25, 3.4)
-    c.eye(29, 25, 3.4)
-    c.blob(24, 30.5, 2.2, 1.1, 'leaf', 0.16)
+    c.eye(19, 25.5, 3.4)
+    c.eye(29, 25.5, 3.4)
+    c.blob(23.1, 30.4, 1.3, 0.6, 'eye', 0.0)
+    c.blob(24.9, 30.4, 1.3, 0.6, 'eye', 0.0)
     c.outline()
     return c
 
@@ -800,58 +930,49 @@ def pyrelynx(pal='pyre'):
 def emberkit(pal='ember'):
     """Ember cub, sitting.
 
-    A cub reads through proportion: an oversized head, a narrow chest, and small
-    forepaws set close together. The mane behind the jaw and the backlight down
-    the right keep the head from flattening into the body.
+    Built as ONE surface: haunches, chest, neck and head are separate volumes
+    that the height field fuses, so the light runs from the top of the skull all
+    the way down the chest without meeting a seam.
     """
-    c = new_creature(pal)
-    c.shadow(24, 45, 14, 3)
+    b = Body(pal, blend=2.3)
 
-    # --- tail, behind everything ----------------------------------------
-    c.limb(31, 34, 40, 22, 2.9, 1.4, 'body', ambient=0.16)
-    c.limb(40, 23, 43.5, 14, 1.9, 0.5, 'leaf', ambient=0.42)
-    c.limb(39.5, 21, 41.0, 16.5, 1.3, 0.4, 'belly', ambient=0.60)
+    b.tube(30, 34, 38, 26, 2.6, 1.5)                 # tail
+    b.tube(38, 26, 42, 17, 1.5, 0.8, 'leaf')
 
-    # --- haunches and hind paws -----------------------------------------
-    c.sphere(14.5, 37, 5.6, 6.2, 'body', ambient=0.16)
-    c.sphere(33.5, 37, 5.6, 6.2, 'body', ambient=0.18)
-    c.sphere(13.0, 44, 4.2, 2.3, 'body', ambient=0.22)
-    c.sphere(35.0, 44, 4.2, 2.3, 'body', ambient=0.22)
+    b.ball(14.0, 37.5, 6.6, 7.0, 5.0)                # haunches
+    b.ball(34.0, 37.5, 6.6, 7.0, 5.0)
 
-    # --- chest, narrower than the haunches ------------------------------
-    c.sphere(24, 34, 10.0, 9.5, 'body', ambient=0.20)
-    c.sphere(24, 37, 6.6, 5.4, 'belly', ambient=0.34)
+    b.ball(24, 33, 10.2, 9.8, 9.2)                   # chest
+    # Pale front, standing PROUD of the chest so it catches light rather than
+    # sitting in its shadow. Kept shallow and wide — a tall narrow one read as a
+    # bald patch stuck on the fur.
+    b.ball(24, 37.0, 7.2, 4.6, 9.4, 'belly')
+    b.tube(20.5, 32, 20, 43, 2.7, 2.3)               # forelegs
+    b.tube(27.5, 32, 28, 43, 2.7, 2.3)
+    b.ball(19.6, 44.2, 3.3, 2.1, 2.2, 'belly')
+    b.ball(28.4, 44.2, 3.3, 2.1, 2.2, 'belly')
+    b.ball(12.8, 44.2, 4.2, 2.3, 2.2)
+    b.ball(35.2, 44.2, 4.2, 2.3, 2.2)
 
-    # --- forelegs, close together ---------------------------------------
-    c.limb(20.5, 33, 20, 43, 2.5, 2.1, 'body', ambient=0.24)
-    c.limb(27.5, 33, 28, 43, 2.5, 2.1, 'body', ambient=0.26)
-    c.sphere(19.5, 44.5, 3.1, 1.9, 'belly', ambient=0.38)
-    c.sphere(28.5, 44.5, 3.1, 1.9, 'belly', ambient=0.40)
+    b.tube(24, 30, 24, 22, 6.6, 8.2)                 # neck into skull
+    b.ball(24, 19, 12.0, 10.6, 10.4)
+    b.ball(24, 24.3, 5.4, 3.6, 10.9, 'belly')        # muzzle, standing forward
 
-    # --- a small chest tuft, at the sides only ---------------------------
-    # A full radiating ruff crossed the chest and read as fluting on a column.
-    # Two tufts either side of the neck do the job and leave the chest smooth.
-    c.limb(16.5, 28.5, 12.5, 33.0, 3.0, 1.0, 'leaf', ambient=0.20)
-    c.limb(31.5, 28.5, 35.5, 33.0, 3.0, 1.0, 'leaf', ambient=0.24)
+    b.tube(18.0, 13.5, 15.0, 3.5, 4.2, 0.9)          # ears
+    b.tube(30.0, 13.5, 33.0, 3.5, 4.2, 0.9)
 
-    # --- head ------------------------------------------------------------
-    c.limb(17.0, 15, 14.5, 3.5, 4.7, 0.8, 'body', ambient=0.22)
-    c.limb(31.0, 15, 33.5, 3.5, 4.7, 0.8, 'body', ambient=0.24)
-    c.limb(17.0, 14, 15.4, 6.5, 2.4, 0.5, 'leaf', ambient=0.50)
-    c.limb(31.0, 14, 32.6, 6.5, 2.4, 0.5, 'leaf', ambient=0.44)
-    c.sphere(24, 19, 12.2, 10.8, 'body', ambient=0.20)
-    c.sphere(24, 24, 6.6, 4.5, 'belly', ambient=0.36)
-    c.limb(24, 13, 24, 7.5, 2.4, 0.5, 'leaf', ambient=0.62)      # brow flame
+    c = b.to_canvas(ambient=0.10, backlight=1.05, gamma=1.3)
 
-    c.occlude(0.36)
-    c.backlight(width=2, strength=0.85)
-    c.spec(18.5, 13.5, 5.2, strength=0.55)
-    c.spec(20.0, 31.5, 3.4, strength=0.40)
+    c.limb(17.6, 13.0, 15.8, 6.0, 2.0, 0.5, 'leaf', ambient=0.50)
+    c.limb(30.4, 13.0, 32.2, 6.0, 2.0, 0.5, 'leaf', ambient=0.44)
+    c.limb(24, 12.5, 24, 7.0, 2.2, 0.5, 'leaf', ambient=0.66)
+    c.spec(19.2, 13.0, 4.6, strength=0.40)
 
-    c.eye(18.6, 18, 3.5)
-    c.eye(29.4, 18, 3.5)
-    c.blob(24, 22.5, 2.0, 1.3, 'eye', 0.0)
-    c.blob(24, 25.4, 2.7, 0.8, 'eye', 0.0)
+    c.eye(18.6, 18.5, 3.5)
+    c.eye(29.4, 18.5, 3.5)
+    c.blob(24, 22.6, 1.9, 1.2, 'eye', 0.0)           # nose
+    c.blob(23.0, 25.4, 1.5, 0.6, 'eye', 0.0)         # mouth, two short strokes
+    c.blob(25.0, 25.4, 1.5, 0.6, 'eye', 0.0)
     c.outline()
     return c
 
@@ -859,40 +980,34 @@ def emberkit(pal='ember'):
 def dewbble(pal='dew'):
     """Dewdrop companion.
 
-    Water is the hardest of the three: it has to look wet, and wet is a specular
-    plus a bright transmitted core, not a colour. The drop carries a hard
-    highlight on the upper left, a lit core low in the body where light passes
-    through, and a strong backlit rim.
+    The point and the body are one volume, tapered — a drop is a single surface
+    and drawing it as a cone stuck on a ball was the most obvious seam in the
+    whole roster. Wet is a hard specular over a lit core, not a colour.
     """
-    c = new_creature(pal)
-    c.shadow(24, 45, 12, 3)
+    b = Body(pal, blend=2.6)
 
-    c.limb(19.5, 36, 17, 43, 2.7, 2.3, 'body', ambient=0.16)
-    c.limb(28.5, 36, 31, 43, 2.7, 2.3, 'body', ambient=0.16)
-    c.sphere(16.5, 44.5, 3.7, 2.2, 'body', ambient=0.22)
-    c.sphere(31.5, 44.5, 3.7, 2.2, 'body', ambient=0.22)
+    b.tube(20.0, 35, 17.0, 43, 2.9, 2.4)               # legs
+    b.tube(28.0, 35, 31.0, 43, 2.9, 2.4)
+    b.ball(16.4, 44.4, 3.8, 2.2, 2.1)
+    b.ball(31.6, 44.4, 3.8, 2.2, 2.1)
 
-    # the drop: a point that swells into a body
-    c.limb(24, 21, 24, 5, 7.0, 0.8, 'body', ambient=0.20)
-    c.sphere(24, 30, 13.2, 12.2, 'body', ambient=0.18)
+    # the drop: one tapered volume from the point down into the body
+    b.tube(24, 30, 24, 6, 12.0, 1.2, rz=12.0)
+    b.ball(24, 31, 13.4, 12.4, 13.0)
+    b.ball(24, 35.5, 8.2, 5.4, 13.4, 'belly')          # lit core, standing proud
 
-    # transmitted light low in the drop — what makes water read as water
-    c.sphere(24, 35, 8.4, 5.8, 'belly', ambient=0.44)
-    c.sphere(24, 36.5, 5.4, 3.4, 'leaf', ambient=0.66)
+    b.tube(13.6, 30, 10.0, 36, 2.7, 2.1)               # arms
+    b.tube(34.4, 30, 38.0, 36, 2.7, 2.1)
+    b.ball(9.4, 37.0, 2.6, 2.4, 2.2)
+    b.ball(38.6, 37.0, 2.6, 2.4, 2.2)
 
-    c.limb(13.0, 30, 9.5, 36, 2.4, 1.9, 'body', ambient=0.22)
-    c.limb(35.0, 30, 38.5, 36, 2.4, 1.9, 'body', ambient=0.26)
-    c.sphere(9.0, 37, 2.5, 2.3, 'body', ambient=0.28)
-    c.sphere(39.0, 37, 2.5, 2.3, 'body', ambient=0.32)
+    c = b.to_canvas(ambient=0.13, backlight=1.15, gamma=1.2)
+    c.spec(18.8, 22.5, 4.4, 'leaf', strength=0.95)     # the wet highlight
+    c.spec(21.0, 12.5, 2.0, 'leaf', strength=0.75)
 
-    c.occlude(0.30)
-    c.backlight(width=2, strength=0.95)
-    c.spec(18.5, 22.0, 4.6, 'leaf', strength=0.95)     # hard wet highlight
-    c.spec(20.5, 12.0, 2.2, 'leaf', strength=0.70)
-
-    c.eye(19, 28, 3.4)
-    c.eye(29, 28, 3.4)
-    c.blob(24, 33, 2.0, 1.1, 'eye', 0.0)
+    c.eye(19, 28.5, 3.4)
+    c.eye(29, 28.5, 3.4)
+    c.blob(24, 33.5, 1.9, 1.0, 'eye', 0.0)
     c.outline()
     return c
 
