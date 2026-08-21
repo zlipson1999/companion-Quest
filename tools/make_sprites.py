@@ -29,12 +29,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 
 TRANSPARENT = '.'
-# Palette indices. Base-36 capped a sprite at 35 colours, which was the hard
-# ceiling on shading: three ramps of seven steps and nothing left over. This
-# alphabet is case-SENSITIVE and 62 wide, so a creature can carry three
-# fourteen-step ramps and still have room for keylines and fixed colours.
-# src/components/PixelArt.js indexes it by lookup rather than parseInt.
-DIGITS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+# Palette indices, at the practical maximum: every printable ASCII character
+# except '.' (transparent), plus the quote, double-quote and backslash that
+# would need escaping in JSON or in the JS literal that reads it. Ninety
+# colours per sprite. Base-36 capped this at 35, which was the hard ceiling on
+# how finely anything could be shaded.
+# src/components/PixelArt.js holds the same string and indexes it by lookup.
+DIGITS = '!#$%&()*+,-/0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~'
 
 # Light comes from the upper left and slightly toward the viewer — the
 # convention almost all handheld sprite art uses, and the reason these read as
@@ -142,7 +143,7 @@ PALETTE_SPECS = {
     'maels':   {'body': ('#04203f', '#6cc4ff'), 'leaf': ('#0d5c7a', '#9fe8ff'), 'belly': ('#123a5e', '#d0f2ff')},
 }
 
-RAMP_STEPS = 14
+RAMP_STEPS = 26
 
 
 def build_palette(spec):
@@ -577,10 +578,10 @@ CREATURE_SIZE = 48
 CREATURE_SCALE = 2
 
 
-# Ten bands over a fourteen-step ramp. Five bands was the chunky look; this is
-# still banded — the steps are visible and deliberate — but there is enough
-# ladder for form to turn smoothly instead of jumping.
-CREATURE_BANDS = 10
+# Fourteen bands over a twenty-six-step ramp. Bands are the ARTISTIC control —
+# how visibly stepped the shading reads — now that the palette is no longer the
+# constraint. Tiles stay at five; a 16x16 tile wants to look chunky.
+CREATURE_BANDS = 14
 
 
 def new_creature(palette):

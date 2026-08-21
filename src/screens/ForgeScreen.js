@@ -13,7 +13,7 @@ import { Screen, Window, DialogueBox, BodyMap3D, PixelText, PixelButton, PixelSp
 import { palette, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { levelFromXp } from '../state/leveling';
-import { canEvolve, pointsFor } from '../state/evolution';
+import { canEvolve, pointsFor, xpFor } from '../state/evolution';
 import { getCreature } from '../data/creatures';
 import { evolveLines } from '../coach';
 import { moduleStateFor, getModule, todayKey, logModuleAction } from '../modules';
@@ -241,7 +241,7 @@ export default function ForgeScreen({ params }) {
       dispatch({ type: 'RECORD_PR', payload: { count: newPrs.length } });
       lines.push({
         speaker: 'Narration',
-        text: `New personal best: ${names}!  +${pointsFor('pr', newPrs.length)} evolve points`,
+        text: `New personal best: ${names}!  +${xpFor('pr', newPrs.length)} XP  +${pointsFor('pr', newPrs.length)} evolve points`,
       });
     }
     if (preview.goalJustHit) lines.push({ speaker: 'Narration', text: habitGoalLine(module.name) });

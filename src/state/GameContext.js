@@ -14,7 +14,7 @@ import { xpProgress, levelFromXp, maxHpFor } from './leveling';
 import { loadGame, saveGame, clearGame } from './storage';
 import { stamp, trim } from './history';
 import { computeRecovery } from './recovery';
-import { pointsFor } from './evolution';
+import { XP_PER_MILE, pointsFor, xpFor } from './evolution';
 import {
   MODULES,
   getModule,
@@ -48,6 +48,7 @@ const FRESH = {
     totalSteps: 0,
     distanceMi: 0,
     routeMi: 0,
+    xpCarry: 0,   // fractional walking XP not yet paid out
     milestonesReached: 0,
     battlesWon: 0,
     battlesLost: 0,
@@ -195,14 +196,23 @@ function reducer(state, action) {
         milestonesReached += 1;
         hitMilestones += 1;
       }
-      const withEvo = hitMilestones
-        ? updateActive(state, (m) => applyEffect(m, { evo: pointsFor('milestone', hitMilestones) }))
-        : state;
+      // Walking pays XP now. Distance arrives a thousandth of a mile at a
+      // time, so the fraction is carried between dispatches — rounding each
+      // step's worth on its own would floor every one of them to zero.
+      const carry = (state.stats.xpCarry || 0) + mi * XP_PER_MILE;
+      const walkXp = Math.floor(carry);
+      const withEvo = updateActive(state, (m) =>
+        applyEffect(m, {
+          xp: walkXp,
+          evo: hitMilestones ? pointsFor('milestone', hitMilestones) : 0,
+        })
+      );
       return {
         ...withEvo,
-        history: remember(state, { distanceMi: mi, load: mi * LOAD_PER_MILE }),
+        history: remember(state, { distanceMi: mi, load: mi * LOAD_PER_MILE, xp: walkXp }),
         stats: {
           ...state.stats,
+          xpCarry: carry - walkXp,
           totalSteps: state.stats.totalSteps + steps,
           distanceMi: state.stats.distanceMi + mi,
           routeMi,
@@ -383,7 +393,10 @@ function reducer(state, action) {
     case 'RECORD_PR': {
       const n = Math.max(0, action.payload.count || 0);
       if (!n) return state;
-      return updateActive(state, (m) => applyEffect(m, { evo: pointsFor('pr', n) }));
+      const next = updateActive(state, (m) =>
+        applyEffect(m, { xp: xpFor('pr', n), evo: pointsFor('pr', n) })
+      );
+      return { ...next, history: remember(state, { xp: xpFor('pr', n) }) };
     }
 
     case 'EVOLVE': {
