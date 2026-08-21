@@ -13,6 +13,7 @@ import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { ENCOUNTERS } from '../data/obstacles';
 import { getCreature } from '../data/creatures';
+import { canEvolve } from '../state/evolution';
 import { getExercise, BATTLE_MOVES } from '../data/exercises';
 import {
   wildIntro, movePrompt, moveLanded, victoryLines, defeatLines, levelUpLine, evolveLines,
@@ -110,7 +111,10 @@ export default function BattleScreen({ params }) {
 
   const maybeEvolve = (level, done) => {
     const creature = getCreature(companion.id);
-    if (creature.evolvesTo && level >= (creature.evolveLevel || 999)) {
+    // Level is no longer the whole gate: evolve points have to be there too,
+    // so a companion evolves because of what you did in the real world and not
+    // only because you fought enough obstacles.
+    if (canEvolve(companion, creature, level)) {
       const evolved = getCreature(creature.evolvesTo);
       const evo = evolveLines(creature.name, evolved.name);
       say([evo[0], evo[1]], () => {

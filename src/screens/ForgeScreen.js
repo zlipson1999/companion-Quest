@@ -13,6 +13,9 @@ import { Screen, Window, DialogueBox, BodyMap3D, PixelText, PixelButton, PixelSp
 import { palette, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { levelFromXp } from '../state/leveling';
+import { canEvolve, pointsFor } from '../state/evolution';
+import { getCreature } from '../data/creatures';
+import { evolveLines } from '../coach';
 import { moduleStateFor, getModule, todayKey, logModuleAction } from '../modules';
 import { analysePlan, suggestionsFor } from '../modules/forge/analysis';
 import { emptyPlan } from '../modules/forge';
@@ -235,13 +238,34 @@ export default function ForgeScreen({ params }) {
     if (newPrs.length) {
       const names = newPrs.map((b) => getMovement(b.movementId).name).join(', ');
       playSfx('milestone');
-      lines.push({ speaker: 'Narration', text: `New personal best: ${names}!` });
+      dispatch({ type: 'RECORD_PR', payload: { count: newPrs.length } });
+      lines.push({
+        speaker: 'Narration',
+        text: `New personal best: ${names}!  +${pointsFor('pr', newPrs.length)} evolve points`,
+      });
     }
     if (preview.goalJustHit) lines.push({ speaker: 'Narration', text: habitGoalLine(module.name) });
     const after = levelFromXp(companion.xp + preview.reward.xp);
     if (after > companion.level) {
       playSfx('levelup');
       lines.push({ speaker: 'Narration', text: levelUpLine(companion.creature.name, after) });
+    }
+
+    // Evolution can no longer only happen in battle. A player who lifts and
+    // never fights was previously capped at their starting form forever, which
+    // made the whole progression invisible to exactly the people this module is
+    // for. Project the points this session just paid, since `companion` is the
+    // pre-dispatch snapshot.
+    const projected = {
+      ...companion,
+      evo: (companion.evo || 0) + pointsFor('session') + pointsFor('pr', newPrs.length),
+    };
+    const creature = getCreature(companion.id);
+    if (canEvolve(projected, creature, after)) {
+      const evoLines = evolveLines(creature.name, getCreature(creature.evolvesTo).name);
+      lines.push(evoLines[0], evoLines[2]);
+      playSfx('evolve');
+      dispatch({ type: 'EVOLVE', payload: { newId: creature.evolvesTo } });
     }
     setResultLines(lines);
     setPhase('result');
