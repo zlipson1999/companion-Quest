@@ -37,7 +37,10 @@ function Row({ row, pal, px }) {
   return (
     <View style={{ flexDirection: 'row', height: px }}>
       {runs.map((r, k) => {
-        const transparent = r.ch === '.' || r.ch === '0';
+        // '.' alone is transparent. '0' used to be as well, from the base-36
+        // days — but in the 90-char alphabet '0' is palette index 12, a real
+        // colour, and the old check punched holes in every sprite that used it.
+        const transparent = r.ch === '.';
         const color = transparent ? 'transparent' : pal[INDEX[r.ch]] || 'transparent';
         return <View key={k} style={{ width: r.len * px, height: px, backgroundColor: color }} />;
       })}
