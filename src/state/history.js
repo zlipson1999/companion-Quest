@@ -120,10 +120,28 @@ export function totals(days) {
   );
 }
 
-// "Active" means you did something real, not that the app was opened.
+// "Active" means you did something real, not that the app was opened. Logging a
+// habit counts — showing up is the point of the habit modules.
 export function isActive(day) {
   if (!day) return false;
   return !!(day.sessions || day.workouts || day.battles || day.habitLogs || (day.distanceMi || 0) >= 0.25);
 }
 
-export default { blankDay, dayIn, stamp, trim, lastDays, weekOf, previousWeekOf, totals, isActive, weekStart, datesBack, KEEP_DAYS };
+// "Training" is narrower and deliberately so: it means you physically trained.
+// Recovery uses this, not isActive — otherwise logging last night's sleep every
+// morning reads as five consecutive hard days and the app tells someone who has
+// never trained to take a rest day.
+export const TRAINING_DISTANCE_MI = 0.75;
+
+export function isTraining(day) {
+  if (!day) return false;
+  return !!(day.sessions || day.workouts || day.battles || (day.distanceMi || 0) >= TRAINING_DISTANCE_MI);
+}
+
+// Days that carry any record at all — used to tell "no data yet" apart from
+// "genuinely did nothing", which the recovery ratio depends on.
+export function observedDays(history, dates) {
+  return (dates || []).filter((d) => !!(history || {})[d]).length;
+}
+
+export default { blankDay, dayIn, stamp, trim, lastDays, weekOf, previousWeekOf, totals, isActive, isTraining, observedDays, weekStart, datesBack, KEEP_DAYS };

@@ -38,8 +38,14 @@ export default function WeekScreen() {
 
   const days = useMemo(() => weekOf(state.history, today), [state.history, today]);
   const prev = useMemo(() => previousWeekOf(state.history, today), [state.history, today]);
-  const now = totals(days);
-  const before = totals(prev);
+
+  // Days elapsed so far this week, today included. Comparing a Tuesday against
+  // a complete previous week made every delta red and had the verdict read
+  // "2 active days against 6 last week" — true, and useless.
+  const elapsed = Math.max(1, days.findIndex((d) => d.date === today) + 1);
+  const now = totals(days.slice(0, elapsed));
+  const before = totals(prev.slice(0, elapsed));
+  const partWeek = elapsed < 7;
 
   // Bars are scaled against the busiest day across BOTH weeks, so this week
   // looking smaller actually means it was smaller.
@@ -55,13 +61,20 @@ export default function WeekScreen() {
         <Window tone="dark" pad={12}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: MAX_BAR + 34 }}>
             {days.map((d, i) => {
-              const h = Math.max(2, Math.round(((d.xp || 0) / peak) * MAX_BAR));
+              const future = i >= elapsed;
+              const h = future ? 2 : Math.max(2, Math.round(((d.xp || 0) / peak) * MAX_BAR));
               const isToday = d.date === today;
-              const color = d.rested ? palette.water : isActive(d) ? palette.xp : palette.barTrack;
+              const color = future
+                ? palette.inkSoft
+                : d.rested
+                ? palette.water
+                : isActive(d)
+                ? palette.xp
+                : palette.barTrack;
               return (
                 <View key={d.date} style={{ alignItems: 'center', flex: 1 }}>
                   <PixelText size="tiny" color={palette.windowBorderLight} style={{ marginBottom: 4 }}>
-                    {d.xp || ''}
+                    {future ? '' : d.xp || ''}
                   </PixelText>
                   <View style={{ width: 16, height: h, backgroundColor: color, borderWidth: 2, borderColor: palette.ink }} />
                   <PixelText size="tiny" color={isToday ? palette.secondary : palette.windowBorderLight} style={{ marginTop: 5 }}>
@@ -80,8 +93,12 @@ export default function WeekScreen() {
 
         <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-            <PixelText size="small" color={palette.accentDark}>This week</PixelText>
-            <PixelText size="tiny" color={palette.windowTextDim}>vs last</PixelText>
+            <PixelText size="small" color={palette.accentDark}>
+              {partWeek ? `This week so far` : 'This week'}
+            </PixelText>
+            <PixelText size="tiny" color={palette.windowTextDim}>
+              {partWeek ? `vs same ${elapsed} day${elapsed === 1 ? '' : 's'} last week` : 'vs last'}
+            </PixelText>
           </View>
           {[
             ['Active days', now.activeDays, before.activeDays, ''],
@@ -123,7 +140,7 @@ export default function WeekScreen() {
         <Window tone="dark" pad={12} style={{ marginTop: space.sm }}>
           <PixelText size="small" color={palette.secondary}>How it is going</PixelText>
           <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 8, lineHeight: 15 }}>
-            {weekVerdict(now, before, recovery)}
+            {weekVerdict(now, before, recovery, partWeek, elapsed)}
           </PixelText>
         </Window>
         <View style={{ height: space.sm }} />
@@ -135,11 +152,24 @@ export default function WeekScreen() {
 }
 
 // One plain sentence about the week. Says the awkward thing when there is one.
-function weekVerdict(now, before, recovery) {
-  if (!now.activeDays && !now.restDays) return 'Nothing logged this week yet. One small thing today is how weeks like this turn around.';
+// Every comparison here is against the SAME number of days last week, so a
+// midweek verdict is a fair one.
+function weekVerdict(now, before, recovery, partWeek, elapsed) {
+  const span = partWeek ? `${elapsed} day${elapsed === 1 ? '' : 's'} in` : 'This week';
+  if (!now.activeDays && !now.restDays) {
+    return partWeek
+      ? `Nothing logged yet this week. One small thing today is how weeks like this turn around.`
+      : 'A blank week. It happens — the next one starts whenever you decide it does.';
+  }
   if (recovery.needsRest) return `${now.activeDays} active days and ${now.restDays} rest days. ${recovery.advice}`;
-  if (now.activeDays >= 6 && !now.restDays) return `${now.activeDays} days on and none off. Impressive, and not something to repeat next week.`;
-  if (before.activeDays && now.activeDays > before.activeDays) return `${now.activeDays} active days, up from ${before.activeDays} last week. That is the direction that matters.`;
-  if (before.activeDays && now.activeDays < before.activeDays) return `${now.activeDays} active days against ${before.activeDays} last week. Weeks vary — what counts is that the next one starts.`;
-  return `${now.activeDays} active days and ${now.restDays} rest. Steady is underrated.`;
+  if (!partWeek && now.activeDays >= 6 && !now.restDays) {
+    return `${now.activeDays} days on and none off. Impressive, and not something to repeat next week.`;
+  }
+  if (now.activeDays > before.activeDays) {
+    return `${span}: ${now.activeDays} active days, against ${before.activeDays} by this point last week. That is the direction that matters.`;
+  }
+  if (now.activeDays < before.activeDays) {
+    return `${span}: ${now.activeDays} active days, against ${before.activeDays} by this point last week. Weeks vary — what counts is that the next one starts.`;
+  }
+  return `${span}: ${now.activeDays} active days and ${now.restDays} rest. Steady is underrated.`;
 }

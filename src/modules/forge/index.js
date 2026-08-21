@@ -61,6 +61,9 @@ const FORGE = {
   unit: 'sessions',
   dailyGoal: 1,
   screen: 'forge',
+  // Forge logs are physical training, so they feed the recovery model. Habit
+  // modules like Sleep deliberately do not.
+  training: true,
   blurb: 'Write your own workouts. The Forge reads what each one actually trains and decides what it is worth.',
 
   initialState() {
