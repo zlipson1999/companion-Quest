@@ -13,7 +13,7 @@ export const CREATURES = {
   // --- Starter line: Balance ---
   sproutle: {
     id: 'sproutle', name: 'Sproutle', sprite: 'sproutle', palette: 'sprout',
-    species: 'Seedling Companion', kind: 'starter', goalId: 'balance',
+    species: 'Seedling Companion', kind: 'starter', goalId: 'root',
     baseHp: 60, catchable: true, catchRate: 0.55,
     flavor: 'A gentle sprout-spirit. It grows calmer and steadier the more balanced your days become.',
     evolvesTo: 'bloomtail', evolveLevel: 5, evolvePoints: 30,
@@ -34,7 +34,7 @@ export const CREATURES = {
   // --- Starter line: Strength ---
   emberkit: {
     id: 'emberkit', name: 'Emberkit', sprite: 'emberkit', palette: 'ember',
-    species: 'Ember Cub Companion', kind: 'starter', goalId: 'strength',
+    species: 'Ember Cub Companion', kind: 'starter', goalId: 'muscle',
     baseHp: 64, catchable: true, catchRate: 0.5,
     flavor: 'A warm little ember cub. Its inner flame burns brighter each time you push yourself.',
     evolvesTo: 'pyrelynx', evolveLevel: 5, evolvePoints: 30,
@@ -55,7 +55,7 @@ export const CREATURES = {
   // --- Starter line: Distance ---
   dewbble: {
     id: 'dewbble', name: 'Dewbble', sprite: 'dewbble', palette: 'dew',
-    species: 'Dewdrop Companion', kind: 'starter', goalId: 'distance',
+    species: 'Dewdrop Companion', kind: 'starter', goalId: 'lean',
     baseHp: 58, catchable: true, catchRate: 0.55,
     flavor: 'A bright dewdrop sprite. It rolls a little farther with every step you take together.',
     evolvesTo: 'tidewade', evolveLevel: 5, evolvePoints: 30,

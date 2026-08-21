@@ -1,36 +1,51 @@
 // The life goal the player picks at the start. Each goal pairs them with an
-// original starter companion and sets the tone for their journey. Phase 3 will
-// let goals weight which "life modules" feed progression most.
+// original starter companion AND sets a real playstyle: route pacing, trail
+// name, and which kind of effort pays a bonus (see GOAL_PACING in route.js).
+//
+// The three goals are the three reasons people actually open a fitness app:
+// build muscle, lose fat, build the habit. Named for the game world rather
+// than the gym — "Travel Light" is a kinder sentence than "lose weight", and
+// it means the same thing.
 
 export const GOALS = [
   {
-    id: 'distance',
-    name: 'Go the Distance',
-    tagline: 'Move more, every day.',
-    description: 'Build a daily walking habit. Your steps are your strength.',
-    starterId: 'dewbble',
-    focus: 'steps',
-  },
-  {
-    id: 'strength',
-    name: 'Build Strength',
-    tagline: 'Get a little stronger each day.',
-    description: 'Take on workouts and challenges. Push, lift, and rise.',
+    id: 'muscle',
+    name: 'Forge Might',
+    tagline: 'Muscle is made, set by set.',
+    description: 'Lift, push, and log real sets. Workouts pay extra XP, and every new personal best stokes the forge.',
     starterId: 'emberkit',
     focus: 'workouts',
   },
   {
-    id: 'balance',
-    name: 'Find Balance',
-    tagline: 'Healthy, steady, sustainable.',
-    description: 'A calm mix of movement and consistency. Progress without burnout.',
+    id: 'lean',
+    name: 'Travel Light',
+    tagline: 'Move more, carry less.',
+    description: 'Miles are the engine. Walks and runs pay extra XP, milestones come quicker, and steady motion burns the load away.',
+    starterId: 'dewbble',
+    focus: 'miles',
+  },
+  {
+    id: 'root',
+    name: 'Take Root',
+    tagline: 'Small habits, deep roots.',
+    description: 'Show up a little every day — water, sleep, movement. A balanced bonus to everything, because steady grows strong.',
     starterId: 'sproutle',
     focus: 'consistency',
   },
 ];
 
+// Saves written before this goal set exist with the old ids. The mapping keeps
+// the spirit of the old choice: distance was about moving, strength about
+// lifting, balance about consistency.
+export const LEGACY_GOAL_IDS = { distance: 'lean', strength: 'muscle', balance: 'root' };
+
+export function migrateGoalId(id) {
+  return LEGACY_GOAL_IDS[id] || id;
+}
+
 export function getGoal(id) {
-  return GOALS.find((g) => g.id === id) || null;
+  const gid = migrateGoalId(id);
+  return GOALS.find((g) => g.id === gid) || null;
 }
 
 export default GOALS;
