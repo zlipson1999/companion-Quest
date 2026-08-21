@@ -11,18 +11,18 @@
 export const MUSCLES = {
   chest:      { id: 'chest',      name: 'Chest',        short: 'CHEST', region: 'push',  mesh: { pos: [0.17, 1.22, 0.17], size: [0.30, 0.26, 0.10], mirror: true } },
   shoulders:  { id: 'shoulders',  name: 'Shoulders',    short: 'DELT',  region: 'push',  mesh: { pos: [0.44, 1.32, 0.00], size: [0.20, 0.20, 0.28], mirror: true } },
-  triceps:    { id: 'triceps',    name: 'Triceps',      short: 'TRI',   region: 'push',  mesh: { pos: [0.47, 1.03, -0.07], size: [0.15, 0.30, 0.13], mirror: true } },
+  triceps:    { id: 'triceps',    name: 'Triceps',      short: 'TRI',   region: 'push',  mesh: { pos: [0.44, 1.03, -0.07], size: [0.13, 0.28, 0.10], mirror: true } },
   upperBack:  { id: 'upperBack',  name: 'Upper Back',   short: 'TRAP',  region: 'pull',  mesh: { pos: [0.16, 1.30, -0.16], size: [0.30, 0.24, 0.10], mirror: true } },
   lats:       { id: 'lats',       name: 'Lats',         short: 'LATS',  region: 'pull',  mesh: { pos: [0.24, 1.06, -0.14], size: [0.18, 0.32, 0.13], mirror: true } },
-  biceps:     { id: 'biceps',     name: 'Biceps',       short: 'BI',    region: 'pull',  mesh: { pos: [0.47, 1.03, 0.07], size: [0.15, 0.28, 0.13], mirror: true } },
-  forearms:   { id: 'forearms',   name: 'Forearms',     short: 'FORE',  region: 'pull',  mesh: { pos: [0.50, 0.72, 0.00], size: [0.14, 0.30, 0.14], mirror: true } },
+  biceps:     { id: 'biceps',     name: 'Biceps',       short: 'BI',    region: 'pull',  mesh: { pos: [0.44, 1.03, 0.07], size: [0.13, 0.26, 0.10], mirror: true } },
+  forearms:   { id: 'forearms',   name: 'Forearms',     short: 'FORE',  region: 'pull',  mesh: { pos: [0.50, 0.72, 0.00], size: [0.11, 0.26, 0.11], mirror: true } },
   core:       { id: 'core',       name: 'Core',         short: 'CORE',  region: 'brace', mesh: { pos: [0.00, 0.92, 0.17], size: [0.34, 0.36, 0.09], mirror: false } },
   obliques:   { id: 'obliques',   name: 'Obliques',     short: 'OBLQ',  region: 'brace', mesh: { pos: [0.24, 0.90, 0.06], size: [0.10, 0.32, 0.24], mirror: true } },
   lowerBack:  { id: 'lowerBack',  name: 'Lower Back',   short: 'LBACK', region: 'brace', mesh: { pos: [0.00, 0.90, -0.17], size: [0.32, 0.30, 0.09], mirror: false } },
-  glutes:     { id: 'glutes',     name: 'Glutes',       short: 'GLUT',  region: 'hinge', mesh: { pos: [0.16, 0.60, -0.13], size: [0.28, 0.26, 0.16], mirror: true } },
-  hamstrings: { id: 'hamstrings', name: 'Hamstrings',   short: 'HAM',   region: 'hinge', mesh: { pos: [0.17, 0.28, -0.10], size: [0.24, 0.36, 0.13], mirror: true } },
-  quads:      { id: 'quads',      name: 'Quads',        short: 'QUAD',  region: 'squat', mesh: { pos: [0.17, 0.28, 0.10], size: [0.24, 0.38, 0.13], mirror: true } },
-  calves:     { id: 'calves',     name: 'Calves',       short: 'CALF',  region: 'squat', mesh: { pos: [0.17, -0.22, -0.05], size: [0.18, 0.30, 0.16], mirror: true } },
+  glutes:     { id: 'glutes',     name: 'Glutes',       short: 'GLUT',  region: 'hinge', mesh: { pos: [0.14, 0.60, -0.12], size: [0.22, 0.22, 0.12], mirror: true } },
+  hamstrings: { id: 'hamstrings', name: 'Hamstrings',   short: 'HAM',   region: 'hinge', mesh: { pos: [0.17, 0.28, -0.09], size: [0.18, 0.34, 0.10], mirror: true } },
+  quads:      { id: 'quads',      name: 'Quads',        short: 'QUAD',  region: 'squat', mesh: { pos: [0.17, 0.28, 0.09], size: [0.18, 0.36, 0.10], mirror: true } },
+  calves:     { id: 'calves',     name: 'Calves',       short: 'CALF',  region: 'squat', mesh: { pos: [0.17, -0.20, -0.04], size: [0.14, 0.26, 0.12], mirror: true } },
 };
 
 export const MUSCLE_IDS = Object.keys(MUSCLES);
