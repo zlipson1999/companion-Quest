@@ -4,13 +4,20 @@
 //
 // `palette` may be an array of colors or a key into SPRITE_PALETTES, which the
 // sprite generator emits alongside the art so nothing is mirrored by hand.
-// '.' (or index 0) is transparent. Indices are BASE 36: sprites carry shading
-// ramps now and a single digit only addressed ten colours.
+// '.' (or index 0) is transparent. Indices are looked up in a 90-character
+// alphabet — every printable ASCII char except the ones that would need
+// escaping. Base-36 capped a sprite at 35 colours, which was the ceiling on
+// how finely a creature could be shaded.
 
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { spritePalettes } from '../theme';
 import { SPRITE_PALETTES } from '../data/sprites';
+
+// Must match DIGITS in tools/make_sprites.py exactly.
+const ALPHABET = '!#$%&()*+,-/0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
+const INDEX = {};
+for (let i = 0; i < ALPHABET.length; i += 1) INDEX[ALPHABET[i]] = i;
 
 function resolvePalette(palette) {
   if (Array.isArray(palette)) return palette;
@@ -31,7 +38,7 @@ function Row({ row, pal, px }) {
     <View style={{ flexDirection: 'row', height: px }}>
       {runs.map((r, k) => {
         const transparent = r.ch === '.' || r.ch === '0';
-        const color = transparent ? 'transparent' : pal[parseInt(r.ch, 36)] || 'transparent';
+        const color = transparent ? 'transparent' : pal[INDEX[r.ch]] || 'transparent';
         return <View key={k} style={{ width: r.len * px, height: px, backgroundColor: color }} />;
       })}
     </View>

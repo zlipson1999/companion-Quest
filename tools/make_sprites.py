@@ -29,8 +29,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 
 TRANSPARENT = '.'
-# Palette indices are base-36 chars, so a sprite can use up to 35 colours.
-DIGITS = '0123456789abcdefghijklmnopqrstuvwxyz'
+# Palette indices, at the practical maximum: every printable ASCII character
+# except '.' (transparent), plus the quote, double-quote and backslash that
+# would need escaping in JSON or in the JS literal that reads it. Ninety
+# colours per sprite. Base-36 capped this at 35, which was the hard ceiling on
+# how finely anything could be shaded.
+# src/components/PixelArt.js holds the same string and indexes it by lookup.
+DIGITS = '!#$%&()*+,-/0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~'
 
 # Light comes from the upper left and slightly toward the viewer — the
 # convention almost all handheld sprite art uses, and the reason these read as
@@ -113,9 +118,9 @@ EYE_DARK = '#1b1430'
 # a ramp and a shade; the flat index list is generated, so nothing has to be
 # mirrored by hand anywhere else.
 PALETTE_SPECS = {
-    'sprout':  {'body': ('#1f5c39', '#a6f0b4'), 'leaf': ('#2f7d3f', '#d4ff9e'), 'belly': ('#4a7a3a', '#e2ffc9')},
-    'ember':   {'body': ('#5e2a14', '#ffcf8e'), 'leaf': ('#b8431c', '#ffe3a0'), 'belly': ('#7a3c1e', '#ffdcae')},
-    'dew':     {'body': ('#123f6b', '#b8ecff'), 'leaf': ('#1d6ea8', '#dcf7ff'), 'belly': ('#2a6f96', '#e6fbff')},
+    'sprout':  {'body': ('#0d3320', '#b6f7c2'), 'leaf': ('#1b5426', '#dcff9e'), 'belly': ('#2c5624', '#eaffd2')},
+    'ember':   {'body': ('#331306', '#ffd89c'), 'leaf': ('#b8431c', '#ffe3a0'), 'belly': ('#7a3c1e', '#ffdcae')},
+    'dew':     {'body': ('#07223d', '#c8f2ff'), 'leaf': ('#0f4a72', '#eafcff'), 'belly': ('#134a68', '#f0ffff')},
     'sludge':  {'body': ('#2e3d18', '#b6d16a'), 'leaf': ('#46561f', '#d6e88a'), 'belly': ('#3d4a22', '#c6dd7c')},
     'snooze':  {'body': ('#2a2650', '#b9b6ee'), 'leaf': ('#413a72', '#d5d2ff'), 'belly': ('#38346a', '#c9c6f7')},
     'ache':    {'body': ('#6b1730', '#ffb0c4'), 'leaf': ('#93253f', '#ffd0dc'), 'belly': ('#7d2038', '#ffc2d2')},
@@ -138,7 +143,7 @@ PALETTE_SPECS = {
     'maels':   {'body': ('#04203f', '#6cc4ff'), 'leaf': ('#0d5c7a', '#9fe8ff'), 'belly': ('#123a5e', '#d0f2ff')},
 }
 
-RAMP_STEPS = 7
+RAMP_STEPS = 26
 
 
 def build_palette(spec):
@@ -173,7 +178,7 @@ for _k, _spec in PALETTE_SPECS.items():
 # Hard value bands, not a smooth gradient. A continuous ramp reads airbrushed;
 # handheld sprite work bands into a few clear steps and lets the boundaries do
 # the describing. Four bands plus the specular is the classic budget.
-BANDS = 5
+BANDS = 5          # default; creatures raise it (see Canvas.bands)
 
 # 4x4 ordered dither, used only in a narrow zone either side of a band edge so
 # transitions break up instead of banding as a hard contour line.
@@ -194,8 +199,11 @@ class Canvas:
     the same drawing code emits a bigger, smoother sprite.
     """
 
-    def __init__(self, w, h, palette, scale=1):
+    def __init__(self, w, h, palette, scale=1, bands=BANDS):
         self.scale = scale
+        # More bands means a richer, more modern read; fewer keeps the chunky
+        # look that suits a 16x16 tile. It should be a per-sprite decision.
+        self.bands = bands
         self.w, self.h = w * scale, h * scale
         self.palette = palette
         self.px = [[None] * self.w for _ in range(self.h)]
@@ -371,31 +379,37 @@ class Canvas:
                     self._set(x, y, ramp_name, shade)
 
     def eye(self, cx, cy, r=2, look=(0, 0)):
-        """Sclera, lid shadow, pupil, specular.
+        """Sclera, clipped lid, pupil, specular.
 
-        A white dot with a black dot in it reads as a bead. What sells an eye at
-        this size is the lid shadow across the top and a specular that is big
-        enough to survive — one pixel of highlight disappears the moment the
-        sprite is scaled down."""
+        The lid is painted ONLY over pixels that are already sclera. Drawing it
+        as a free ellipse let it spill above the eye and onto the face, where it
+        read as a heavy black eyebrow and made every creature look furious.
+        """
         S = self.scale
         self.blob(cx, cy, r, r + 0.35, 'white', 1.0)
-        # The lid was a third of the eye's height and the pupil most of the
-        # rest, so every creature came out heavy-lidded and sullen. A thin lid
-        # high on the eye reads as a brow; the white has to survive around the
-        # pupil or there is no eye left to see.
-        self.blob(cx, cy - r * 0.92, r * 0.92, r * 0.26, 'eye', 0.0)     # lid line
-        self.blob(cx + look[0], cy + look[1] + r * 0.10, r * 0.54, r * 0.62, 'eye', 0.0)
-        # specular: a 2x2 block up and left of the pupil, inside the sclera
-        hx, hy = int((cx - r * 0.42) * S), int((cy - r * 0.34) * S)
+
+        # lid: darken sclera pixels above the lid line, and nothing else
+        cxp, cyp, rp = cx * S, cy * S, r * S
+        lid_y = cyp - rp * 0.52
+        for y in range(int(cyp - rp * 1.6), int(lid_y) + 1):
+            for x in range(int(cxp - rp * 1.2), int(cxp + rp * 1.2) + 1):
+                if 0 <= y < self.h and 0 <= x < self.w:
+                    cur = self.px[y][x]
+                    if cur is not None and cur[0] == 'white':
+                        self.px[y][x] = ('eye', 0.0, cur[2], False)
+                        self.lay[y][x] = self.layer
+
+        self.blob(cx + look[0], cy + look[1] + r * 0.14, r * 0.58, r * 0.66, 'eye', 0.0)
+
+        hx, hy = int((cx - r * 0.42) * S), int((cy - r * 0.20) * S)
         for dy in range(max(2, S)):
             for dx in range(max(2, S)):
                 self._set(hx + dx, hy + dy, 'white', 1.0)
-        # a smaller bounce light low-right keeps the eye from looking painted on
-        self._set(int((cx + r * 0.34) * S), int((cy + r * 0.44) * S), 'white', 1.0)
+        self._set(int((cx + r * 0.34) * S), int((cy + r * 0.46) * S), 'white', 1.0)
 
     # -- finishing passes ---------------------------------------------------
     def rim(self, ramp_name='leaf', strength=1.0):
-        """Bounce light along the lower-right silhouette edge."""
+        """Legacy edge brighten. Kept for tiles; creatures use backlight()."""
         add = []
         for y in range(self.h):
             for x in range(self.w):
@@ -407,6 +421,58 @@ class Canvas:
         for x, y in add:
             rn, sh, cov, lit = self.px[y][x]
             self.px[y][x] = (rn, min(1.0, sh + 0.34 * strength), cov, lit)
+
+    def backlight(self, width=2, strength=0.85):
+        """A bright rim along the silhouette OPPOSITE the key light.
+
+        This is the single most recognisable feature of modern pixel art and the
+        thing the old sprites were most obviously missing. The key light comes
+        from the upper left, so a second, cooler light behind and to the lower
+        right catches the far edge of the form and separates the creature from
+        whatever it is standing on. Without it a sprite sits flat against the
+        background no matter how well the interior is shaded.
+        """
+        lx, ly = -LIGHT[0], -LIGHT[1]          # behind, opposite the key
+        n = math.sqrt(lx * lx + ly * ly) or 1.0
+        lx, ly = lx / n, ly / n
+        edits = []
+        for y in range(self.h):
+            for x in range(self.w):
+                cur = self.px[y][x]
+                if cur is None or cur[0] in ('white', 'eye', 'ink'):
+                    continue
+                # distance to the outside, measured along the backlight
+                for d in range(1, width + 1):
+                    nx = int(round(x + lx * d))
+                    ny = int(round(y + ly * d))
+                    if not self.filled(nx, ny):
+                        edits.append((x, y, 1.0 - (d - 1) / float(width)))
+                        break
+        for x, y, amt in edits:
+            rn, sh, cov, lit = self.px[y][x]
+            self.px[y][x] = (rn, min(1.0, sh + strength * amt), cov, lit)
+
+    def spec(self, cx, cy, r, ramp_name=None, strength=1.0):
+        """A sharp highlight where the form turns toward the light.
+
+        Banded shading alone tops out at the ramp's lightest step, so nothing
+        ever reads as shiny. A small explicit hotspot is what makes a surface
+        look wet, waxy or furred rather than matte.
+        """
+        S = self.scale
+        cx, cy, r = cx * S, cy * S, r * S
+        for y in range(int(cy - r) - 1, int(cy + r) + 2):
+            for x in range(int(cx - r) - 1, int(cx + r) + 2):
+                cur = self.px[y][x] if (0 <= y < self.h and 0 <= x < self.w) else None
+                if cur is None or cur[0] in ('white', 'eye', 'ink'):
+                    continue
+                u, v = (x + 0.5 - cx) / r, (y + 0.5 - cy) / r
+                d2 = u * u + v * v
+                if d2 > 1.0:
+                    continue
+                rn, sh, cov, lit = cur
+                falloff = (1.0 - d2) ** 0.7
+                self.px[y][x] = (ramp_name or rn, min(1.0, sh + strength * falloff), cov, lit)
 
     def outline(self, ink_below=True):
         """A COLOURED outline: each edge pixel takes the keyline of whatever ramp
@@ -478,11 +544,12 @@ class Canvas:
                     # they were picking between, so take the ramp step directly.
                     step = int(round(sh * (RAMP_STEPS - 1)))
                 else:
-                    pos = sh * (BANDS - 1)
+                    nb = self.bands
+                    pos = sh * (nb - 1)
                     band = int(pos)
                     frac = pos - band
                     # dither only near a band edge, so lit flats stay clean
-                    if DITHER_ZONE > 0 and band < BANDS - 1:
+                    if DITHER_ZONE > 0 and band < nb - 1:
                         lo, hi = 0.5 - DITHER_ZONE / 2, 0.5 + DITHER_ZONE / 2
                         if lo < frac < hi:
                             t = (frac - lo) / (hi - lo)
@@ -490,8 +557,8 @@ class Canvas:
                                 band += 1
                         elif frac >= hi:
                             band += 1
-                    band = max(0, min(BANDS - 1, band))
-                    step = int(round(band * (RAMP_STEPS - 1) / float(BANDS - 1)))
+                    band = max(0, min(nb - 1, band))
+                    step = int(round(band * (RAMP_STEPS - 1) / float(nb - 1)))
                 step = max(0, min(RAMP_STEPS - 1, step))
                 row += DIGITS[idx[(name, step)]]
             rows.append(row)
@@ -511,33 +578,59 @@ CREATURE_SIZE = 48
 CREATURE_SCALE = 2
 
 
+# Fourteen bands over a twenty-six-step ramp. Bands are the ARTISTIC control —
+# how visibly stepped the shading reads — now that the palette is no longer the
+# constraint. Tiles stay at five; a 16x16 tile wants to look chunky.
+CREATURE_BANDS = 14
+
+
 def new_creature(palette):
-    return Canvas(CREATURE_SIZE, CREATURE_SIZE, palette, scale=CREATURE_SCALE)
+    return Canvas(CREATURE_SIZE, CREATURE_SIZE, palette, scale=CREATURE_SCALE, bands=CREATURE_BANDS)
 
 
 def sproutle(pal='sprout'):
-    """A seedling that stands up. Round, but with arms, feet and a sprout, so
-    the silhouette is a small figure rather than an egg with a leaf."""
+    """Seedling companion.
+
+    Built to turn in the light: a rounded torso with a distinct chest, tapered
+    limbs that thicken at the shoulder and hip, a backlit rim down the right,
+    and speculars on the crown of the head and the top of each leaf.
+    """
     c = new_creature(pal)
-    c.shadow(24, 44, 12, 3)
-    c.limb(24, 16, 24, 8, 1.3, 1.0, 'leaf', ambient=0.4)
-    c.sphere(17.5, 6.5, 6.0, 3.2, 'leaf', ambient=0.5)
-    c.sphere(30.5, 5.5, 5.4, 3.0, 'leaf', ambient=0.6)
-    c.limb(17, 36, 14, 43, 2.6, 2.4, 'body', ambient=0.24)
-    c.limb(31, 36, 34, 43, 2.6, 2.4, 'body', ambient=0.24)
-    c.blob(13.5, 44, 3.6, 2.0, 'body', 0.34)
-    c.blob(34.5, 44, 3.6, 2.0, 'body', 0.34)
-    c.sphere(24, 27, 13.5, 12.5, 'body')
-    c.sphere(24, 32, 8.0, 6.4, 'belly', ambient=0.54)
-    c.limb(12.5, 26, 9, 33, 2.4, 1.9, 'body', ambient=0.34)
-    c.limb(35.5, 26, 39, 33, 2.4, 1.9, 'body', ambient=0.34)
-    c.blob(8.5, 34, 2.4, 2.2, 'body', 0.42)
-    c.blob(39.5, 34, 2.4, 2.2, 'body', 0.42)
-    c.eye(19, 24, 3.3)
-    c.eye(29, 24, 3.3)
-    c.blob(24, 29.5, 2.2, 1.1, 'leaf', 0.22)
-    c.occlude()
-    c.rim('leaf')
+    c.shadow(24, 45, 12.5, 3)
+
+    # --- sprout ---------------------------------------------------------
+    c.limb(24, 17, 24, 9, 1.5, 1.1, 'leaf', ambient=0.34)
+    c.sphere(17.0, 7.0, 6.4, 3.4, 'leaf', ambient=0.30)
+    c.sphere(31.0, 6.0, 5.8, 3.1, 'leaf', ambient=0.34)
+
+    # --- legs, planted and slightly apart -------------------------------
+    c.limb(18, 35, 15.5, 43, 3.2, 2.6, 'body', ambient=0.18)
+    c.limb(30, 35, 32.5, 43, 3.2, 2.6, 'body', ambient=0.18)
+    c.sphere(15.0, 44.5, 4.0, 2.3, 'body', ambient=0.24)
+    c.sphere(33.0, 44.5, 4.0, 2.3, 'body', ambient=0.24)
+
+    # --- torso: a pear, wider at the hips than the shoulders -------------
+    c.sphere(24, 28, 13.0, 12.5, 'body', ambient=0.20)
+    c.sphere(24, 33, 11.0, 9.0, 'body', ambient=0.22)
+    c.sphere(24, 33.5, 7.6, 6.2, 'belly', ambient=0.34)
+
+    # --- arms ------------------------------------------------------------
+    c.limb(13.5, 27, 9.5, 34, 2.7, 2.0, 'body', ambient=0.24)
+    c.limb(34.5, 27, 38.5, 34, 2.7, 2.0, 'body', ambient=0.26)
+    c.sphere(9.0, 35.5, 2.7, 2.5, 'body', ambient=0.30)
+    c.sphere(39.0, 35.5, 2.7, 2.5, 'body', ambient=0.34)
+
+    c.occlude(0.34)
+    c.backlight(width=2, strength=0.80)
+
+    # --- speculars: where the form turns hardest into the light -----------
+    c.spec(18.5, 21.5, 5.0, strength=0.55)
+    c.spec(15.0, 5.8, 3.0, 'leaf', strength=0.55)
+    c.spec(29.5, 4.9, 2.6, 'leaf', strength=0.50)
+
+    c.eye(19, 25, 3.4)
+    c.eye(29, 25, 3.4)
+    c.blob(24, 30.5, 2.2, 1.1, 'leaf', 0.16)
     c.outline()
     return c
 
@@ -705,82 +798,101 @@ def pyrelynx(pal='pyre'):
 
 
 def emberkit(pal='ember'):
-    """An ember cub, sitting up.
+    """Ember cub, sitting.
 
-    Rebuilt against the silhouette test: the first version was an egg with ears,
-    indistinguishable in black from every other creature. This one has a neck, a
-    chest, four legs and a raised tail, so the shape says "small quadruped"
-    before any colour is read.
+    A cub reads through proportion: an oversized head, a narrow chest, and small
+    forepaws set close together. The mane behind the jaw and the backlight down
+    the right keep the head from flattening into the body.
     """
     c = new_creature(pal)
-    c.shadow(24, 44, 14, 3)
+    c.shadow(24, 45, 14, 3)
 
-    # tail first, so the body overlaps its root
-    c.limb(31, 34, 40, 22, 2.8, 1.4, 'body')
-    # A flame, not a bead on a stick: an asymmetric tongue with a lick off the
-    # side, so the tail ends in a shape rather than a full stop.
-    c.poly([(40, 24), (44, 16), (41.5, 17.5), (42, 10), (38, 17), (39, 15.5), (37.5, 23)], 'leaf', 0.95)
-    c.poly([(40, 22), (42, 17), (40.5, 18), (40.5, 14), (38.5, 18.5), (38.8, 21)], 'belly', 1.0)
+    # --- tail, behind everything ----------------------------------------
+    c.limb(31, 34, 40, 22, 2.9, 1.4, 'body', ambient=0.16)
+    c.limb(40, 23, 43.5, 14, 1.9, 0.5, 'leaf', ambient=0.42)
+    c.limb(39.5, 21, 41.0, 16.5, 1.3, 0.4, 'belly', ambient=0.60)
 
-    # hind legs, then the body sitting over them
-    c.limb(15, 33, 13, 42, 3.4, 2.8, 'body', ambient=0.22)
-    c.limb(33, 33, 35, 42, 3.4, 2.8, 'body', ambient=0.22)
-    c.blob(12.5, 43, 4.0, 2.2, 'body', 0.30)              # hind paws
-    c.blob(35.5, 43, 4.0, 2.2, 'body', 0.30)
+    # --- haunches and hind paws -----------------------------------------
+    c.sphere(14.5, 37, 5.6, 6.2, 'body', ambient=0.16)
+    c.sphere(33.5, 37, 5.6, 6.2, 'body', ambient=0.18)
+    c.sphere(13.0, 44, 4.2, 2.3, 'body', ambient=0.22)
+    c.sphere(35.0, 44, 4.2, 2.3, 'body', ambient=0.22)
 
-    c.sphere(24, 33, 11.5, 10.0, 'body')                  # chest / body
-    c.sphere(24, 36, 7.0, 5.4, 'belly', ambient=0.52)     # pale front
+    # --- chest, narrower than the haunches ------------------------------
+    c.sphere(24, 34, 10.0, 9.5, 'body', ambient=0.20)
+    c.sphere(24, 37, 6.6, 5.4, 'belly', ambient=0.34)
 
-    # forelegs in front of the chest
-    c.limb(19, 34, 18, 43, 2.6, 2.2, 'body', ambient=0.34)
-    c.limb(29, 34, 30, 43, 2.6, 2.2, 'body', ambient=0.34)
-    c.blob(17.5, 44, 3.2, 1.8, 'belly', 0.62)
-    c.blob(30.5, 44, 3.2, 1.8, 'belly', 0.62)
+    # --- forelegs, close together ---------------------------------------
+    c.limb(20.5, 33, 20, 43, 2.5, 2.1, 'body', ambient=0.24)
+    c.limb(27.5, 33, 28, 43, 2.5, 2.1, 'body', ambient=0.26)
+    c.sphere(19.5, 44.5, 3.1, 1.9, 'belly', ambient=0.38)
+    c.sphere(28.5, 44.5, 3.1, 1.9, 'belly', ambient=0.40)
 
-    c.limb(24, 27, 24, 22, 5.0, 5.6, 'body', ambient=0.30) # neck
+    # --- a small chest tuft, at the sides only ---------------------------
+    # A full radiating ruff crossed the chest and read as fluting on a column.
+    # Two tufts either side of the neck do the job and leave the chest smooth.
+    c.limb(16.5, 28.5, 12.5, 33.0, 3.0, 1.0, 'leaf', ambient=0.20)
+    c.limb(31.5, 28.5, 35.5, 33.0, 3.0, 1.0, 'leaf', ambient=0.24)
 
-    # head last: ears behind, skull, muzzle
-    c.limb(16.5, 15, 14.5, 3, 4.6, 0.7, 'body', ambient=0.34)   # ears
-    c.limb(31.5, 15, 33.5, 3, 4.6, 0.7, 'body', ambient=0.34)
-    c.limb(16.5, 14, 15.3, 6, 2.4, 0.5, 'leaf', ambient=0.60)   # inner ear
-    c.limb(31.5, 14, 32.7, 6, 2.4, 0.5, 'leaf', ambient=0.52)
-    c.sphere(24, 18, 12.0, 10.5, 'body')                   # skull
-    c.sphere(24, 23, 6.4, 4.4, 'belly', ambient=0.56)      # muzzle
-    c.poly([(24, 6), (27, 13), (24, 11), (21, 13)], 'leaf', 1.0)  # flame mark
+    # --- head ------------------------------------------------------------
+    c.limb(17.0, 15, 14.5, 3.5, 4.7, 0.8, 'body', ambient=0.22)
+    c.limb(31.0, 15, 33.5, 3.5, 4.7, 0.8, 'body', ambient=0.24)
+    c.limb(17.0, 14, 15.4, 6.5, 2.4, 0.5, 'leaf', ambient=0.50)
+    c.limb(31.0, 14, 32.6, 6.5, 2.4, 0.5, 'leaf', ambient=0.44)
+    c.sphere(24, 19, 12.2, 10.8, 'body', ambient=0.20)
+    c.sphere(24, 24, 6.6, 4.5, 'belly', ambient=0.36)
+    c.limb(24, 13, 24, 7.5, 2.4, 0.5, 'leaf', ambient=0.62)      # brow flame
 
-    c.eye(18.5, 17, 3.4)
-    c.eye(29.5, 17, 3.4)
-    c.blob(24, 21.5, 1.9, 1.3, 'eye', 0.0)                 # nose
-    c.blob(24, 24.5, 2.6, 0.9, 'eye', 0.0)                 # mouth line
+    c.occlude(0.36)
+    c.backlight(width=2, strength=0.85)
+    c.spec(18.5, 13.5, 5.2, strength=0.55)
+    c.spec(20.0, 31.5, 3.4, strength=0.40)
 
-    c.occlude()
-    c.rim('leaf')
+    c.eye(18.6, 18, 3.5)
+    c.eye(29.4, 18, 3.5)
+    c.blob(24, 22.5, 2.0, 1.3, 'eye', 0.0)
+    c.blob(24, 25.4, 2.7, 0.8, 'eye', 0.0)
     c.outline()
     return c
 
 
 def dewbble(pal='dew'):
-    """A dewdrop that walks. The teardrop point is kept as the identity, but it
-    has stubby arms and feet so it is a creature and not a shape."""
+    """Dewdrop companion.
+
+    Water is the hardest of the three: it has to look wet, and wet is a specular
+    plus a bright transmitted core, not a colour. The drop carries a hard
+    highlight on the upper left, a lit core low in the body where light passes
+    through, and a strong backlit rim.
+    """
     c = new_creature(pal)
-    c.shadow(24, 44, 12, 3)
-    c.limb(19, 37, 16, 43, 2.4, 2.2, 'body', ambient=0.24)
-    c.limb(29, 37, 32, 43, 2.4, 2.2, 'body', ambient=0.24)
-    c.blob(15.5, 44, 3.4, 2.0, 'body', 0.32)
-    c.blob(32.5, 44, 3.4, 2.0, 'body', 0.32)
-    c.limb(24, 20, 24, 4, 6.0, 0.6, 'body', ambient=0.40)      # the point
-    c.sphere(24, 29, 13.0, 12.0, 'body')                       # the drop
-    c.sphere(24, 34, 7.6, 5.6, 'belly', ambient=0.56)
-    c.limb(12.5, 29, 9, 35, 2.2, 1.8, 'body', ambient=0.34)
-    c.limb(35.5, 29, 39, 35, 2.2, 1.8, 'body', ambient=0.34)
-    c.blob(8.5, 36, 2.3, 2.1, 'body', 0.42)
-    c.blob(39.5, 36, 2.3, 2.1, 'body', 0.42)
-    c.sphere(18, 20, 3.6, 4.4, 'leaf', ambient=0.80)           # surface glint
-    c.eye(19, 27, 3.3)
-    c.eye(29, 27, 3.3)
-    c.blob(24, 32, 2.0, 1.1, 'eye', 0.0)
-    c.occlude()
-    c.rim('leaf')
+    c.shadow(24, 45, 12, 3)
+
+    c.limb(19.5, 36, 17, 43, 2.7, 2.3, 'body', ambient=0.16)
+    c.limb(28.5, 36, 31, 43, 2.7, 2.3, 'body', ambient=0.16)
+    c.sphere(16.5, 44.5, 3.7, 2.2, 'body', ambient=0.22)
+    c.sphere(31.5, 44.5, 3.7, 2.2, 'body', ambient=0.22)
+
+    # the drop: a point that swells into a body
+    c.limb(24, 21, 24, 5, 7.0, 0.8, 'body', ambient=0.20)
+    c.sphere(24, 30, 13.2, 12.2, 'body', ambient=0.18)
+
+    # transmitted light low in the drop — what makes water read as water
+    c.sphere(24, 35, 8.4, 5.8, 'belly', ambient=0.44)
+    c.sphere(24, 36.5, 5.4, 3.4, 'leaf', ambient=0.66)
+
+    c.limb(13.0, 30, 9.5, 36, 2.4, 1.9, 'body', ambient=0.22)
+    c.limb(35.0, 30, 38.5, 36, 2.4, 1.9, 'body', ambient=0.26)
+    c.sphere(9.0, 37, 2.5, 2.3, 'body', ambient=0.28)
+    c.sphere(39.0, 37, 2.5, 2.3, 'body', ambient=0.32)
+
+    c.occlude(0.30)
+    c.backlight(width=2, strength=0.95)
+    c.spec(18.5, 22.0, 4.6, 'leaf', strength=0.95)     # hard wet highlight
+    c.spec(20.5, 12.0, 2.2, 'leaf', strength=0.70)
+
+    c.eye(19, 28, 3.4)
+    c.eye(29, 28, 3.4)
+    c.blob(24, 33, 2.0, 1.1, 'eye', 0.0)
     c.outline()
     return c
 

@@ -1,4 +1,4 @@
-// Evolution, and the points that earn it.
+// What real-world effort is worth: XP and evolve points, in one table.
 //
 // Levels alone used to decide this: hit level 5 and your companion evolved,
 // once, and that was the end of the line. Two problems with that. It made XP the
@@ -18,17 +18,30 @@
 
 export const EVO_SOURCES = {
   // Setting a personal best is the strongest signal in the app that you are
-  // actually getting stronger, so it pays the most.
-  pr: { points: 5, label: 'a new personal best' },
-  session: { points: 3, label: 'a workout session' },
-  milestone: { points: 2, label: 'a distance milestone' },
-  habit: { points: 2, label: 'a daily goal met' },
-  battle: { points: 1, label: 'a battle won' },
+  // actually getting stronger, so it pays the most of any single event. It
+  // covers all three kinds: more weight on a lift, more reps on a bodyweight
+  // movement, and a longer hold on a plank — beatsRecord scores each on its
+  // own terms, so they all arrive here the same way.
+  pr: { points: 5, xp: 20, label: 'a new personal best' },
+  session: { points: 3, xp: 0, label: 'a workout session' },
+  milestone: { points: 2, xp: 0, label: 'a distance milestone' },
+  habit: { points: 2, xp: 0, label: 'a daily goal met' },
+  battle: { points: 1, xp: 0, label: 'a battle won' },
 };
+
+// Walking. Paid per mile rather than per milestone so no distance is lost, with
+// the fraction carried in stats — steps arrive a thousandth of a mile at a time
+// and rounding each one would floor every single step to zero XP.
+export const XP_PER_MILE = 25;
 
 export function pointsFor(source, n = 1) {
   const s = EVO_SOURCES[source];
   return s ? s.points * n : 0;
+}
+
+export function xpFor(source, n = 1) {
+  const s = EVO_SOURCES[source];
+  return s ? (s.xp || 0) * n : 0;
 }
 
 // What the next stage costs. Lives on the creature so different lines can
@@ -84,4 +97,4 @@ export function evolveHint(member, creature, level) {
   return `Needs ${bits.join(' and ')}.`;
 }
 
-export default { EVO_SOURCES, pointsFor, requirementFor, evolveProgress, canEvolve, evolveHint };
+export default { EVO_SOURCES, XP_PER_MILE, pointsFor, xpFor, requirementFor, evolveProgress, canEvolve, evolveHint };
