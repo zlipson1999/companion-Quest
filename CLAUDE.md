@@ -90,6 +90,10 @@ owns the calendar (day roll, streaks, reward math) and is pure/testable;
   `expo-location`, `src/state/useDistance.js`); tall-grass wild encounters
   (`src/data/wild.js`); **catch wild companions with a Bond Token + build a team
   of 6** (Catch/Swap in `BattleScreen`, Team screen); goal-tuned pacing.
+- **Phase 4** — **Workout Forge**: build/log/store your own workout plans, a real
+  3D muscle body map, on-device analysis that derives perks and rewards from what
+  a plan actually trains, and a camera form-check mirror. Plus the battle stage
+  rebuilt to genre-standard framing (horizon, platforms, EXP bar).
 - **Phase 3** — **pluggable life modules** (`src/modules/`): a registry + shared
   daily/streak engine feeding the same XP/bond reducer path, with **Hydration**
   and **Nourish** shipped as the example modules, a **Habits** hub + per-module
@@ -118,9 +122,10 @@ and **Nourish (diet)** as the two example modules.
 
 **Adding a life module (sleep, meditation, reading, chores, check-ins…):** write
 one object with `{ id, name, tagline, blurb, sprite, spritePalette, color, unit,
-dailyGoal, actions:[{id,label,sublabel,amount,reward:{xp,bond}, apply?}],
-goalReward:{xp,bond}, progress?(day), summary?(day), cheer?(day) }` and add it to
-`MODULES`. That's it — the Habits hub, log screen, progress bars, streaks, daily
+dailyGoal, actions:[{id,label,sublabel,amount,reward:{xp,bond,heal}, apply?}],
+goalReward:{xp,bond}, initialState?(), screen?, progress?(day), summary?(day),
+cheer?(day) }` and add it to `MODULES`. `actions` may instead be a function of
+module state when they depend on the player's own content (see `forge`). That's it — the Habits hub, log screen, progress bars, streaks, daily
 reset, save migration and Status readout all pick it up. Art is optional: a
 module with no `sprite` falls back to `mod_check`.
 
@@ -145,10 +150,44 @@ The Status screen grew a "Daily Habits" block plus habit-log stats.
 `mod_droplet`, `mod_plate`, and `mod_check` (the art-less-module fallback). No
 new audio: logs reuse `item`/`milestone`/`levelup`.
 
-## Phase 4 — ideas, not committed
+## Phase 4 — DONE: Workout Forge + battle-stage fidelity
+
+**Workout Forge** (`src/modules/forge/`) — the module where the player writes the
+content. It is the reason the plugin interface grew three generic hooks:
+`actions(modState)` (the Forge's actions ARE the player's saved plans),
+`initialState()` (module-owned, non-daily data — the plans themselves), and
+`screen` (bring your own UI). `MODULE_PATCH` persists module-owned data without
+the reducer knowing about any specific module. Any future module can use all of it.
+
+- `src/data/muscles.js` — 14 groups, each carrying the geometry of its own plate.
+- `src/data/movements.js` — 24 movements / 7 patterns, each declaring the muscles
+  it trains, a relative `load`, and its coaching cues.
+- `forge/analysis.js` — the on-device analyser. **Deterministic scoring, not an
+  LLM**: coverage, pattern balance, volume (load weighted superlinearly so hard
+  short sets beat easy long ones), intensity, duration. Explains every number.
+- `forge/perks.js` — 8 perks, each with its own test and a plain-language reason.
+  Gated behind `PERK_MIN_SETS`/`PERK_MIN_VOLUME` so a token plan earns nothing.
+- `components/BodyMap3D.js` — real 3D via `expo-gl` + `three`, low-poly and
+  flat-shaded, built procedurally from the muscle data (still zero asset files).
+  Falls back to `<BodyMapFlat>`, a 2D projection of the same data, if GL fails.
+- `screens/FormCheckScreen.js` — front camera as a mirror plus cue ticker.
+  **Not pose analysis** — there is no pose model in the app, and the screen says
+  so. Nothing recorded or sent; works fully with the camera declined.
+
+**Reward safety:** `applyLog` credits only the portion of a log that lands inside
+the daily goal. Logging past the goal is tallied but pays nothing, so no log
+button is ever a free progression button. Forge `dailyGoal` is 1 session.
+
+**Battle-stage fidelity** — `components/BattleStage.js` (horizon + stacked-rect
+"pixel ellipse" platforms, hard edges preserved) and `components/StatusPlate.js`
+(name/Lv, tagged HP bar, and the EXP strip under YOUR plate only). This is the
+genre's most recognisable furniture and it was the main visual gap.
+
+## Phase 5 — ideas, not committed
 
 Sleep / meditation / reading modules (should be pure `src/modules/*` additions);
-weekly rollups; letting the Coach read module state for grounded encouragement.
+weekly rollups; letting the Coach read module + Forge state for grounded
+encouragement; per-plan history and PRs.
 
 ## Conventions & guardrails
 

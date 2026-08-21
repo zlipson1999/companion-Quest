@@ -5,7 +5,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Screen, DualPane, Window, HPBar, Menu, DialogueBox, PixelText, PixelSprite, PixelButton } from '../components';
+import { Screen, DualPane, Window, Menu, DialogueBox, BattleStage, Platform, StatusPlate, PixelText, PixelSprite, PixelButton } from '../components';
 import { palette, space } from '../theme';
 import { useGame, useCompanion, useParty } from '../state';
 import { levelFromXp } from '../state/leveling';
@@ -256,56 +256,50 @@ export default function BattleScreen({ params }) {
   const holdReady = move && move.kind === 'hold' ? hold <= 0 : true;
   const companionMax = companion.maxHp;
 
-  const top = (
-    <View style={{ flex: 1, backgroundColor: palette.bgAlt, padding: space.sm }}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-        <Window tone="dark" pad={8} style={{ flex: 1, marginRight: space.xl }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <PixelText size="small" color={palette.windowFill}>
-              {wild.name}
-            </PixelText>
-            {target.isCompanion ? (
-              <PixelText size="tiny" color={palette.hpHigh}>
-                wild
-              </PixelText>
-            ) : (
-              <PixelText size="tiny" color={palette.danger}>
-                obstacle
-              </PixelText>
-            )}
-          </View>
-          <HPBar hp={wildHp} maxHp={target.hp} width={120} showNumbers={false} label="" />
-          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 2 }}>
-            {wild.species}
-          </PixelText>
-        </Window>
-        <View style={{ alignItems: 'center', marginTop: 6 }}>
-          <PixelSprite spriteKey={wild.sprite} palette={wild.palette} size={84} bob={!wildFaint} hitCount={wildHit} fainting={wildFaint} />
-          <View style={{ width: 64, height: 8, backgroundColor: palette.inkSoft, marginTop: 2 }} />
-        </View>
-      </View>
+  // Classic battle framing: their plate top-left with the creature opposite it,
+  // your plate bottom-right with your companion opposite that, both standing on
+  // lit discs over a horizon.
+  const stageTone = params.from === 'route' ? 'grass' : 'trail';
 
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 'auto' }}>
-        <View style={{ alignItems: 'center', marginRight: space.lg }}>
-          <View>
-            <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={96} bob={!companionFaint} hitCount={companionHit} fainting={companionFaint} flip />
-            <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, backgroundColor: '#fff', opacity: evoFlash }} />
+  const top = (
+    <BattleStage tone={stageTone} horizon={0.5}>
+      <View style={{ flex: 1, padding: space.sm }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <StatusPlate
+            name={wild.name}
+            hp={wildHp}
+            maxHp={target.hp}
+            tag={target.isCompanion ? 'wild' : 'obstacle'}
+            tagColor={target.isCompanion ? palette.hpHigh : palette.danger}
+            style={{ flex: 1, marginRight: space.lg }}
+          />
+          <View style={{ alignItems: 'center', marginTop: 2 }}>
+            <PixelSprite spriteKey={wild.sprite} palette={wild.palette} size={84} bob={!wildFaint} hitCount={wildHit} fainting={wildFaint} />
+            <Platform width={92} tone={stageTone} />
           </View>
-          <View style={{ width: 76, height: 9, backgroundColor: palette.inkSoft, marginTop: 2 }} />
         </View>
-        <Window tone="dark" pad={8} style={{ flex: 1, marginLeft: space.sm }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <PixelText size="small" color={palette.secondary}>
-              {companion.creature.name}
-            </PixelText>
-            <PixelText size="tiny" color={palette.windowFill}>
-              Lv.{companion.level}
-            </PixelText>
+
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 'auto' }}>
+          <View style={{ alignItems: 'center', marginRight: space.md }}>
+            <View>
+              <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={96} bob={!companionFaint} hitCount={companionHit} fainting={companionFaint} flip />
+              <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, backgroundColor: '#fff', opacity: evoFlash }} />
+            </View>
+            <Platform width={108} tone={stageTone} />
           </View>
-          <HPBar hp={companionHp} maxHp={companionMax} width={120} label="HP" />
-        </Window>
+          <StatusPlate
+            name={companion.creature.name}
+            level={companion.level}
+            hp={companionHp}
+            maxHp={companionMax}
+            xpInto={companion.xpInto}
+            xpNeeded={companion.xpNeeded}
+            showNumbers
+            style={{ flex: 1, marginLeft: space.sm }}
+          />
+        </View>
       </View>
-    </View>
+    </BattleStage>
   );
 
   let bottom;
