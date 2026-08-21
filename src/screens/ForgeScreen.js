@@ -16,6 +16,9 @@ import { levelFromXp } from '../state/leveling';
 import { moduleStateFor, getModule, todayKey, logModuleAction } from '../modules';
 import { analysePlan, suggestionsFor } from '../modules/forge/analysis';
 import { emptyPlan } from '../modules/forge';
+import { agoLabel, historyFor, lastSession, prTargets, prsSetBy, progressionFor, recordSession, sessionEntry } from '../modules/forge/history';
+import { loadOf } from '../state/recovery';
+import { useRecovery } from '../state';
 import { getMovement } from '../data/movements';
 import { MUSCLES } from '../data/muscles';
 import { useNav } from './navContext';
@@ -40,9 +43,10 @@ function PerkChip({ perk }) {
   );
 }
 
-function BlockRow({ block, index, done, onToggle, onForm }) {
+function BlockRow({ block, index, done, onToggle, onForm, pr, lastAmount }) {
   const mv = getMovement(block.movementId);
   if (!mv) return null;
+  const unit = mv.unit === 'seconds' ? 's' : '';
   return (
     <Window tone="cream" pad={11} style={{ marginBottom: space.sm }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -54,6 +58,7 @@ function BlockRow({ block, index, done, onToggle, onForm }) {
             </PixelText>
             <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 5 }}>
               {block.sets} x {block.amount} {mv.unit === 'reps' ? 'reps' : mv.unit === 'seconds' ? 'sec' : mv.unit}
+              {lastAmount != null ? `   (last: ${lastAmount}${unit})` : ''}
             </PixelText>
           </View>
         </Pressable>
@@ -62,6 +67,11 @@ function BlockRow({ block, index, done, onToggle, onForm }) {
       <PixelText size="tiny" color={palette.accentDark} style={{ marginTop: 8, lineHeight: 14 }}>
         {mv.cues[0]}
       </PixelText>
+      {pr && block.amount > pr.amount ? (
+        <PixelText size="tiny" color={palette.success} style={{ marginTop: 6 }}>
+          Beats your best of {pr.amount}{unit}.
+        </PixelText>
+      ) : null}
     </Window>
   );
 }
@@ -69,6 +79,7 @@ function BlockRow({ block, index, done, onToggle, onForm }) {
 export default function ForgeScreen({ params }) {
   const { state, dispatch } = useGame();
   const companion = useCompanion();
+  const recovery = useRecovery();
   const { navigate } = useNav();
 
   const module = getModule(FORGE_ID);
@@ -114,7 +125,13 @@ export default function ForgeScreen({ params }) {
     // what gets banked.
     const preview = logModuleAction(module, modState, `plan:${plan.id}`, todayKey());
     if (!preview) return;
-    dispatch({ type: 'MODULE_LOG', payload: { moduleId: FORGE_ID, actionId: `plan:${plan.id}` } });
+    const load = loadOf(analysis);
+    dispatch({ type: 'MODULE_LOG', payload: { moduleId: FORGE_ID, actionId: `plan:${plan.id}`, load } });
+
+    // Write the session into the Forge's own log and fold in any new records.
+    const entry = sessionEntry(plan, analysis, todayKey(), load);
+    const newPrs = prsSetBy(modState, entry);
+    dispatch({ type: 'MODULE_PATCH', payload: { moduleId: FORGE_ID, patch: recordSession(modState, entry) } });
 
     const lines = [
       { speaker: 'Narration', text: `${plan.name} complete — ${analysis.sets} sets, about ${analysis.minutes} minutes.` },
@@ -131,6 +148,11 @@ export default function ForgeScreen({ params }) {
     }
     if (analysis.perks.length) {
       lines.push({ speaker: companion.creature.name, text: `${analysis.perks.map((p) => p.name).join(' and ')} — I could feel that in the work.` });
+    }
+    if (newPrs.length) {
+      const names = newPrs.map((b) => getMovement(b.movementId).name).join(', ');
+      playSfx('milestone');
+      lines.push({ speaker: 'Narration', text: `New personal best: ${names}!` });
     }
     if (preview.goalJustHit) lines.push({ speaker: 'Narration', text: habitGoalLine(module.name) });
     const after = levelFromXp(companion.xp + preview.reward.xp);
@@ -164,6 +186,8 @@ export default function ForgeScreen({ params }) {
   if (phase === 'session' && plan) {
     const total = plan.blocks.length;
     const doneCount = plan.blocks.filter((_b, i) => checked[i]).length;
+    const prev = lastSession(modState, plan.id);
+    const records = modState.records || {};
     return (
       <Screen style={{ padding: space.md }}>
         <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
@@ -178,6 +202,11 @@ export default function ForgeScreen({ params }) {
               tap a row as you finish it
             </PixelText>
           </View>
+          {recovery.needsRest ? (
+            <PixelText size="tiny" color={palette.hpMid} style={{ marginTop: 8, lineHeight: 14 }}>
+              {recovery.advice} You can absolutely still train — just going in with your eyes open.
+            </PixelText>
+          ) : null}
         </Window>
         <ScrollView showsVerticalScrollIndicator={false}>
           {plan.blocks.map((b, i) => (
@@ -190,6 +219,8 @@ export default function ForgeScreen({ params }) {
                 playSfx('cursor');
                 setChecked((c) => ({ ...c, [i]: !c[i] }));
               }}
+              pr={records[b.movementId]}
+              lastAmount={prev ? (prev.blocks.filter((x) => x.movementId === b.movementId)[0] || {}).amount : null}
               onForm={() => navigate('formcheck', { movementId: b.movementId, planId: plan.id, checked, from })}
             />
           ))}
@@ -211,6 +242,10 @@ export default function ForgeScreen({ params }) {
   // ---------------------------------------------------------------- detail
   if (phase === 'detail' && plan && analysis) {
     const notes = suggestionsFor(analysis);
+    const prog = progressionFor(modState, plan.id, analysis);
+    const best = (modState.bests || {})[plan.id];
+    const runs = historyFor(modState, plan.id).length;
+    const targets = prTargets(modState, plan);
     return (
       <Screen style={{ padding: space.md }}>
         <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
@@ -257,6 +292,55 @@ export default function ForgeScreen({ params }) {
               </PixelText>
             )}
           </Window>
+
+          <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
+            <PixelText size="small" color={palette.accentDark}>Last time</PixelText>
+            {prog ? (
+              <View>
+                <PixelText size="tiny" color={palette.windowText} style={{ marginTop: 8, lineHeight: 15 }}>
+                  {agoLabel(prog.last.date, todayKey())} — {prog.last.sets} sets, volume {prog.last.volume}, {prog.last.xp} XP
+                </PixelText>
+                <PixelText
+                  size="tiny"
+                  color={prog.improved ? palette.success : prog.unchanged ? palette.windowTextDim : palette.accentDark}
+                  style={{ marginTop: 7, lineHeight: 14 }}
+                >
+                  {prog.unchanged
+                    ? 'As written, this is the same session again. Add a set or a rep to move forward.'
+                    : prog.improved
+                    ? `As written that is ${prog.volumeDelta > 0 ? `+${prog.volumeDelta} volume` : `${prog.setsDelta > 0 ? '+' : ''}${prog.setsDelta} sets`} on last time.`
+                    : `As written that is lighter than last time (${prog.volumeDelta} volume). Fine on purpose, worth noticing by accident.`}
+                </PixelText>
+                {best ? (
+                  <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 7 }}>
+                    Best: volume {best.volume} on {best.date}  ·  done {runs} time{runs === 1 ? '' : 's'}
+                  </PixelText>
+                ) : null}
+              </View>
+            ) : (
+              <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 8, lineHeight: 15 }}>
+                Never run. Do it once and the Forge starts tracking what to beat.
+              </PixelText>
+            )}
+          </Window>
+
+          {targets.some((t) => t.pr || t.beats) ? (
+            <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
+              <PixelText size="small" color={palette.accentDark}>Personal bests</PixelText>
+              {targets.map((t) => {
+                const mv = getMovement(t.movementId);
+                if (!mv) return null;
+                return (
+                  <View key={t.movementId} style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 7 }}>
+                    <PixelText size="tiny" color={palette.windowText} style={{ flex: 1 }}>{mv.name}</PixelText>
+                    <PixelText size="tiny" color={t.beats ? palette.success : palette.windowTextDim}>
+                      {t.pr ? `${t.pr.amount}${mv.unit === 'seconds' ? 's' : ''}${t.beats ? '  BEATS IT' : ''}` : 'no record yet'}
+                    </PixelText>
+                  </View>
+                );
+              })}
+            </Window>
+          ) : null}
 
           <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
             <PixelText size="small" color={palette.accentDark}>Trained</PixelText>

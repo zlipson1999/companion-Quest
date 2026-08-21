@@ -35,6 +35,7 @@ export function freshDay(date) {
     goalDays: 0,
     totalCount: 0,
     totalLogs: 0,
+    paid: null,   // `replaces` modules only: the most this day has already paid
   };
 }
 
@@ -52,7 +53,7 @@ export function rollDay(modState, date) {
   const base = normalizeDay(modState);
   if (base.date === day) return base;
   const chained = base.lastGoalDate === day || base.lastGoalDate === dayBefore(day);
-  return { ...base, date: day, count: 0, entries: [], goalHit: false, streak: chained ? base.streak : 0 };
+  return { ...base, date: day, count: 0, entries: [], goalHit: false, paid: null, streak: chained ? base.streak : 0 };
 }
 
 // Today's standing for a module. A module may override with its own progress().
@@ -111,17 +112,46 @@ export function applyLog(module, modState, action, date) {
     };
   }
 
-  // Portion of this log that still counted toward an unmet goal.
-  const credited = amount > 0 ? Math.max(0, Math.min(amount, goal - day.count)) / amount : 0;
   const bonus = (goalJustHit && module.goalReward) || {};
   const base = action.reward || {};
   // heal rides the same path (applyEffect understands it) so a recovery-shaped
   // module can restore HP instead of only granting XP.
-  const reward = {
-    xp: Math.round((base.xp || 0) * credited) + (bonus.xp || 0),
-    bond: Math.round((base.bond || 0) * credited) + (bonus.bond || 0),
-    heal: Math.round((base.heal || 0) * credited) + (bonus.heal || 0),
-  };
+  const full = { xp: base.xp || 0, bond: base.bond || 0, heal: base.heal || 0 };
+
+  let reward;
+  let credited;
+  if (module.replaces) {
+    // A `replaces` module records one value for the day (last night's sleep),
+    // so it cannot be farmed by logging again — the entry is overwritten.
+    // Pro-rating against the goal would be actively wrong here: it would pay
+    // LESS for sleeping nine hours than for eight. Instead pay the difference
+    // between what this log is worth and what the day has already paid, so
+    // correcting an entry upward tops you up and correcting it downward simply
+    // pays nothing rather than clawing back.
+    const paid = day.paid || { xp: 0, bond: 0, heal: 0 };
+    reward = {
+      xp: Math.max(0, full.xp - (paid.xp || 0)) + (bonus.xp || 0),
+      bond: Math.max(0, full.bond - (paid.bond || 0)) + (bonus.bond || 0),
+      heal: Math.max(0, full.heal - (paid.heal || 0)) + (bonus.heal || 0),
+    };
+    credited = 1;
+    next = {
+      ...next,
+      paid: {
+        xp: Math.max(paid.xp || 0, full.xp),
+        bond: Math.max(paid.bond || 0, full.bond),
+        heal: Math.max(paid.heal || 0, full.heal),
+      },
+    };
+  } else {
+    // Portion of this log that still counted toward an unmet goal.
+    credited = amount > 0 ? Math.max(0, Math.min(amount, goal - day.count)) / amount : 0;
+    reward = {
+      xp: Math.round(full.xp * credited) + (bonus.xp || 0),
+      bond: Math.round(full.bond * credited) + (bonus.bond || 0),
+      heal: Math.round(full.heal * credited) + (bonus.heal || 0),
+    };
+  }
 
   return { state: next, reward, goalJustHit, streak: next.streak, amount, credited };
 }

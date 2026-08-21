@@ -1,0 +1,145 @@
+// The weekly rollup.
+//
+// Streaks answer "did I show up today". Nothing answered "how was my week" —
+// which is the question people actually ask themselves, and the timescale
+// training is planned on. Seven columns, this week against last, and the honest
+// arithmetic underneath.
+
+import React, { useMemo } from 'react';
+import { ScrollView, View } from 'react-native';
+import { Screen, Window, PixelText, PixelButton } from '../components';
+import { palette, space } from '../theme';
+import { useGame, useModules, useRecovery } from '../state';
+import { isActive, previousWeekOf, totals, weekOf } from '../state/history';
+import { todayKey } from '../modules';
+import { useNav } from './navContext';
+
+const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const MAX_BAR = 46;
+
+function Delta({ now, then, unit, invert }) {
+  const d = Math.round((now - then) * 10) / 10;
+  if (!then && !now) return <PixelText size="tiny" color={palette.windowTextDim}>—</PixelText>;
+  const better = invert ? d < 0 : d > 0;
+  const color = d === 0 ? palette.windowTextDim : better ? palette.success : palette.accentDark;
+  return (
+    <PixelText size="tiny" color={color}>
+      {d === 0 ? 'same' : `${d > 0 ? '+' : ''}${d}${unit || ''}`}
+    </PixelText>
+  );
+}
+
+export default function WeekScreen() {
+  const { state } = useGame();
+  const modules = useModules();
+  const recovery = useRecovery();
+  const { navigate } = useNav();
+  const today = todayKey();
+
+  const days = useMemo(() => weekOf(state.history, today), [state.history, today]);
+  const prev = useMemo(() => previousWeekOf(state.history, today), [state.history, today]);
+  const now = totals(days);
+  const before = totals(prev);
+
+  // Bars are scaled against the busiest day across BOTH weeks, so this week
+  // looking smaller actually means it was smaller.
+  const peak = Math.max(1, ...days.concat(prev).map((d) => d.xp || 0));
+
+  return (
+    <Screen style={{ padding: space.md }}>
+      <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
+        Your Week
+      </PixelText>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <Window tone="dark" pad={12}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: MAX_BAR + 34 }}>
+            {days.map((d, i) => {
+              const h = Math.max(2, Math.round(((d.xp || 0) / peak) * MAX_BAR));
+              const isToday = d.date === today;
+              const color = d.rested ? palette.water : isActive(d) ? palette.xp : palette.barTrack;
+              return (
+                <View key={d.date} style={{ alignItems: 'center', flex: 1 }}>
+                  <PixelText size="tiny" color={palette.windowBorderLight} style={{ marginBottom: 4 }}>
+                    {d.xp || ''}
+                  </PixelText>
+                  <View style={{ width: 16, height: h, backgroundColor: color, borderWidth: 2, borderColor: palette.ink }} />
+                  <PixelText size="tiny" color={isToday ? palette.secondary : palette.windowBorderLight} style={{ marginTop: 5 }}>
+                    {DAY_LETTERS[i]}
+                  </PixelText>
+                </View>
+              );
+            })}
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.sm }}>
+            <PixelText size="tiny" color={palette.xp}>trained</PixelText>
+            <PixelText size="tiny" color={palette.water}>rested</PixelText>
+            <PixelText size="tiny" color={palette.windowBorderLight}>nothing logged</PixelText>
+          </View>
+        </Window>
+
+        <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+            <PixelText size="small" color={palette.accentDark}>This week</PixelText>
+            <PixelText size="tiny" color={palette.windowTextDim}>vs last</PixelText>
+          </View>
+          {[
+            ['Active days', now.activeDays, before.activeDays, ''],
+            ['Rest days', now.restDays, before.restDays, ''],
+            ['Workout sessions', now.sessions + now.workouts, before.sessions + before.workouts, ''],
+            ['Distance', Math.round(now.distanceMi * 100) / 100, Math.round(before.distanceMi * 100) / 100, ' mi'],
+            ['Habit logs', now.habitLogs, before.habitLogs, ''],
+            ['Daily goals met', now.goalsMet, before.goalsMet, ''],
+            ['XP earned', now.xp, before.xp, ''],
+            ['Training load', Math.round(now.load * 10) / 10, Math.round(before.load * 10) / 10, ''],
+          ].map((r) => (
+            <View key={r[0]} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
+              <PixelText size="tiny" color={palette.windowTextDim} style={{ flex: 1 }}>{r[0]}</PixelText>
+              <PixelText size="small" color={palette.windowText} style={{ width: 62, textAlign: 'right' }}>
+                {r[1]}{r[3]}
+              </PixelText>
+              <View style={{ width: 58, alignItems: 'flex-end' }}>
+                <Delta now={r[1]} then={r[2]} unit={r[3]} />
+              </View>
+            </View>
+          ))}
+        </Window>
+
+        <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
+          <PixelText size="small" color={palette.accentDark}>Habits this week</PixelText>
+          {modules.map(({ module, state: modState }) => (
+            <View key={module.id} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+              <PixelText size="tiny" color={palette.windowText} style={{ flex: 1 }}>{module.name}</PixelText>
+              <PixelText size="tiny" color={modState.streak > 0 ? palette.accentDark : palette.windowTextDim}>
+                {modState.streak}d streak
+              </PixelText>
+              <PixelText size="tiny" color={palette.windowTextDim} style={{ width: 74, textAlign: 'right' }}>
+                best {modState.bestStreak}
+              </PixelText>
+            </View>
+          ))}
+        </Window>
+
+        <Window tone="dark" pad={12} style={{ marginTop: space.sm }}>
+          <PixelText size="small" color={palette.secondary}>How it is going</PixelText>
+          <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 8, lineHeight: 15 }}>
+            {weekVerdict(now, before, recovery)}
+          </PixelText>
+        </Window>
+        <View style={{ height: space.sm }} />
+      </ScrollView>
+
+      <PixelButton label="Back to Town" tone="plain" sound="cancel" onPress={() => navigate('hub')} style={{ marginTop: space.sm }} />
+    </Screen>
+  );
+}
+
+// One plain sentence about the week. Says the awkward thing when there is one.
+function weekVerdict(now, before, recovery) {
+  if (!now.activeDays && !now.restDays) return 'Nothing logged this week yet. One small thing today is how weeks like this turn around.';
+  if (recovery.needsRest) return `${now.activeDays} active days and ${now.restDays} rest days. ${recovery.advice}`;
+  if (now.activeDays >= 6 && !now.restDays) return `${now.activeDays} days on and none off. Impressive, and not something to repeat next week.`;
+  if (before.activeDays && now.activeDays > before.activeDays) return `${now.activeDays} active days, up from ${before.activeDays} last week. That is the direction that matters.`;
+  if (before.activeDays && now.activeDays < before.activeDays) return `${now.activeDays} active days against ${before.activeDays} last week. Weeks vary — what counts is that the next one starts.`;
+  return `${now.activeDays} active days and ${now.restDays} rest. Steady is underrated.`;
+}

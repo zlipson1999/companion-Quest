@@ -12,6 +12,8 @@ import { getItem } from '../data/items';
 import { pacingForGoal } from '../data/route';
 import { xpProgress, levelFromXp, maxHpFor } from './leveling';
 import { loadGame, saveGame, clearGame } from './storage';
+import { stamp, trim } from './history';
+import { computeRecovery } from './recovery';
 import {
   MODULES,
   getModule,
@@ -26,7 +28,7 @@ import {
 const today = todayKey;
 const STARTING_TOKENS = 3;
 const MAX_PARTY = 6;
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 4;
 
 function daysBetween(a, b) {
   if (!a || !b) return 0;
@@ -59,6 +61,7 @@ const FRESH = {
   bag: {},
   dex: {},
   modules: {},
+  history: {},
   settings: { muted: false, bgmMuted: false },
   meta: { createdAt: today(), lastPlayedDate: today() },
 };
@@ -76,6 +79,14 @@ function updateActive(state, fn) {
   if (!state.party.length) return state;
   const party = state.party.map((m, i) => (i === state.activeIndex ? fn(m) : m));
   return { ...state, party };
+}
+
+// Everything worth remembering lands in state.history through here: recovery,
+// personal records and the weekly rollup all read from it, and none of them can
+// see anything an action did not record.
+function remember(state, patch) {
+  const today_ = today();
+  return trim(stamp(state.history, today_, patch), today_);
 }
 
 function applyEffect(member, effect) {
@@ -115,6 +126,9 @@ function reducer(state, action) {
       // is where the daily reset actually happens for a returning player).
       const migratingDates = (saved.version || 1) < 3;
       merged.modules = rollAllModules(saved.modules, today());
+      // v4: the daily history. Older saves simply start recording from now —
+      // there is no honest way to reconstruct days nobody logged.
+      merged.history = trim(saved.history || {}, today());
       merged.version = SAVE_VERSION;
 
       // v3 also moved "today" from a UTC date to a LOCAL one. A pre-v3
@@ -165,6 +179,7 @@ function reducer(state, action) {
       }
       return {
         ...state,
+        history: remember(state, { distanceMi: mi }),
         stats: {
           ...state.stats,
           totalSteps: state.stats.totalSteps + steps,
@@ -221,6 +236,7 @@ function reducer(state, action) {
       }));
       return {
         ...next,
+        history: remember(state, { xp, bond, battles: 1 }),
         stats: { ...state.stats, battlesWon: state.stats.battlesWon + 1 },
         dex: { ...state.dex, [targetId]: state.dex[targetId] || 'seen' },
       };
@@ -268,6 +284,14 @@ function reducer(state, action) {
       return {
         ...next,
         modules: { ...state.modules, [moduleId]: result.state },
+        history: remember(state, {
+          xp: result.reward.xp || 0,
+          bond: result.reward.bond || 0,
+          habitLogs: 1,
+          goalsMet: result.goalJustHit ? 1 : 0,
+          sessions: moduleId === 'forge' && result.reward.xp > 0 ? 1 : 0,
+          load: action.payload.load || 0,
+        }),
         stats: {
           ...state.stats,
           habitLogs: state.stats.habitLogs + 1,
@@ -298,11 +322,25 @@ function reducer(state, action) {
       return { ...state, modules: rollAllModules(state.modules, today()) };
     }
 
+    // Taking a rest day is a real training decision, so it is a real action.
+    // It pays bond and healing and NEVER xp: resting is not effort, and paying
+    // xp for it would make "rest" a button you press for progress.
+    case 'REST_DAY': {
+      const day = (state.history || {})[today()];
+      if (day && day.rested) return state;
+      const next = updateActive(state, (m) => applyEffect(m, { bond: 6, heal: 40 }));
+      return { ...next, history: remember(state, { rested: true, bond: 6 }) };
+    }
+
     case 'COMPLETE_WORKOUT': {
       const { xp = 0, bond = 0 } = action.payload.reward || {};
       const mult = pacingForGoal(state.goalId).workoutXpMult || 1;
       const next = updateActive(state, (m) => ({ ...m, xp: m.xp + Math.round(xp * mult), bond: m.bond + bond }));
-      return { ...next, stats: { ...state.stats, workoutsDone: state.stats.workoutsDone + 1 } };
+      return {
+        ...next,
+        history: remember(state, { xp: Math.round(xp * mult), bond, workouts: 1 }),
+        stats: { ...state.stats, workoutsDone: state.stats.workoutsDone + 1 },
+      };
     }
 
     case 'EVOLVE': {
@@ -400,6 +438,11 @@ export function decorateMember(member) {
 export function useModuleState(moduleId) {
   const { state } = useGame();
   return moduleStateFor(state.modules, moduleId);
+}
+
+export function useRecovery() {
+  const { state } = useGame();
+  return computeRecovery(state.history, todayKey());
 }
 
 export function useModules() {

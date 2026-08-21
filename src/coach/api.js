@@ -7,7 +7,7 @@ export function isCoachConfigured() {
   return !!COACH_API_URL;
 }
 
-export async function sendCoachMessage({ messages, companionName, goalName }) {
+export async function sendCoachMessage({ messages, companionName, goalName, context }) {
   if (!COACH_API_URL) {
     return {
       ok: false,
@@ -21,7 +21,7 @@ export async function sendCoachMessage({ messages, companionName, goalName }) {
     const res = await fetch(`${COACH_API_URL}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, companionName, goalName }),
+      body: JSON.stringify({ messages, companionName, goalName, context }),
       signal: controller.signal,
     });
     clearTimeout(timer);

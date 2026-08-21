@@ -27,6 +27,7 @@ import HabitLogScreen from './HabitLogScreen';
 import ForgeScreen from './ForgeScreen';
 import ForgeEditScreen from './ForgeEditScreen';
 import FormCheckScreen from './FormCheckScreen';
+import WeekScreen from './WeekScreen';
 import CoachChatScreen from './CoachChatScreen';
 import OptionsScreen from './OptionsScreen';
 import LoadingScreen from './LoadingScreen';
@@ -50,6 +51,7 @@ const SCREENS = {
   forge: ForgeScreen,
   forgeEdit: ForgeEditScreen,
   formcheck: FormCheckScreen,
+  week: WeekScreen,
   coach: CoachChatScreen,
   options: OptionsScreen,
 };
@@ -59,7 +61,7 @@ const SCREENS = {
 // just kept playing over the walk.
 const TOWN_BGM = new Set([
   'title', 'intro', 'goal', 'pairing', 'hub', 'route', 'rest', 'workout', 'summary', 'index', 'bag',
-  'party', 'coach', 'options', 'habits', 'habit', 'forge', 'forgeEdit', 'formcheck',
+  'party', 'coach', 'options', 'habits', 'habit', 'forge', 'forgeEdit', 'formcheck', 'week',
 ]);
 
 export default function Router() {

@@ -6,8 +6,10 @@
 import React, { useEffect } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Screen, Window, PixelText, PixelButton, PixelSprite, Triangle } from '../components';
+import { dayIn } from '../state/history';
+import { todayKey } from '../modules';
 import { palette, space } from '../theme';
-import { useGame, useModules, useCompanion } from '../state';
+import { useGame, useModules, useCompanion, useRecovery } from '../state';
 import { moduleScreen, moduleSprite, moduleSummary, modulesNeedRoll } from '../modules';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
@@ -76,7 +78,9 @@ export default function HabitsScreen() {
   const { state, dispatch } = useGame();
   const modules = useModules();
   const companion = useCompanion();
+  const recovery = useRecovery();
   const { navigate } = useNav();
+  const restedToday = dayIn(state.history, todayKey()).rested;
 
   // Self-heal if the app sat open past midnight — the reducer only rolls the
   // day on HYDRATE, so a long-running session would otherwise keep logging
@@ -118,6 +122,47 @@ export default function HabitsScreen() {
       </Window>
 
       <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Recovery sits above the modules on purpose: when it has something to
+            say, it matters more than any of them. */}
+        <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <PixelText size="body" color={palette.windowText}>Recovery</PixelText>
+            <PixelText
+              size="tiny"
+              color={recovery.needsRest ? palette.danger : recovery.status === 'building' ? palette.accentDark : palette.success}
+            >
+              {recovery.headline}
+            </PixelText>
+          </View>
+          <PixelText size="tiny" color={palette.windowText} style={{ marginTop: 8, lineHeight: 15 }}>
+            {recovery.advice}
+          </PixelText>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.sm }}>
+            <PixelText size="tiny" color={palette.windowTextDim}>7-day load {recovery.acute}</PixelText>
+            <PixelText size="tiny" color={palette.windowTextDim}>vs usual {recovery.ratio ? `${recovery.ratio}x` : '-'}</PixelText>
+            <PixelText size="tiny" color={palette.windowTextDim}>{recovery.streak}d streak</PixelText>
+          </View>
+          {recovery.deloadDue ? (
+            <PixelText size="tiny" color={palette.accentDark} style={{ marginTop: 8, lineHeight: 14 }}>
+              Three weeks of climbing load. A lighter week now is what makes the next hard one possible.
+            </PixelText>
+          ) : null}
+          <PixelButton
+            label={restedToday ? 'Rest day logged' : 'Log a Rest Day'}
+            tone={restedToday ? 'plain' : recovery.needsRest ? 'gold' : 'dark'}
+            size="small"
+            disabled={restedToday}
+            style={{ marginTop: space.sm }}
+            onPress={() => {
+              dispatch({ type: 'REST_DAY', payload: {} });
+              playSfx('heal');
+            }}
+          />
+          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 7, lineHeight: 14 }}>
+            Rest pays bond and healing, never XP. It is a training decision, not a way to earn.
+          </PixelText>
+        </Window>
+
         {modules.map(({ module, state: modState, progress }) => (
           <ModuleCard
             key={module.id}

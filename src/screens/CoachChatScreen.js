@@ -13,6 +13,7 @@ import { getGoal } from '../data/goals';
 import { classifyMessage } from '../coach/guardrail';
 import { greeting, refusal, JAILBREAK_LINE } from '../coach/persona';
 import { sendCoachMessage, isCoachConfigured } from '../coach/api';
+import { buildCoachContext, groundedGreeting } from '../coach/context';
 
 function Bubble({ role, text, companion }) {
   const mine = role === 'user';
@@ -47,7 +48,7 @@ export default function CoachChatScreen() {
   const scrollRef = useRef(null);
 
   const [messages, setMessages] = useState(() => [
-    { role: 'assistant', text: greeting(companion.creature.name) },
+    { role: 'assistant', text: groundedGreeting(state, companion) },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -85,6 +86,9 @@ export default function CoachChatScreen() {
       messages: history,
       companionName: companion.creature.name,
       goalName: goal ? goal.name : '',
+      // What the player actually did. Sent to their own proxy so the coach can
+      // be specific instead of generic.
+      context: buildCoachContext(state, companion),
     });
     setLoading(false);
     playSfx(result.refused ? 'cancel' : 'blip');

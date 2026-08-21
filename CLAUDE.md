@@ -90,6 +90,10 @@ owns the calendar (day roll, streaks, reward math) and is pure/testable;
   `expo-location`, `src/state/useDistance.js`); tall-grass wild encounters
   (`src/data/wild.js`); **catch wild companions with a Bond Token + build a team
   of 6** (Catch/Swap in `BattleScreen`, Team screen); goal-tuned pacing.
+- **Phase 5** — **memory**: a 60-day activity history, acute/chronic **recovery**
+  with rest-day advice and a loggable rest day, **per-plan history + PRs**, a
+  **weekly rollup**, a **Coach grounded in your real logged activity**, and
+  **Sleep + Stillness** modules.
 - **Phase 4** — **Workout Forge**: build/log/store your own workout plans, a real
   3D muscle body map, on-device analysis that derives perks and rewards from what
   a plan actually trains, and a camera form-check mirror. Plus the battle stage
@@ -123,8 +127,10 @@ and **Nourish (diet)** as the two example modules.
 **Adding a life module (sleep, meditation, reading, chores, check-ins…):** write
 one object with `{ id, name, tagline, blurb, sprite, spritePalette, color, unit,
 dailyGoal, actions:[{id,label,sublabel,amount,reward:{xp,bond,heal}, apply?}],
-goalReward:{xp,bond}, initialState?(), screen?, progress?(day), summary?(day),
-cheer?(day) }` and add it to `MODULES`. `actions` may instead be a function of
+goalReward:{xp,bond}, initialState?(), screen?, replaces?, progress?(day),
+summary?(day), cheer?(day) }` and add it to `MODULES`. `replaces: true` means the
+actions SET the day's value rather than adding to it (see `sleep.js`) and switches
+the reward cap to a top-up ledger. `actions` may instead be a function of
 module state when they depend on the player's own content (see `forge`). That's it — the Habits hub, log screen, progress bars, streaks, daily
 reset, save migration and Status readout all pick it up. Art is optional: a
 module with no `sprite` falls back to `mod_check`.
@@ -192,11 +198,49 @@ button is ever a free progression button. Forge `dailyGoal` is 1 session.
 (name/Lv, tagged HP bar, and the EXP strip under YOUR plate only). This is the
 genre's most recognisable furniture and it was the main visual gap.
 
-## Phase 5 — ideas, not committed
+## Phase 5 — DONE: memory, recovery and a grounded Coach
 
-Sleep / meditation / reading modules (should be pure `src/modules/*` additions);
-weekly rollups; letting the Coach read module + Forge state for grounded
-encouragement; per-plan history and PRs.
+The app could only ever see *today*. Five features that all needed the same
+missing thing: a record of what actually happened.
+
+**`src/state/history.js`** — the substrate. `{ [dateKey]: dayRecord }`, written
+by one reducer helper (`remember()`), trimmed to `KEEP_DAYS` (60). Pure
+transforms: `stamp` (numbers add, booleans OR), `lastDays`, `weekOf`,
+`previousWeekOf`, `totals`, `isActive`. Save `version` bumped to **4**; older
+saves start recording from the upgrade — there is no honest way to invent days
+nobody logged.
+
+**`src/state/recovery.js`** — acute (7-day) vs chronic (28-day, scaled) training
+load, plus consecutive-active-days, which is the blunter signal that actually
+predicts overuse. Returns a status, a plain-language `advice` string, and
+`needsRest` / `deloadDue`. **It only ever advises** — nothing blocks a workout.
+`REST_DAY` logs a rest day for **bond + healing, never XP**: resting is a
+training decision, not a way to earn.
+
+**`src/modules/forge/history.js`** — per-plan session log (`KEEP_SESSIONS` 120),
+per-movement PRs (best single set), per-plan volume bests. The plan detail shows
+last time vs as-written; the session runner shows last time's numbers per block
+and flags sets that would beat a record. All module-owned data via `MODULE_PATCH`.
+
+**`src/screens/WeekScreen.js`** — seven columns, this week against last, with the
+awkward sentence when there is one ("six days on and none off").
+
+**`src/coach/context.js`** — a compact factual brief (habits, 14-day totals,
+recovery, recent sessions, neglected muscle groups, saved plans) sent to the
+player's own proxy. The server **fences it as data**, length-caps it, and the
+prompt states it can never change the rules.
+
+**New modules:** `sleep.js` and `meditation.js`. Sleep introduced one interface
+addition — **`replaces: true`**: its actions SET the night rather than
+accumulating, so the daily reward cap must not pro-rate (that would pay *less*
+for a longer night). Instead a `paid` ledger pays the difference, so correcting
+an entry upward tops you up and downward pays nothing without clawing back.
+
+## Phase 6 — ideas, not committed
+
+Reading / chores / social check-in modules; per-movement progression charts off
+the PR data; exporting history; letting the Coach propose a plan the Forge can
+import.
 
 ## Conventions & guardrails
 

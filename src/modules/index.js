@@ -27,9 +27,11 @@
 import HYDRATION from './hydration';
 import DIET from './diet';
 import FORGE from './forge';
+import SLEEP from './sleep';
+import MEDITATION from './meditation';
 import { applyLog, normalizeDay, progressFor, rollDay, todayKey } from './daily';
 
-export const MODULES = [HYDRATION, DIET, FORGE];
+export const MODULES = [HYDRATION, DIET, FORGE, SLEEP, MEDITATION];
 
 export const MODULE_IDS = MODULES.map((m) => m.id);
 

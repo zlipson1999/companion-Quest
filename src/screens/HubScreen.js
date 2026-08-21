@@ -96,6 +96,7 @@ export default function HubScreen() {
             { label: 'Coach', value: 'coach', sublabel: 'AI chat' },
             { label: 'Bag', value: 'bag', sublabel: 'items' },
             { label: 'Status', value: 'summary', sublabel: 'stats' },
+            { label: 'Week', value: 'week', sublabel: 'rollup' },
             { label: 'Index', value: 'index', sublabel: 'creatures' },
             { label: 'Options', value: 'options', sublabel: 'settings' },
             { label: 'Title', value: 'title', sublabel: 'menu' },
