@@ -2013,12 +2013,54 @@ def tile_gate():
 
 
 # =========================================================================
+# TRACED — sprites converted from reference artwork.
+#
+# The procedural pipeline can build a coherent lit form, but the DESIGN — the
+# proportions, where the weight sits, how a face is arranged — was the limit,
+# and it was mine rather than the engine's. A drawn reference solves that
+# directly: the artwork is downsampled, quantised to a hand-ordered palette, and
+# kept here as data.
+#
+# These are the kit. Everything procedural should inherit their palette ramps
+# and their proportions so the roster reads as one family rather than as two
+# separate art styles sharing a screen.
+# =========================================================================
+TRACED_DIR = HERE
+
+
+def load_traced(name):
+    path = os.path.join(TRACED_DIR, 'traced_%s.json' % name)
+    if not os.path.exists(path):
+        return None
+    with open(path) as f:
+        blob = json.load(f)
+    pal = ['transparent'] + list(blob['palette'])
+    # Re-index from the converter's A.. alphabet into the sprite alphabet, with
+    # 0 reserved for transparent as everywhere else.
+    grid = []
+    for row in blob['rows']:
+        out = ''
+        for ch in row:
+            out += TRANSPARENT if ch == '.' else DIGITS[ord(ch) - 64]
+        grid.append(out)
+    return {'palette': pal, 'grid': grid}
+
+
+# =========================================================================
 # REGISTRY
 # =========================================================================
 def build_all():
     s = {}
+    traced_palettes = {}
 
     def add(name, canvas):
+        # Reference artwork, where we have it, beats anything generated.
+        t = load_traced(name)
+        if t:
+            key = 'art_' + name
+            traced_palettes[key] = t['palette']
+            s[name] = {'palette': key, 'grid': t['grid']}
+            return
         s[name] = {'palette': canvas.palette, 'grid': canvas.resolve()}
 
     # creatures
@@ -2055,6 +2097,7 @@ def build_all():
     add('tile_roof_rest', tile_roof('ache')); add('tile_roof_gym', tile_roof('hero'))
     add('tile_wall', tile_wall('couch')); add('tile_window', tile_window('couch'))
     add('tile_door', tile_door('couch')); add('tile_gate', tile_gate())
+    PALETTES.update(traced_palettes)
     return s
 
 
