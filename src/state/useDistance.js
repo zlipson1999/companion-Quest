@@ -4,6 +4,8 @@
 // counted. When no pedometer exists (desktop/sim), a dev injector is exposed.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { Pedometer } from 'expo-sensors';
 import * as Location from 'expo-location';
 import { STEPS_PER_MILE } from '../data/route';
@@ -23,6 +25,10 @@ function haversineMeters(a, b) {
 
 export function useDistance() {
   const [pedAvailable, setPedAvailable] = useState(null);
+  // Why the pedometer is unavailable, when it is. The first version threw the
+  // exception away and set a boolean, so a dead sensor on a real phone was
+  // indistinguishable from a simulator and there was nothing to debug with.
+  const [pedDiag, setPedDiag] = useState(null);
   const [miles, setMiles] = useState(0);
   const [steps, setSteps] = useState(0);
   const [running, setRunning] = useState(false);
@@ -46,13 +52,36 @@ export function useDistance() {
     let mounted = true;
     (async () => {
       let ok = false;
+      let error = null;
+      let permission = null;
       try {
         ok = await Pedometer.isAvailableAsync();
       } catch (e) {
         ok = false;
+        error = String((e && (e.message || e.code)) || e);
+      }
+      // Ask what the permission actually is, separately from availability —
+      // "sensor missing" and "you said no" both surface as false, and they need
+      // completely different fixes.
+      try {
+        if (Pedometer.getPermissionsAsync) {
+          const p = await Pedometer.getPermissionsAsync();
+          permission = p && p.status ? p.status : null;
+        }
+      } catch (e) {
+        if (!permission) permission = `check failed: ${String((e && e.message) || e)}`;
       }
       if (!mounted) return;
       setPedAvailable(ok);
+      setPedDiag({
+        available: ok,
+        permission,
+        error,
+        platform: `${Platform.OS} ${Platform.Version}`,
+        // Expo Go sandboxes native modules; a standalone build often succeeds
+        // where Expo Go cannot, so which one this is matters for the diagnosis.
+        host: Constants.appOwnership === 'expo' ? 'Expo Go' : 'standalone',
+      });
       if (ok) {
         try {
           if (Pedometer.requestPermissionsAsync) await Pedometer.requestPermissionsAsync();
@@ -67,7 +96,10 @@ export function useDistance() {
             }
           });
         } catch (e) {
-          if (mounted) setPedAvailable(false);
+          if (mounted) {
+            setPedAvailable(false);
+            setPedDiag((d) => ({ ...(d || {}), available: false, error: `watch failed: ${String((e && e.message) || e)}` }));
+          }
         }
       }
     })();
@@ -129,6 +161,7 @@ export function useDistance() {
 
   return {
     pedAvailable,
+    pedDiag,
     miles,
     steps,
     running,

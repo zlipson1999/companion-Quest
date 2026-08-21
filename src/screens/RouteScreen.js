@@ -236,10 +236,19 @@ export default function RouteScreen() {
       {dist.showInjector ? (
         <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
           <PixelText size="tiny" color={palette.danger}>
-            DEV ONLY · no pedometer detected
+            No step counter available
           </PixelText>
-          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 12 }}>
-            simulate distance for testing (hidden on a real phone)
+          {/* The exact reason, on screen. "It doesn't work" is not something
+              anyone can act on; a permission status and an error string are. */}
+          {dist.pedDiag ? (
+            <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 5, lineHeight: 13 }}>
+              {dist.pedDiag.host} · {dist.pedDiag.platform}
+              {'\n'}permission: {dist.pedDiag.permission || 'unknown'}
+              {dist.pedDiag.error ? `\nerror: ${dist.pedDiag.error}` : ''}
+            </PixelText>
+          ) : null}
+          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 12 }}>
+            Until it works, these buttons stand in for real steps.
           </PixelText>
           <View style={{ flexDirection: 'row', marginTop: space.sm }}>
             {[[100, '+0.05mi'], [500, '+0.25mi'], [2000, '+1mi']].map(([n, label], i) => (
