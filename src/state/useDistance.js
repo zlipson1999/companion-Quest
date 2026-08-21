@@ -13,8 +13,18 @@ import { createStepDetector } from './stepDetector';
 
 const METERS_PER_MILE = 1609.34;
 
-// 25 Hz. Enough to resolve a 4 steps/sec sprint, cheap enough not to matter.
-const MOTION_INTERVAL_MS = 40;
+// 50 Hz requested. A footfall impulse lasts about 90ms, so sampling any slower
+// than ~15 Hz starts missing peaks between samples and silently under-counts —
+// measured at 10 Hz it lost 40% of steps. Asking for 50 leaves headroom for
+// platforms that clamp the rate or throttle under battery saver.
+const MOTION_INTERVAL_MS = 20;
+
+// Below this the detector cannot see footfalls reliably. We report it rather
+// than quietly reporting a low step count as if it were the truth.
+const MOTION_MIN_HZ = 15;
+
+// How long to wait for the first samples before declaring the sensor dead.
+const MOTION_PROBE_MS = 1200;
 
 function haversineMeters(a, b) {
   const R = 6371000;
@@ -36,6 +46,11 @@ export function useDistance() {
   // Which sensor is actually feeding steps: the OS step counter, our own
   // accelerometer detector, or nothing.
   const [source, setSource] = useState('none');
+  // Live count from our own detector, so the Route can prove it is working
+  // rather than just asserting it.
+  const [motionSteps, setMotionSteps] = useState(0);
+  // Measured delivery rate. Below MOTION_MIN_HZ the count is known to be low.
+  const [motionHz, setMotionHz] = useState(null);
   const [miles, setMiles] = useState(0);
   const [steps, setSteps] = useState(0);
   const [running, setRunning] = useState(false);
@@ -121,29 +136,62 @@ export function useDistance() {
     })();
     async function startMotionFallback() {
       try {
-        const has = await Accelerometer.isAvailableAsync();
-        if (!has || !mounted) {
-          if (mounted) setPedDiag((d) => ({ ...(d || {}), fallback: 'accelerometer unavailable too' }));
-          return;
-        }
+        // 'probing' keeps the failure box off screen for the second or so it
+        // takes to find out — flashing "no step counter" and then replacing it
+        // reads as a bug even when it resolves correctly.
+        if (mounted) setSource('probing');
         detectorRef.current = createStepDetector();
-        Accelerometer.setUpdateInterval(MOTION_INTERVAL_MS);
-        let t = 0;
+        let samples = 0;
+
+        // Subscribe FIRST and judge by whether data actually arrives.
+        // isAvailableAsync() used to gate this, and it is exactly the call that
+        // already lied about the pedometer inside Expo Go — gating the fallback
+        // on the same kind of check meant the fallback could be disabled by the
+        // very problem it exists to work around. A sensor that delivers samples
+        // works, whatever it claims about itself.
         motionSubRef.current = Accelerometer.addListener(({ x, y, z }) => {
-          // The listener carries no timestamp, and the delivery interval is
-          // what we asked for, so advance our own clock by it.
-          t += MOTION_INTERVAL_MS;
-          if (!detectorRef.current.push(x, y, z, t)) return;
+          samples += 1;
+          // Real elapsed time, not a counter advanced by the interval we asked
+          // for: platforms deliver at their own rate, and a synthetic clock
+          // running fast or slow silently rescales the refractory gap.
+          if (!detectorRef.current.push(x, y, z, Date.now())) return;
           stepsRef.current += 1;
           setSteps(stepsRef.current);
+          setMotionSteps(stepsRef.current);
           if (!runningRef.current) addMiles(1 / STEPS_PER_MILE);
         });
-        if (mounted) {
-          setSource('motion');
-          setPedDiag((d) => ({ ...(d || {}), fallback: 'counting steps from the accelerometer' }));
+        try {
+          Accelerometer.setUpdateInterval(MOTION_INTERVAL_MS);
+        } catch (e) {
+          // Non-fatal: we still get samples at the platform default.
         }
+
+        // Give it a moment, then decide from evidence.
+        setTimeout(() => {
+          if (!mounted) return;
+          if (samples > 0) {
+            const hz = Math.round((samples / MOTION_PROBE_MS) * 1000);
+            setSource('motion');
+            setMotionHz(hz);
+            setPedDiag((d) => ({
+              ...(d || {}),
+              fallback:
+                hz < MOTION_MIN_HZ
+                  ? `accelerometer live but slow (${hz} Hz) — steps will under-count`
+                  : `accelerometer live (${hz} Hz)`,
+            }));
+          } else {
+            if (motionSubRef.current && motionSubRef.current.remove) motionSubRef.current.remove();
+            motionSubRef.current = null;
+            setSource('none');
+            setPedDiag((d) => ({ ...(d || {}), fallback: 'accelerometer delivered no data either' }));
+          }
+        }, MOTION_PROBE_MS);
       } catch (e) {
-        if (mounted) setPedDiag((d) => ({ ...(d || {}), fallback: `accelerometer failed: ${String((e && e.message) || e)}` }));
+        if (mounted) {
+          setSource('none');
+          setPedDiag((d) => ({ ...(d || {}), fallback: `accelerometer failed: ${String((e && e.message) || e)}` }));
+        }
       }
     }
 
@@ -208,6 +256,9 @@ export function useDistance() {
     pedAvailable,
     pedDiag,
     source,
+    motionSteps,
+    motionHz,
+    motionSlow: motionHz != null && motionHz < MOTION_MIN_HZ,
     miles,
     steps,
     running,
