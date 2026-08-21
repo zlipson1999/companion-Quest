@@ -3,7 +3,7 @@
 // companion, and the lower pane holds the D-pad plus the system menu.
 
 import React, { useRef, useState } from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Screen, DualPane, TileMap, Dpad, Window, Menu, PixelText, PixelSprite } from '../components';
 import { palette, space, screen } from '../theme';
 import { useGame, useCompanion } from '../state';
@@ -79,7 +79,9 @@ export default function HubScreen() {
           walk to a door
         </PixelText>
       </View>
-      <View style={{ flex: 1, justifyContent: 'center' }}>
+      {/* The menu grows as modules are installed; it must scroll rather than
+          spill out of the fixed lower pane on a small screen. */}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ justifyContent: 'center', flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         <Menu
           tone="dark"
           pad={10}
@@ -99,7 +101,7 @@ export default function HubScreen() {
           ]}
           onSelect={(opt) => navigate(opt.value)}
         />
-      </View>
+      </ScrollView>
     </View>
   );
 

@@ -11,6 +11,7 @@ import { levelFromXp } from '../state/leveling';
 import {
   getModule,
   logModuleAction,
+  moduleActions,
   moduleCheer,
   moduleProgress,
   moduleSprite,
@@ -157,7 +158,7 @@ export default function HabitLogScreen({ params }) {
           {module.blurb}
         </PixelText>
 
-        {module.actions.map((action) => (
+        {moduleActions(module, modState).map((action) => (
           <ActionButton key={action.id} action={action} unit={module.unit} onPress={() => log(action)} />
         ))}
 

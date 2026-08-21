@@ -74,6 +74,13 @@ export function progressFor(module, modState) {
 // reward to feed the shared progression, and whether this log completed the
 // daily goal (which pays the module's bonus on top). The reducer and the log
 // screen both call this, so the preview the player sees is the real thing.
+//
+// REWARDS ARE CAPPED AT THE DAILY GOAL. Only the portion of a log that lands
+// inside today's goal earns XP/bond; anything past it is still tallied (it is
+// true, and lifetime totals want it) but pays nothing. Without this, tapping a
+// log button is a free progression button — which is exactly what this game
+// does not have. One honest day is worth one day's growth, no matter how many
+// times the screen is tapped.
 export function applyLog(module, modState, action, date) {
   if (!module || !action) return null;
   const day = rollDay(modState, date);
@@ -104,11 +111,19 @@ export function applyLog(module, modState, action, date) {
     };
   }
 
+  // Portion of this log that still counted toward an unmet goal.
+  const credited = amount > 0 ? Math.max(0, Math.min(amount, goal - day.count)) / amount : 0;
   const bonus = (goalJustHit && module.goalReward) || {};
   const base = action.reward || {};
-  const reward = { xp: (base.xp || 0) + (bonus.xp || 0), bond: (base.bond || 0) + (bonus.bond || 0) };
+  // heal rides the same path (applyEffect understands it) so a recovery-shaped
+  // module can restore HP instead of only granting XP.
+  const reward = {
+    xp: Math.round((base.xp || 0) * credited) + (bonus.xp || 0),
+    bond: Math.round((base.bond || 0) * credited) + (bonus.bond || 0),
+    heal: Math.round((base.heal || 0) * credited) + (bonus.heal || 0),
+  };
 
-  return { state: next, reward, goalJustHit, streak: next.streak, amount };
+  return { state: next, reward, goalJustHit, streak: next.streak, amount, credited };
 }
 
 export default { todayKey, dayBefore, freshDay, normalizeDay, rollDay, progressFor, applyLog };

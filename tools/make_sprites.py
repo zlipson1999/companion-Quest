@@ -396,6 +396,26 @@ MOD_CHECK = [
     "................",
 ]
 
+# The Workout Forge's icon: a plate-loaded bar, steel on the rock palette.
+MOD_BARBELL = [
+    "................",
+    "................",
+    "................",
+    "................",
+    ".44444....44444.",
+    ".43324....42334.",
+    ".43324444442334.",
+    ".43324222242334.",
+    ".43324333342334.",
+    ".43324444442334.",
+    ".43324....42334.",
+    ".44444....44444.",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+
 SPRITES = {
     "sproutle":      {"palette": "sprout", "grid": SPROUTLE},
     "emberkit":      {"palette": "ember",  "grid": EMBERKIT},
@@ -416,6 +436,7 @@ SPRITES = {
     "mod_droplet":   {"palette": "dew",    "grid": MOD_DROPLET},
     "mod_plate":     {"palette": "sprout", "grid": MOD_PLATE},
     "mod_check":     {"palette": "item",   "grid": MOD_CHECK},
+    "mod_barbell":   {"palette": "rock",   "grid": MOD_BARBELL},
 }
 
 

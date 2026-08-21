@@ -24,6 +24,9 @@ import BagScreen from './BagScreen';
 import PartyScreen from './PartyScreen';
 import HabitsScreen from './HabitsScreen';
 import HabitLogScreen from './HabitLogScreen';
+import ForgeScreen from './ForgeScreen';
+import ForgeEditScreen from './ForgeEditScreen';
+import FormCheckScreen from './FormCheckScreen';
 import CoachChatScreen from './CoachChatScreen';
 import OptionsScreen from './OptionsScreen';
 import LoadingScreen from './LoadingScreen';
@@ -44,13 +47,16 @@ const SCREENS = {
   party: PartyScreen,
   habits: HabitsScreen,
   habit: HabitLogScreen,
+  forge: ForgeScreen,
+  forgeEdit: ForgeEditScreen,
+  formcheck: FormCheckScreen,
   coach: CoachChatScreen,
   options: OptionsScreen,
 };
 
 const TOWN_BGM = new Set([
   'title', 'intro', 'goal', 'pairing', 'hub', 'rest', 'workout', 'summary', 'index', 'bag', 'party', 'coach', 'options',
-  'habits', 'habit',
+  'habits', 'habit', 'forge', 'forgeEdit', 'formcheck',
 ]);
 
 export default function Router() {

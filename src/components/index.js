@@ -13,3 +13,4 @@ export { default as DualPane } from './DualPane';
 export { default as PixelButton } from './PixelButton';
 export { default as BattleTransition } from './BattleTransition';
 export { default as Screen } from './Screen';
+export { default as BodyMap3D, BodyMapFlat } from './BodyMap3D';

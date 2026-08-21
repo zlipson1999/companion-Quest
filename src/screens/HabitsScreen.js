@@ -8,7 +8,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { Screen, Window, PixelText, PixelButton, PixelSprite, Triangle } from '../components';
 import { palette, space } from '../theme';
 import { useGame, useModules, useCompanion } from '../state';
-import { moduleSprite, moduleSummary, modulesNeedRoll } from '../modules';
+import { moduleScreen, moduleSprite, moduleSummary, modulesNeedRoll } from '../modules';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { habitsIntro } from '../coach';
@@ -124,7 +124,7 @@ export default function HabitsScreen() {
             module={module}
             state={modState}
             progress={progress}
-            onPress={() => navigate('habit', { moduleId: module.id })}
+            onPress={() => navigate(moduleScreen(module), { moduleId: module.id })}
           />
         ))}
         <PixelText size="tiny" color={palette.windowTextDim} align="center" style={{ marginTop: space.xs, lineHeight: 14 }}>

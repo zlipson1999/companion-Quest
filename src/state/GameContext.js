@@ -113,11 +113,17 @@ function reducer(state, action) {
       // v3: life modules. Old saves have none — every registered module starts
       // at zero, and any module already stored gets its day rolled over (which
       // is where the daily reset actually happens for a returning player).
+      const migratingDates = (saved.version || 1) < 3;
       merged.modules = rollAllModules(saved.modules, today());
       merged.version = SAVE_VERSION;
 
+      // v3 also moved "today" from a UTC date to a LOCAL one. A pre-v3
+      // lastPlayedDate was written in the other convention, so on the upgrade
+      // load alone a 1-day gap may be a timezone artefact rather than a real
+      // return: skip the streak increment that once. A genuine multi-day
+      // absence still resets, since no timezone shift spans more than a day.
       const gap = daysBetween(merged.meta.lastPlayedDate, today());
-      if (gap === 1) {
+      if (gap === 1 && !migratingDates) {
         merged.stats.streak += 1;
         merged.stats.daysActive += 1;
       } else if (gap > 1) {
@@ -268,6 +274,16 @@ function reducer(state, action) {
           habitGoalsHit: state.stats.habitGoalsHit + (result.goalJustHit ? 1 : 0),
         },
       };
+    }
+
+    // Merge a module's OWN data (not the daily counters) — the Forge storing
+    // the player's saved plans, for example. Generic on purpose: a module can
+    // persist whatever it needs without the reducer learning about it.
+    case 'MODULE_PATCH': {
+      const { moduleId, patch } = action.payload;
+      if (!getModule(moduleId) || !patch) return state;
+      const current = moduleStateFor(state.modules, moduleId, today());
+      return { ...state, modules: { ...state.modules, [moduleId]: { ...current, ...patch } } };
     }
 
     // Roll stale module days over to today. Fired on HYDRATE via rollAllModules
