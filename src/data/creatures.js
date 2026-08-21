@@ -5,8 +5,9 @@
 // All names/designs are 100% original.
 //
 // `sprite` -> key in src/data/sprites.js (in-engine pixel art).
-// `palette` -> key in spritePalettes OR an explicit color array (evolutions
-//   reuse the base silhouette with a richer recolor).
+// `palette` -> key in SPRITE_PALETTES (emitted by tools/make_sprites.py).
+//   Evolutions have their OWN drawn sprite now rather than a recolour of the
+//   base silhouette — a tinted copy read as the same creature on screen.
 
 export const CREATURES = {
   // --- Starter line: Balance ---
@@ -18,8 +19,7 @@ export const CREATURES = {
     evolvesTo: 'bloomtail', evolveLevel: 5,
   },
   bloomtail: {
-    id: 'bloomtail', name: 'Bloomtail', sprite: 'sproutle',
-    palette: ['transparent', '#2f6b43', '#4a9c5e', '#7fd08f', '#1a1228', '#ffcf4d', '#ffffff'],
+    id: 'bloomtail', name: 'Bloomtail', sprite: 'bloomtail', palette: 'bloom',
     species: 'Blossom Companion', kind: 'evolution', baseHp: 100, scale: 1.18, catchable: false,
     flavor: 'Sproutle in full bloom — its petals open a little wider with every steady week.',
     evolvesTo: null,
@@ -34,8 +34,7 @@ export const CREATURES = {
     evolvesTo: 'pyrelynx', evolveLevel: 5,
   },
   pyrelynx: {
-    id: 'pyrelynx', name: 'Pyrelynx', sprite: 'emberkit',
-    palette: ['transparent', '#a82f1f', '#ff5e2f', '#ffd24d', '#1a1228', '#ff9d3d', '#ffffff'],
+    id: 'pyrelynx', name: 'Pyrelynx', sprite: 'pyrelynx', palette: 'pyre',
     species: 'Flame Lynx Companion', kind: 'evolution', baseHp: 108, scale: 1.18, catchable: false,
     flavor: 'Emberkit, grown bold and blazing. It paces beside you, ready for the next set.',
     evolvesTo: null,
@@ -50,8 +49,7 @@ export const CREATURES = {
     evolvesTo: 'tidewade', evolveLevel: 5,
   },
   tidewade: {
-    id: 'tidewade', name: 'Tidewade', sprite: 'dewbble',
-    palette: ['transparent', '#1f6090', '#2f95c6', '#7fd0ee', '#101a2a', '#bdeeff', '#ffffff'],
+    id: 'tidewade', name: 'Tidewade', sprite: 'tidewade', palette: 'tide',
     species: 'Tidewalker Companion', kind: 'evolution', baseHp: 96, scale: 1.18, catchable: false,
     flavor: 'Dewbble, deepened into a rolling tide. Distance means nothing to it now.',
     evolvesTo: null,
