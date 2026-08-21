@@ -259,8 +259,26 @@ export default function RouteScreen() {
       ) : (
         <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
           <PixelText size="tiny" color={palette.hpHigh}>
-            {dist.source === 'pedometer' ? 'Step counter connected — walk to advance!' : 'Counting your steps — keep the app open and walk!'}
+            {dist.source === 'pedometer'
+              ? 'Step counter connected — walk to advance!'
+              : dist.source === 'probing'
+              ? 'Looking for a step counter...'
+              : 'Counting your steps — keep the app open and walk!'}
           </PixelText>
+          {/* A live count, so "it is working" is something you can watch rather
+              than something the app claims. Walk ten steps and see ten. */}
+          {dist.source === 'motion' ? (
+            <PixelText size="small" color={palette.secondary} style={{ marginTop: 6 }}>
+              {dist.motionSteps} steps detected
+            </PixelText>
+          ) : null}
+          {dist.motionSlow ? (
+            <PixelText size="tiny" color={palette.hpMid} style={{ marginTop: 5, lineHeight: 12 }}>
+              This phone reports motion at {dist.motionHz} Hz, which is too slow to catch every
+              footfall — your real step count is higher than this. A development build fixes it
+              properly; see docs/STEP_COUNTING.md.
+            </PixelText>
+          ) : null}
           {/* Which source is running, stated plainly. The two are not equivalent
               and the difference is one the player feels: the OS step counter
               keeps counting in your pocket, ours cannot. */}
