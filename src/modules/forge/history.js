@@ -12,7 +12,15 @@ export const KEEP_SESSIONS = 120;
 
 // One entry per logged session. Blocks are copied so a later edit to the plan
 // does not rewrite history.
-export function sessionEntry(plan, analysis, date, load) {
+// `plan` here must be what was actually PERFORMED, not what was planned — see
+// ForgeScreen, which filters to the ticked blocks before calling this. Recording
+// the whole plan for a part-finished session set personal records on movements
+// the player never did.
+//
+// `xp` is the XP actually BANKED, not the plan's theoretical value: a session
+// logged after the daily goal is already met pays nothing, and the log should
+// say so rather than claiming 74 XP.
+export function sessionEntry(plan, analysis, date, load, bankedXp) {
   return {
     date,
     planId: plan.id,
@@ -21,7 +29,8 @@ export function sessionEntry(plan, analysis, date, load) {
     volume: analysis.volume,
     minutes: analysis.minutes,
     intensity: Math.round(analysis.intensity * 100) / 100,
-    xp: analysis.reward.xp,
+    xp: bankedXp == null ? analysis.reward.xp : bankedXp,
+    partial: !!plan.partial,
     load: load || 0,
     blocks: (plan.blocks || []).map((b) => ({ movementId: b.movementId, sets: b.sets, amount: b.amount })),
   };

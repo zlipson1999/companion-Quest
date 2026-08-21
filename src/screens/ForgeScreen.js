@@ -121,20 +121,35 @@ export default function ForgeScreen({ params }) {
   };
 
   const finishSession = () => {
-    // Price it through the same helper the reducer uses, so what we announce is
-    // what gets banked.
-    const preview = logModuleAction(module, modState, `plan:${plan.id}`, todayKey());
+    // Log what was DONE, not what was planned. Ticking one block of five and
+    // pressing "Log 1/5" used to record the whole plan: full volume into
+    // recovery, and a personal best on every movement you skipped.
+    const doneBlocks = plan.blocks.filter((_b, i) => checked[i]);
+    if (!doneBlocks.length) return;
+    const performed = { ...plan, blocks: doneBlocks, partial: doneBlocks.length < plan.blocks.length };
+    const done = analysePlan(performed);
+    const load = loadOf(done);
+
+    // The action is priced on the whole plan; a part-finished session is worth
+    // proportionally less. clampReward in applyLog guarantees this can only
+    // reduce the payout, never inflate it.
+    const capped = done.reward;
+    const preview = logModuleAction(module, modState, `plan:${plan.id}`, todayKey(), capped);
     if (!preview) return;
-    const load = loadOf(analysis);
-    dispatch({ type: 'MODULE_LOG', payload: { moduleId: FORGE_ID, actionId: `plan:${plan.id}`, load } });
+    dispatch({ type: 'MODULE_LOG', payload: { moduleId: FORGE_ID, actionId: `plan:${plan.id}`, load, capped } });
 
     // Write the session into the Forge's own log and fold in any new records.
-    const entry = sessionEntry(plan, analysis, todayKey(), load);
+    const entry = sessionEntry(performed, done, todayKey(), load, preview.reward.xp);
     const newPrs = prsSetBy(modState, entry);
     dispatch({ type: 'MODULE_PATCH', payload: { moduleId: FORGE_ID, patch: recordSession(modState, entry) } });
 
     const lines = [
-      { speaker: 'Narration', text: `${plan.name} complete — ${analysis.sets} sets, about ${analysis.minutes} minutes.` },
+      {
+        speaker: 'Narration',
+        text: performed.partial
+          ? `${plan.name} — ${doneBlocks.length} of ${plan.blocks.length} blocks done, ${done.sets} sets in about ${done.minutes} minutes.`
+          : `${plan.name} complete — ${done.sets} sets, about ${done.minutes} minutes.`,
+      },
     ];
     if (preview.reward.xp > 0) {
       lines.push({
@@ -146,8 +161,8 @@ export default function ForgeScreen({ params }) {
       lines.push({ speaker: 'Narration', text: "Logged. Today's growth was already banked — rest is part of it." });
       playSfx('confirm');
     }
-    if (analysis.perks.length) {
-      lines.push({ speaker: companion.creature.name, text: `${analysis.perks.map((p) => p.name).join(' and ')} — I could feel that in the work.` });
+    if (done.perks.length) {
+      lines.push({ speaker: companion.creature.name, text: `${done.perks.map((p) => p.name).join(' and ')} — I could feel that in the work.` });
     }
     if (newPrs.length) {
       const names = newPrs.map((b) => getMovement(b.movementId).name).join(', ');

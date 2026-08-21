@@ -23,8 +23,14 @@ import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { habitGoalLine, habitLogged, habitStreakLine, levelUpLine } from '../coach';
 
-function ActionButton({ action, unit, onPress }) {
-  const reward = action.reward || {};
+// The label shows what pressing this ACTUALLY does right now — the real payout
+// after the daily cap or the top-up ledger, and "sets" rather than "+" for a
+// module whose actions replace the day's value. Advertising "+5 hours, +4 XP"
+// for a button that replaces the entry and pays nothing is just a lie.
+function ActionButton({ action, unit, replaces, preview, onPress }) {
+  const paid = preview ? preview.reward : action.reward || {};
+  const amount = action.amount == null ? 1 : action.amount;
+  const nothing = !paid.xp && !paid.bond && !paid.heal;
   return (
     <PixelButton tone="gold" onPress={onPress} style={{ marginBottom: space.sm }}>
       <View style={{ width: '100%' }}>
@@ -33,11 +39,14 @@ function ActionButton({ action, unit, onPress }) {
             {action.label}
           </PixelText>
           <PixelText size="tiny" color={palette.accentDark}>
-            +{action.amount == null ? 1 : action.amount} {unit}
+            {replaces ? `${amount} ${unit}` : `+${amount} ${unit}`}
           </PixelText>
         </View>
         <PixelText size="tiny" color={palette.windowText} style={{ marginTop: 5 }}>
-          {action.sublabel ? `${action.sublabel}  ·  ` : ''}+{reward.xp || 0} XP  +{reward.bond || 0} bond
+          {action.sublabel ? `${action.sublabel}  ·  ` : ''}
+          {nothing
+            ? 'already banked today'
+            : `+${paid.xp || 0} XP  +${paid.bond || 0} bond${paid.heal ? `  +${paid.heal} HP` : ''}`}
         </PixelText>
       </View>
     </PixelButton>
@@ -159,7 +168,16 @@ export default function HabitLogScreen({ params }) {
         </PixelText>
 
         {moduleActions(module, modState).map((action) => (
-          <ActionButton key={action.id} action={action} unit={module.unit} onPress={() => log(action)} />
+          <ActionButton
+            key={action.id}
+            action={action}
+            unit={module.unit}
+            replaces={!!module.replaces}
+            // Price each button through the same helper the reducer uses, so the
+            // number on it is the number it will pay.
+            preview={logModuleAction(module, modState, action.id, todayKey())}
+            onPress={() => log(action)}
+          />
         ))}
 
         {feedback ? (

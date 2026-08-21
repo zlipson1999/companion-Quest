@@ -55,13 +55,17 @@ export function buildCoachContext(state, companion) {
 
   // --- the Forge: what they actually train, and what they are neglecting ---
   const forge = moduleStateFor(state.modules, 'forge', today);
-  const log = (forge.log || []).slice(0, 6);
+  const log = forge.log || [];
   if (log.length) {
     lines.push(
       `Recent sessions: ${log
-        .map((e) => `${e.name} (${e.date}, ${e.sets} sets)`)
+        .slice(0, 6)
+        .map((e) => `${e.name} (${e.date}, ${e.sets} sets${e.partial ? ', partial' : ''})`)
         .join(', ')}.`
     );
+    // The neglect claim reads the WHOLE log, not the six most recent sessions —
+    // a frequent trainer was being told they neglect muscles they trained days
+    // ago, and the Coach then stated it as fact.
     const stale = neglectedMuscles(log, today);
     if (stale.length) {
       lines.push(`Not trained in ${STALE_MUSCLE_DAYS} days: ${stale.map((id) => MUSCLES[id].name).join(', ')}.`);
@@ -84,13 +88,21 @@ export function neglectedMuscles(log, today) {
   const cutoff = new Date(today + 'T00:00:00');
   cutoff.setDate(cutoff.getDate() - STALE_MUSCLE_DAYS);
   const touched = new Set();
+  let inWindow = 0;
   log.forEach((e) => {
     if (new Date(e.date + 'T00:00:00') < cutoff) return;
+    inWindow += 1;
     (e.blocks || []).forEach((b) => {
       const mv = getMovement(b.movementId);
-      if (mv) (mv.primary || []).forEach((m) => touched.add(m));
+      if (!mv) return;
+      // Secondary work is still work: a movement that hits the core hard as a
+      // stabiliser should not leave the core reading as untrained.
+      [...(mv.primary || []), ...(mv.secondary || [])].forEach((m) => touched.add(m));
     });
   });
+  // Nothing logged inside the window means "no recent data", not "neglects
+  // everything" — saying the latter would be a confident falsehood.
+  if (!inWindow) return [];
   return MUSCLE_IDS.filter((id) => !touched.has(id));
 }
 

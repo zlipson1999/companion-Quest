@@ -17,6 +17,9 @@
 //     initialState?()                   // extra, non-daily fields the module owns
 //     screen?: 'routeName'              // bring your own UI instead of the
 //                                       // generic log screen
+//     replaces?: true                   // actions SET the day's value, not add
+//     training?: true                   // logs count as physical training for
+//                                       // the recovery model
 //     progress?(day), summary?(day), cheer?(day),
 //   }
 //
@@ -99,8 +102,8 @@ export function modulesNeedRoll(modules, date) {
 
 // Pure preview/apply of a log. Shared by the reducer and the log screen so the
 // numbers the player is shown are the numbers that get banked.
-export function logModuleAction(module, modState, actionId, date) {
-  return applyLog(module, modState, getModuleAction(module, actionId, modState), date);
+export function logModuleAction(module, modState, actionId, date, capped) {
+  return applyLog(module, modState, getModuleAction(module, actionId, modState), date, capped);
 }
 
 export function moduleProgress(module, modState) {

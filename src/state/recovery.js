@@ -13,7 +13,7 @@
 // It only ever ADVISES. Nothing here blocks a workout: an app does not get to
 // tell an adult they may not train today.
 
-import { lastDays, isActive } from './history';
+import { datesBack, isTraining, lastDays, observedDays } from './history';
 import { todayKey } from '../modules/daily';
 
 export const ACUTE_DAYS = 7;
@@ -28,6 +28,13 @@ export const HARD_STREAK_LIMIT = 5;
 export const OVERREACH_RATIO = 1.5;
 export const DETRAIN_RATIO = 0.6;
 
+// The ratio compares this week to a usual month. Before there IS a usual month
+// it is meaningless — a first-ever session divides ~all the load by ~nothing and
+// reports 4.0, so a brand-new player was greeted with "Time to rest" in red.
+// Below these floors the ratio is reported but never drives the verdict.
+export const MIN_OBSERVED_DAYS = 14;
+export const MIN_CHRONIC_LOAD = 6;
+
 export function computeRecovery(history, date) {
   const day = date || todayKey();
   const acuteDays = lastDays(history, day, ACUTE_DAYS);
@@ -39,31 +46,46 @@ export function computeRecovery(history, date) {
   const chronic = (chronicTotal / CHRONIC_DAYS) * ACUTE_DAYS;
   const ratio = chronic > 0 ? acute / chronic : 0;
 
-  // Walk back from today counting unbroken training days.
+  // Is there enough history behind the ratio to believe it?
+  const observed = observedDays(history, datesBack(day, CHRONIC_DAYS));
+  const ratioReliable = observed >= MIN_OBSERVED_DAYS && chronicTotal >= MIN_CHRONIC_LOAD;
+
+  // Walk back counting unbroken TRAINING days. Counted over the CHRONIC window,
+  // not the 7-day one: the advice quotes this number out loud, and capping it at
+  // the acute window reported "6 days straight" to someone on day twelve.
+  //
+  // Today is skipped when it holds nothing yet — at 9am you have not broken a
+  // streak, you just have not trained yet, and zeroing it there hid the warning
+  // until after the session it was meant to prevent.
+  const ordered = chronicDays.slice().reverse();
   let streak = 0;
-  for (let i = acuteDays.length - 1; i >= 0; i -= 1) {
-    const d = acuteDays[i];
-    if (d.rested || !isActive(d)) break;
+  for (let i = 0; i < ordered.length; i += 1) {
+    const d = ordered[i];
+    if (i === 0 && !d.rested && !isTraining(d)) continue; // today, still blank
+    if (d.rested || !isTraining(d)) break;
     streak += 1;
   }
 
-  const restedInLast7 = acuteDays.some((d) => d.rested || !isActive(d));
+  const restedInLast7 = acuteDays.some((d) => d.rested || !isTraining(d));
   const hardSessions = acuteDays.reduce((n, d) => n + (d.sessions || 0), 0);
 
   let status = 'fresh';
-  if (streak >= HARD_STREAK_LIMIT || (chronic > 0 && ratio >= OVERREACH_RATIO)) status = 'overreaching';
-  else if (acute > 0 && chronic > 0 && ratio >= 1.05) status = 'building';
+  if (streak >= HARD_STREAK_LIMIT || (ratioReliable && ratio >= OVERREACH_RATIO)) status = 'overreaching';
+  else if (acute > 0 && ratioReliable && ratio >= 1.05) status = 'building';
   else if (acute > 0) status = 'steady';
-  else if (chronicTotal > 0 && ratio < DETRAIN_RATIO) status = 'rested';
+  else if (ratioReliable && ratio < DETRAIN_RATIO) status = 'rested';
 
   const needsRest = status === 'overreaching';
   // Three straight weeks of climbing load is where a deload earns its keep.
-  const deloadDue = weeklyLoads(history, day, 3).every((w, i, a) => i === 0 || w > a[i - 1] * 1.1) && acute > 0;
+  const deloadDue =
+    ratioReliable && acute > 0 && weeklyLoads(history, day, 3).every((w, i, a) => i === 0 || w > a[i - 1] * 1.1);
 
   return {
     acute: Math.round(acute * 10) / 10,
     chronic: Math.round(chronic * 10) / 10,
     ratio: Math.round(ratio * 100) / 100,
+    ratioReliable,
+    observed,
     streak,
     restedInLast7,
     hardSessions,
@@ -71,7 +93,7 @@ export function computeRecovery(history, date) {
     needsRest,
     deloadDue: !!deloadDue && status !== 'fresh',
     headline: HEADLINE[status],
-    advice: adviceFor(status, streak, restedInLast7),
+    advice: adviceFor(status, streak, restedInLast7, ratioReliable),
   };
 }
 
@@ -83,12 +105,15 @@ const HEADLINE = {
   rested: 'Well rested',
 };
 
-function adviceFor(status, streak, restedInLast7) {
+function adviceFor(status, streak, restedInLast7, ratioReliable) {
   if (status === 'overreaching') {
     if (streak >= HARD_STREAK_LIMIT) {
       return `${streak} days straight without a break. Take today off — you will come back stronger, and I would rather have you around next week.`;
     }
     return 'You have ramped up fast this week. An easy day now protects everything you have built.';
+  }
+  if (!ratioReliable && status !== 'fresh') {
+    return 'Still learning your usual week. Keep logging and I will start telling you when to back off.';
   }
   if (status === 'building') {
     return restedInLast7

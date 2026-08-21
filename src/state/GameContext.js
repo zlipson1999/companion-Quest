@@ -81,6 +81,13 @@ function updateActive(state, fn) {
   return { ...state, party };
 }
 
+// Training load from the non-Forge sources. Recovery reads one number, so a
+// battle or a walked mile has to contribute to it — otherwise three days of real
+// exercise reported "Nothing logged recently" beside a 3-day streak.
+const LOAD_PER_BATTLE = 2.5;
+const LOAD_PER_MILE = 1.2;
+const LOAD_PER_WORKOUT_XP = 0.06;
+
 // Everything worth remembering lands in state.history through here: recovery,
 // personal records and the weekly rollup all read from it, and none of them can
 // see anything an action did not record.
@@ -179,7 +186,7 @@ function reducer(state, action) {
       }
       return {
         ...state,
-        history: remember(state, { distanceMi: mi }),
+        history: remember(state, { distanceMi: mi, load: mi * LOAD_PER_MILE }),
         stats: {
           ...state.stats,
           totalSteps: state.stats.totalSteps + steps,
@@ -236,7 +243,7 @@ function reducer(state, action) {
       }));
       return {
         ...next,
-        history: remember(state, { xp, bond, battles: 1 }),
+        history: remember(state, { xp, bond, battles: 1, load: LOAD_PER_BATTLE }),
         stats: { ...state.stats, battlesWon: state.stats.battlesWon + 1 },
         dex: { ...state.dex, [targetId]: state.dex[targetId] || 'seen' },
       };
@@ -275,10 +282,10 @@ function reducer(state, action) {
     // and then hands its reward to the SAME xp/bond path a workout uses, so no
     // module ever needs to know how progression works.
     case 'MODULE_LOG': {
-      const { moduleId, actionId } = action.payload;
+      const { moduleId, actionId, capped } = action.payload;
       const module = getModule(moduleId);
       if (!module) return state;
-      const result = logModuleAction(module, moduleStateFor(state.modules, moduleId), actionId, today());
+      const result = logModuleAction(module, moduleStateFor(state.modules, moduleId), actionId, today(), capped);
       if (!result) return state;
       const next = updateActive(state, (m) => applyEffect(m, result.reward));
       return {
@@ -289,7 +296,10 @@ function reducer(state, action) {
           bond: result.reward.bond || 0,
           habitLogs: 1,
           goalsMet: result.goalJustHit ? 1 : 0,
-          sessions: moduleId === 'forge' && result.reward.xp > 0 ? 1 : 0,
+          // `training` is a module flag, not a hardcoded id — the reducer still
+          // knows nothing about any specific module. Counted whether or not it
+          // paid: a second session on the same day still happened.
+          sessions: module.training ? 1 : 0,
           load: action.payload.load || 0,
         }),
         stats: {
@@ -338,7 +348,12 @@ function reducer(state, action) {
       const next = updateActive(state, (m) => ({ ...m, xp: m.xp + Math.round(xp * mult), bond: m.bond + bond }));
       return {
         ...next,
-        history: remember(state, { xp: Math.round(xp * mult), bond, workouts: 1 }),
+        history: remember(state, {
+          xp: Math.round(xp * mult),
+          bond,
+          workouts: 1,
+          load: Math.round(xp * mult * LOAD_PER_WORKOUT_XP * 10) / 10,
+        }),
         stats: { ...state.stats, workoutsDone: state.stats.workoutsDone + 1 },
       };
     }
