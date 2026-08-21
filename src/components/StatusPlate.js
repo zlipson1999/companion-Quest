@@ -10,6 +10,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, View } from 'react-native';
 import PixelText from './PixelText';
+import BarFill from './BarFill';
 import { palette } from '../theme';
 
 function Bar({ ratio, color, height, track }) {
@@ -17,16 +18,7 @@ function Bar({ ratio, color, height, track }) {
   useEffect(() => {
     Animated.timing(anim, { toValue: ratio, duration: 350, useNativeDriver: false }).start();
   }, [ratio, anim]);
-  return (
-    <View style={{ flex: 1, height, backgroundColor: track, borderWidth: 2, borderColor: palette.ink }}>
-      <Animated.View
-        style={{
-          height: '100%',
-          backgroundColor: color,
-          width: anim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }}
-      />
-    </View>
-  );
+  return <BarFill ratioAnim={anim} color={color} height={height} trackColor={track} style={{ flex: 1 }} />;
 }
 
 export default function StatusPlate({
@@ -46,8 +38,11 @@ export default function StatusPlate({
   const mine = xpNeeded != null;
 
   return (
-    <View style={[{ backgroundColor: palette.windowBorder, padding: 3 }, style]}>
-      <View style={{ borderWidth: 2, borderColor: palette.inkSoft, backgroundColor: palette.bgAlt }}>
+    <View style={[{ backgroundColor: palette.ink, padding: 1 }, style]}>
+      <View style={{ backgroundColor: palette.windowFrame, padding: 3 }}>
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 1, backgroundColor: palette.windowFrameLight }} />
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 1, backgroundColor: palette.windowFrameDark }} />
+        <View style={{ borderWidth: 1, borderColor: palette.inkSoft, backgroundColor: palette.bgAlt }}>
         <View style={{ paddingHorizontal: 8, paddingTop: 7, paddingBottom: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <PixelText size="small" color={palette.windowFill} numberOfLines={1} style={{ flex: 1, marginRight: 6 }}>
@@ -79,15 +74,16 @@ export default function StatusPlate({
           ) : null}
         </View>
 
-        {/* the EXP strip — your side only, flush to the bottom edge */}
-        {mine ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 8, paddingRight: 3, paddingBottom: 3 }}>
-            <PixelText size="tiny" color={palette.xp} style={{ marginRight: 5 }}>
-              EXP
-            </PixelText>
-            <Bar ratio={xpNeeded > 0 ? Math.max(0, Math.min(1, xpInto / xpNeeded)) : 0} color={palette.xp} height={5} track={palette.ink} />
-          </View>
-        ) : null}
+          {/* the EXP strip — your side only, flush to the bottom edge */}
+          {mine ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 8, paddingRight: 3, paddingBottom: 3 }}>
+              <PixelText size="tiny" color={palette.xp} style={{ marginRight: 5 }}>
+                EXP
+              </PixelText>
+              <Bar ratio={xpNeeded > 0 ? Math.max(0, Math.min(1, xpInto / xpNeeded)) : 0} color={palette.xp} height={6} track={palette.ink} />
+            </View>
+          ) : null}
+        </View>
       </View>
     </View>
   );

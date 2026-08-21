@@ -69,7 +69,8 @@ export default function PixelSprite({
   const pal = palette || sprite.palette;
   const cols = sprite.grid[0].length;
   const rows = sprite.grid.length;
-  const px = Math.max(1, Math.round(size / cols));
+  // Fractional cells so `size` is honoured exactly — see PixelArt.
+  const px = size / cols;
   const w = cols * px;
   const h = rows * px;
 

@@ -10,23 +10,43 @@ import Triangle from './Triangle';
 import { palette, space } from '../theme';
 import { playSfx } from '../audio';
 
-function MenuItem({ option, focused, onIn, onPress, width, labelColor, dimColor }) {
+// The selected row needs a FILL, not just a cursor. A lone arrow beside plain
+// text is legible but flat; a highlight bar is what makes a handheld menu feel
+// like something you are moving through.
+const FOCUS = {
+  cream: { fill: '#d8e2ff', rule: '#8ea6e8', text: palette.ink, dim: palette.windowTextDim, cursor: palette.accentDark },
+  dark: { fill: '#2e2a52', rule: '#6a5b9e', text: palette.white, dim: palette.windowBorderLight, cursor: palette.secondary },
+};
+
+function MenuItem({ option, focused, onIn, onPress, width, labelColor, dimColor, focusTone }) {
   const disabled = option.disabled;
+  const f = FOCUS[focusTone] || FOCUS.cream;
   return (
     <Pressable
       onPressIn={() => !disabled && onIn()}
       onPress={() => !disabled && onPress()}
-      style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingRight: space.sm, width, opacity: disabled ? 0.4 : 1 }}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 6,
+        paddingRight: space.sm,
+        width,
+        opacity: disabled ? 0.4 : 1,
+        backgroundColor: focused ? f.fill : 'transparent',
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: focused ? f.rule : 'transparent',
+      }}
     >
       <View style={{ width: 18, alignItems: 'center', justifyContent: 'center' }}>
-        {focused ? <Triangle direction="right" size={6} color={palette.accent} /> : null}
+        {focused ? <Triangle direction="right" size={6} color={f.cursor} /> : null}
       </View>
       <View style={{ flex: 1 }}>
-        <PixelText size="body" color={labelColor}>
+        <PixelText size="body" color={focused ? f.text : labelColor}>
           {option.label}
         </PixelText>
         {option.sublabel ? (
-          <PixelText size="tiny" color={dimColor} style={{ marginTop: 3 }}>
+          <PixelText size="tiny" color={focused ? f.dim : dimColor} style={{ marginTop: 3 }}>
             {option.sublabel}
           </PixelText>
         ) : null}
@@ -63,6 +83,7 @@ export default function Menu({ options, onSelect, columns = 1, framed = true, to
           width={itemWidth}
           labelColor={labelColor}
           dimColor={dimColor}
+          focusTone={tone}
         />
       ))}
     </View>

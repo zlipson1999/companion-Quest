@@ -1,91 +1,115 @@
-// Renders the top-down tile overworld + an animated walking player sprite.
+// The top-down tile overworld, plus the walking hero.
+//
+// Tiles used to be flat coloured Views — a green square for grass, a brown one
+// for a tree. That is the single biggest reason the overworld read as a mockup
+// rather than a game. They are real 16x16 pixel tiles now, drawn by
+// tools/make_sprites.py like everything else, with two-frame animation on water
+// and a scattered second grass variant so large fields do not tile visibly.
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
+import PixelArt from './PixelArt';
 import PixelSprite from './PixelSprite';
-import Triangle from './Triangle';
 import { palette } from '../theme';
+import { SPRITES } from '../data/sprites';
 
-function Tile({ code, s }) {
-  const base = { width: s, height: s };
-  switch (code) {
-    case '#':
-      return <View style={[base, { backgroundColor: palette.path }]} />;
-    case 'G':
-      return (
-        <View style={[base, { backgroundColor: palette.pathDark, alignItems: 'center', justifyContent: 'center' }]}>
-          <Triangle direction="up" size={Math.max(4, s * 0.18)} color={palette.windowFill} />
-        </View>
-      );
-    case 'T':
-      return (
-        <View style={[base, { backgroundColor: palette.grassDark, alignItems: 'center', justifyContent: 'center' }]}>
-          <View style={{ width: s * 0.7, height: s * 0.7, backgroundColor: palette.tree, borderWidth: 2, borderColor: palette.treeDark }} />
-        </View>
-      );
-    case '~':
-      return (
-        <View style={[base, { backgroundColor: palette.water, justifyContent: 'center' }]}>
-          <View style={{ height: 2, backgroundColor: palette.waterDark, marginHorizontal: 4 }} />
-        </View>
-      );
-    case ',':
-      return (
-        <View style={[base, { backgroundColor: palette.grass, alignItems: 'center', justifyContent: 'center' }]}>
-          <View style={{ flexDirection: 'row' }}>
-            <View style={{ width: 3, height: 3, backgroundColor: palette.accent, margin: 1 }} />
-            <View style={{ width: 3, height: 3, backgroundColor: palette.secondary, margin: 1 }} />
-          </View>
-        </View>
-      );
-    case 'h':
-      return <View style={[base, { backgroundColor: palette.roof, borderBottomWidth: 3, borderBottomColor: palette.roofDark }]} />;
-    case 'y':
-      return <View style={[base, { backgroundColor: palette.primary, borderBottomWidth: 3, borderBottomColor: palette.primaryDark }]} />;
-    case 'H':
-    case 'Y':
-      return (
-        <View style={[base, { backgroundColor: palette.wall, alignItems: 'center', justifyContent: 'center' }]}>
-          <View style={{ width: s * 0.4, height: s * 0.4, backgroundColor: palette.primary, borderWidth: 2, borderColor: palette.wallDark }} />
-        </View>
-      );
-    case 'D':
-    case 'd':
-      return (
-        <View style={[base, { backgroundColor: palette.wall, alignItems: 'center', justifyContent: 'flex-end' }]}>
-          <View style={{ width: s * 0.5, height: s * 0.7, backgroundColor: palette.ink }} />
-        </View>
-      );
-    default:
-      return (
-        <View style={[base, { backgroundColor: palette.grass }]}>
-          <View style={{ width: 3, height: 3, backgroundColor: palette.grassDark, opacity: 0.6, marginLeft: s * 0.55, marginTop: s * 0.5 }} />
-        </View>
-      );
-  }
+// Tile code -> sprite key. Animated tiles list their frames.
+const TILE_SPRITES = {
+  '.': ['tile_grass', 'tile_grass_b'],
+  ',': ['tile_flowers'],
+  '#': ['tile_path', 'tile_path_b'],
+  G: ['tile_gate'],
+  T: ['tile_tree'],
+  '~': ['tile_water', 'tile_water_b'],
+  h: ['tile_roof_rest'],
+  y: ['tile_roof_gym'],
+  H: ['tile_window'],
+  Y: ['tile_window'],
+  D: ['tile_door'],
+  d: ['tile_door'],
+  '^': ['tile_tallgrass'],
+};
+
+const WATER_FRAME_MS = 620;
+
+// Grass gets a stable per-cell variant so the field looks scattered rather than
+// checkerboarded — derived from the coordinates, not random, so it never
+// reshuffles on re-render.
+function variantFor(x, y, count) {
+  if (count <= 1) return 0;
+  return ((x * 7 + y * 13) >>> 0) % count === 0 ? 1 : 0;
+}
+
+export function Tile({ code, s, frame, x, y }) {
+  const keys = TILE_SPRITES[code] || TILE_SPRITES['.'];
+  const key = keys.length > 1 && code === '~' ? keys[frame % keys.length] : keys[variantFor(x, y, keys.length)];
+  const sprite = SPRITES[key];
+  if (!sprite) return <View style={{ width: s, height: s, backgroundColor: palette.grass }} />;
+  // Fractional, not rounded: at a 24px tile a 16px sprite needs 1.5px cells.
+  // Rounding to 2 rendered a 32px tile and clipped a quarter of it away, which
+  // chopped the right-hand and bottom edges off every tile on the map.
+  const px = s / sprite.grid[0].length;
+  return (
+    <View style={{ width: s, height: s, overflow: 'hidden' }}>
+      <PixelArt grid={sprite.grid} palette={sprite.palette} pixelSize={px} />
+    </View>
+  );
 }
 
 export default function TileMap({ map, player, tileSize, style }) {
   const s = tileSize;
   const pos = useRef(new Animated.ValueXY({ x: player.x * s, y: player.y * s })).current;
+  const [frame, setFrame] = useState(0);
+  const [stepFrame, setStepFrame] = useState(0);
+  const lastPos = useRef(`${player.x},${player.y}`);
+
+  useEffect(() => {
+    const t = setInterval(() => setFrame((f) => f + 1), WATER_FRAME_MS);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     Animated.timing(pos, { toValue: { x: player.x * s, y: player.y * s }, duration: 120, useNativeDriver: true }).start();
+    // Advance the walk cycle only on an actual move, so bumping a wall does not
+    // make the hero jog on the spot.
+    const key = `${player.x},${player.y}`;
+    if (key !== lastPos.current) {
+      lastPos.current = key;
+      setStepFrame((f) => (f + 1) % 2);
+    }
   }, [player.x, player.y, s, pos]);
+
+  // Rows are static once the map is set; only the player and water move.
+  const rows = useMemo(
+    () =>
+      map.grid.map((row, y) => (
+        <View key={y} style={{ flexDirection: 'row' }}>
+          {row.split('').map((code, x) => (
+            <Tile key={x} code={code} s={s} frame={frame} x={x} y={y} />
+          ))}
+        </View>
+      )),
+    [map, s, frame]
+  );
+
+  const facing = player.facing || 'down';
+  const heroKey = `hero_${facing}${stepFrame === 0 ? '_a' : '_b'}`;
+  const spriteKey = SPRITES[heroKey] ? heroKey : `hero_${facing}`;
 
   return (
     <View style={[{ width: map.cols * s, height: map.rows * s, backgroundColor: palette.grassDark, overflow: 'hidden' }, style]}>
-      {map.grid.map((row, y) => (
-        <View key={y} style={{ flexDirection: 'row' }}>
-          {row.split('').map((code, x) => (
-            <Tile key={x} code={code} s={s} />
-          ))}
-        </View>
-      ))}
+      {rows}
       <Animated.View
-        style={{ position: 'absolute', width: s, height: s, alignItems: 'center', justifyContent: 'flex-end', transform: [{ translateX: pos.x }, { translateY: pos.y }] }}
+        style={{
+          position: 'absolute',
+          width: s,
+          height: s,
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          transform: [{ translateX: pos.x }, { translateY: pos.y }],
+        }}
       >
-        <PixelSprite spriteKey="hero_down" size={s * 0.92} flip={player.facing === 'left'} />
+        <PixelSprite spriteKey={spriteKey} size={s * 1.25} />
       </Animated.View>
     </View>
   );

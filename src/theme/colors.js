@@ -14,6 +14,14 @@ export const palette = {
   windowFillAlt: '#e8e0c8',
   windowBorder: '#2a1e3d',
   windowBorderLight: '#b8a98a',
+  // The window frame is a bevelled band, not a flat rule: a lit top-left edge
+  // and a shadowed bottom-right are what give a menu physical depth on a
+  // handheld screen. Three tones, so the bevel has something to bevel with.
+  windowFrame: '#4a3a6e',
+  windowFrameLight: '#8570b8',
+  windowFrameDark: '#1d1430',
+  windowStud: '#ffcf4d',
+  windowFillHi: '#fffdf6',
   windowText: '#2a1e3d',
   windowTextDim: '#6b5d7a',
 
@@ -72,5 +80,17 @@ export const spritePalettes = {
   air: ['transparent', '#8fb8d6', '#bcdcee', '#eaf6ff', '#2a3a4a', '#ffcf4d', '#ffffff'],
   spore: ['transparent', '#a83b4b', '#d65b6b', '#ffd0b0', '#3a1e28', '#f7f0d8', '#ffffff'],
 };
+
+// Lighten (amt > 0) or darken (amt < 0) a hex colour. Used for bar tube
+// shading and bevels, so the highlight of a green bar is a green highlight
+// rather than a wash of white laid over it.
+export function shade(hex, amt) {
+  const h = hex.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+  const to = amt > 0 ? 255 : 0;
+  const t = Math.abs(amt);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => Math.round(v + (to - v) * t));
+  return `#${ch.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
 
 export default palette;

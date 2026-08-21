@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, View } from 'react-native';
 import PixelText from './PixelText';
+import BarFill from './BarFill';
 import { palette } from '../theme';
 
 export default function ProgressBar({
@@ -29,9 +30,7 @@ export default function ProgressBar({
           {label}
         </PixelText>
       ) : null}
-      <View style={{ height, backgroundColor: trackColor, borderWidth: 2, borderColor: palette.ink }}>
-        <Animated.View style={{ height: '100%', backgroundColor: color, width: anim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }} />
-      </View>
+      <BarFill ratioAnim={anim} color={color} trackColor={trackColor} height={height} />
       {showText ? (
         <PixelText size="tiny" color={palette.windowFill} align="right" style={{ marginTop: 4 }}>
           {Math.floor(value)} / {max}

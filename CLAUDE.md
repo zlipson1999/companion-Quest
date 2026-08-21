@@ -37,13 +37,26 @@ server is standalone (not part of the Metro graph): `node --check server/index.j
 
 ## Original assets are GENERATED, not hand-placed as image/audio files
 
-- **Pixel art** — `tools/make_sprites.py`: each creature/hero/item is a 16×16
-  grid of palette indices. It validates alignment, renders a preview to
-  `tools/sprite_preview.png` (Read it to eyeball the art), and emits
-  `src/data/sprites.js`. The app renders these grids directly via `<PixelArt>` /
-  `<PixelSprite>` — there are **no external image files**. To add a creature: add
-  its grid + a palette (mirror the palette into `src/theme/colors.js`
-  `spritePalettes`), run the script, view the preview, then wire up data.
+- **Pixel art** — `tools/make_sprites.py` **draws** the art; it no longer stores
+  hand-typed grids. A creature is a few lit forms: `sphere()` evaluates a real
+  surface normal and dots it with a light vector, `outline()` walks the
+  silhouette, `rim()` adds bounce light along the shaded edge. That is why
+  things read as round now — the lighting is computed, not guessed.
+  - **Sizes:** creatures 48×48, hero 24×32 (4 facings × 3 frames), items and
+    module icons 24×24, tiles 16×16.
+  - **Palettes** are ramp specs (`PALETTE_SPECS`): a dark→light pair per ramp
+    (`body`/`leaf`/`belly`), expanded to `RAMP_STEPS` and flattened. Grids are
+    **base-36** indices, so a sprite can use up to 35 colours. The script emits
+    `SPRITE_PALETTES` into `src/data/sprites.js` alongside the art — **nothing is
+    mirrored into `colors.js` by hand any more.**
+  - To add a creature: write a function composing shaded forms, register it in
+    `build_all()`, run the script, **Read `tools/sprite_preview.png`** to eyeball
+    it, then point `src/data/creatures.js` at the new key + palette. Evolutions
+    get their OWN drawn sprite — a tinted copy of the base read as the same
+    creature on screen.
+  - `<PixelArt>`/`<PixelSprite>` honour the requested `size` **exactly**
+    (fractional cells). Rounding to whole pixels was harmless at 16×16 and
+    snapped a 30px request up to 48px once sprites got bigger.
 - **Audio** — `tools/make_audio.py`: all SFX + the town/battle chiptune loops are
   synthesized to WAVs in `assets/sfx/`. Re-run after edits.
 - **Fonts/glyphs:** pixel font everywhere via `PixelText`. Don't rely on unicode
@@ -76,6 +89,11 @@ new screens in `Router.js` (SCREENS map + TOWN_BGM) and add a hub menu entry in
 
 **Data-driven:** creatures/goals/items/exercises/obstacles/wild/workouts/maps all
 live in `src/data/*` as plain objects. Add content there.
+
+**The overworld** (`components/TileMap.js`) draws real 16×16 tile sprites, not
+coloured rectangles: two grass variants scattered by coordinate so fields do not
+visibly tile, two-frame water, and a hero walk cycle that advances only on an
+actual move.
 
 **Life modules:** `src/modules/*` — see "Phase 3" below. `src/modules/daily.js`
 owns the calendar (day roll, streaks, reward math) and is pure/testable;
