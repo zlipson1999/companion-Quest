@@ -54,9 +54,12 @@ const SCREENS = {
   options: OptionsScreen,
 };
 
+// Every non-battle screen plays the town loop. 'route' matters especially:
+// fleeing a battle returns there, and without an entry here the battle music
+// just kept playing over the walk.
 const TOWN_BGM = new Set([
-  'title', 'intro', 'goal', 'pairing', 'hub', 'rest', 'workout', 'summary', 'index', 'bag', 'party', 'coach', 'options',
-  'habits', 'habit', 'forge', 'forgeEdit', 'formcheck',
+  'title', 'intro', 'goal', 'pairing', 'hub', 'route', 'rest', 'workout', 'summary', 'index', 'bag',
+  'party', 'coach', 'options', 'habits', 'habit', 'forge', 'forgeEdit', 'formcheck',
 ]);
 
 export default function Router() {

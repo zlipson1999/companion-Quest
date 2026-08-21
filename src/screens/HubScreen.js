@@ -88,7 +88,8 @@ export default function HubScreen() {
           columns={2}
           options={[
             { label: 'Route 1', value: 'route', sublabel: 'real miles' },
-            { label: 'Train', value: 'workout', sublabel: 'workouts' },
+            { label: 'Train', value: 'workout', sublabel: 'quick sets' },
+            { label: 'Forge', value: 'forge', sublabel: 'your plans' },
             { label: 'Rest', value: 'rest', sublabel: 'heal team' },
             { label: 'Team', value: 'party', sublabel: 'companions' },
             { label: 'Habits', value: 'habits', sublabel: 'daily life' },

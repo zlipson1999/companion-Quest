@@ -55,10 +55,18 @@ export const PERKS = [
     color: 'rock',
     effect: { bond: 5 },
     test(a) {
-      const share = a.patternShare.pull || 0;
+      // Carries are the grip pattern; a loaded-carry day earns this as surely
+      // as a pulling day does.
+      const share = (a.patternShare.pull || 0) + (a.patternShare.carry || 0);
       const grip = a.muscleShare.forearms || 0;
       if (share < 0.25 || grip <= 0) return null;
-      return { score: share + grip, why: `${pct(share)} pulling, with real forearm demand.` };
+      const carried = (a.patternShare.carry || 0) > 0.15;
+      return {
+        score: share + grip,
+        why: carried
+          ? `${pct(share)} pulling and carrying — your grip works the whole time.`
+          : `${pct(share)} pulling, with real forearm demand.`,
+      };
     },
   },
   {

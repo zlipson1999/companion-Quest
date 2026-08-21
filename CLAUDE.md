@@ -160,8 +160,12 @@ content. It is the reason the plugin interface grew three generic hooks:
 the reducer knowing about any specific module. Any future module can use all of it.
 
 - `src/data/muscles.js` — 14 groups, each carrying the geometry of its own plate.
-- `src/data/movements.js` — 24 movements / 7 patterns, each declaring the muscles
-  it trains, a relative `load`, and its coaching cues.
+- `src/data/movements.js` — **140 movements / 8 patterns / 8 equipment types**
+  (bodyweight, DB, BB, KB, band, cable, machine, cardio kit), each declaring the
+  muscles it trains, a relative `load`, and 3-4 coaching cues. `searchMovements(q,
+  {pattern, equipment})` powers the picker's search + filter chips.
+  **Movement ids are permanent** — saved plans store them, so add freely but
+  never rename or remove one.
 - `forge/analysis.js` — the on-device analyser. **Deterministic scoring, not an
   LLM**: coverage, pattern balance, volume (load weighted superlinearly so hard
   short sets beat easy long ones), intensity, duration. Explains every number.
@@ -173,6 +177,11 @@ the reducer knowing about any specific module. Any future module can use all of 
 - `screens/FormCheckScreen.js` — front camera as a mirror plus cue ticker.
   **Not pose analysis** — there is no pose model in the app, and the screen says
   so. Nothing recorded or sent; works fully with the camera declined.
+
+**Integration:** the Forge has its own hub-menu entry beside Train; Form Check
+carries the running session's progress across in `params.resume` so leaving for
+a mirror does not discard it; every non-battle route is in `TOWN_BGM` (fleeing a
+battle to the Route used to keep the battle music playing).
 
 **Reward safety:** `applyLog` credits only the portion of a log that lands inside
 the daily goal. Logging past the goal is tallied but pays nothing, so no log

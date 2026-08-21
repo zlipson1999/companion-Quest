@@ -3,13 +3,13 @@
 // the point being that you can see what a choice is worth before committing.
 
 import React, { useMemo, useState } from 'react';
-import { ScrollView, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { Screen, Window, BodyMap3D, PixelText, PixelButton } from '../components';
 import { palette, space, FONT_FAMILY } from '../theme';
 import { useGame } from '../state';
 import { moduleStateFor } from '../modules';
 import { analysePlan, suggestionsFor } from '../modules/forge/analysis';
-import { MOVEMENTS, PATTERNS, PATTERN_IDS, getMovement } from '../data/movements';
+import { EQUIPMENT, EQUIPMENT_IDS, PATTERNS, PATTERN_IDS, getMovement, searchMovements } from '../data/movements';
 import { MUSCLES } from '../data/muscles';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
@@ -45,7 +45,11 @@ export default function ForgeEditScreen({ params }) {
   const original = plans.find((p) => p.id === params.planId) || null;
 
   const [draft, setDraft] = useState(() => (original ? { ...original, blocks: [...original.blocks] } : null));
-  const [picking, setPicking] = useState(null); // pattern id while choosing a movement
+  // The library is large enough that browsing it needs real filtering.
+  const [picking, setPicking] = useState(false);
+  const [query, setQuery] = useState('');
+  const [pattern, setPattern] = useState(null);
+  const [equipment, setEquipment] = useState(null);
   const startedEmpty = useMemo(() => !!original && original.blocks.length === 0, []);
 
   const analysis = useMemo(() => (draft ? analysePlan(draft) : null), [draft]);
@@ -72,7 +76,7 @@ export default function ForgeEditScreen({ params }) {
       ...d,
       blocks: [...d.blocks, { movementId: mv.id, sets: 3, amount: mv.unit === 'seconds' ? 30 : 10 }],
     }));
-    setPicking(null);
+    setPicking(false);
   };
 
   const save = () => {
@@ -95,30 +99,95 @@ export default function ForgeEditScreen({ params }) {
 
   // ------------------------------------------------------- movement picker
   if (picking) {
-    const list = MOVEMENTS.filter((m) => m.pattern === picking);
+    const list = searchMovements(query, { pattern, equipment });
+    const chip = (label, active, onPress) => (
+      <Pressable
+        key={label}
+        onPress={() => {
+          playSfx('cursor');
+          onPress();
+        }}
+        style={{
+          borderWidth: 2,
+          borderColor: active ? palette.secondary : palette.inkSoft,
+          backgroundColor: active ? palette.secondary : palette.bgAlt,
+          paddingHorizontal: 8,
+          paddingVertical: 6,
+          marginRight: 5,
+          marginBottom: 5,
+        }}
+      >
+        <PixelText size="tiny" color={active ? palette.ink : palette.windowBorderLight}>
+          {label}
+        </PixelText>
+      </Pressable>
+    );
+
     return (
       <Screen style={{ padding: space.md }}>
         <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
-          {PATTERNS[picking].name}
+          Add Movement
         </PixelText>
-        <ScrollView showsVerticalScrollIndicator={false}>
+
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search 140 movements..."
+          placeholderTextColor={palette.windowTextDim}
+          style={{
+            fontFamily: FONT_FAMILY,
+            fontSize: 9,
+            color: palette.windowText,
+            backgroundColor: palette.windowFill,
+            borderWidth: 3,
+            borderColor: palette.ink,
+            paddingHorizontal: 10,
+            paddingVertical: 9,
+          }}
+        />
+
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: space.sm }}>
+          {chip('All kit', equipment == null, () => setEquipment(null))}
+          {EQUIPMENT_IDS.map((id) => chip(EQUIPMENT[id].short, equipment === id, () => setEquipment(id)))}
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          {chip('All', pattern == null, () => setPattern(null))}
+          {PATTERN_IDS.map((id) => chip(PATTERNS[id].name, pattern === id, () => setPattern(id)))}
+        </View>
+
+        <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, marginBottom: space.sm }}>
+          {list.length} {list.length === 1 ? 'movement' : 'movements'}
+        </PixelText>
+
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {list.map((mv) => (
-            <Window key={mv.id} tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+            <Window key={mv.id} tone="cream" pad={11} style={{ marginBottom: 6 }}>
               <View onTouchEnd={() => addMovement(mv)}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <PixelText size="small" color={palette.windowText}>{mv.name}</PixelText>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <PixelText size="small" color={palette.windowText} style={{ flex: 1 }}>
+                    {mv.name}
+                  </PixelText>
                   <PixelText size="tiny" color={palette.accentDark}>
-                    {'load ' + mv.load}
+                    {EQUIPMENT[mv.equipment].short}  L{mv.load}
                   </PixelText>
                 </View>
-                <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 7, lineHeight: 14 }}>
-                  {mv.primary.map((id) => MUSCLES[id].name).join(', ')}
+                <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 14 }}>
+                  {PATTERNS[mv.pattern].name}  ·  {mv.primary.map((id) => MUSCLES[id].name).join(', ')}
                 </PixelText>
               </View>
             </Window>
           ))}
+          {!list.length ? (
+            <Window tone="cream" pad={14}>
+              <PixelText size="tiny" color={palette.windowText} style={{ lineHeight: 15 }}>
+                Nothing matches that. Try a muscle name, or clear the filters.
+              </PixelText>
+            </Window>
+          ) : null}
+          <View style={{ height: space.sm }} />
         </ScrollView>
-        <PixelButton label="Back" tone="plain" sound="cancel" onPress={() => setPicking(null)} style={{ marginTop: space.sm }} />
+
+        <PixelButton label="Back" tone="plain" sound="cancel" onPress={() => setPicking(false)} style={{ marginTop: space.sm }} />
       </Screen>
     );
   }
@@ -215,23 +284,7 @@ export default function ForgeEditScreen({ params }) {
             That is plenty for one session.
           </PixelText>
         ) : (
-          <View>
-            <PixelText size="tiny" color={palette.windowTextDim} style={{ marginBottom: space.sm }}>
-              Add from
-            </PixelText>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-              {PATTERN_IDS.map((id) => (
-                <PixelButton
-                  key={id}
-                  label={PATTERNS[id].name}
-                  tone="dark"
-                  size="tiny"
-                  onPress={() => setPicking(id)}
-                  style={{ marginRight: 6, marginBottom: 6, paddingVertical: 8, paddingHorizontal: 10 }}
-                />
-              ))}
-            </View>
-          </View>
+          <PixelButton label="+ Add Movement" tone="dark" size="small" onPress={() => setPicking(true)} />
         )}
         <View style={{ height: space.md }} />
       </ScrollView>

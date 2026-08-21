@@ -60,7 +60,7 @@ function BlockRow({ block, index, done, onToggle, onForm }) {
   );
 }
 
-export default function ForgeScreen() {
+export default function ForgeScreen({ params }) {
   const { state, dispatch } = useGame();
   const companion = useCompanion();
   const { navigate } = useNav();
@@ -69,9 +69,13 @@ export default function ForgeScreen() {
   const modState = moduleStateFor(state.modules, FORGE_ID);
   const plans = modState.plans || [];
 
-  const [phase, setPhase] = useState('list');
-  const [selectedId, setSelectedId] = useState(null);
-  const [checked, setChecked] = useState({});
+  // Coming back from the form-check screen re-enters the session exactly where
+  // it was left — the router unmounts us, so the session carries its own state
+  // across in params rather than being silently thrown away.
+  const resume = (params && params.resume) || null;
+  const [phase, setPhase] = useState(resume ? 'session' : 'list');
+  const [selectedId, setSelectedId] = useState(resume ? resume.planId : null);
+  const [checked, setChecked] = useState(resume ? resume.checked || {} : {});
   const [resultLines, setResultLines] = useState([]);
 
   const plan = plans.find((p) => p.id === selectedId) || null;
@@ -177,7 +181,7 @@ export default function ForgeScreen() {
                 playSfx('cursor');
                 setChecked((c) => ({ ...c, [i]: !c[i] }));
               }}
-              onForm={() => navigate('formcheck', { movementId: b.movementId, planId: plan.id })}
+              onForm={() => navigate('formcheck', { movementId: b.movementId, planId: plan.id, checked })}
             />
           ))}
         </ScrollView>

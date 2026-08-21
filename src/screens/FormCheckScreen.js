@@ -23,6 +23,9 @@ const CUE_SECONDS = 5;
 export default function FormCheckScreen({ params }) {
   const { navigate } = useNav();
   const movement = getMovement(params.movementId);
+  // Return to the session we came from, carrying its progress back with us.
+  const goBack = () =>
+    navigate('forge', params.planId ? { resume: { planId: params.planId, checked: params.checked || {} } } : {});
   const [permission, requestPermission] = useCameraPermissions();
   const [mirror, setMirror] = useState(false);
   const [cue, setCue] = useState(0);
@@ -53,7 +56,7 @@ export default function FormCheckScreen({ params }) {
             No movement selected.
           </PixelText>
         </Window>
-        <PixelButton label="Back" tone="plain" sound="cancel" onPress={() => navigate('forge')} style={{ marginTop: space.sm }} />
+        <PixelButton label="Back" tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
       </Screen>
     );
   }
@@ -133,11 +136,11 @@ export default function FormCheckScreen({ params }) {
 
       <View style={{ flexDirection: 'row', marginTop: space.sm }}>
         <PixelButton
-          label="Back"
+          label={params.planId ? 'Back to Set' : 'Back'}
           tone="plain"
           sound="cancel"
           style={{ flex: 1, marginRight: 6 }}
-          onPress={() => navigate('forge')}
+          onPress={goBack}
         />
         <PixelButton
           label={running ? 'Pause' : 'Start Set'}

@@ -137,7 +137,10 @@ function focusLabel(patternShare, sets) {
   const top = ranked[0];
   if (!top || top.v <= 0) return 'Empty';
   if (top.v >= 0.5) {
-    return { push: 'Push', pull: 'Pull', squat: 'Legs', hinge: 'Posterior', brace: 'Core', condition: 'Conditioning', mobility: 'Mobility' }[top.id];
+    return {
+      push: 'Push', pull: 'Pull', squat: 'Legs', hinge: 'Posterior',
+      brace: 'Core', carry: 'Carry', condition: 'Conditioning', mobility: 'Mobility',
+    }[top.id];
   }
   if (ranked[1] && ranked[1].v > 0.2) return 'Full Body';
   return 'Mixed';
