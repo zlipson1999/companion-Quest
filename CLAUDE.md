@@ -92,6 +92,14 @@ should grow the companion dispatches the SAME reducer actions
 plug into that same flow without touching battle/route code. The Route and
 Workouts modules are the first two examples of the pattern.
 
+**Step counting has two sources** (`src/state/useDistance.js`). The OS step
+counter is preferred — it counts with the screen off — but it is not always
+reachable, notably inside Expo Go, which is where the app first failed on a real
+phone. When it is not, `src/state/stepDetector.js` counts steps off the
+accelerometer instead: peak detection with hysteresis and a refractory gap, no
+permission needed, but foreground-only. The Route states which is running rather
+than pretending they are equivalent. See `docs/STEP_COUNTING.md`.
+
 **State shape** (persisted to AsyncStorage, auto-migrated by `version`, currently
 3): `{ started, goalId, party:[{id,baseId,xp,bond,hp}], activeIndex, stats, bag,
 dex, modules, settings, meta }`. Companion XP is a lifetime total; level/HP are derived
