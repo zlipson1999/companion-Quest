@@ -22,6 +22,12 @@ import SummaryScreen from './SummaryScreen';
 import IndexScreen from './IndexScreen';
 import BagScreen from './BagScreen';
 import PartyScreen from './PartyScreen';
+import HabitsScreen from './HabitsScreen';
+import HabitLogScreen from './HabitLogScreen';
+import ForgeScreen from './ForgeScreen';
+import ForgeEditScreen from './ForgeEditScreen';
+import FormCheckScreen from './FormCheckScreen';
+import WeekScreen from './WeekScreen';
 import CoachChatScreen from './CoachChatScreen';
 import OptionsScreen from './OptionsScreen';
 import LoadingScreen from './LoadingScreen';
@@ -40,12 +46,22 @@ const SCREENS = {
   index: IndexScreen,
   bag: BagScreen,
   party: PartyScreen,
+  habits: HabitsScreen,
+  habit: HabitLogScreen,
+  forge: ForgeScreen,
+  forgeEdit: ForgeEditScreen,
+  formcheck: FormCheckScreen,
+  week: WeekScreen,
   coach: CoachChatScreen,
   options: OptionsScreen,
 };
 
+// Every non-battle screen plays the town loop. 'route' matters especially:
+// fleeing a battle returns there, and without an entry here the battle music
+// just kept playing over the walk.
 const TOWN_BGM = new Set([
-  'title', 'intro', 'goal', 'pairing', 'hub', 'rest', 'workout', 'summary', 'index', 'bag', 'party', 'coach', 'options',
+  'title', 'intro', 'goal', 'pairing', 'hub', 'route', 'rest', 'workout', 'summary', 'index', 'bag',
+  'party', 'coach', 'options', 'habits', 'habit', 'forge', 'forgeEdit', 'formcheck', 'week',
 ]);
 
 export default function Router() {

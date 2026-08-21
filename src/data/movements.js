@@ -1,0 +1,543 @@
+// The movement library the Workout Forge builds plans from.
+//
+// Each movement declares the muscles it actually trains, the pattern and
+// equipment it belongs to, and the coaching cues shown during a set (and on the
+// form-check camera). The on-device analyser reads `primary`/`secondary`/
+// `pattern`/`load` to work out what a plan trains and which perks it earns — so
+// adding a movement here immediately changes what the game can recognise.
+//
+// `unit`: 'reps' | 'seconds' | 'steps'
+// `load`: 1 easy .. 3 hard — relative systemic cost per set.
+
+import { MUSCLES } from './muscles';
+//
+// Movement ids are PERMANENT: a saved plan stores them, so renaming or removing
+// one silently breaks somebody's workout. Add freely; never rename.
+
+export const EQUIPMENT = {
+  bodyweight:  { id: 'bodyweight',  name: 'Bodyweight',  short: 'BW' },
+  dumbbell:    { id: 'dumbbell',    name: 'Dumbbells',   short: 'DB' },
+  barbell:     { id: 'barbell',     name: 'Barbell',     short: 'BB' },
+  kettlebell:  { id: 'kettlebell',  name: 'Kettlebell',  short: 'KB' },
+  band:        { id: 'band',        name: 'Bands',       short: 'BND' },
+  cable:       { id: 'cable',       name: 'Cable',       short: 'CBL' },
+  machine:     { id: 'machine',     name: 'Machine',     short: 'MCH' },
+  cardio:      { id: 'cardio',      name: 'Cardio Kit',  short: 'CDO' },
+};
+
+export const EQUIPMENT_IDS = Object.keys(EQUIPMENT);
+
+export const PATTERNS = {
+  push:      { id: 'push',      name: 'Push',         color: 'accent' },
+  pull:      { id: 'pull',      name: 'Pull',         color: 'primary' },
+  squat:     { id: 'squat',     name: 'Squat',        color: 'grass' },
+  hinge:     { id: 'hinge',     name: 'Hinge',        color: 'secondary' },
+  brace:     { id: 'brace',     name: 'Brace',        color: 'water' },
+  carry:     { id: 'carry',     name: 'Carry',        color: 'rock' },
+  condition: { id: 'condition', name: 'Conditioning', color: 'danger' },
+  mobility:  { id: 'mobility',  name: 'Mobility',     color: 'success' },
+};
+
+export const PATTERN_IDS = Object.keys(PATTERNS);
+
+export const MOVEMENTS = [
+  // ================= BODYWEIGHT — PUSH =================
+  { id: 'pushup', name: 'Push-Up', pattern: 'push', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['chest', 'triceps'], secondary: ['shoulders', 'core'],
+    cues: ['Hands under your shoulders', 'Squeeze your glutes, ribs down', 'Lower until elbows pass 90', 'Push the floor away'] },
+  { id: 'kneepushup', name: 'Knee Push-Up', pattern: 'push', equipment: 'bodyweight', unit: 'reps', load: 1,
+    primary: ['chest', 'triceps'], secondary: ['shoulders'],
+    cues: ['Knees, hips and shoulders in one line', 'Hands just wider than the chest', 'Lower with control', 'Full lockout at the top'] },
+  { id: 'inclinepushup', name: 'Incline Push-Up', pattern: 'push', equipment: 'bodyweight', unit: 'reps', load: 1,
+    primary: ['chest', 'triceps'], secondary: ['shoulders', 'core'],
+    cues: ['Hands on a bench or counter', 'Body stays one straight line', 'Chest to the edge', 'The higher the hands, the easier'] },
+  { id: 'declinepushup', name: 'Decline Push-Up', pattern: 'push', equipment: 'bodyweight', unit: 'reps', load: 3,
+    primary: ['chest', 'shoulders'], secondary: ['triceps', 'core'],
+    cues: ['Feet raised behind you', 'Hips do not sag or pike', 'Chest to the floor', 'Press evenly through both hands'] },
+  { id: 'diamondpushup', name: 'Diamond Push-Up', pattern: 'push', equipment: 'bodyweight', unit: 'reps', load: 3,
+    primary: ['triceps'], secondary: ['chest', 'shoulders'],
+    cues: ['Hands together under your sternum', 'Elbows brush your ribs', 'Lower slowly', 'Stop if your wrists complain'] },
+  { id: 'widepushup', name: 'Wide Push-Up', pattern: 'push', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['chest'], secondary: ['shoulders', 'triceps'],
+    cues: ['Hands well outside the shoulders', 'Elbows at about 45 degrees', 'Feel it across the chest', 'Do not flare to 90'] },
+  { id: 'pikepress', name: 'Pike Press', pattern: 'push', equipment: 'bodyweight', unit: 'reps', load: 3,
+    primary: ['shoulders', 'triceps'], secondary: ['core'],
+    cues: ['Hips high, body in a V', 'Crown of the head toward the floor', 'Elbows track forward, not flared', 'Press tall at the top'] },
+  { id: 'dip', name: 'Chair Dip', pattern: 'push', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['triceps'], secondary: ['chest', 'shoulders'],
+    cues: ['Shoulders down away from ears', 'Elbows point straight back', 'Stop at 90 degrees', 'Lock out gently'] },
+  { id: 'paralleldip', name: 'Parallel Bar Dip', pattern: 'push', equipment: 'bodyweight', unit: 'reps', load: 3,
+    primary: ['chest', 'triceps'], secondary: ['shoulders'],
+    cues: ['Start locked out, shoulders packed', 'Lean slightly forward for the chest', 'Lower to a comfortable depth', 'No bouncing at the bottom'] },
+  { id: 'wallhandstand', name: 'Wall Handstand Hold', pattern: 'push', equipment: 'bodyweight', unit: 'seconds', load: 3,
+    primary: ['shoulders'], secondary: ['triceps', 'core'],
+    cues: ['Hands a hand-width from the wall', 'Push the floor away, shoulders to ears', 'Ribs down, squeeze the glutes', 'Come down before you wobble'] },
+  { id: 'bearcrawl', name: 'Bear Crawl', pattern: 'push', equipment: 'bodyweight', unit: 'seconds', load: 2,
+    primary: ['shoulders', 'core'], secondary: ['quads', 'triceps'],
+    cues: ['Knees an inch off the floor', 'Opposite hand and foot together', 'Hips stay low and level', 'Small steps, no swaying'] },
+
+  // ================= BODYWEIGHT — PULL =================
+  { id: 'row', name: 'Table Row', pattern: 'pull', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['lats', 'biceps'], secondary: ['upperBack', 'forearms', 'core'],
+    cues: ['Chest to the edge, not chin', 'Pull elbows past your ribs', 'Body stays one straight line', 'Lower under control'] },
+  { id: 'pullup', name: 'Bar Pull-Up', pattern: 'pull', equipment: 'bodyweight', unit: 'reps', load: 3,
+    primary: ['lats', 'biceps'], secondary: ['upperBack', 'forearms', 'core'],
+    cues: ['Start from a dead hang', 'Pull your chest to the bar', 'Shoulders down and back', 'No kicking — control the descent'] },
+  { id: 'chinup', name: 'Chin-Up', pattern: 'pull', equipment: 'bodyweight', unit: 'reps', load: 3,
+    primary: ['biceps', 'lats'], secondary: ['upperBack', 'forearms'],
+    cues: ['Palms facing you, shoulder width', 'Drive the elbows down to your sides', 'Chin clears the bar', 'Lower all the way to a hang'] },
+  { id: 'negativepullup', name: 'Negative Pull-Up', pattern: 'pull', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['lats', 'biceps'], secondary: ['forearms', 'upperBack'],
+    cues: ['Jump or step to the top position', 'Lower for a slow five count', 'Keep the shoulders active throughout', 'Reset rather than dropping'] },
+  { id: 'scapularpull', name: 'Scapular Pull', pattern: 'pull', equipment: 'bodyweight', unit: 'reps', load: 1,
+    primary: ['upperBack'], secondary: ['lats', 'forearms'],
+    cues: ['Hang with straight arms', 'Pull the shoulders down without bending the elbows', 'Small range — this is the point', 'Pause at the top'] },
+  { id: 'hang', name: 'Dead Hang', pattern: 'pull', equipment: 'bodyweight', unit: 'seconds', load: 1,
+    primary: ['forearms'], secondary: ['lats', 'upperBack'],
+    cues: ['Full grip, thumb around', 'Shoulders active, not slack', 'Breathe slowly', 'Step down, do not drop'] },
+  { id: 'towelrow', name: 'Towel Door Row', pattern: 'pull', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['lats', 'biceps'], secondary: ['upperBack', 'forearms'],
+    cues: ['Towel around a solid anchor', 'Lean back with straight arms', 'Pull chest toward your hands', 'Squeeze the shoulder blades'] },
+  { id: 'reverseplankraise', name: 'Reverse Plank Raise', pattern: 'pull', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['upperBack', 'glutes'], secondary: ['hamstrings', 'shoulders'],
+    cues: ['Hands under shoulders, fingers forward', 'Drive the hips to the ceiling', 'Open the chest, squeeze the blades', 'Lower without touching down'] },
+
+  // ================= BODYWEIGHT — SQUAT =================
+  { id: 'squat', name: 'Bodyweight Squat', pattern: 'squat', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['quads', 'glutes'], secondary: ['core', 'calves'],
+    cues: ['Feet shoulder width, toes slightly out', 'Sit back and down', 'Knees track over your toes', 'Drive through mid-foot'] },
+  { id: 'lunge', name: 'Reverse Lunge', pattern: 'squat', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['quads', 'glutes'], secondary: ['hamstrings', 'core'],
+    cues: ['Step back, not forward', 'Back knee lightly kisses the floor', 'Torso stays tall', 'Push the front heel down'] },
+  { id: 'forwardlunge', name: 'Forward Lunge', pattern: 'squat', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['quads', 'glutes'], secondary: ['hamstrings', 'calves'],
+    cues: ['Long step, upright chest', 'Both knees to about 90', 'Front knee behind the toes', 'Push back to the start in one move'] },
+  { id: 'splitsquat', name: 'Split Squat', pattern: 'squat', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['quads', 'glutes'], secondary: ['hamstrings', 'core'],
+    cues: ['Feet stay planted the whole set', 'Drop straight down, not forward', 'Weight mostly on the front leg', 'Even reps both sides'] },
+  { id: 'bulgarian', name: 'Rear-Foot Elevated Squat', pattern: 'squat', equipment: 'bodyweight', unit: 'reps', load: 3,
+    primary: ['quads', 'glutes'], secondary: ['hamstrings', 'core'],
+    cues: ['Back foot on a low bench', 'Front foot far enough forward', 'Sink straight down', 'Brutal — start with fewer reps'] },
+  { id: 'pistolbox', name: 'Box Pistol Squat', pattern: 'squat', equipment: 'bodyweight', unit: 'reps', load: 3,
+    primary: ['quads', 'glutes'], secondary: ['core', 'hamstrings'],
+    cues: ['Sit to a box on one leg', 'Free leg out in front', 'Arms forward to counterbalance', 'Stand without pushing off the box'] },
+  { id: 'sumosquat', name: 'Sumo Squat', pattern: 'squat', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['quads', 'glutes'], secondary: ['hamstrings', 'core'],
+    cues: ['Wide stance, toes out 45 degrees', 'Knees push out over the toes', 'Chest tall the whole way', 'Squeeze the glutes at the top'] },
+  { id: 'wallsit', name: 'Wall Sit', pattern: 'squat', equipment: 'bodyweight', unit: 'seconds', load: 2,
+    primary: ['quads'], secondary: ['glutes', 'core'],
+    cues: ['Thighs parallel to the floor', 'Back flat against the wall', 'Weight in the heels', 'Breathe — do not brace and hold'] },
+  { id: 'stepup', name: 'Step-Up', pattern: 'squat', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['quads', 'glutes'], secondary: ['calves', 'core'],
+    cues: ['Whole foot on the step', 'Drive through the top heel', 'Do not push off the back foot', 'Lower slowly, no thud'] },
+  { id: 'calfraise', name: 'Calf Raise', pattern: 'squat', equipment: 'bodyweight', unit: 'reps', load: 1,
+    primary: ['calves'], secondary: [],
+    cues: ['Rise to the top slowly', 'Pause at full height', 'Lower all the way down', 'No bouncing'] },
+  { id: 'singlecalf', name: 'Single-Leg Calf Raise', pattern: 'squat', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['calves'], secondary: ['core'],
+    cues: ['One hand on a wall for balance', 'Full range, heel below the step', 'Pause at the top', 'Match the reps on both sides'] },
+
+  // ================= BODYWEIGHT — HINGE =================
+  { id: 'hipbridge', name: 'Hip Bridge', pattern: 'hinge', equipment: 'bodyweight', unit: 'reps', load: 1,
+    primary: ['glutes', 'hamstrings'], secondary: ['lowerBack', 'core'],
+    cues: ['Heels close to your hips', 'Drive through the heels', 'Squeeze at the top, ribs down', 'Lower one vertebra at a time'] },
+  { id: 'singlebridge', name: 'Single-Leg Bridge', pattern: 'hinge', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['glutes', 'hamstrings'], secondary: ['core', 'lowerBack'],
+    cues: ['One foot planted, other knee tucked', 'Hips stay level — do not tip', 'Drive up through the heel', 'Same reps each side'] },
+  { id: 'goodmorning', name: 'Standing Hinge', pattern: 'hinge', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['hamstrings', 'lowerBack'], secondary: ['glutes'],
+    cues: ['Soft knees, long spine', 'Push your hips back', 'Feel the stretch, not a round back', 'Stand tall by squeezing your glutes'] },
+  { id: 'singleleg', name: 'Single-Leg Reach', pattern: 'hinge', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['hamstrings', 'glutes'], secondary: ['core', 'obliques'],
+    cues: ['One line from crown to back heel', 'Hips stay square to the floor', 'Reach, do not rush', 'Return under control'] },
+  { id: 'nordiceccentric', name: 'Nordic Curl (Assisted)', pattern: 'hinge', equipment: 'bodyweight', unit: 'reps', load: 3,
+    primary: ['hamstrings'], secondary: ['glutes', 'core'],
+    cues: ['Anchor the heels, kneel tall', 'Lower as slowly as you can control', 'Hips stay extended — no folding', 'Catch with the hands and push back'] },
+  { id: 'glutekickback', name: 'Quadruped Kickback', pattern: 'hinge', equipment: 'bodyweight', unit: 'reps', load: 1,
+    primary: ['glutes'], secondary: ['hamstrings', 'lowerBack'],
+    cues: ['Hands and knees, flat back', 'Drive the heel to the ceiling', 'Do not arch the low back', 'Squeeze at the top for a beat'] },
+  { id: 'frogpump', name: 'Frog Pump', pattern: 'hinge', equipment: 'bodyweight', unit: 'reps', load: 1,
+    primary: ['glutes'], secondary: ['hamstrings'],
+    cues: ['Soles of the feet together, knees wide', 'Drive the hips up', 'Chin tucked, ribs down', 'Fast up, slow down'] },
+
+  // ================= BODYWEIGHT — BRACE =================
+  { id: 'plank', name: 'Front Plank', pattern: 'brace', equipment: 'bodyweight', unit: 'seconds', load: 2,
+    primary: ['core'], secondary: ['shoulders', 'glutes'],
+    cues: ['Elbows under shoulders', 'Ribs down, tailbone tucked', 'Squeeze glutes and quads', 'Breathe — do not hold your breath'] },
+  { id: 'sideplank', name: 'Side Plank', pattern: 'brace', equipment: 'bodyweight', unit: 'seconds', load: 2,
+    primary: ['obliques'], secondary: ['core', 'shoulders'],
+    cues: ['Stack your feet and shoulders', 'Lift the hips high', 'Do not let the top shoulder roll forward', 'Even time on both sides'] },
+  { id: 'deadbug', name: 'Dead Bug', pattern: 'brace', equipment: 'bodyweight', unit: 'reps', load: 1,
+    primary: ['core'], secondary: ['lowerBack'],
+    cues: ['Low back stays flat to the floor', 'Move the opposite arm and leg', 'Slow — three seconds out', 'Exhale as you extend'] },
+  { id: 'superman', name: 'Back Extension', pattern: 'brace', equipment: 'bodyweight', unit: 'reps', load: 1,
+    primary: ['lowerBack'], secondary: ['glutes', 'upperBack'],
+    cues: ['Look at the floor, neck long', 'Lift chest and thighs together', 'Small range is plenty', 'Lower softly'] },
+  { id: 'birddog', name: 'Bird Dog', pattern: 'brace', equipment: 'bodyweight', unit: 'reps', load: 1,
+    primary: ['core', 'lowerBack'], secondary: ['glutes', 'upperBack'],
+    cues: ['Opposite arm and leg reach out', 'Hips stay square — no rotation', 'Long from fingertips to heel', 'Pause for two counts'] },
+  { id: 'hollowhold', name: 'Hollow Hold', pattern: 'brace', equipment: 'bodyweight', unit: 'seconds', load: 3,
+    primary: ['core'], secondary: ['quads'],
+    cues: ['Low back pressed flat', 'Shoulders and heels just off the floor', 'Arms by the ears if you can', 'Bend the knees to make it easier'] },
+  { id: 'legraise', name: 'Lying Leg Raise', pattern: 'brace', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['core'], secondary: ['quads'],
+    cues: ['Hands under the hips for support', 'Legs straight, lower slowly', 'Stop before the back arches', 'Do not let the feet touch down'] },
+  { id: 'hangingkneeraise', name: 'Hanging Knee Raise', pattern: 'brace', equipment: 'bodyweight', unit: 'reps', load: 3,
+    primary: ['core'], secondary: ['forearms', 'lats'],
+    cues: ['Hang without swinging', 'Curl the pelvis, not just the knees', 'Knees toward the chest', 'Lower under control'] },
+  { id: 'russiantwist', name: 'Seated Twist', pattern: 'brace', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['obliques'], secondary: ['core'],
+    cues: ['Lean back, spine long not rounded', 'Rotate from the ribcage', 'Touch each side lightly', 'Slow beats fast here'] },
+  { id: 'palloffhold', name: 'Anti-Rotation Hold', pattern: 'brace', equipment: 'bodyweight', unit: 'seconds', load: 2,
+    primary: ['obliques', 'core'], secondary: ['shoulders'],
+    cues: ['Press the hands straight out from the chest', 'Resist the pull to rotate', 'Feet planted, hips square', 'Equal time facing each way'] },
+  { id: 'flutterkick', name: 'Flutter Kicks', pattern: 'brace', equipment: 'bodyweight', unit: 'seconds', load: 2,
+    primary: ['core'], secondary: ['quads'],
+    cues: ['Low back stays down', 'Small, quick alternating kicks', 'Heels never touch the floor', 'Neck relaxed'] },
+
+  // ================= BODYWEIGHT — CARRY =================
+  { id: 'farmerbw', name: 'Suitcase Hold', pattern: 'carry', equipment: 'bodyweight', unit: 'seconds', load: 2,
+    primary: ['forearms', 'obliques'], secondary: ['upperBack', 'core'],
+    cues: ['Heavy object in one hand', 'Stand tall — do not lean away', 'Shoulders level the whole time', 'Swap sides for equal time'] },
+  { id: 'bagcarry', name: 'Loaded Carry', pattern: 'carry', equipment: 'bodyweight', unit: 'seconds', load: 2,
+    primary: ['forearms', 'core'], secondary: ['upperBack', 'quads'],
+    cues: ['Anything heavy in both hands', 'Ribs down, chest proud', 'Short controlled steps', 'Set it down, do not drop it'] },
+
+  // ================= BODYWEIGHT — CONDITIONING =================
+  { id: 'jumpingjack', name: 'Jumping Jacks', pattern: 'condition', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['calves', 'shoulders'], secondary: ['quads', 'core'],
+    cues: ['Land soft, knees bent', 'Full arm sweep overhead', 'Keep a steady rhythm', 'Breathe in time'] },
+  { id: 'highknees', name: 'High Knees', pattern: 'condition', equipment: 'bodyweight', unit: 'seconds', load: 2,
+    primary: ['quads', 'calves'], secondary: ['core'],
+    cues: ['Knees to hip height', 'Stay on the balls of your feet', 'Arms drive with the legs', 'Tall posture, no leaning back'] },
+  { id: 'burpee', name: 'Burpee', pattern: 'condition', equipment: 'bodyweight', unit: 'reps', load: 3,
+    primary: ['quads', 'chest'], secondary: ['core', 'shoulders', 'triceps'],
+    cues: ['Hands down before the feet jump back', 'Keep the plank rigid', 'Chest up as you stand', 'Pace it — this one bites'] },
+  { id: 'mountain', name: 'Mountain Climbers', pattern: 'condition', equipment: 'bodyweight', unit: 'seconds', load: 2,
+    primary: ['core', 'quads'], secondary: ['shoulders'],
+    cues: ['Hips level, do not pike', 'Drive the knee to the chest', 'Shoulders stay over the hands', 'Quick but controlled'] },
+  { id: 'squatjump', name: 'Squat Jump', pattern: 'condition', equipment: 'bodyweight', unit: 'reps', load: 3,
+    primary: ['quads', 'glutes'], secondary: ['calves', 'core'],
+    cues: ['Sink to a quarter squat', 'Explode up, reach tall', 'Land quiet, absorb through the hips', 'Reset each rep'] },
+  { id: 'skater', name: 'Skater Bound', pattern: 'condition', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['glutes', 'quads'], secondary: ['calves', 'obliques'],
+    cues: ['Bound side to side', 'Land on one leg and stick it', 'Free leg swings behind', 'Arms help you travel'] },
+  { id: 'shadowbox', name: 'Shadow Boxing', pattern: 'condition', equipment: 'bodyweight', unit: 'seconds', load: 2,
+    primary: ['shoulders', 'obliques'], secondary: ['core', 'calves'],
+    cues: ['Light on the feet, hands up', 'Rotate from the hips, not just the arms', 'Exhale sharply on each punch', 'Stay relaxed — do not muscle it'] },
+  { id: 'tuckjump', name: 'Tuck Jump', pattern: 'condition', equipment: 'bodyweight', unit: 'reps', load: 3,
+    primary: ['quads', 'core'], secondary: ['calves', 'glutes'],
+    cues: ['Jump and pull the knees up', 'Land softly on the mid-foot', 'Chest stays up', 'Low reps — this is a power move'] },
+  { id: 'inchworm', name: 'Inchworm', pattern: 'condition', equipment: 'bodyweight', unit: 'reps', load: 2,
+    primary: ['core', 'shoulders'], secondary: ['hamstrings', 'chest'],
+    cues: ['Hinge and walk the hands out', 'Pause in a strong plank', 'Walk the feet back to the hands', 'Keep the legs as straight as comfort allows'] },
+  { id: 'burpeebroad', name: 'Broad Jump', pattern: 'condition', equipment: 'bodyweight', unit: 'reps', load: 3,
+    primary: ['glutes', 'quads'], secondary: ['calves', 'hamstrings'],
+    cues: ['Swing the arms back, then forward', 'Jump for distance, not height', 'Land in a soft squat', 'Walk back and reset each rep'] },
+
+  // ================= BODYWEIGHT — MOBILITY =================
+  { id: 'catcow', name: 'Cat-Cow', pattern: 'mobility', equipment: 'bodyweight', unit: 'reps', load: 1,
+    primary: ['lowerBack'], secondary: ['core', 'upperBack'],
+    cues: ['Move with your breath', 'Round fully, then arch fully', 'Let the movement start at the tailbone', 'No forcing the end range'] },
+  { id: 'hipopener', name: 'Hip Opener', pattern: 'mobility', equipment: 'bodyweight', unit: 'seconds', load: 1,
+    primary: ['glutes'], secondary: ['hamstrings', 'lowerBack'],
+    cues: ['Front shin as parallel as it goes', 'Hips square, chest tall', 'Breathe into the stretch', 'Match the time on both sides'] },
+  { id: 'shoulderopener', name: 'Shoulder Opener', pattern: 'mobility', equipment: 'bodyweight', unit: 'seconds', load: 1,
+    primary: ['shoulders'], secondary: ['chest', 'upperBack'],
+    cues: ['Hands wide on a doorway or strap', 'Chest through, ribs down', 'Stop before any pinching', 'Slow, even breathing'] },
+  { id: 'hamstretch', name: 'Hamstring Stretch', pattern: 'mobility', equipment: 'bodyweight', unit: 'seconds', load: 1,
+    primary: ['hamstrings'], secondary: ['calves', 'lowerBack'],
+    cues: ['Hinge from the hip, spine long', 'Soft knee is fine', 'Ease in — no bouncing', 'Thirty seconds each side'] },
+  { id: 'worldsgreatest', name: 'Deep Lunge Rotation', pattern: 'mobility', equipment: 'bodyweight', unit: 'reps', load: 1,
+    primary: ['glutes', 'obliques'], secondary: ['hamstrings', 'shoulders'],
+    cues: ['Deep lunge, back knee off the floor', 'Elbow toward the instep', 'Rotate and reach for the ceiling', 'Follow your hand with your eyes'] },
+  { id: 'thoracicrotation', name: 'Open Book', pattern: 'mobility', equipment: 'bodyweight', unit: 'reps', load: 1,
+    primary: ['upperBack'], secondary: ['chest', 'obliques'],
+    cues: ['Lie on your side, knees stacked', 'Peel the top arm open', 'Let the head follow', 'Exhale at the end range'] },
+  { id: 'ankledorsi', name: 'Ankle Rock', pattern: 'mobility', equipment: 'bodyweight', unit: 'reps', load: 1,
+    primary: ['calves'], secondary: ['quads'],
+    cues: ['Front foot flat, knee over the toes', 'Rock forward without lifting the heel', 'Small, repeated rocks', 'Both ankles'] },
+  { id: 'childspose', name: 'Rest Pose', pattern: 'mobility', equipment: 'bodyweight', unit: 'seconds', load: 1,
+    primary: ['lowerBack'], secondary: ['lats', 'shoulders'],
+    cues: ['Knees wide, big toes together', 'Reach the hands long', 'Let the chest sink toward the floor', 'Long slow breaths'] },
+  { id: 'couchstretch', name: 'Hip Flexor Stretch', pattern: 'mobility', equipment: 'bodyweight', unit: 'seconds', load: 1,
+    primary: ['quads'], secondary: ['glutes', 'lowerBack'],
+    cues: ['Back knee down, shin up a wall or couch', 'Squeeze the back glute', 'Ribs down — do not arch', 'Back off if the knee complains'] },
+  { id: 'neckrolls', name: 'Neck Release', pattern: 'mobility', equipment: 'bodyweight', unit: 'seconds', load: 1,
+    primary: ['upperBack'], secondary: [],
+    cues: ['Slow half-circles, ear toward shoulder', 'Never roll backward under load', 'Let the shoulders stay down', 'Stop at any sharp sensation'] },
+
+  // ================= DUMBBELL =================
+  { id: 'dbbench', name: 'DB Bench Press', pattern: 'push', equipment: 'dumbbell', unit: 'reps', load: 3,
+    primary: ['chest'], secondary: ['triceps', 'shoulders'],
+    cues: ['Shoulder blades pinned to the bench', 'Wrists stacked over the elbows', 'Lower to chest level', 'Press up and slightly together'] },
+  { id: 'dbfloorpress', name: 'DB Floor Press', pattern: 'push', equipment: 'dumbbell', unit: 'reps', load: 2,
+    primary: ['chest', 'triceps'], secondary: ['shoulders'],
+    cues: ['Upper arms rest at the bottom', 'Elbows at 45 degrees from the body', 'Press without flaring', 'Great when the shoulders are cranky'] },
+  { id: 'dbshoulderpress', name: 'DB Shoulder Press', pattern: 'push', equipment: 'dumbbell', unit: 'reps', load: 3,
+    primary: ['shoulders'], secondary: ['triceps', 'core'],
+    cues: ['Start at ear height, elbows forward', 'Brace the ribs down', 'Press until the arms lock', 'Lower slower than you press'] },
+  { id: 'dblateral', name: 'Lateral Raise', pattern: 'push', equipment: 'dumbbell', unit: 'reps', load: 1,
+    primary: ['shoulders'], secondary: [],
+    cues: ['Slight bend in the elbows', 'Lead with the elbows, not the hands', 'Stop at shoulder height', 'Light weight — no swinging'] },
+  { id: 'dbfly', name: 'DB Fly', pattern: 'push', equipment: 'dumbbell', unit: 'reps', load: 2,
+    primary: ['chest'], secondary: ['shoulders'],
+    cues: ['Soft elbows, hold the angle', 'Open wide like hugging a barrel', 'Stop when the chest says so', 'Squeeze at the top'] },
+  { id: 'dbtricepext', name: 'Overhead Triceps Ext.', pattern: 'push', equipment: 'dumbbell', unit: 'reps', load: 2,
+    primary: ['triceps'], secondary: ['shoulders'],
+    cues: ['Elbows point forward, close to the head', 'Lower behind the neck', 'Only the forearms move', 'Ribs stay down'] },
+  { id: 'dbrow', name: 'Single-Arm DB Row', pattern: 'pull', equipment: 'dumbbell', unit: 'reps', load: 2,
+    primary: ['lats', 'upperBack'], secondary: ['biceps', 'forearms'],
+    cues: ['Hand and knee on a bench', 'Flat back, hips square', 'Pull the elbow to the hip', 'No twisting to lift it'] },
+  { id: 'dbbentrow', name: 'Bent-Over DB Row', pattern: 'pull', equipment: 'dumbbell', unit: 'reps', load: 3,
+    primary: ['lats', 'upperBack'], secondary: ['biceps', 'lowerBack'],
+    cues: ['Hinge to about 45 degrees', 'Long spine, chest proud', 'Row both to the ribs', 'Do not stand up to finish the rep'] },
+  { id: 'dbcurl', name: 'DB Curl', pattern: 'pull', equipment: 'dumbbell', unit: 'reps', load: 1,
+    primary: ['biceps'], secondary: ['forearms'],
+    cues: ['Elbows pinned at your sides', 'Curl without swinging the body', 'Squeeze at the top', 'Lower for three counts'] },
+  { id: 'dbhammer', name: 'Hammer Curl', pattern: 'pull', equipment: 'dumbbell', unit: 'reps', load: 1,
+    primary: ['biceps', 'forearms'], secondary: [],
+    cues: ['Palms face each other throughout', 'Elbows stay still', 'Control the negative', 'Both arms together or alternating'] },
+  { id: 'dbrearfly', name: 'Rear Delt Fly', pattern: 'pull', equipment: 'dumbbell', unit: 'reps', load: 1,
+    primary: ['upperBack', 'shoulders'], secondary: [],
+    cues: ['Hinge forward, back flat', 'Lift out to the sides, thumbs down', 'Squeeze the shoulder blades', 'Light weight, high control'] },
+  { id: 'dbshrug', name: 'DB Shrug', pattern: 'pull', equipment: 'dumbbell', unit: 'reps', load: 2,
+    primary: ['upperBack'], secondary: ['forearms'],
+    cues: ['Shrug straight up, not in circles', 'Pause at the top', 'Do not roll the shoulders', 'Let the arms hang relaxed'] },
+  { id: 'dbgoblet', name: 'Goblet Squat', pattern: 'squat', equipment: 'dumbbell', unit: 'reps', load: 3,
+    primary: ['quads', 'glutes'], secondary: ['core', 'upperBack'],
+    cues: ['Hold the weight at the chest', 'Elbows inside the knees at the bottom', 'Chest tall the whole way', 'Drive up through the whole foot'] },
+  { id: 'dblunge', name: 'DB Lunge', pattern: 'squat', equipment: 'dumbbell', unit: 'reps', load: 3,
+    primary: ['quads', 'glutes'], secondary: ['hamstrings', 'forearms', 'core'],
+    cues: ['Weights hang at your sides', 'Step and drop straight down', 'Torso upright', 'Push through the front heel to stand'] },
+  { id: 'dbstepup', name: 'DB Step-Up', pattern: 'squat', equipment: 'dumbbell', unit: 'reps', load: 3,
+    primary: ['quads', 'glutes'], secondary: ['calves', 'forearms'],
+    cues: ['Full foot on the box', 'Drive through the top leg only', 'Stand tall at the top', 'Lower with control'] },
+  { id: 'dbrdl', name: 'DB Romanian Deadlift', pattern: 'hinge', equipment: 'dumbbell', unit: 'reps', load: 3,
+    primary: ['hamstrings', 'glutes'], secondary: ['lowerBack', 'forearms'],
+    cues: ['Weights close to the legs', 'Push the hips back, soft knees', 'Stop where the back would round', 'Squeeze the glutes to stand'] },
+  { id: 'dbsinglerdl', name: 'Single-Leg DB RDL', pattern: 'hinge', equipment: 'dumbbell', unit: 'reps', load: 3,
+    primary: ['hamstrings', 'glutes'], secondary: ['core', 'obliques'],
+    cues: ['One weight, opposite hand', 'Hips square — do not open up', 'Back leg extends behind you', 'Slow is the whole point'] },
+  { id: 'dbfarmer', name: 'Farmer Carry', pattern: 'carry', equipment: 'dumbbell', unit: 'seconds', load: 2,
+    primary: ['forearms', 'upperBack'], secondary: ['core', 'quads'],
+    cues: ['Heavy in both hands', 'Stand tall, shoulders back', 'Brisk, deliberate steps', 'Grip fails before the legs do'] },
+  { id: 'dbwaiter', name: 'Overhead Carry', pattern: 'carry', equipment: 'dumbbell', unit: 'seconds', load: 3,
+    primary: ['shoulders', 'core'], secondary: ['triceps', 'obliques'],
+    cues: ['One weight locked out overhead', 'Bicep by the ear', 'Ribs down, do not lean', 'Swap arms for equal time'] },
+  { id: 'dbthruster', name: 'DB Thruster', pattern: 'condition', equipment: 'dumbbell', unit: 'reps', load: 3,
+    primary: ['quads', 'shoulders'], secondary: ['glutes', 'triceps', 'core'],
+    cues: ['Front squat into an overhead press', 'One continuous movement', 'Use the leg drive to start the press', 'Breathe at the top'] },
+  { id: 'dbrenegade', name: 'Renegade Row', pattern: 'condition', equipment: 'dumbbell', unit: 'reps', load: 3,
+    primary: ['core', 'lats'], secondary: ['obliques', 'chest', 'shoulders'],
+    cues: ['Wide feet for stability', 'Row one weight, hips stay level', 'Do not rotate toward the working arm', 'Alternate sides'] },
+
+  // ================= BARBELL =================
+  { id: 'bbbench', name: 'Bench Press', pattern: 'push', equipment: 'barbell', unit: 'reps', load: 3,
+    primary: ['chest', 'triceps'], secondary: ['shoulders'],
+    cues: ['Feet planted, upper back tight', 'Bar to the lower chest', 'Elbows about 45 degrees', 'Use a spotter or safeties'] },
+  { id: 'bboverhead', name: 'Overhead Press', pattern: 'push', equipment: 'barbell', unit: 'reps', load: 3,
+    primary: ['shoulders', 'triceps'], secondary: ['core', 'upperBack'],
+    cues: ['Bar on the front delts to start', 'Squeeze glutes, ribs down', 'Move the head back, press through', 'Finish with the bar over the ears'] },
+  { id: 'bbclosegrip', name: 'Close-Grip Bench', pattern: 'push', equipment: 'barbell', unit: 'reps', load: 3,
+    primary: ['triceps', 'chest'], secondary: ['shoulders'],
+    cues: ['Hands about shoulder width', 'Elbows tucked close', 'Bar to the lower sternum', 'Do not narrow the grip past comfort'] },
+  { id: 'bbrow', name: 'Barbell Row', pattern: 'pull', equipment: 'barbell', unit: 'reps', load: 3,
+    primary: ['lats', 'upperBack'], secondary: ['biceps', 'lowerBack', 'forearms'],
+    cues: ['Hinge to 45 degrees, back flat', 'Pull to the navel', 'Elbows drive back, not out', 'Lower fully each rep'] },
+  { id: 'bbcurl', name: 'Barbell Curl', pattern: 'pull', equipment: 'barbell', unit: 'reps', load: 2,
+    primary: ['biceps'], secondary: ['forearms'],
+    cues: ['Shoulder-width grip', 'Elbows stay at your sides', 'No hip swing to start the rep', 'Slow on the way down'] },
+  { id: 'bbsquat', name: 'Back Squat', pattern: 'squat', equipment: 'barbell', unit: 'reps', load: 3,
+    primary: ['quads', 'glutes'], secondary: ['lowerBack', 'core', 'hamstrings'],
+    cues: ['Bar on the upper back, not the neck', 'Brace hard before you descend', 'Hips and knees bend together', 'Drive the whole foot into the floor'] },
+  { id: 'bbfrontsquat', name: 'Front Squat', pattern: 'squat', equipment: 'barbell', unit: 'reps', load: 3,
+    primary: ['quads'], secondary: ['core', 'upperBack', 'glutes'],
+    cues: ['Elbows high, bar on the shoulders', 'Stay upright through the whole rep', 'Knees track over the toes', 'Elbows drop means the bar drops'] },
+  { id: 'bbdeadlift', name: 'Deadlift', pattern: 'hinge', equipment: 'barbell', unit: 'reps', load: 3,
+    primary: ['hamstrings', 'glutes', 'lowerBack'], secondary: ['upperBack', 'forearms', 'quads'],
+    cues: ['Bar over mid-foot, shins close', 'Take the slack out before you pull', 'Push the floor away', 'Lock out with the glutes, not the low back'] },
+  { id: 'bbrdl', name: 'Barbell RDL', pattern: 'hinge', equipment: 'barbell', unit: 'reps', load: 3,
+    primary: ['hamstrings', 'glutes'], secondary: ['lowerBack', 'forearms'],
+    cues: ['Start standing, bar against the thighs', 'Push the hips back, bar stays close', 'Soft knees, long spine', 'Stop at the stretch, not the floor'] },
+  { id: 'bbhipthrust', name: 'Hip Thrust', pattern: 'hinge', equipment: 'barbell', unit: 'reps', load: 3,
+    primary: ['glutes'], secondary: ['hamstrings', 'core'],
+    cues: ['Upper back on a bench, bar on the hips', 'Chin tucked, ribs down', 'Drive the hips to full lockout', 'Pause and squeeze at the top'] },
+  { id: 'bbgoodmorning', name: 'Barbell Good Morning', pattern: 'hinge', equipment: 'barbell', unit: 'reps', load: 3,
+    primary: ['hamstrings', 'lowerBack'], secondary: ['glutes'],
+    cues: ['Light bar — lighter than you think', 'Hips back, chest down', 'Never round the spine', 'Stand by driving the hips forward'] },
+
+  // ================= KETTLEBELL =================
+  { id: 'kbswing', name: 'KB Swing', pattern: 'hinge', equipment: 'kettlebell', unit: 'reps', load: 3,
+    primary: ['glutes', 'hamstrings'], secondary: ['lowerBack', 'core', 'forearms'],
+    cues: ['Hike the bell back between the legs', 'Snap the hips — the arms are rope', 'Bell floats to chest height, no higher', 'Stand tall and squeeze at the top'] },
+  { id: 'kbgoblet', name: 'KB Goblet Squat', pattern: 'squat', equipment: 'kettlebell', unit: 'reps', load: 3,
+    primary: ['quads', 'glutes'], secondary: ['core', 'upperBack'],
+    cues: ['Bell by the horns at the chest', 'Sit between the hips', 'Elbows brush the inside of the knees', 'Stay tall coming up'] },
+  { id: 'kbcleanpress', name: 'KB Clean & Press', pattern: 'push', equipment: 'kettlebell', unit: 'reps', load: 3,
+    primary: ['shoulders', 'glutes'], secondary: ['triceps', 'core', 'forearms'],
+    cues: ['Guide the bell to the rack, do not swing it up', 'Pause in the rack position', 'Press with the ribs down', 'Lower to the rack, then to the hang'] },
+  { id: 'kbturkish', name: 'Turkish Get-Up', pattern: 'brace', equipment: 'kettlebell', unit: 'reps', load: 3,
+    primary: ['shoulders', 'core'], secondary: ['obliques', 'glutes', 'quads'],
+    cues: ['Eyes on the bell the whole way', 'One step at a time — never rush', 'Arm stays vertical throughout', 'Reverse the same steps to come down'] },
+  { id: 'kbsnatch', name: 'KB Snatch', pattern: 'condition', equipment: 'kettlebell', unit: 'reps', load: 3,
+    primary: ['shoulders', 'glutes'], secondary: ['hamstrings', 'forearms', 'core'],
+    cues: ['One hip snap from swing to overhead', 'Punch the hand through, do not let it flop', 'Lock out with a still arm', 'Learn this one light'] },
+  { id: 'kbwindmill', name: 'KB Windmill', pattern: 'brace', equipment: 'kettlebell', unit: 'reps', load: 2,
+    primary: ['obliques', 'shoulders'], secondary: ['hamstrings', 'core'],
+    cues: ['Top arm locked out, eyes on the bell', 'Push the hip out to the side', 'Slide the free hand down the leg', 'Stop where the range ends'] },
+  { id: 'kbracked', name: 'Racked Carry', pattern: 'carry', equipment: 'kettlebell', unit: 'seconds', load: 2,
+    primary: ['core', 'upperBack'], secondary: ['obliques', 'forearms'],
+    cues: ['Bell in the rack, wrist straight', 'Do not lean away from the load', 'Breathe against the pressure', 'Equal time each side'] },
+  { id: 'kbhalo', name: 'KB Halo', pattern: 'mobility', equipment: 'kettlebell', unit: 'reps', load: 1,
+    primary: ['shoulders'], secondary: ['upperBack', 'core'],
+    cues: ['Circle the bell close around the head', 'Ribs down — do not arch', 'Slow and even both directions', 'Light bell'] },
+
+  // ================= BANDS =================
+  { id: 'bandpullapart', name: 'Band Pull-Apart', pattern: 'pull', equipment: 'band', unit: 'reps', load: 1,
+    primary: ['upperBack'], secondary: ['shoulders'],
+    cues: ['Arms straight at chest height', 'Pull the band to the sternum', 'Squeeze the shoulder blades', 'Return slowly, do not let it snap'] },
+  { id: 'bandrow', name: 'Band Row', pattern: 'pull', equipment: 'band', unit: 'reps', load: 2,
+    primary: ['lats', 'upperBack'], secondary: ['biceps', 'forearms'],
+    cues: ['Anchor at chest height', 'Elbows drive past the ribs', 'Chest stays proud', 'Resist the return'] },
+  { id: 'bandfacepull', name: 'Face Pull', pattern: 'pull', equipment: 'band', unit: 'reps', load: 1,
+    primary: ['upperBack', 'shoulders'], secondary: [],
+    cues: ['Anchor above head height', 'Pull toward the forehead', 'Elbows high, hands wider than elbows', 'Great antidote to desk posture'] },
+  { id: 'bandpressdown', name: 'Band Press-Down', pattern: 'push', equipment: 'band', unit: 'reps', load: 1,
+    primary: ['triceps'], secondary: [],
+    cues: ['Elbows pinned to the ribs', 'Only the forearms move', 'Full lockout at the bottom', 'Control the way back up'] },
+  { id: 'bandchestpress', name: 'Band Chest Press', pattern: 'push', equipment: 'band', unit: 'reps', load: 2,
+    primary: ['chest', 'triceps'], secondary: ['shoulders', 'core'],
+    cues: ['Band behind the back, under the arms', 'Press forward and slightly together', 'Do not let the ribs flare', 'Slow return'] },
+  { id: 'bandmonster', name: 'Monster Walk', pattern: 'squat', equipment: 'band', unit: 'seconds', load: 2,
+    primary: ['glutes'], secondary: ['quads', 'core'],
+    cues: ['Band above the knees', 'Quarter squat, stay low', 'Step wide, keep tension', 'Toes forward the whole time'] },
+  { id: 'bandclamshell', name: 'Clamshell', pattern: 'hinge', equipment: 'band', unit: 'reps', load: 1,
+    primary: ['glutes'], secondary: ['obliques'],
+    cues: ['Side lying, knees bent, band above the knees', 'Open the top knee only', 'Hips stay stacked — no rolling back', 'Squeeze at the top'] },
+  { id: 'bandgoodmorning', name: 'Band Good Morning', pattern: 'hinge', equipment: 'band', unit: 'reps', load: 2,
+    primary: ['hamstrings', 'glutes'], secondary: ['lowerBack'],
+    cues: ['Band under the feet, over the shoulders', 'Hips back, spine long', 'Feel the hamstrings load', 'Stand by squeezing the glutes'] },
+  { id: 'bandpallof', name: 'Band Anti-Rotation Press', pattern: 'brace', equipment: 'band', unit: 'reps', load: 2,
+    primary: ['obliques', 'core'], secondary: ['shoulders'],
+    cues: ['Stand side-on to the anchor', 'Press straight out from the chest', 'Do not let the torso turn', 'Equal reps facing each way'] },
+  { id: 'bandlateral', name: 'Band Lateral Raise', pattern: 'push', equipment: 'band', unit: 'reps', load: 1,
+    primary: ['shoulders'], secondary: [],
+    cues: ['Stand on the band, handles at your sides', 'Lead with the elbows', 'Stop at shoulder height', 'Resist on the way down'] },
+
+  // ================= CABLE & MACHINE =================
+  { id: 'latpulldown', name: 'Lat Pulldown', pattern: 'pull', equipment: 'machine', unit: 'reps', load: 2,
+    primary: ['lats'], secondary: ['biceps', 'upperBack', 'forearms'],
+    cues: ['Chest up, slight lean back', 'Pull the bar to the collarbone', 'Drive the elbows down and back', 'Control the bar back to full stretch'] },
+  { id: 'seatedrow', name: 'Seated Cable Row', pattern: 'pull', equipment: 'cable', unit: 'reps', load: 2,
+    primary: ['lats', 'upperBack'], secondary: ['biceps', 'forearms'],
+    cues: ['Sit tall, slight forward lean to start', 'Pull to the belly button', 'Squeeze the blades, then release', 'Do not row with the low back'] },
+  { id: 'cablefly', name: 'Cable Fly', pattern: 'push', equipment: 'cable', unit: 'reps', load: 2,
+    primary: ['chest'], secondary: ['shoulders'],
+    cues: ['Soft elbows, hold the angle', 'Bring the hands together in front', 'Squeeze for a beat', 'Let the stretch happen slowly'] },
+  { id: 'cabletriceps', name: 'Cable Press-Down', pattern: 'push', equipment: 'cable', unit: 'reps', load: 2,
+    primary: ['triceps'], secondary: [],
+    cues: ['Elbows locked at the ribs', 'Press to full extension', 'Lean slightly forward, stay still', 'Do not turn it into a shoulder press'] },
+  { id: 'cablecurl', name: 'Cable Curl', pattern: 'pull', equipment: 'cable', unit: 'reps', load: 2,
+    primary: ['biceps'], secondary: ['forearms'],
+    cues: ['Constant tension is the point', 'Elbows stay put', 'Squeeze hard at the top', 'Three seconds down'] },
+  { id: 'cablewoodchop', name: 'Cable Chop', pattern: 'brace', equipment: 'cable', unit: 'reps', load: 2,
+    primary: ['obliques', 'core'], secondary: ['shoulders', 'glutes'],
+    cues: ['Rotate from the hips and ribs', 'Arms stay long, do not row it', 'Pivot the back foot', 'Same reps each direction'] },
+  { id: 'legpress', name: 'Leg Press', pattern: 'squat', equipment: 'machine', unit: 'reps', load: 3,
+    primary: ['quads', 'glutes'], secondary: ['hamstrings', 'calves'],
+    cues: ['Feet mid-platform, shoulder width', 'Lower until the knees reach 90', 'Do not let the low back round off the pad', 'Never lock the knees hard'] },
+  { id: 'legextension', name: 'Leg Extension', pattern: 'squat', equipment: 'machine', unit: 'reps', load: 2,
+    primary: ['quads'], secondary: [],
+    cues: ['Pad on the shins, not the ankles', 'Extend to straight, pause', 'Lower for three counts', 'Do not swing the weight up'] },
+  { id: 'legcurl', name: 'Leg Curl', pattern: 'hinge', equipment: 'machine', unit: 'reps', load: 2,
+    primary: ['hamstrings'], secondary: ['calves'],
+    cues: ['Hips stay down on the pad', 'Curl all the way, squeeze', 'Slow on the return', 'No jerking off the bottom'] },
+  { id: 'chestpressmachine', name: 'Chest Press Machine', pattern: 'push', equipment: 'machine', unit: 'reps', load: 2,
+    primary: ['chest', 'triceps'], secondary: ['shoulders'],
+    cues: ['Set the seat so handles meet mid-chest', 'Back flat against the pad', 'Press without shrugging', 'Stop just short of lockout'] },
+  { id: 'calfmachine', name: 'Standing Calf Machine', pattern: 'squat', equipment: 'machine', unit: 'reps', load: 2,
+    primary: ['calves'], secondary: [],
+    cues: ['Balls of the feet on the platform', 'Drop the heels for a full stretch', 'Rise to the very top', 'Pause at both ends'] },
+  { id: 'backextmachine', name: 'Hyperextension', pattern: 'hinge', equipment: 'machine', unit: 'reps', load: 2,
+    primary: ['lowerBack', 'glutes'], secondary: ['hamstrings'],
+    cues: ['Pads just below the hip bones', 'Hinge, do not round and crunch', 'Rise to a straight line, no further', 'Slow both directions'] },
+
+  // ================= CARDIO KIT =================
+  { id: 'jumprope', name: 'Jump Rope', pattern: 'condition', equipment: 'cardio', unit: 'seconds', load: 2,
+    primary: ['calves'], secondary: ['shoulders', 'forearms', 'core'],
+    cues: ['Small jumps, barely off the floor', 'Turn the rope with the wrists', 'Elbows close to the ribs', 'Land on the balls of the feet'] },
+  { id: 'rowerg', name: 'Rowing Machine', pattern: 'condition', equipment: 'cardio', unit: 'seconds', load: 2,
+    primary: ['lats', 'quads'], secondary: ['glutes', 'upperBack', 'core'],
+    cues: ['Legs, then back, then arms', 'Reverse that order on the recovery', 'Drive with the legs, not the arms', 'Long strokes beat frantic ones'] },
+  { id: 'bike', name: 'Stationary Bike', pattern: 'condition', equipment: 'cardio', unit: 'seconds', load: 2,
+    primary: ['quads'], secondary: ['glutes', 'calves', 'hamstrings'],
+    cues: ['Seat height: slight bend at the bottom', 'Push and pull through the whole circle', 'Keep the shoulders relaxed', 'Cadence over grinding'] },
+  { id: 'treadmillrun', name: 'Treadmill Run', pattern: 'condition', equipment: 'cardio', unit: 'seconds', load: 2,
+    primary: ['quads', 'calves'], secondary: ['glutes', 'hamstrings', 'core'],
+    cues: ['Land under your hips, not ahead', 'Quick, light steps', 'Relaxed shoulders and hands', 'Breathe in rhythm with the stride'] },
+  { id: 'stairclimb', name: 'Stair Climb', pattern: 'condition', equipment: 'cardio', unit: 'seconds', load: 2,
+    primary: ['quads', 'glutes'], secondary: ['calves', 'hamstrings'],
+    cues: ['Full foot on each step', 'Drive through the heel', 'Stand tall, do not hang on the rails', 'Steady beats sprinting'] },
+  { id: 'skierg', name: 'Ski Erg', pattern: 'condition', equipment: 'cardio', unit: 'seconds', load: 3,
+    primary: ['lats', 'core'], secondary: ['triceps', 'glutes'],
+    cues: ['Reach tall, then hinge and pull down', 'Finish the pull past the hips', 'Hips do the work, not just the arms', 'Rhythm over force'] },
+  { id: 'battlerope', name: 'Battle Ropes', pattern: 'condition', equipment: 'cardio', unit: 'seconds', load: 3,
+    primary: ['shoulders', 'forearms'], secondary: ['core', 'quads'],
+    cues: ['Athletic stance, knees soft', 'Waves from the shoulders, not the wrists', 'Brace the middle hard', 'Short intervals — this drains fast'] },
+  { id: 'sledpush', name: 'Sled Push', pattern: 'carry', equipment: 'cardio', unit: 'seconds', load: 3,
+    primary: ['quads', 'glutes'], secondary: ['calves', 'core', 'shoulders'],
+    cues: ['Low body angle, arms locked', 'Drive with short powerful steps', 'Head neutral, eyes just ahead', 'Push the whole distance, then rest properly'] },
+];
+
+export function getMovement(id) {
+  return MOVEMENTS.find((m) => m.id === id) || null;
+}
+
+export function movementsByPattern(pattern) {
+  return MOVEMENTS.filter((m) => m.pattern === pattern);
+}
+
+export function movementsByEquipment(equipment) {
+  return MOVEMENTS.filter((m) => m.equipment === equipment);
+}
+
+// Free-text search across the words a player can actually see: the movement
+// name, its pattern, its equipment (full name or the abbreviation the filter
+// chips teach), and the DISPLAY NAMES of the muscles it trains — "lower back"
+// has to work, not just the `lowerBack` key nobody is shown. Raw ids are matched
+// only exactly; substring-matching them made "db" return Dead Bug and "bb"
+// return half the dumbbell rack.
+export function searchMovements(query, filters) {
+  const q = (query || '').trim().toLowerCase();
+  const eq = filters && filters.equipment;
+  const pat = filters && filters.pattern;
+
+  // An exact abbreviation means THAT kit and nothing else. Left to fall through
+  // to substring matching, "bb" also matches the word "dumbbells" and returns
+  // the whole dumbbell rack.
+  const kitCode = EQUIPMENT_IDS.filter((id) => EQUIPMENT[id].short.toLowerCase() === q)[0];
+
+  return MOVEMENTS.filter((m) => {
+    if (eq && m.equipment !== eq) return false;
+    if (pat && m.pattern !== pat) return false;
+    if (!q) return true;
+    if (kitCode) return m.equipment === kitCode;
+    if (m.name.toLowerCase().includes(q)) return true;
+    if (m.id === q) return true;
+    if (PATTERNS[m.pattern].name.toLowerCase().includes(q)) return true;
+    if (EQUIPMENT[m.equipment].name.toLowerCase().includes(q)) return true;
+    return musclesOf(m).some((id) => {
+      const muscle = MUSCLES[id];
+      return id.toLowerCase() === q || (muscle && muscle.name.toLowerCase().includes(q));
+    });
+  });
+}
+
+// Every muscle a movement touches, primary first.
+export function musclesOf(movement) {
+  if (!movement) return [];
+  return [...(movement.primary || []), ...(movement.secondary || [])];
+}
+
+export default MOVEMENTS;

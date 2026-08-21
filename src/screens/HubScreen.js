@@ -3,7 +3,7 @@
 // companion, and the lower pane holds the D-pad plus the system menu.
 
 import React, { useRef, useState } from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Screen, DualPane, TileMap, Dpad, Window, Menu, PixelText, PixelSprite } from '../components';
 import { palette, space, screen } from '../theme';
 import { useGame, useCompanion } from '../state';
@@ -79,26 +79,31 @@ export default function HubScreen() {
           walk to a door
         </PixelText>
       </View>
-      <View style={{ flex: 1, justifyContent: 'center' }}>
+      {/* The menu grows as modules are installed; it must scroll rather than
+          spill out of the fixed lower pane on a small screen. */}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ justifyContent: 'center', flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         <Menu
           tone="dark"
           pad={10}
           columns={2}
           options={[
             { label: 'Route 1', value: 'route', sublabel: 'real miles' },
-            { label: 'Train', value: 'workout', sublabel: 'workouts' },
+            { label: 'Train', value: 'workout', sublabel: 'quick sets' },
+            { label: 'Forge', value: 'forge', sublabel: 'your plans' },
             { label: 'Rest', value: 'rest', sublabel: 'heal team' },
             { label: 'Team', value: 'party', sublabel: 'companions' },
+            { label: 'Habits', value: 'habits', sublabel: 'daily life' },
             { label: 'Coach', value: 'coach', sublabel: 'AI chat' },
             { label: 'Bag', value: 'bag', sublabel: 'items' },
             { label: 'Status', value: 'summary', sublabel: 'stats' },
+            { label: 'Week', value: 'week', sublabel: 'rollup' },
             { label: 'Index', value: 'index', sublabel: 'creatures' },
             { label: 'Options', value: 'options', sublabel: 'settings' },
             { label: 'Title', value: 'title', sublabel: 'menu' },
           ]}
           onSelect={(opt) => navigate(opt.value)}
         />
-      </View>
+      </ScrollView>
     </View>
   );
 

@@ -2,6 +2,9 @@
 // Phase 1.5: you build a TEAM. state.party holds your companions and
 // state.activeIndex is the one currently at your side / fighting. Distance
 // (miles) drives the Route. Old single-companion saves migrate automatically.
+// Phase 3: state.modules holds one bucket per installed life module. Modules
+// pay out through the same XP/bond path as everything else — that is the whole
+// point of the plugin system.
 
 import React, { createContext, useContext, useEffect, useReducer, useRef } from 'react';
 import { getCreature } from '../data/creatures';
@@ -9,10 +12,23 @@ import { getItem } from '../data/items';
 import { pacingForGoal } from '../data/route';
 import { xpProgress, levelFromXp, maxHpFor } from './leveling';
 import { loadGame, saveGame, clearGame } from './storage';
+import { stamp, trim } from './history';
+import { computeRecovery } from './recovery';
+import {
+  MODULES,
+  getModule,
+  logModuleAction,
+  moduleProgress,
+  moduleStateFor,
+  rollAllModules,
+  rollDay,
+  todayKey,
+} from '../modules';
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = todayKey;
 const STARTING_TOKENS = 3;
 const MAX_PARTY = 6;
+const SAVE_VERSION = 4;
 
 function daysBetween(a, b) {
   if (!a || !b) return 0;
@@ -22,7 +38,7 @@ function daysBetween(a, b) {
 }
 
 const FRESH = {
-  version: 2,
+  version: SAVE_VERSION,
   started: false,
   goalId: null,
   party: [],
@@ -37,11 +53,15 @@ const FRESH = {
     caught: 0,
     workoutsDone: 0,
     itemsCollected: 0,
+    habitLogs: 0,
+    habitGoalsHit: 0,
     daysActive: 1,
     streak: 1,
   },
   bag: {},
   dex: {},
+  modules: {},
+  history: {},
   settings: { muted: false, bgmMuted: false },
   meta: { createdAt: today(), lastPlayedDate: today() },
 };
@@ -59,6 +79,14 @@ function updateActive(state, fn) {
   if (!state.party.length) return state;
   const party = state.party.map((m, i) => (i === state.activeIndex ? fn(m) : m));
   return { ...state, party };
+}
+
+// Everything worth remembering lands in state.history through here: recovery,
+// personal records and the weekly rollup all read from it, and none of them can
+// see anything an action did not record.
+function remember(state, patch) {
+  const today_ = today();
+  return trim(stamp(state.history, today_, patch), today_);
 }
 
 function applyEffect(member, effect) {
@@ -93,8 +121,23 @@ function reducer(state, action) {
       merged.activeIndex = clamp(saved.activeIndex || 0, 0, Math.max(0, merged.party.length - 1));
       delete merged.companion;
 
+      // v3: life modules. Old saves have none — every registered module starts
+      // at zero, and any module already stored gets its day rolled over (which
+      // is where the daily reset actually happens for a returning player).
+      const migratingDates = (saved.version || 1) < 3;
+      merged.modules = rollAllModules(saved.modules, today());
+      // v4: the daily history. Older saves simply start recording from now —
+      // there is no honest way to reconstruct days nobody logged.
+      merged.history = trim(saved.history || {}, today());
+      merged.version = SAVE_VERSION;
+
+      // v3 also moved "today" from a UTC date to a LOCAL one. A pre-v3
+      // lastPlayedDate was written in the other convention, so on the upgrade
+      // load alone a 1-day gap may be a timezone artefact rather than a real
+      // return: skip the streak increment that once. A genuine multi-day
+      // absence still resets, since no timezone shift spans more than a day.
       const gap = daysBetween(merged.meta.lastPlayedDate, today());
-      if (gap === 1) {
+      if (gap === 1 && !migratingDates) {
         merged.stats.streak += 1;
         merged.stats.daysActive += 1;
       } else if (gap > 1) {
@@ -119,6 +162,7 @@ function reducer(state, action) {
         activeIndex: 0,
         dex: { ...state.dex, [starterId]: 'owned' },
         bag: { ...state.bag, token: (state.bag.token || 0) + STARTING_TOKENS },
+        modules: rollAllModules(state.modules, today()),
       };
     }
 
@@ -135,6 +179,7 @@ function reducer(state, action) {
       }
       return {
         ...state,
+        history: remember(state, { distanceMi: mi }),
         stats: {
           ...state.stats,
           totalSteps: state.stats.totalSteps + steps,
@@ -191,6 +236,7 @@ function reducer(state, action) {
       }));
       return {
         ...next,
+        history: remember(state, { xp, bond, battles: 1 }),
         stats: { ...state.stats, battlesWon: state.stats.battlesWon + 1 },
         dex: { ...state.dex, [targetId]: state.dex[targetId] || 'seen' },
       };
@@ -224,11 +270,77 @@ function reducer(state, action) {
       return { ...state, dex: { ...state.dex, [id]: 'seen' } };
     }
 
+    // --- Phase 3: life modules ---------------------------------------------
+    // A module log is just another way to earn. It updates state.modules[id]
+    // and then hands its reward to the SAME xp/bond path a workout uses, so no
+    // module ever needs to know how progression works.
+    case 'MODULE_LOG': {
+      const { moduleId, actionId } = action.payload;
+      const module = getModule(moduleId);
+      if (!module) return state;
+      const result = logModuleAction(module, moduleStateFor(state.modules, moduleId), actionId, today());
+      if (!result) return state;
+      const next = updateActive(state, (m) => applyEffect(m, result.reward));
+      return {
+        ...next,
+        modules: { ...state.modules, [moduleId]: result.state },
+        history: remember(state, {
+          xp: result.reward.xp || 0,
+          bond: result.reward.bond || 0,
+          habitLogs: 1,
+          goalsMet: result.goalJustHit ? 1 : 0,
+          sessions: moduleId === 'forge' && result.reward.xp > 0 ? 1 : 0,
+          load: action.payload.load || 0,
+        }),
+        stats: {
+          ...state.stats,
+          habitLogs: state.stats.habitLogs + 1,
+          habitGoalsHit: state.stats.habitGoalsHit + (result.goalJustHit ? 1 : 0),
+        },
+      };
+    }
+
+    // Merge a module's OWN data (not the daily counters) — the Forge storing
+    // the player's saved plans, for example. Generic on purpose: a module can
+    // persist whatever it needs without the reducer learning about it.
+    case 'MODULE_PATCH': {
+      const { moduleId, patch } = action.payload;
+      if (!getModule(moduleId) || !patch) return state;
+      const current = moduleStateFor(state.modules, moduleId, today());
+      return { ...state, modules: { ...state.modules, [moduleId]: { ...current, ...patch } } };
+    }
+
+    // Roll stale module days over to today. Fired on HYDRATE via rollAllModules
+    // and again by the Habits screens, so a session left open past midnight
+    // still starts the new day clean (streaks intact).
+    case 'MODULE_RESET_DAY': {
+      const { moduleId } = action.payload || {};
+      if (moduleId) {
+        if (!getModule(moduleId)) return state;
+        return { ...state, modules: { ...state.modules, [moduleId]: rollDay(state.modules[moduleId], today()) } };
+      }
+      return { ...state, modules: rollAllModules(state.modules, today()) };
+    }
+
+    // Taking a rest day is a real training decision, so it is a real action.
+    // It pays bond and healing and NEVER xp: resting is not effort, and paying
+    // xp for it would make "rest" a button you press for progress.
+    case 'REST_DAY': {
+      const day = (state.history || {})[today()];
+      if (day && day.rested) return state;
+      const next = updateActive(state, (m) => applyEffect(m, { bond: 6, heal: 40 }));
+      return { ...next, history: remember(state, { rested: true, bond: 6 }) };
+    }
+
     case 'COMPLETE_WORKOUT': {
       const { xp = 0, bond = 0 } = action.payload.reward || {};
       const mult = pacingForGoal(state.goalId).workoutXpMult || 1;
       const next = updateActive(state, (m) => ({ ...m, xp: m.xp + Math.round(xp * mult), bond: m.bond + bond }));
-      return { ...next, stats: { ...state.stats, workoutsDone: state.stats.workoutsDone + 1 } };
+      return {
+        ...next,
+        history: remember(state, { xp: Math.round(xp * mult), bond, workouts: 1 }),
+        stats: { ...state.stats, workoutsDone: state.stats.workoutsDone + 1 },
+      };
     }
 
     case 'EVOLVE': {
@@ -315,6 +427,30 @@ export function useParty() {
 
 export function decorateMember(member) {
   return decorate(member);
+}
+
+// --- Life-module selectors -------------------------------------------------
+// The Habits UI never reads state.modules directly: these hand back the module
+// definition, its (normalized) state and today's standing together, so a screen
+// can render any module — including ones added after this file was written —
+// without special-casing.
+
+export function useModuleState(moduleId) {
+  const { state } = useGame();
+  return moduleStateFor(state.modules, moduleId);
+}
+
+export function useRecovery() {
+  const { state } = useGame();
+  return computeRecovery(state.history, todayKey());
+}
+
+export function useModules() {
+  const { state } = useGame();
+  return MODULES.map((module) => {
+    const modState = moduleStateFor(state.modules, module.id);
+    return { module, state: modState, progress: moduleProgress(module, modState) };
+  });
 }
 
 export async function wipeSave() {

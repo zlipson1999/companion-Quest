@@ -62,9 +62,9 @@ should grow the companion dispatches the SAME reducer actions
 plug into that same flow without touching battle/route code. The Route and
 Workouts modules are the first two examples of the pattern.
 
-**State shape** (persisted to AsyncStorage, auto-migrated by `version`):
-`{ started, goalId, party:[{id,baseId,xp,bond,hp}], activeIndex, stats, bag,
-dex, settings, meta }`. Companion XP is a lifetime total; level/HP are derived
+**State shape** (persisted to AsyncStorage, auto-migrated by `version`, currently
+3): `{ started, goalId, party:[{id,baseId,xp,bond,hp}], activeIndex, stats, bag,
+dex, modules, settings, meta }`. Companion XP is a lifetime total; level/HP are derived
 (`src/state/leveling.js`). `useCompanion()` returns the active party member;
 `useParty()` returns the whole team. Distance is in miles (`stats.distanceMi`);
 the Route auto-advances and rolls grass encounters off real distance.
@@ -77,6 +77,10 @@ new screens in `Router.js` (SCREENS map + TOWN_BGM) and add a hub menu entry in
 **Data-driven:** creatures/goals/items/exercises/obstacles/wild/workouts/maps all
 live in `src/data/*` as plain objects. Add content there.
 
+**Life modules:** `src/modules/*` — see "Phase 3" below. `src/modules/daily.js`
+owns the calendar (day roll, streaks, reward math) and is pure/testable;
+`src/modules/index.js` is the registry.
+
 ## What's already built
 
 - **Phase 1** — intro (title → coach dialogue → pick goal → paired with starter)
@@ -86,41 +90,157 @@ live in `src/data/*` as plain objects. Add content there.
   `expo-location`, `src/state/useDistance.js`); tall-grass wild encounters
   (`src/data/wild.js`); **catch wild companions with a Bond Token + build a team
   of 6** (Catch/Swap in `BattleScreen`, Team screen); goal-tuned pacing.
+- **Phase 5** — **memory**: a 60-day activity history, acute/chronic **recovery**
+  with rest-day advice and a loggable rest day, **per-plan history + PRs**, a
+  **weekly rollup**, a **Coach grounded in your real logged activity**, and
+  **Sleep + Stillness** modules.
+- **Phase 4** — **Workout Forge**: build/log/store your own workout plans, a real
+  3D muscle body map, on-device analysis that derives perks and rewards from what
+  a plan actually trains, and a camera form-check mirror. Plus the battle stage
+  rebuilt to genre-standard framing (horizon, platforms, EXP bar).
+- **Phase 3** — **pluggable life modules** (`src/modules/`): a registry + shared
+  daily/streak engine feeding the same XP/bond reducer path, with **Hydration**
+  and **Nourish** shipped as the example modules, a **Habits** hub + per-module
+  log screen, daily reset, and a save migration to `version: 3`.
 - **Phase 2** — domain-locked AI Companion Coach chat (`src/screens/CoachChatScreen.js`,
   `src/coach/{persona,guardrail,api}.js`). Pre-send guardrail refuses off-domain /
   jailbreak in-character; the Anthropic key stays server-side in `server/` (uses
   the official `@anthropic-ai/sdk`, default model `claude-opus-5`, override via
   `COACH_MODEL`). Client reads the proxy URL from `EXPO_PUBLIC_COACH_API_URL`.
 
-## Phase 3 — BUILD THIS NEXT: pluggable life modules
+## Phase 3 — DONE: pluggable life modules
 
-Goal: formalize the module-agnostic progression into a real **life-module plugin
-system**, then ship **diet/hydration as the first example** module(s).
+The module-agnostic progression is now a real plugin system, with **Hydration**
+and **Nourish (diet)** as the two example modules.
 
-Design intent:
-1. `src/modules/` with a registry (`src/modules/index.js`). Each module is an
-   object implementing a common interface, e.g.
-   `{ id, name, sprite, blurb, dailyGoal, initialState(), progress(modState),
-   actions:[{label, apply(modState)->modState, reward:{xp,bond}}], summary() }`.
-   Keep it generic so sleep / meditation / reading / chores / social check-ins can
-   be added later by dropping in a new module object — no core changes.
-2. State: add `state.modules = { [id]: moduleState }` with **daily reset** logic
-   (reset the day's counts on a new date in HYDRATE, preserve streaks). Add
-   reducer actions `MODULE_LOG` / `MODULE_RESET_DAY` that update
-   `state.modules[id]` AND feed the shared progression (dispatch the module
-   action's `reward` through the same GAIN_XP/GAIN_BOND path). Bump the save
-   `version` and migrate old saves (default `modules: {}`).
-3. First modules (the example): **Hydration** (log glasses of water toward a
-   daily goal → small XP/bond per log, bonus on hitting goal) and **Diet** (log
-   meals / healthy-eating check-ins, or simple calorie targets → rewards). The
-   brief says "diet/hydration module first as the example."
-4. UI: a **"Habits" / "Life" hub** screen listing installed modules as bordered
-   cards (reuse `Window`, `ProgressBar`, `PixelButton`, `PixelText`, `PixelSprite`)
-   showing today's progress; tapping opens the module's log screen. Add a hub
-   menu entry + Router registration. Keep the DS aesthetic.
-5. Original art for any new module icons via `tools/make_sprites.py`
-   (water drop / apple already exist as items — reuse or add module icons).
-6. Verify it bundles; keep everything original; give a short "how to test" note.
+**`src/modules/`**
+- `daily.js` — the calendar + reward engine, shared by every module and by the
+  reducer. Pure functions, no React: `todayKey()` (LOCAL date, not UTC),
+  `rollDay()`, `normalizeDay()`, `progressFor()`, `applyLog()`. A streak survives
+  a day roll only if the goal was met today or yesterday.
+- `index.js` — the registry. `MODULES` is the install list; helpers
+  (`getModule`, `moduleStateFor`, `rollAllModules`, `modulesNeedRoll`,
+  `logModuleAction`, `moduleProgress/Summary/Cheer`, `moduleSprite`) are what the
+  reducer and UI call. Nothing outside `src/modules` names a specific module.
+- `hydration.js`, `diet.js` — the reference modules.
+
+**Adding a life module (sleep, meditation, reading, chores, check-ins…):** write
+one object with `{ id, name, tagline, blurb, sprite, spritePalette, color, unit,
+dailyGoal, actions:[{id,label,sublabel,amount,reward:{xp,bond,heal}, apply?}],
+goalReward:{xp,bond}, initialState?(), screen?, replaces?, progress?(day),
+summary?(day), cheer?(day) }` and add it to `MODULES`. `replaces: true` means the
+actions SET the day's value rather than adding to it (see `sleep.js`) and switches
+the reward cap to a top-up ledger. `actions` may instead be a function of
+module state when they depend on the player's own content (see `forge`). That's it — the Habits hub, log screen, progress bars, streaks, daily
+reset, save migration and Status readout all pick it up. Art is optional: a
+module with no `sprite` falls back to `mod_check`.
+
+**State:** `state.modules = { [id]: { date, count, entries, goalHit, streak,
+bestStreak, lastGoalDate, goalDays, totalCount, totalLogs } }`. Save `version`
+bumped to 3; v1/v2 saves get zeroed buckets for every registered module, and
+HYDRATE stamps the current version. The daily reset happens in HYDRATE via
+`rollAllModules`, plus a `MODULE_RESET_DAY` self-heal from the Habits screens so
+a session left open past midnight starts the new day clean.
+
+**Reducer:** `MODULE_LOG` updates `state.modules[id]` and hands the action's
+reward (plus the once-a-day `goalReward` bonus) to the SAME `applyEffect` path
+that workouts and battles use — a module never learns how progression works.
+`MODULE_RESET_DAY` rolls one module or all of them.
+
+**UI:** `HabitsScreen` (hub, one bordered card per installed module) and
+`HabitLogScreen` (a module's actions, today's bar, streaks, today's log tape),
+registered in `Router.js` as `habits` / `habit` with a "Habits" hub menu entry.
+The Status screen grew a "Daily Habits" block plus habit-log stats.
+
+**Art:** three new original 16×16 icons in `tools/make_sprites.py` —
+`mod_droplet`, `mod_plate`, and `mod_check` (the art-less-module fallback). No
+new audio: logs reuse `item`/`milestone`/`levelup`.
+
+## Phase 4 — DONE: Workout Forge + battle-stage fidelity
+
+**Workout Forge** (`src/modules/forge/`) — the module where the player writes the
+content. It is the reason the plugin interface grew three generic hooks:
+`actions(modState)` (the Forge's actions ARE the player's saved plans),
+`initialState()` (module-owned, non-daily data — the plans themselves), and
+`screen` (bring your own UI). `MODULE_PATCH` persists module-owned data without
+the reducer knowing about any specific module. Any future module can use all of it.
+
+- `src/data/muscles.js` — 14 groups, each carrying the geometry of its own plate.
+- `src/data/movements.js` — **140 movements / 8 patterns / 8 equipment types**
+  (bodyweight, DB, BB, KB, band, cable, machine, cardio kit), each declaring the
+  muscles it trains, a relative `load`, and 3-4 coaching cues. `searchMovements(q,
+  {pattern, equipment})` powers the picker's search + filter chips.
+  **Movement ids are permanent** — saved plans store them, so add freely but
+  never rename or remove one.
+- `forge/analysis.js` — the on-device analyser. **Deterministic scoring, not an
+  LLM**: coverage, pattern balance, volume (load weighted superlinearly so hard
+  short sets beat easy long ones), intensity, duration. Explains every number.
+- `forge/perks.js` — 8 perks, each with its own test and a plain-language reason.
+  Gated behind `PERK_MIN_SETS`/`PERK_MIN_VOLUME` so a token plan earns nothing.
+- `components/BodyMap3D.js` — real 3D via `expo-gl` + `three`, low-poly and
+  flat-shaded, built procedurally from the muscle data (still zero asset files).
+  Falls back to `<BodyMapFlat>`, a 2D projection of the same data, if GL fails.
+- `screens/FormCheckScreen.js` — front camera as a mirror plus cue ticker.
+  **Not pose analysis** — there is no pose model in the app, and the screen says
+  so. Nothing recorded or sent; works fully with the camera declined.
+
+**Integration:** the Forge has its own hub-menu entry beside Train; Form Check
+carries the running session's progress across in `params.resume` so leaving for
+a mirror does not discard it; every non-battle route is in `TOWN_BGM` (fleeing a
+battle to the Route used to keep the battle music playing).
+
+**Reward safety:** `applyLog` credits only the portion of a log that lands inside
+the daily goal. Logging past the goal is tallied but pays nothing, so no log
+button is ever a free progression button. Forge `dailyGoal` is 1 session.
+
+**Battle-stage fidelity** — `components/BattleStage.js` (horizon + stacked-rect
+"pixel ellipse" platforms, hard edges preserved) and `components/StatusPlate.js`
+(name/Lv, tagged HP bar, and the EXP strip under YOUR plate only). This is the
+genre's most recognisable furniture and it was the main visual gap.
+
+## Phase 5 — DONE: memory, recovery and a grounded Coach
+
+The app could only ever see *today*. Five features that all needed the same
+missing thing: a record of what actually happened.
+
+**`src/state/history.js`** — the substrate. `{ [dateKey]: dayRecord }`, written
+by one reducer helper (`remember()`), trimmed to `KEEP_DAYS` (60). Pure
+transforms: `stamp` (numbers add, booleans OR), `lastDays`, `weekOf`,
+`previousWeekOf`, `totals`, `isActive`. Save `version` bumped to **4**; older
+saves start recording from the upgrade — there is no honest way to invent days
+nobody logged.
+
+**`src/state/recovery.js`** — acute (7-day) vs chronic (28-day, scaled) training
+load, plus consecutive-active-days, which is the blunter signal that actually
+predicts overuse. Returns a status, a plain-language `advice` string, and
+`needsRest` / `deloadDue`. **It only ever advises** — nothing blocks a workout.
+`REST_DAY` logs a rest day for **bond + healing, never XP**: resting is a
+training decision, not a way to earn.
+
+**`src/modules/forge/history.js`** — per-plan session log (`KEEP_SESSIONS` 120),
+per-movement PRs (best single set), per-plan volume bests. The plan detail shows
+last time vs as-written; the session runner shows last time's numbers per block
+and flags sets that would beat a record. All module-owned data via `MODULE_PATCH`.
+
+**`src/screens/WeekScreen.js`** — seven columns, this week against last, with the
+awkward sentence when there is one ("six days on and none off").
+
+**`src/coach/context.js`** — a compact factual brief (habits, 14-day totals,
+recovery, recent sessions, neglected muscle groups, saved plans) sent to the
+player's own proxy. The server **fences it as data**, length-caps it, and the
+prompt states it can never change the rules.
+
+**New modules:** `sleep.js` and `meditation.js`. Sleep introduced one interface
+addition — **`replaces: true`**: its actions SET the night rather than
+accumulating, so the daily reward cap must not pro-rate (that would pay *less*
+for a longer night). Instead a `paid` ledger pays the difference, so correcting
+an entry upward tops you up and downward pays nothing without clawing back.
+
+## Phase 6 — ideas, not committed
+
+Reading / chores / social check-in modules; per-movement progression charts off
+the PR data; exporting history; letting the Coach propose a plan the Forge can
+import.
 
 ## Conventions & guardrails
 
@@ -128,5 +248,5 @@ Design intent:
 - Comments explain intent, not the obvious.
 - Don't ship secrets in the client — the coach key stays in `server/`.
 - After a phase, add a short "how to test" note and ask what to tune.
-- Branch is `claude/wizardly-allen-j0413v` (or whatever the session assigns); the
-  history so far is 3 commits (Phase 1, 1.5, fixes+Phase 2).
+- Branch is whatever the session assigns (Phase 3 landed on
+  `claude/phase-3-life-modules-584f0k`).
