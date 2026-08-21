@@ -81,10 +81,14 @@ def mix(a, b, t):
 # This is the single biggest difference between a ramp that looks like pixel art
 # and one that looks like a mechanical fade — straight RGB interpolation between
 # a dark and a light version of the same hue reads muddy and plastic.
-SHADOW_HUE = -30      # degrees toward blue/violet at the dark end
-LIGHT_HUE = 22        # degrees toward yellow at the light end
-SHADOW_SAT = 1.22
-LIGHT_SAT = 0.62
+# Tuned down from (-30, 1.22): the swing was strong enough that a warm
+# creature's shadows became saturated red, so contact shading read as red LINES
+# drawn on the model rather than as shadow. A hue shift should be felt, not
+# seen — the shadow still has to look like the same material in less light.
+SHADOW_HUE = -16      # degrees toward blue/violet at the dark end
+LIGHT_HUE = 18        # degrees toward yellow at the light end
+SHADOW_SAT = 1.06
+LIGHT_SAT = 0.66
 
 
 def ramp(dark, light, steps=6, gamma=0.82):
@@ -110,7 +114,7 @@ EYE_DARK = '#1b1430'
 # mirrored by hand anywhere else.
 PALETTE_SPECS = {
     'sprout':  {'body': ('#1f5c39', '#a6f0b4'), 'leaf': ('#2f7d3f', '#d4ff9e'), 'belly': ('#4a7a3a', '#e2ffc9')},
-    'ember':   {'body': ('#8c2a12', '#ffd08a'), 'leaf': ('#c4441a', '#ffe9a8'), 'belly': ('#a8481f', '#ffe0b0')},
+    'ember':   {'body': ('#5e2a14', '#ffcf8e'), 'leaf': ('#b8431c', '#ffe3a0'), 'belly': ('#7a3c1e', '#ffdcae')},
     'dew':     {'body': ('#123f6b', '#b8ecff'), 'leaf': ('#1d6ea8', '#dcf7ff'), 'belly': ('#2a6f96', '#e6fbff')},
     'sludge':  {'body': ('#2e3d18', '#b6d16a'), 'leaf': ('#46561f', '#d6e88a'), 'belly': ('#3d4a22', '#c6dd7c')},
     'snooze':  {'body': ('#2a2650', '#b9b6ee'), 'leaf': ('#413a72', '#d5d2ff'), 'belly': ('#38346a', '#c9c6f7')},
@@ -128,7 +132,9 @@ PALETTE_SPECS = {
     # Third-stage forms. Deeper and richer than the stage they grow out of —
     # a final form that is merely a brighter recolour reads as the same creature.
     'grove':   {'body': ('#14402a', '#7ad98e'), 'leaf': ('#5c3a18', '#d9a860'), 'belly': ('#a8801e', '#ffe89a')},
-    'cinder':  {'body': ('#5c1005', '#ff8a3d'), 'leaf': ('#8a1f06', '#ffd45e'), 'belly': ('#2a1410', '#c96a3a')},
+    # belly was ('#2a1410', ...) — so dark the muzzle read as a hole punched
+    # through the face rather than a lighter patch of fur.
+    'cinder':  {'body': ('#5c1005', '#ff8a3d'), 'leaf': ('#8a1f06', '#ffd45e'), 'belly': ('#7a3418', '#ffc48a')},
     'maels':   {'body': ('#04203f', '#6cc4ff'), 'leaf': ('#0d5c7a', '#9fe8ff'), 'belly': ('#123a5e', '#d0f2ff')},
 }
 
@@ -147,9 +153,10 @@ def build_palette(spec):
         # A keyline that is merely the ramp's darkest step reads as a coloured
         # halo — a red fringe around warm hair, cyan around blue cloth. Pull it
         # most of the way to ink: enough hue survives to tie the line to the
-        # surface, not enough to glow.
+        # surface, not enough to glow. At 0.62 a warm creature still came out
+        # ringed in bright red-brown and read as a sticker; 0.80 sits down.
         index[(name, 'line')] = len(colors)
-        colors.append(mix(steps[0], INK, 0.62))
+        colors.append(mix(steps[0], INK, 0.80))
     for name, c in (('ink', INK), ('white', WHITE), ('eye', EYE_DARK)):
         index[(name, 0)] = len(colors)
         colors.append(c)
@@ -192,6 +199,16 @@ class Canvas:
         self.w, self.h = w * scale, h * scale
         self.palette = palette
         self.px = [[None] * self.w for _ in range(self.h)]
+        # Which primitive drew each pixel. `occlude()` uses it to darken an
+        # older surface where a newer form sits on top, which is what makes
+        # overlapping parts read as separate objects rather than one fused blob.
+        self.lay = [[0] * self.w for _ in range(self.h)]
+        self.layer = 0
+
+    def begin(self):
+        """Start a new form. Call before each limb/body part."""
+        self.layer += 1
+        return self.layer
 
     # -- low level ----------------------------------------------------------
     def _set(self, x, y, ramp_name, shade, cov=1.0, lit=False):
@@ -204,6 +221,7 @@ class Canvas:
             # into a checkerboard, which is what made the grass and the roofs
             # read as woven fabric rather than ground and shingles.
             self.px[y][x] = (ramp_name, max(0.0, min(1.0, shade)), cov, lit)
+            self.lay[y][x] = self.layer
 
     def put(self, x, y, ramp_name, shade):
         """Author-space pixel — fills a scale x scale block."""
@@ -218,6 +236,7 @@ class Canvas:
     # -- primitives ---------------------------------------------------------
     def sphere(self, cx, cy, rx, ry, ramp_name, light=LIGHT, ambient=0.26, squash=1.0):
         """A lit ellipsoid, supersampled so its edge anti-aliases."""
+        self.begin()
         S = self.scale
         cx, cy, rx, ry = cx * S, cy * S, rx * S, ry * S
         lx, ly, lz = light
@@ -242,6 +261,7 @@ class Canvas:
                 self._set(x, y, ramp_name, ambient + (1 - ambient) * lam, hits / float(SS * SS), lit=True)
 
     def blob(self, cx, cy, rx, ry, ramp_name, shade=0.62):
+        self.begin()
         S = self.scale
         cx, cy, rx, ry = cx * S, cy * S, rx * S, ry * S
         for y in range(int(cy - ry) - 1, int(cy + ry) + 2):
@@ -256,6 +276,78 @@ class Canvas:
                 if hits:
                     self._set(x, y, ramp_name, shade, hits / float(SS * SS))
 
+    def limb(self, x0, y0, x1, y1, r0, r1, ramp_name, light=LIGHT, ambient=0.28):
+        """A lit tapered capsule: the arm, leg, neck and tail primitive.
+
+        Creatures built only from spheres come out as eggs — the silhouette test
+        on the first roster showed six creatures and six variations of the same
+        blob. You cannot draw a limb with an ellipsoid, and without limbs there
+        is no gesture and no recognisable shape.
+
+        Shaded as a real cylinder: the surface normal is the perpendicular
+        offset from the axis, with the z component recovered from the radius.
+        """
+        S = self.scale
+        self.begin()
+        ax, ay, bx, by = x0 * S, y0 * S, x1 * S, y1 * S
+        ra, rb = r0 * S, r1 * S
+        lx, ly, lz = light
+        n = math.sqrt(lx * lx + ly * ly + lz * lz)
+        lx, ly, lz = lx / n, ly / n, lz / n
+        dx, dy = bx - ax, by - ay
+        seg2 = dx * dx + dy * dy or 1.0
+        rmax = max(ra, rb)
+        for y in range(int(min(ay, by) - rmax) - 1, int(max(ay, by) + rmax) + 2):
+            for x in range(int(min(ax, bx) - rmax) - 1, int(max(ax, bx) + rmax) + 2):
+                hits, acc = 0, 0.0
+                for sy in range(SS):
+                    for sx in range(SS):
+                        px_ = x + (sx + 0.5) / SS
+                        py_ = y + (sy + 0.5) / SS
+                        t = max(0.0, min(1.0, ((px_ - ax) * dx + (py_ - ay) * dy) / seg2))
+                        cx_, cy_ = ax + dx * t, ay + dy * t
+                        r = ra + (rb - ra) * t
+                        if r <= 0:
+                            continue
+                        ox, oy = px_ - cx_, py_ - cy_
+                        d = math.sqrt(ox * ox + oy * oy)
+                        if d > r:
+                            continue
+                        hits += 1
+                        u, v = ox / r, oy / r
+                        nz = math.sqrt(max(0.0, 1.0 - (d / r) ** 2))
+                        acc += max(0.0, u * lx + v * ly + nz * lz)
+                if not hits:
+                    continue
+                lam = acc / hits
+                self._set(x, y, ramp_name, ambient + (1 - ambient) * lam, hits / float(SS * SS), lit=True)
+
+    def occlude(self, strength=0.42):
+        """Contact shading: darken an older surface where a newer form meets it.
+
+        Automatic, because doing it by hand for every join is how parts end up
+        fused. This is the difference between a head resting ON a body and a
+        head merged INTO one.
+        """
+        edits = []
+        for y in range(self.h):
+            for x in range(self.w):
+                cur = self.px[y][x]
+                if cur is None or cur[0] in ('ink', 'white', 'eye'):
+                    continue
+                mine = self.lay[y][x]
+                deep = 0
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, 1), (1, -1), (-1, -1)):
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < self.w and 0 <= ny < self.h and self.px[ny][nx] is not None:
+                        if self.lay[ny][nx] > mine:
+                            deep += 1
+                if deep:
+                    edits.append((x, y, min(1.0, deep / 3.0)))
+        for x, y, amt in edits:
+            rn, sh, cov, lit = self.px[y][x]
+            self.px[y][x] = (rn, max(0.0, sh - strength * amt), cov, lit)
+
     def rect(self, x0, y0, x1, y1, ramp_name, shade=0.6):
         S = self.scale
         for y in range(int(y0) * S, (int(y1) + 1) * S):
@@ -263,6 +355,7 @@ class Canvas:
                 self._set(x, y, ramp_name, shade)
 
     def poly(self, points, ramp_name, shade=0.6):
+        self.begin()
         S = self.scale
         pts = [(px * S, py * S) for px, py in points]
         ys = [p[1] for p in pts]
@@ -286,10 +379,14 @@ class Canvas:
         sprite is scaled down."""
         S = self.scale
         self.blob(cx, cy, r, r + 0.35, 'white', 1.0)
-        self.blob(cx, cy - r * 0.66, r * 0.95, r * 0.36, 'eye', 0.0)     # lid shadow
-        self.blob(cx + look[0], cy + look[1] + r * 0.20, r * 0.58, r * 0.68, 'eye', 0.0)
+        # The lid was a third of the eye's height and the pupil most of the
+        # rest, so every creature came out heavy-lidded and sullen. A thin lid
+        # high on the eye reads as a brow; the white has to survive around the
+        # pupil or there is no eye left to see.
+        self.blob(cx, cy - r * 0.92, r * 0.92, r * 0.26, 'eye', 0.0)     # lid line
+        self.blob(cx + look[0], cy + look[1] + r * 0.10, r * 0.54, r * 0.62, 'eye', 0.0)
         # specular: a 2x2 block up and left of the pupil, inside the sclera
-        hx, hy = int((cx - r * 0.40) * S), int((cy - r * 0.40) * S)
+        hx, hy = int((cx - r * 0.42) * S), int((cy - r * 0.34) * S)
         for dy in range(max(2, S)):
             for dx in range(max(2, S)):
                 self._set(hx + dx, hy + dy, 'white', 1.0)
@@ -408,195 +505,309 @@ class Canvas:
 CREATURE_SIZE = 48
 
 
+# Creatures render at 2x the authoring grid — 96x96. The detail budget at 48
+# was the hard ceiling on how much character a sprite could carry: an eye was
+# six pixels and a paw was three.
+CREATURE_SCALE = 2
+
+
 def new_creature(palette):
-    return Canvas(CREATURE_SIZE, CREATURE_SIZE, palette)
+    return Canvas(CREATURE_SIZE, CREATURE_SIZE, palette, scale=CREATURE_SCALE)
 
 
 def sproutle(pal='sprout'):
-    """A round seedling spirit with a two-leaf sprout and a pale belly."""
+    """A seedling that stands up. Round, but with arms, feet and a sprout, so
+    the silhouette is a small figure rather than an egg with a leaf."""
     c = new_creature(pal)
-    # sprout stem + leaves, drawn first so the head overlaps them
-    c.rect(23, 4, 24, 13, 'leaf', 0.45)
-    c.sphere(18, 7, 6, 3.5, 'leaf')
-    c.sphere(30, 6, 5, 3, 'leaf')
-    c.shadow(24, 43, 14, 3)
-    c.sphere(24, 27, 16, 15, 'body')          # body
-    c.sphere(24, 34, 10, 8, 'belly')          # belly patch
-    c.sphere(12, 34, 5, 6, 'body')            # feet
-    c.sphere(36, 34, 5, 6, 'body')
-    c.eye(18, 24, 3, (0, 0))
-    c.eye(31, 24, 3, (0, 0))
-    c.blob(24.5, 30, 2.4, 1.4, 'leaf', 0.25)  # mouth
+    c.shadow(24, 44, 12, 3)
+    c.limb(24, 16, 24, 8, 1.3, 1.0, 'leaf', ambient=0.4)
+    c.sphere(17.5, 6.5, 6.0, 3.2, 'leaf', ambient=0.5)
+    c.sphere(30.5, 5.5, 5.4, 3.0, 'leaf', ambient=0.6)
+    c.limb(17, 36, 14, 43, 2.6, 2.4, 'body', ambient=0.24)
+    c.limb(31, 36, 34, 43, 2.6, 2.4, 'body', ambient=0.24)
+    c.blob(13.5, 44, 3.6, 2.0, 'body', 0.34)
+    c.blob(34.5, 44, 3.6, 2.0, 'body', 0.34)
+    c.sphere(24, 27, 13.5, 12.5, 'body')
+    c.sphere(24, 32, 8.0, 6.4, 'belly', ambient=0.54)
+    c.limb(12.5, 26, 9, 33, 2.4, 1.9, 'body', ambient=0.34)
+    c.limb(35.5, 26, 39, 33, 2.4, 1.9, 'body', ambient=0.34)
+    c.blob(8.5, 34, 2.4, 2.2, 'body', 0.42)
+    c.blob(39.5, 34, 2.4, 2.2, 'body', 0.42)
+    c.eye(19, 24, 3.3)
+    c.eye(29, 24, 3.3)
+    c.blob(24, 29.5, 2.2, 1.1, 'leaf', 0.22)
+    c.occlude()
     c.rim('leaf')
     c.outline()
     return c
 
 
 def bloomtail(pal='bloom'):
-    """Sproutle in flower: an open bloom instead of a sprout, and taller."""
+    """Sproutle grown upright and flowered: taller, leaf arms held out, a
+    petalled crown. Reads as a standing figure with a wide top."""
     c = new_creature(pal)
-    c.shadow(24, 44, 15, 3)
-    c.rect(23, 6, 24, 14, 'body', 0.4)
-    for ang in range(0, 360, 60):                       # petals
-        px = 24 + math.cos(math.radians(ang)) * 7.5
-        py = 8 + math.sin(math.radians(ang)) * 5.5
-        c.sphere(px, py, 4.2, 3.4, 'leaf')
-    c.sphere(24, 8, 3.2, 2.6, 'belly')                  # flower centre
-    c.sphere(24, 29, 16, 14, 'body')
-    c.sphere(24, 35, 10, 7, 'belly')
-    c.sphere(11, 36, 5, 6, 'body')
-    c.sphere(37, 36, 5, 6, 'body')
-    c.eye(18, 26, 3.1)
-    c.eye(31, 26, 3.1)
-    c.blob(24.5, 32, 2.6, 1.5, 'leaf', 0.3)
+    c.shadow(24, 45, 13, 3)
+    c.limb(24, 20, 24, 11, 1.6, 1.3, 'body', ambient=0.36)
+    for ang in range(0, 360, 60):
+        px = 24 + math.cos(math.radians(ang)) * 7.2
+        py = 9 + math.sin(math.radians(ang)) * 5.2
+        c.sphere(px, py, 4.0, 3.2, 'leaf')
+    c.sphere(24, 9, 3.0, 2.5, 'belly', ambient=0.62)
+    c.limb(18, 38, 15, 44, 3.0, 2.6, 'body', ambient=0.22)
+    c.limb(30, 38, 33, 44, 3.0, 2.6, 'body', ambient=0.22)
+    c.blob(14.5, 45, 3.8, 2.1, 'body', 0.32)
+    c.blob(33.5, 45, 3.8, 2.1, 'body', 0.32)
+    c.sphere(24, 30, 13.0, 12.0, 'body')
+    c.sphere(24, 35, 8.0, 6.0, 'belly', ambient=0.54)
+    # Arms in the BODY ramp: bloom's 'leaf' ramp is the flower's pink, and
+    # pink arms read as lollipops rather than as part of the plant.
+    c.limb(12.5, 29, 6.5, 26, 2.6, 1.7, 'body', ambient=0.34)
+    c.limb(35.5, 29, 41.5, 26, 2.6, 1.7, 'body', ambient=0.42)
+    c.sphere(5.5, 24.5, 4.4, 2.8, 'body', ambient=0.48)
+    c.sphere(42.5, 24.5, 4.4, 2.8, 'body', ambient=0.56)
+    c.eye(19, 27, 3.3)
+    c.eye(29, 27, 3.3)
+    c.blob(24, 32.5, 2.4, 1.2, 'belly', 0.30)
+    c.occlude()
     c.rim('leaf')
     c.outline()
     return c
 
 
 def groveheart(pal='grove'):
-    """Bloomtail grown into a standing grove: a broad canopy over a trunk-like
-    body, with the flower kept as a crown so the line still reads as one
-    creature."""
+    """The final form: a standing grove-warden. A broad canopy crown over a
+    trunk body with root feet and branch arms — a FIGURE with a canopy, not a
+    tree with a face stuck on it, which is what the first attempt drew."""
     c = new_creature(pal)
-    c.shadow(24, 45, 17, 3)
-    c.rect(21, 20, 27, 42, 'leaf', 0.24)                 # trunk body
-    c.rect(21, 20, 22, 42, 'leaf', 0.42)                 # lit side
-    c.rect(17, 40, 31, 44, 'leaf', 0.20)                 # roots spreading
-    for lx, ly, lr in ((14, 14, 9), (34, 14, 9), (24, 8, 10), (24, 18, 9)):
-        c.sphere(lx, ly, lr, lr * 0.86, 'body', ambient=0.44)
-    c.sphere(16, 9, 5.5, 4.2, 'body', ambient=0.74)      # sunlit lobe
-    for ang in range(0, 360, 72):                        # the crown flower
-        px = 24 + math.cos(math.radians(ang)) * 4.4
-        py = 7 + math.sin(math.radians(ang)) * 3.2
-        c.sphere(px, py, 2.6, 2.1, 'belly')
-    c.eye(19, 27, 3.2)
-    c.eye(30, 27, 3.2)
-    c.blob(24.5, 33, 3.0, 1.6, 'leaf', 0.16)             # mouth
-    for lx, ly in ((10, 20), (38, 20), (24, 2)):
-        c.put(lx, ly, 'body', 0.98)
-    c.rim('leaf')
+    c.shadow(24, 46, 16, 3)
+    for lx, ly, lr in ((13, 12, 8.5), (35, 12, 8.5), (24, 7, 9.5), (24, 15, 8.0)):
+        c.sphere(lx, ly, lr, lr * 0.84, 'body', ambient=0.44)
+    c.sphere(15, 8, 5.0, 3.8, 'body', ambient=0.76)
+    c.limb(19, 40, 16, 46, 3.4, 3.0, 'leaf', ambient=0.20)
+    c.limb(29, 40, 32, 46, 3.4, 3.0, 'leaf', ambient=0.20)
+    c.blob(15.5, 46.5, 4.4, 2.2, 'leaf', 0.26)
+    c.blob(32.5, 46.5, 4.4, 2.2, 'leaf', 0.26)
+    c.limb(24, 22, 24, 41, 8.5, 7.0, 'leaf', ambient=0.30)
+    c.sphere(24, 33, 6.0, 6.5, 'belly', ambient=0.46)
+    c.limb(16, 27, 8, 31, 2.9, 1.7, 'leaf', ambient=0.34)
+    c.limb(32, 27, 40, 31, 2.9, 1.7, 'leaf', ambient=0.42)
+    c.sphere(7, 32.5, 4.4, 3.2, 'body', ambient=0.54)
+    c.sphere(41, 32.5, 4.4, 3.2, 'body', ambient=0.62)
+    c.eye(20, 26, 3.2)
+    c.eye(28, 26, 3.2)
+    c.blob(24, 31, 2.6, 1.2, 'leaf', 0.14)
+    c.occlude()
+    c.rim('body')
     c.outline()
     return c
 
 
 def cindermane(pal='cinder'):
-    """Pyrelynx at full burn: the mane is the silhouette, so it reads as a
-    different creature from across the screen rather than a recoloured lynx."""
+    """The final fire form: a maned beast, planted and heavy. The mane is the
+    silhouette — a ring of flame tongues rather than the lumpy starburst the
+    first attempt produced, which read as a sun and not a creature."""
     c = new_creature(pal)
-    c.shadow(24, 44, 15, 3)
-    for ang in range(0, 360, 30):                        # the mane, drawn first
-        r = 17 if ang % 60 == 0 else 13
-        px = 24 + math.cos(math.radians(ang)) * r
-        py = 25 + math.sin(math.radians(ang)) * (r * 0.86)
-        c.sphere(px, py, 6.0, 5.4, 'leaf', ambient=0.40)
-    c.poly([(11, 16), (15, 3), (19, 15)], 'leaf', 0.9)   # ear flames
-    c.poly([(29, 15), (33, 3), (37, 16)], 'leaf', 0.9)
-    c.sphere(24, 26, 12.5, 11.5, 'body')                 # face
-    c.sphere(24, 32, 7.5, 5.2, 'belly', ambient=0.5)     # muzzle
-    c.eye(18.5, 24, 3.2)
-    c.eye(29.5, 24, 3.2)
-    c.blob(24, 33, 1.7, 1.2, 'eye', 0.0)                 # nose
-    c.blob(20, 38, 3.6, 2.2, 'body', 0.30)               # paws
-    c.blob(28, 38, 3.6, 2.2, 'body', 0.30)
-    for lx, ly in ((13, 12), (35, 12), (24, 8)):
-        c.put(lx, ly, 'leaf', 1.0)
+    c.shadow(24, 45, 16, 3)
+    c.limb(34, 30, 44, 20, 3.0, 1.4, 'body', ambient=0.26)     # tail
+    c.poly([(44, 23), (49, 12), (45, 16), (46, 8), (41, 17)], 'leaf', 0.94)
+    c.limb(15, 32, 13, 45, 3.4, 2.8, 'body', ambient=0.20)     # hind legs
+    c.limb(33, 32, 35, 45, 3.4, 2.8, 'body', ambient=0.20)
+    c.blob(12.5, 46, 4.2, 2.1, 'body', 0.28)
+    c.blob(35.5, 46, 4.2, 2.1, 'body', 0.28)
+    c.limb(15, 31, 33, 31, 8.6, 7.4, 'body', ambient=0.30)     # barrel body
+    c.sphere(24, 35, 8.4, 4.8, 'belly', ambient=0.50)
+    c.limb(19, 33, 18, 45, 2.8, 2.4, 'body', ambient=0.34)     # forelegs
+    c.limb(29, 33, 30, 45, 2.8, 2.4, 'body', ambient=0.34)
+    c.blob(17.5, 46, 3.4, 1.9, 'belly', 0.58)
+    c.blob(30.5, 46, 3.4, 1.9, 'belly', 0.58)
+    # the mane: tongues of flame radiating from the head, drawn before it
+    for ang in range(-175, 40, 18):
+        a = math.radians(ang)
+        reach = 18.5 if (ang // 18) % 2 == 0 else 15.0
+        bx, by = 24 + math.cos(a) * 8.5, 21 + math.sin(a) * 8.0
+        tx, ty = 24 + math.cos(a) * reach, 21 + math.sin(a) * (reach * 0.92)
+        c.limb(bx, by, tx, ty, 3.4, 0.6, 'leaf', ambient=0.34 + ((ang + 175) % 54) / 200.0)
+    c.sphere(24, 21, 11.0, 10.0, 'body')                       # head
+    c.sphere(24, 26, 6.6, 4.4, 'belly', ambient=0.54)          # muzzle
+    c.eye(18.8, 20, 3.3)
+    c.eye(29.2, 20, 3.3)
+    c.blob(24, 24.5, 2.0, 1.3, 'eye', 0.0)
+    c.blob(24, 27.5, 2.8, 0.9, 'eye', 0.0)
+    c.occlude()
     c.rim('leaf')
     c.outline()
     return c
 
 
 def maelstride(pal='maels'):
-    """Tidewade become a moving current: a long body trailing into spray, so its
-    silhouette is horizontal where the earlier stages are round."""
+    """The final water form: a current with legs. Deliberately HORIZONTAL where
+    both earlier stages are vertical, so the line's last silhouette is the one
+    that does not look like the other two."""
     c = new_creature(pal)
-    c.shadow(24, 44, 16, 3)
-    c.sphere(20, 24, 14, 13, 'body')                     # head of the current
-    for i, (tx, ty, tr) in enumerate(((33, 30, 8.5), (39, 35, 6.5), (44, 39, 4.5))):
-        c.sphere(tx, ty, tr, tr * 0.82, 'body', ambient=0.34 + i * 0.06)
-    c.poly([(16, 10), (20, 1), (24, 11)], 'leaf', 0.92)  # crest
-    c.poly([(24, 11), (28, 4), (31, 13)], 'leaf', 0.78)
-    c.sphere(20, 30, 8.5, 5.5, 'belly', ambient=0.52)    # pale underside
-    c.eye(14.5, 22, 3.2)
-    c.eye(25.5, 22, 3.2)
-    c.blob(20, 31, 2.4, 1.4, 'eye', 0.0)
-    for sx, sy in ((36, 26), (42, 31), (46, 35), (30, 20)):
-        c.blob(sx, sy, 1.6, 1.4, 'leaf', 1.0)            # spray
+    c.shadow(24, 45, 17, 3)
+    c.limb(30, 32, 41, 22, 3.4, 1.2, 'body', ambient=0.26)     # trailing tail
+    c.poly([(41, 25), (47, 14), (43, 18), (44, 9), (38, 19)], 'leaf', 0.92)
+    c.limb(15, 34, 12, 44, 2.8, 2.4, 'body', ambient=0.20)     # legs, mid-stride
+    c.limb(26, 35, 30, 44, 2.8, 2.4, 'body', ambient=0.20)
+    c.blob(11.5, 45, 3.8, 2.0, 'body', 0.28)
+    c.blob(30.5, 45, 3.8, 2.0, 'body', 0.28)
+    c.limb(13, 27, 31, 32, 9.5, 6.0, 'body', ambient=0.30)     # long body
+    c.sphere(19, 32, 7.0, 4.4, 'belly', ambient=0.50)
+    c.limb(14, 14, 15, 2, 3.2, 0.6, 'leaf', ambient=0.46)      # crest
+    c.limb(21, 14, 23, 4, 2.8, 0.6, 'leaf', ambient=0.40)
+    c.sphere(14, 22, 11.0, 10.0, 'body')                       # head, forward
+    c.sphere(13, 27, 6.2, 4.0, 'belly', ambient=0.54)          # jaw
+    c.eye(9.5, 20, 3.2)
+    c.eye(19.5, 20, 3.2)
+    c.blob(12.5, 25.5, 1.9, 1.1, 'eye', 0.0)
+    for sx, sy in ((36, 20), (43, 25), (33, 38)):
+        c.blob(sx, sy, 1.7, 1.5, 'leaf', 1.0)                  # spray
+    c.occlude()
     c.rim('leaf')
     c.outline()
     return c
 
 
 def pyrelynx(pal='pyre'):
-    """Emberkit grown: long flame ears, a mane, a burning crest."""
+    """Emberkit grown into a standing lynx: longer body, tall tufted ears, a
+    flame crest down the neck. Stands on all fours where the cub sits."""
     c = new_creature(pal)
-    c.shadow(24, 44, 14, 3)
-    c.poly([(9, 18), (12, 1), (19, 16)], 'leaf', 0.8)   # tall flame ears
-    c.poly([(39, 18), (36, 1), (29, 16)], 'leaf', 0.8)
-    for ang in range(0, 360, 45):                        # mane
-        px = 24 + math.cos(math.radians(ang)) * 15
-        py = 27 + math.sin(math.radians(ang)) * 14
-        c.sphere(px, py, 5, 4.5, 'leaf', ambient=0.5)
-    c.sphere(24, 27, 15, 14, 'body')
-    c.sphere(24, 34, 9, 6, 'belly')
-    c.poly([(24, 11), (29, 22), (24, 19), (19, 22)], 'leaf', 1.0)
-    c.eye(18, 25, 3.2)
-    c.eye(31, 25, 3.2)
-    c.blob(24.5, 32, 1.9, 1.2, 'eye', 0.0)
+    c.shadow(24, 45, 15, 3)
+    c.limb(32, 31, 43, 19, 3.0, 1.4, 'body', ambient=0.26)     # tail
+    c.poly([(43, 22), (48, 11), (44, 15), (45, 7), (40, 16)], 'leaf', 0.94)
+    c.limb(14, 32, 12, 44, 3.0, 2.6, 'body', ambient=0.20)     # legs
+    c.limb(33, 32, 35, 44, 3.0, 2.6, 'body', ambient=0.20)
+    c.blob(11.5, 45, 3.8, 2.0, 'body', 0.28)
+    c.blob(35.5, 45, 3.8, 2.0, 'body', 0.28)
+    c.limb(14, 30, 34, 30, 8.0, 7.0, 'body', ambient=0.30)     # body
+    c.sphere(24, 34, 8.0, 4.6, 'belly', ambient=0.52)
+    c.limb(19, 33, 18, 44, 2.5, 2.2, 'body', ambient=0.34)     # forelegs
+    c.limb(28, 33, 29, 44, 2.5, 2.2, 'body', ambient=0.34)
+    c.blob(17.5, 45, 3.2, 1.8, 'belly', 0.60)
+    c.blob(29.5, 45, 3.2, 1.8, 'belly', 0.60)
+    c.limb(16.5, 16, 14, 2, 4.6, 0.7, 'body', ambient=0.34)     # tall ears
+    c.limb(31.5, 16, 34, 2, 4.6, 0.7, 'body', ambient=0.34)
+    c.limb(16.5, 15, 14.9, 5, 2.4, 0.5, 'leaf', ambient=0.62)
+    c.limb(31.5, 15, 33.1, 5, 2.4, 0.5, 'leaf', ambient=0.54)
+    c.sphere(24, 20, 11.5, 10.0, 'body')
+    c.sphere(24, 25, 6.2, 4.2, 'belly', ambient=0.56)
+    # Crest on TOP of the skull. The first version drew it before the head, so
+    # the head covered it completely and the creature had no crest at all.
+    for i, fx in enumerate((19.5, 24, 28.5)):
+        c.limb(fx, 15, fx + (i - 1) * 1.6, 5 - abs(i - 1) * 2, 2.6, 0.5, 'leaf', ambient=0.52 + i * 0.06)
+    c.eye(18.5, 19, 3.3)
+    c.eye(29.5, 19, 3.3)
+    c.blob(24, 23.5, 1.9, 1.2, 'eye', 0.0)
+    c.occlude()
     c.rim('leaf')
     c.outline()
     return c
 
 
 def emberkit(pal='ember'):
-    """An ember cub: tufted ears, a flame mark, a bright muzzle."""
+    """An ember cub, sitting up.
+
+    Rebuilt against the silhouette test: the first version was an egg with ears,
+    indistinguishable in black from every other creature. This one has a neck, a
+    chest, four legs and a raised tail, so the shape says "small quadruped"
+    before any colour is read.
+    """
     c = new_creature(pal)
-    c.shadow(24, 43, 13, 3)
-    c.poly([(11, 16), (14, 3), (20, 15)], 'body', 0.5)   # ears
-    c.poly([(37, 16), (34, 3), (28, 15)], 'body', 0.5)
-    c.sphere(24, 26, 16, 15, 'body')
-    c.sphere(24, 33, 9, 6.5, 'belly')                    # muzzle
-    c.sphere(11, 35, 5, 5, 'body')
-    c.sphere(37, 35, 5, 5, 'body')
-    c.poly([(24, 12), (28, 20), (24, 18), (20, 20)], 'leaf', 1.0)  # flame mark
-    c.eye(18, 24, 3.2)
-    c.eye(31, 24, 3.2)
-    c.blob(24.5, 31, 1.8, 1.2, 'eye', 0.0)               # nose
+    c.shadow(24, 44, 14, 3)
+
+    # tail first, so the body overlaps its root
+    c.limb(31, 34, 40, 22, 2.8, 1.4, 'body')
+    # A flame, not a bead on a stick: an asymmetric tongue with a lick off the
+    # side, so the tail ends in a shape rather than a full stop.
+    c.poly([(40, 24), (44, 16), (41.5, 17.5), (42, 10), (38, 17), (39, 15.5), (37.5, 23)], 'leaf', 0.95)
+    c.poly([(40, 22), (42, 17), (40.5, 18), (40.5, 14), (38.5, 18.5), (38.8, 21)], 'belly', 1.0)
+
+    # hind legs, then the body sitting over them
+    c.limb(15, 33, 13, 42, 3.4, 2.8, 'body', ambient=0.22)
+    c.limb(33, 33, 35, 42, 3.4, 2.8, 'body', ambient=0.22)
+    c.blob(12.5, 43, 4.0, 2.2, 'body', 0.30)              # hind paws
+    c.blob(35.5, 43, 4.0, 2.2, 'body', 0.30)
+
+    c.sphere(24, 33, 11.5, 10.0, 'body')                  # chest / body
+    c.sphere(24, 36, 7.0, 5.4, 'belly', ambient=0.52)     # pale front
+
+    # forelegs in front of the chest
+    c.limb(19, 34, 18, 43, 2.6, 2.2, 'body', ambient=0.34)
+    c.limb(29, 34, 30, 43, 2.6, 2.2, 'body', ambient=0.34)
+    c.blob(17.5, 44, 3.2, 1.8, 'belly', 0.62)
+    c.blob(30.5, 44, 3.2, 1.8, 'belly', 0.62)
+
+    c.limb(24, 27, 24, 22, 5.0, 5.6, 'body', ambient=0.30) # neck
+
+    # head last: ears behind, skull, muzzle
+    c.limb(16.5, 15, 14.5, 3, 4.6, 0.7, 'body', ambient=0.34)   # ears
+    c.limb(31.5, 15, 33.5, 3, 4.6, 0.7, 'body', ambient=0.34)
+    c.limb(16.5, 14, 15.3, 6, 2.4, 0.5, 'leaf', ambient=0.60)   # inner ear
+    c.limb(31.5, 14, 32.7, 6, 2.4, 0.5, 'leaf', ambient=0.52)
+    c.sphere(24, 18, 12.0, 10.5, 'body')                   # skull
+    c.sphere(24, 23, 6.4, 4.4, 'belly', ambient=0.56)      # muzzle
+    c.poly([(24, 6), (27, 13), (24, 11), (21, 13)], 'leaf', 1.0)  # flame mark
+
+    c.eye(18.5, 17, 3.4)
+    c.eye(29.5, 17, 3.4)
+    c.blob(24, 21.5, 1.9, 1.3, 'eye', 0.0)                 # nose
+    c.blob(24, 24.5, 2.6, 0.9, 'eye', 0.0)                 # mouth line
+
+    c.occlude()
     c.rim('leaf')
     c.outline()
     return c
 
 
 def dewbble(pal='dew'):
-    """A droplet companion — pointed crown, wide translucent body."""
+    """A dewdrop that walks. The teardrop point is kept as the identity, but it
+    has stubby arms and feet so it is a creature and not a shape."""
     c = new_creature(pal)
-    c.shadow(24, 43, 12, 3)
-    c.poly([(24, 4), (33, 26), (15, 26)], 'body', 0.75)  # crown taper
-    c.sphere(24, 29, 15, 13, 'body')
-    c.sphere(20, 24, 6, 7, 'leaf', ambient=0.55)         # inner shine
-    c.sphere(24, 36, 8, 5, 'belly')
-    c.eye(18, 27, 3.2)
-    c.eye(31, 27, 3.2)
-    c.blob(24.5, 33, 2.2, 1.3, 'eye', 0.0)
-    c.rim('leaf', 1.2)
+    c.shadow(24, 44, 12, 3)
+    c.limb(19, 37, 16, 43, 2.4, 2.2, 'body', ambient=0.24)
+    c.limb(29, 37, 32, 43, 2.4, 2.2, 'body', ambient=0.24)
+    c.blob(15.5, 44, 3.4, 2.0, 'body', 0.32)
+    c.blob(32.5, 44, 3.4, 2.0, 'body', 0.32)
+    c.limb(24, 20, 24, 4, 6.0, 0.6, 'body', ambient=0.40)      # the point
+    c.sphere(24, 29, 13.0, 12.0, 'body')                       # the drop
+    c.sphere(24, 34, 7.6, 5.6, 'belly', ambient=0.56)
+    c.limb(12.5, 29, 9, 35, 2.2, 1.8, 'body', ambient=0.34)
+    c.limb(35.5, 29, 39, 35, 2.2, 1.8, 'body', ambient=0.34)
+    c.blob(8.5, 36, 2.3, 2.1, 'body', 0.42)
+    c.blob(39.5, 36, 2.3, 2.1, 'body', 0.42)
+    c.sphere(18, 20, 3.6, 4.4, 'leaf', ambient=0.80)           # surface glint
+    c.eye(19, 27, 3.3)
+    c.eye(29, 27, 3.3)
+    c.blob(24, 32, 2.0, 1.1, 'eye', 0.0)
+    c.occlude()
+    c.rim('leaf')
     c.outline()
     return c
 
 
 def tidewade(pal='tide'):
-    """Dewbble grown into a cresting wave, with a foam crown."""
+    """Dewbble deepened into a wader: longer legs, a crest, and arms held ready.
+    Taller and narrower than the drop it grew from."""
     c = new_creature(pal)
-    c.shadow(24, 44, 14, 3)
-    c.poly([(24, 2), (36, 24), (12, 24)], 'body', 0.8)
-    for fx, fy, fr in ((16, 8, 4), (24, 4, 4.5), (32, 9, 3.6), (12, 14, 3)):
-        c.sphere(fx, fy, fr, fr * 0.85, 'leaf', ambient=0.68)   # foam crown
-    c.sphere(24, 30, 16, 14, 'body')
-    c.sphere(19, 25, 6, 7, 'leaf', ambient=0.55)
-    c.sphere(24, 37, 9, 5, 'belly')
-    c.eye(18, 28, 3.3)
-    c.eye(31, 28, 3.3)
-    c.blob(24.5, 34, 2.2, 1.3, 'eye', 0.0)
-    c.rim('leaf', 1.2)
+    c.shadow(24, 46, 13, 3)
+    c.limb(19, 34, 16, 45, 3.0, 2.6, 'body', ambient=0.22)
+    c.limb(29, 34, 32, 45, 3.0, 2.6, 'body', ambient=0.22)
+    c.blob(15.0, 46, 4.2, 2.2, 'body', 0.30)
+    c.blob(33.0, 46, 4.2, 2.2, 'body', 0.30)
+    c.limb(19, 14, 20, 3, 3.4, 0.6, 'leaf', ambient=0.44)      # crest fins
+    c.limb(29, 14, 28, 2, 3.4, 0.6, 'leaf', ambient=0.52)
+    c.sphere(24, 26, 12.5, 12.5, 'body')
+    c.sphere(24, 31, 7.4, 6.0, 'belly', ambient=0.56)
+    c.limb(12.5, 24, 7, 31, 2.5, 1.9, 'body', ambient=0.34)
+    c.limb(35.5, 24, 41, 31, 2.5, 1.9, 'body', ambient=0.40)
+    c.blob(6.5, 32, 2.6, 2.3, 'body', 0.44)
+    c.blob(41.5, 32, 2.6, 2.3, 'body', 0.50)
+    c.sphere(18, 19, 3.4, 4.0, 'leaf', ambient=0.82)
+    c.eye(19, 24, 3.3)
+    c.eye(29, 24, 3.3)
+    c.blob(24, 29, 2.2, 1.1, 'eye', 0.0)
+    c.occlude()
+    c.rim('leaf')
     c.outline()
     return c
 
