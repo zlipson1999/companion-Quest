@@ -16,11 +16,66 @@ export const EXERCISES = {
   situps: { id: 'situps', name: 'Core Crunch', exercise: 'Sit-ups', kind: 'reps', target: 15, power: 18, blurb: 'Engage the core — 15 sit-ups.' },
 };
 
-// The 4 moves shown in the battle's 2x2 action menu.
+// The 4 moves shown in the battle's 2x2 action menu (legacy fallback — the
+// menu is built by battleMovesFor now, which knows about levels and stages).
 export const BATTLE_MOVES = ['pushups', 'squats', 'jacks', 'plank'];
 
 export function getExercise(id) {
   return EXERCISES[id] || null;
+}
+
+// ---------------------------------------------------------------- learnset
+// Moves unlock as the companion levels, and UPGRADE as it evolves. Both halves
+// stay honest to the premise: a higher-level team has earned harder exercises,
+// and an evolved companion asks more of you because you have already proven
+// you can give more.
+
+export const LEARNSET = [
+  { id: 'pushups', atLevel: 1 },
+  { id: 'squats', atLevel: 1 },
+  { id: 'jacks', atLevel: 1 },
+  { id: 'plank', atLevel: 1 },
+  { id: 'lunges', atLevel: 3 },
+  { id: 'situps', atLevel: 5 },
+  { id: 'highknees', atLevel: 7 },
+  { id: 'burpees', atLevel: 10 },
+];
+
+// Tier comes from the companion's evolution STAGE, not raw level — evolving is
+// the upgrade moment, so that is when the moves visibly change with it.
+// Tier II: +50% target, +8 power. Tier III: double target, +18 power.
+const TIER_SUFFIX = ['', ' II', ' III'];
+const TIER_TARGET = [1, 1.5, 2];
+const TIER_POWER = [0, 8, 18];
+
+export function decorateMove(base, stage) {
+  const t = Math.max(0, Math.min(2, (stage || 1) - 1));
+  if (!base) return null;
+  const target = Math.round(base.target * TIER_TARGET[t]);
+  return {
+    ...base,
+    name: base.name + TIER_SUFFIX[t],
+    target,
+    power: base.power + TIER_POWER[t],
+    tier: t + 1,
+    blurb: base.kind === 'hold'
+      ? `Hold a steady ${base.exercise.toLowerCase()} for ${target} seconds.`
+      : `${base.blurb.replace(/\d+/, String(target))}`,
+  };
+}
+
+// The 2x2 battle menu: the three strongest unlocked rep moves plus the best
+// hold, so variety of KIND survives even when burpees out-damage everything.
+export function battleMovesFor(level, stage) {
+  const unlocked = LEARNSET.filter((m) => level >= m.atLevel).map((m) => EXERCISES[m.id]);
+  const reps = unlocked.filter((m) => m.kind === 'reps').sort((a, b) => b.power - a.power).slice(0, 3);
+  const hold = unlocked.filter((m) => m.kind === 'hold').sort((a, b) => b.power - a.power)[0];
+  return [...reps, hold].filter(Boolean).slice(0, 4).map((m) => decorateMove(m, stage));
+}
+
+// Which moves a level-up just unlocked, for the "learned X!" beat.
+export function movesLearnedBetween(beforeLevel, afterLevel) {
+  return LEARNSET.filter((m) => m.atLevel > beforeLevel && m.atLevel <= afterLevel).map((m) => EXERCISES[m.id]);
 }
 
 export default EXERCISES;

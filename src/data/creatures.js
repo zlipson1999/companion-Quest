@@ -12,20 +12,20 @@
 export const CREATURES = {
   // --- Starter line: Balance ---
   sproutle: {
-    id: 'sproutle', name: 'Sproutle', sprite: 'sproutle', palette: 'sprout',
+    id: 'sproutle', stage: 1, name: 'Sproutle', sprite: 'sproutle', palette: 'sprout',
     species: 'Seedling Companion', kind: 'starter', goalId: 'root',
     baseHp: 60, catchable: true, catchRate: 0.55,
     flavor: 'A gentle sprout-spirit. It grows calmer and steadier the more balanced your days become.',
     evolvesTo: 'bloomtail', evolveLevel: 5, evolvePoints: 30,
   },
   bloomtail: {
-    id: 'bloomtail', name: 'Bloomtail', sprite: 'bloomtail', palette: 'bloom',
+    id: 'bloomtail', stage: 2, name: 'Bloomtail', sprite: 'bloomtail', palette: 'bloom',
     species: 'Blossom Companion', kind: 'evolution', baseHp: 100, scale: 1.18, catchable: false,
     flavor: 'Sproutle in full bloom — its petals open a little wider with every steady week.',
     evolvesTo: 'groveheart', evolveLevel: 14, evolvePoints: 110,
   },
   groveheart: {
-    id: 'groveheart', name: 'Groveheart', sprite: 'groveheart', palette: 'grove',
+    id: 'groveheart', stage: 3, name: 'Groveheart', sprite: 'groveheart', palette: 'grove',
     species: 'Grove Guardian Companion', kind: 'evolution', baseHp: 152, scale: 1.32, catchable: false,
     flavor: 'Seasons of steady days, grown into one standing thing. It keeps the pace you set.',
     evolvesTo: null,
@@ -33,20 +33,20 @@ export const CREATURES = {
 
   // --- Starter line: Strength ---
   emberkit: {
-    id: 'emberkit', name: 'Emberkit', sprite: 'emberkit', palette: 'ember',
+    id: 'emberkit', stage: 1, name: 'Emberkit', sprite: 'emberkit', palette: 'ember',
     species: 'Ember Cub Companion', kind: 'starter', goalId: 'muscle',
     baseHp: 64, catchable: true, catchRate: 0.5,
     flavor: 'A warm little ember cub. Its inner flame burns brighter each time you push yourself.',
     evolvesTo: 'pyrelynx', evolveLevel: 5, evolvePoints: 30,
   },
   pyrelynx: {
-    id: 'pyrelynx', name: 'Pyrelynx', sprite: 'pyrelynx', palette: 'pyre',
+    id: 'pyrelynx', stage: 2, name: 'Pyrelynx', sprite: 'pyrelynx', palette: 'pyre',
     species: 'Flame Lynx Companion', kind: 'evolution', baseHp: 108, scale: 1.18, catchable: false,
     flavor: 'Emberkit, grown bold and blazing. It paces beside you, ready for the next set.',
     evolvesTo: 'cindermane', evolveLevel: 14, evolvePoints: 110,
   },
   cindermane: {
-    id: 'cindermane', name: 'Cindermane', sprite: 'cindermane', palette: 'cinder',
+    id: 'cindermane', stage: 3, name: 'Cindermane', sprite: 'cindermane', palette: 'cinder',
     species: 'Blazing Mane Companion', kind: 'evolution', baseHp: 164, scale: 1.32, catchable: false,
     flavor: 'Every set you ever finished, burning at once. It does not flinch at heavy days.',
     evolvesTo: null,
@@ -54,20 +54,20 @@ export const CREATURES = {
 
   // --- Starter line: Distance ---
   dewbble: {
-    id: 'dewbble', name: 'Dewbble', sprite: 'dewbble', palette: 'dew',
+    id: 'dewbble', stage: 1, name: 'Dewbble', sprite: 'dewbble', palette: 'dew',
     species: 'Dewdrop Companion', kind: 'starter', goalId: 'lean',
     baseHp: 58, catchable: true, catchRate: 0.55,
     flavor: 'A bright dewdrop sprite. It rolls a little farther with every step you take together.',
     evolvesTo: 'tidewade', evolveLevel: 5, evolvePoints: 30,
   },
   tidewade: {
-    id: 'tidewade', name: 'Tidewade', sprite: 'tidewade', palette: 'tide',
+    id: 'tidewade', stage: 2, name: 'Tidewade', sprite: 'tidewade', palette: 'tide',
     species: 'Tidewalker Companion', kind: 'evolution', baseHp: 96, scale: 1.18, catchable: false,
     flavor: 'Dewbble, deepened into a rolling tide. Distance means nothing to it now.',
     evolvesTo: 'maelstride', evolveLevel: 14, evolvePoints: 110,
   },
   maelstride: {
-    id: 'maelstride', name: 'Maelstride', sprite: 'maelstride', palette: 'maels',
+    id: 'maelstride', stage: 3, name: 'Maelstride', sprite: 'maelstride', palette: 'maels',
     species: 'Deep Current Companion', kind: 'evolution', baseHp: 146, scale: 1.32, catchable: false,
     flavor: 'A current with somewhere to be. Every mile you have walked is still moving in it.',
     evolvesTo: null,

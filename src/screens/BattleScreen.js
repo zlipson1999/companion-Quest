@@ -14,7 +14,7 @@ import { playSfx } from '../audio';
 import { ENCOUNTERS } from '../data/obstacles';
 import { getCreature } from '../data/creatures';
 import { canEvolve } from '../state/evolution';
-import { getExercise, BATTLE_MOVES } from '../data/exercises';
+import { battleMovesFor, movesLearnedBetween } from '../data/exercises';
 import {
   wildIntro, movePrompt, moveLanded, victoryLines, defeatLines, levelUpLine, evolveLines,
   catchSuccessLines, catchFailLine, catchFullLine, noTokenLine, companionFledLines, swapLine,
@@ -93,6 +93,12 @@ export default function BattleScreen({ params }) {
   const [selectedMove, setSelectedMove] = useState(null);
   const [hold, setHold] = useState(0);
 
+  // Moves come from the companion's level and evolution stage, already
+  // decorated with tier scaling — never from the raw exercise table, or a
+  // Tier III companion would fight with Tier I numbers.
+  const battleMoves = battleMovesFor(companion.level, companion.creature.stage || 1);
+  const getMove = (id) => battleMoves.find((m) => m.id === id) || null;
+
   const [wildHit, setWildHit] = useState(0);
   const [companionHit, setCompanionHit] = useState(0);
   const [wildLunge, setWildLunge] = useState(0);
@@ -134,7 +140,7 @@ export default function BattleScreen({ params }) {
 
   useEffect(() => {
     if (phase !== 'doing' || !selectedMove) return undefined;
-    const move = getExercise(selectedMove);
+    const move = getMove(selectedMove);
     if (move.kind !== 'hold' || hold <= 0) return undefined;
     const id = setTimeout(() => setHold((h) => h - 1), 1000);
     return () => clearTimeout(id);
@@ -184,7 +190,10 @@ export default function BattleScreen({ params }) {
     const afterLevel = levelFromXp(afterXp);
     if (afterLevel > beforeLevel) {
       playSfx('levelup');
-      say([{ speaker: 'Narration', text: levelUpLine(companion.creature.name, afterLevel) }], () => maybeEvolve(afterLevel, done));
+      const learned = movesLearnedBetween(beforeLevel, afterLevel).map(
+        (m) => ({ speaker: 'Narration', text: `${companion.creature.name} learned ${m.name}!` })
+      );
+      say([{ speaker: 'Narration', text: levelUpLine(companion.creature.name, afterLevel) }, ...learned], () => maybeEvolve(afterLevel, done));
     } else {
       done();
     }
@@ -193,14 +202,14 @@ export default function BattleScreen({ params }) {
   const wildCounter = () => 4 + Math.floor(target.hp / 15) + Math.floor(Math.random() * 4);
 
   const startMove = (moveId) => {
-    const move = getExercise(moveId);
+    const move = getMove(moveId);
     setSelectedMove(moveId);
     setHold(move.kind === 'hold' ? move.target : 0);
     setPhase('doing');
   };
 
   const confirmMove = () => {
-    const move = getExercise(selectedMove);
+    const move = getMove(selectedMove);
     const dmg = move.power + Math.floor((companion.level - 1) * 2);
     const newWildHp = Math.max(0, wildHp - dmg);
     // Choreography: the companion steps INTO the strike, and only then does the
@@ -323,17 +332,19 @@ export default function BattleScreen({ params }) {
     navigate(returnTo);
   };
 
-  const move = selectedMove ? getExercise(selectedMove) : null;
+  const move = selectedMove ? getMove(selectedMove) : null;
   const holdReady = move && move.kind === 'hold' ? hold <= 0 : true;
   const companionMax = companion.maxHp;
 
   // Classic battle framing: their plate top-left with the creature opposite it,
   // your plate bottom-right with your companion opposite that, both standing on
-  // lit discs over a horizon.
+  // lit discs. The horizon sits high (0.16) so BOTH combatants stand on the
+  // ground plane — lower, and the enemy floats in the sky with a platform
+  // under it.
   const stageTone = params.from === 'route' ? 'grass' : 'trail';
 
   const top = (
-    <BattleStage tone={stageTone} horizon={0.5}>
+    <BattleStage tone={stageTone} horizon={0.16}>
       <View style={{ flex: 1, padding: space.sm }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
           <StatusPlate
@@ -405,10 +416,11 @@ export default function BattleScreen({ params }) {
         <Menu
           tone="cream"
           columns={2}
-          options={BATTLE_MOVES.map((id) => {
-            const m = getExercise(id);
-            return { label: m.name, value: id, sublabel: m.kind === 'hold' ? `${m.target}s ${m.exercise}` : `${m.target} ${m.exercise}` };
-          })}
+          options={battleMoves.map((m) => ({
+            label: m.name,
+            value: m.id,
+            sublabel: m.kind === 'hold' ? `${m.target}s ${m.exercise}` : `${m.target} ${m.exercise}`,
+          }))}
           onSelect={(opt) => startMove(opt.value)}
         />
         <View style={{ flexDirection: 'row', marginTop: space.sm }}>
