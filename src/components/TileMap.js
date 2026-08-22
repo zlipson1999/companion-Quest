@@ -57,13 +57,6 @@ const TILE_SPRITES = {
   '=': ['tile_gym_wall'],
   '|': ['tile_gym_wall_side'],
   M: ['tile_gym_mirror'],
-  m: ['tile_gym_mat'],
-  R: ['tile_rack_barbell'],
-  b: ['tile_rack_dumbbell'],
-  K: ['tile_machine'],
-  t: ['tile_treadmill'],
-  B: ['tile_bench'],
-  w: ['tile_water_station'],
   X: ['tile_gym_exit'],
 };
 
@@ -88,7 +81,26 @@ const PROP_SPRITES = {
   j: 'prop_kettlebells',
   q: 'prop_rower',
   N: 'prop_reception',
+  m: 'prop_gym_mat',
+  R: 'prop_rack_barbell',
+  b: 'prop_rack_dumbbell',
+  K: 'prop_machine',
+  t: 'prop_treadmill',
+  B: 'prop_bench',
+  w: 'prop_water_station',
+  V: 'prop_banner',
+  O: 'prop_wall_clock',
+  Z: 'prop_whiteboard',
 };
+
+// Floor zones. These sit under the props like any other ground, so a rack can
+// stand on wood and a sled lane on turf without either knowing about the other.
+// 'g', not 'G' — the capital is the route gate in the hub, and turf standing
+// in for it would have swapped the way out of town for a strip of AstroTurf.
+const ZONE_FIELDS = { P: 'tile_gym_platform', g: 'tile_gym_turf' };
+
+// Props that belong to a wall rather than a floor.
+const WALL_DRESSING = new Set(['V', 'O', 'Z']);
 
 // Ground is a FIELD, not a tile: one texture windowed across a FIELD_SPAN block
 // so it runs continuously and its repeat is four tiles apart instead of one.
@@ -199,7 +211,8 @@ function variantFor(x, y, count) {
 function layersFor(map, code, x, y, frame, floor, wallField) {
   const field = floor || GROUND_FIELD;
   const ground = groundKey(field, x, y);
-  const isFloorCode = code === '.' || code === ',' || (floor && code === '#');
+  const zone = ZONE_FIELDS[code];
+  const isFloorCode = code === '.' || code === ',' || !!zone || (floor && code === '#');
 
   let layers;
   if (!floor && PATH_CODES.has(code) && code === '#') {
@@ -214,11 +227,15 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
     ];
   } else if (isFloorCode) {
     // Flowers are an overlay now, so the ground runs on underneath them.
-    layers = code === ',' && !floor
-      ? [{ key: ground }, { key: 'prop_flowers' }]
-      : [{ key: ground }];
+    layers = zone
+      ? [{ key: groundKey(zone, x, y) }]
+      : code === ',' && !floor
+        ? [{ key: ground }, { key: 'prop_flowers' }]
+        : [{ key: ground }];
   } else if (PROP_SPRITES[code]) {
-    layers = [{ key: ground }, { key: PROP_SPRITES[code] }];
+    // Wall dressing hangs on the wall, not on the floor.
+    const under = WALL_DRESSING.has(code) ? groundKey(wallField || GROUND_FIELD, x, y) : ground;
+    layers = [{ key: under }, { key: PROP_SPRITES[code] }];
   } else if (FIELD_CODES[code]) {
     const wall = code === 'W' && wallField ? wallField : FIELD_CODES[code];
     layers = [{ key: groundKey(wall, x, y) }];

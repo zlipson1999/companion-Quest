@@ -32,28 +32,34 @@ export const HUB = {
 // toward had no inside. It is a real room now: equipment you can walk up to,
 // each piece standing for the system it teaches.
 //
-//   =  front wall     |  side wall      M  mirror       .  floor / , variant
-//   m  training mat   R  barbell rack   b  dumbbell rack   U  pull-up bar
-//   K  cable machine  t  treadmill      q  rower           j  kettlebells
-//   B  bench          w  water station  L  lockers         N  reception
-//   p  plant          C  Coach Maple    A  Rowan (training)   X  exit -> hub
+// Zoned, not scattered. A gym that is one continuous surface with objects
+// dotted evenly over it reads as a warehouse; wood under the iron, turf down
+// one side and rubber everywhere else is most of what makes it a place.
+//
+//   =  front wall     |  side wall      M  mirror       .  rubber floor
+//   P  wood platform  g  turf lane      m  training mat
+//   R  barbell rack   b  dumbbell rack  U  pull-up bar   j  kettlebells
+//   K  cable machine  t  treadmill      q  rower         B  bench
+//   w  water station  L  lockers        N  reception     p  plant
+//   V  banner         O  clock          Z  whiteboard
+//   C  Coach Maple    A  Rowan          X  exit -> hub
 export const GYM = {
   id: 'gym',
   cols: 15,
   rows: 13,
   spawn: { x: 7, y: 11 },
   grid: [
-    '===============',
-    '|MMMM....RRRRU|',
-    '|.............|',
-    '|.B.b.......b.|',
-    '|.............|',
-    '|.q..mmm..KK..|',
-    '|....mmm..KK..|',
-    '|.j...A.C.....|',
-    '|.............|',
-    '|.t.t.......w.|',
-    '|...........p.|',
+    '====V=====O=Z==',
+    '|MMMM...PPPPPU|',
+    '|.......PRRRP.|',
+    '|.B.b...PPPPP.|',
+    '|.......P...P.|',
+    '|g..mmm.PbbbP.|',
+    '|g..mmm.PPPPP.|',
+    '|g...A.C......|',
+    '|g.j.......KK.|',
+    '|g.t.t.....KK.|',
+    '|...q.....w.p.|',
     '|LLL.N...N....|',
     '======X========',
   ],
@@ -61,7 +67,7 @@ export const GYM = {
 
 const BLOCKED = new Set([
   'T', '~', 'h', 'H', 'y', 'Y',
-  'W', '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w', 'C', 'A',
+  'W', '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w', 'C', 'A', 'V', 'O', 'Z',
   // Furniture. A rug is walkable; everything else you walk around.
   'e', 'E', 'v', 'k', 'f', 'a', 'c', 'F', 'o', 'p',
   'L', 'U', 'j', 'q', 'N',
@@ -88,6 +94,7 @@ const INTERACTIONS = {
   j: { screen: 'forge', label: 'Kettlebells — build your own session' },
   t: { screen: 'treadmill', params: { mode: 'treadmill' }, label: 'Treadmill — cardio, no interruptions' },
   q: { screen: 'treadmill', params: { mode: 'treadmill' }, label: 'Rower — cardio, no interruptions' },
+  Z: { screen: 'week', label: "Whiteboard — this week's work" },
   L: { screen: 'bag', label: 'Lockers — your supplies' },
   N: { screen: 'summary', label: 'Reception — your record so far' },
   B: { screen: 'rest', label: 'Bench — rest and recover' },

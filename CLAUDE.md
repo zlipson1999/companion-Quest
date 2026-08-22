@@ -365,7 +365,13 @@ the shared one.
   as, so "I Made This" is one motion. Deliberately not calorie maths — the
   module is check-in based because the game rewards showing up, and the
   cookbook has to agree with it. The sofa is a stillness check-in.
-- **Training Hall** — the iron is where you WRITE a session (racks, dumbbells,
+- **Training Hall** — zoned rather than scattered: a wood lifting platform
+  under the racks, a turf lane down one side, rubber everywhere else, and the
+  wall carries a banner, a clock and a whiteboard. Equipment moved from tiles to
+  props so it could take its own `gymkit` palette — colour-coded bumper plates
+  are most of what makes a rack read as a rack at a quarter of a tile, and the
+  room's steel-and-rubber palette could not give them. The iron is where you
+  WRITE a session (racks, dumbbells,
   cable, pull-up bar, kettlebells all open the Forge); Coach hands you one off
   the shelf; treadmill and rower are cardio with nothing to interrupt you. That
   split is the logic of the room: equipment is the work, people are the advice.

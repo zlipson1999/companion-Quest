@@ -189,6 +189,16 @@ PALETTE_SPECS = {
         'body': ('#232833', '#c2cad6'), 'leaf': ('#4a2f18', '#e0b878'),
         'belly': ('#1e2427', '#7f8d88'), 'accent': ('#123c44', '#5fbfae'),
     },
+    # The kit itself, separate from the room. Bumper plates are colour-coded in
+    # every real gym and that colour is most of what makes a rack read as a
+    # rack rather than a grey lump, so the equipment needs a palette the room's
+    # steel-and-rubber one cannot give it.
+    'gymkit': {
+        'body': ('#1b2028', '#e2e8f0'),      # steel, up to a chrome highlight
+        'leaf': ('#5c1418', '#f0574e'),      # red plates
+        'belly': ('#10314f', '#4aa3e8'),     # blue plates
+        'accent': ('#6b5210', '#ffd45e'),    # yellow plates and trim
+    },
     'coach': {
         'body': ('#12301f', '#5b9a68'), 'leaf': ('#42423a', '#e2e0d2'),
         'belly': ('#6b3d20', '#e8b184'), 'accent': ('#8a3b12', '#f2a35c'),
@@ -2812,6 +2822,46 @@ def gym_floor_field(span=FIELD_SPAN):
     return c
 
 
+def gym_platform_field(span=FIELD_SPAN):
+    """The lifting platform: oiled hardwood, laid across several tiles.
+
+    A gym that is one continuous surface reads as a warehouse. Zoning it — wood
+    under the iron, turf down one side, rubber everywhere else — is most of what
+    makes a real gym feel like a place rather than a floor with objects on it.
+    """
+    size = TILE * span
+    c = Canvas(size, size, 'couch', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    board = 14
+    for course, top in enumerate(range(0, px, board)):
+        tone = 0.32 + (hsh(course, 5, 211) - 0.5) * 0.05
+        for y in range(top, min(top + board, px)):
+            for x in range(px):
+                grain = (hsh(x // 13, course, 213) - 0.5) * 0.045
+                c._set(x, y, 'body', tone + grain + (hsh(x // 2, y, 217) - 0.5) * 0.016)
+        c.rect_px(0, top, px - 1, top, 'body', tone - 0.09)
+        c.rect_px(0, top + 1, px - 1, top + 1, 'body', tone + 0.07)
+    return c
+
+
+def gym_turf_field(span=FIELD_SPAN):
+    """Sled and sprint turf, with lane lines running up it."""
+    size = TILE * span
+    c = Canvas(size, size, 'sprout', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    # Indoor turf, not a lawn. The first pass ran bright lane lines every tile
+    # and a hot green under them, and the strip read as somebody had left the
+    # garden door open.
+    _mottle_raw(c, 'body', 0.20, 0.030, 223, px, px, cell=2)
+    for y in range(px):
+        for x in range(px):
+            if hsh(x, y, 227) > 0.92:
+                c._set(x, y, 'body', 0.27)          # blade flecks
+    for lane in range(0, px, 64):                    # one lane line every two tiles
+        c.rect_px(lane, 0, lane, px - 1, 'belly', 0.90)
+    return c
+
+
 def gym_wall_field(span=FIELD_SPAN):
     """Painted block wall — coursed, but softly, so it does not stripe."""
     size = TILE * span
@@ -3122,97 +3172,150 @@ def tile_gym_mirror():
     return c
 
 
-def tile_rack_barbell():
-    """Loaded bar on an upright rack — the silhouette people recognise first."""
-    c = _gym_floor(0)
-    c.rect(1, 4, 3, 15, 'body', 0.26); c.rect(12, 4, 14, 15, 'body', 0.26)   # uprights
-    c.rect(1, 4, 1, 15, 'body', 0.44); c.rect(12, 4, 12, 15, 'body', 0.44)   # lit faces
-    c.rect(2, 6, 13, 7, 'body', 0.62)                                        # the bar
-    c.rect(2, 6, 13, 6, 'body', 0.82)
-    for cx in (4, 11):                                                       # plates
-        c.rect(cx - 1, 3, cx + 1, 10, 'body', 0.20)
-        c.rect(cx - 1, 3, cx - 1, 10, 'body', 0.38)
-        c.rect(cx, 4, cx, 9, 'leaf', 0.44)
+def prop_rack_barbell():
+    """Loaded bar on an upright rack, with colour-coded bumper plates.
+
+    The plates are the whole trick. A rack drawn in the room's steel read as a
+    grey lump; give it red and blue bumpers and it reads as a rack from across
+    the room, at a quarter of the tile size.
+    """
+    c = _prop('gymkit')
+    c.rect(1, 3, 3, 15, 'body', 0.24); c.rect(12, 3, 14, 15, 'body', 0.24)   # uprights
+    c.rect(1, 3, 1, 15, 'body', 0.52); c.rect(12, 3, 12, 15, 'body', 0.52)   # lit faces
+    c.rect(2, 6, 3, 6, 'accent', 0.62); c.rect(12, 6, 13, 6, 'accent', 0.62) # J-hooks
+    c.rect(3, 7, 12, 8, 'body', 0.72)                                        # the bar
+    c.rect(3, 7, 12, 7, 'body', 0.95)                                        # chrome highlight
+    for cx, ramp in ((4, 'leaf'), (11, 'belly')):                            # bumper plates
+        c.rect(cx - 1, 3, cx + 1, 12, ramp, 0.36)
+        c.rect(cx - 1, 3, cx - 1, 12, ramp, 0.66)
+        c.rect(cx, 5, cx, 10, ramp, 0.82)
+        c.rect(cx + 1, 4, cx + 1, 11, ramp, 0.20)
     c.rect(0, 15, 15, 15, 'ink', 0)                                          # contact shadow
     return c
 
 
-def tile_rack_dumbbell():
+def prop_rack_dumbbell():
     """Two-tier rack. Pairs get smaller left to right so it reads as a set."""
-    c = _gym_floor(0)
-    c.rect(0, 6, 15, 7, 'body', 0.30)                                        # shelves
-    c.rect(0, 11, 15, 12, 'body', 0.30)
-    c.rect(0, 6, 15, 6, 'body', 0.48); c.rect(0, 11, 15, 11, 'body', 0.48)
-    c.rect(0, 13, 1, 15, 'body', 0.24); c.rect(14, 13, 15, 15, 'body', 0.24)  # legs
-    for row, top in ((0, 3), (1, 8)):
-        for i, cx in enumerate((3, 7, 11)):
-            r = 2 - i * 0 + (1 if row == 0 else 0)
-            c.rect(cx - 1, top, cx + 1, top + 2, 'body', 0.20)               # bells
-            c.rect(cx, top + 1, cx, top + 1, 'body', 0.56)                   # handle
-            c.put(cx - 1, top, 'body', 0.40)
+    c = _prop('gymkit')
+    c.rect(0, 6, 15, 7, 'body', 0.28)                                        # shelves
+    c.rect(0, 11, 15, 12, 'body', 0.28)
+    c.rect(0, 6, 15, 6, 'body', 0.62); c.rect(0, 11, 15, 11, 'body', 0.62)
+    c.rect(0, 13, 1, 15, 'body', 0.22); c.rect(14, 13, 15, 15, 'body', 0.22)  # legs
+    for row, top, ramp in ((0, 3, 'leaf'), (1, 8, 'belly')):
+        for cx in (3, 7, 11):
+            c.rect(cx - 1, top, cx + 1, top + 2, ramp, 0.34)                 # bells
+            c.rect(cx - 1, top, cx - 1, top + 2, ramp, 0.62)
+            c.rect(cx, top + 1, cx, top + 1, 'body', 0.80)                   # handle
     c.rect(0, 15, 15, 15, 'ink', 0)
     return c
 
 
-def tile_machine():
-    """Cable/selectorised stack: column, pulley, weight stack, seat pad."""
-    c = _gym_floor(0)
-    c.rect(2, 1, 6, 15, 'body', 0.24)                                        # stack housing
-    c.rect(2, 1, 2, 15, 'body', 0.42)                                        # lit edge
+def prop_machine():
+    """Selectorised stack: housing, plates, pulley, seat pad."""
+    c = _prop('gymkit')
+    c.rect(2, 1, 6, 15, 'body', 0.20)                                        # stack housing
+    c.rect(2, 1, 2, 15, 'body', 0.46)                                        # lit edge
     for k in range(3, 14, 2):                                                # the plates
-        c.rect(3, k, 5, k, 'body', 0.56)
-        c.rect(3, k + 1, 5, k + 1, 'body', 0.30)
-    c.rect(8, 1, 9, 12, 'body', 0.36)                                        # upright
-    c.rect(8, 1, 8, 12, 'body', 0.54)
-    c.rect(6, 2, 12, 3, 'body', 0.46)                                        # top arm
-    c.put(12, 4, 'body', 0.70); c.put(12, 5, 'body', 0.70)                   # cable
-    c.rect(10, 9, 15, 11, 'leaf', 0.40)                                      # seat pad
+        c.rect(3, k, 5, k, 'body', 0.60)
+        c.rect(3, k + 1, 5, k + 1, 'body', 0.26)
+    c.rect(4, 3, 4, 8, 'accent', 0.70)                                       # selector pin run
+    c.rect(8, 1, 9, 12, 'body', 0.38); c.rect(8, 1, 8, 12, 'body', 0.66)     # upright
+    c.rect(6, 2, 12, 3, 'body', 0.50)                                        # top arm
+    c.put(12, 4, 'body', 0.88); c.put(12, 5, 'body', 0.88)                   # cable
+    c.rect(10, 9, 15, 11, 'leaf', 0.36)                                      # seat pad
     c.rect(10, 9, 15, 9, 'leaf', 0.58)
-    c.rect(11, 12, 12, 15, 'body', 0.26)                                     # seat post
+    c.rect(11, 12, 12, 15, 'body', 0.24)                                     # seat post
     c.rect(0, 15, 15, 15, 'ink', 0)
     return c
 
 
-def tile_treadmill():
-    """Deck, belt and console — the cardio corner."""
-    c = _gym_floor(0)
-    c.rect(2, 6, 13, 14, 'body', 0.26)                                       # deck
-    c.rect(3, 7, 12, 13, 'belly', 0.30)                                      # belt
+def prop_treadmill():
+    """Deck, belt and a lit console."""
+    c = _prop('gymkit')
+    c.rect(2, 6, 13, 14, 'body', 0.22)                                       # deck
+    c.rect(3, 7, 12, 13, 'body', 0.12)                                       # belt
     for k in range(8, 13, 2):
-        c.rect(3, k, 12, k, 'belly', 0.44)                                   # belt slats
-    c.rect(2, 6, 13, 6, 'body', 0.48)                                        # lit deck lip
-    c.rect(3, 1, 12, 2, 'body', 0.40)                                        # console
-    c.rect(3, 1, 12, 1, 'body', 0.62)
-    c.rect(5, 2, 10, 2, 'leaf', 0.72)                                        # readout
-    c.rect(3, 3, 3, 5, 'body', 0.34); c.rect(12, 3, 12, 5, 'body', 0.34)     # uprights
+        c.rect(3, k, 12, k, 'body', 0.30)                                    # belt slats
+    c.rect(2, 6, 13, 6, 'body', 0.56)                                        # lit deck lip
+    c.rect(3, 1, 12, 3, 'body', 0.34)                                        # console
+    c.rect(3, 1, 12, 1, 'body', 0.70)
+    c.rect(5, 2, 10, 2, 'belly', 0.92)                                       # readout, lit
+    c.rect(3, 4, 3, 6, 'body', 0.44); c.rect(12, 4, 12, 6, 'body', 0.44)     # uprights
     c.rect(0, 15, 15, 15, 'ink', 0)
     return c
 
 
-def tile_bench():
-    """Flat bench, seen from above-front: pad, gap, and two feet."""
-    c = _gym_floor(0)
-    c.rect(3, 4, 12, 10, 'leaf', 0.32)                                       # pad
-    c.rect(3, 4, 12, 4, 'leaf', 0.54)                                        # lit top
-    c.rect(3, 4, 3, 10, 'leaf', 0.46)
-    c.rect(12, 5, 12, 10, 'leaf', 0.20)                                      # shaded side
-    c.rect(4, 11, 11, 11, 'body', 0.22)                                      # frame
-    c.rect(4, 12, 5, 14, 'body', 0.30); c.rect(10, 12, 11, 14, 'body', 0.30) # feet
+def prop_bench():
+    """Flat bench: pad, frame, feet."""
+    c = _prop('gymkit')
+    c.rect(3, 4, 12, 10, 'leaf', 0.30)                                       # pad
+    c.rect(3, 4, 12, 4, 'leaf', 0.52)                                        # lit top
+    c.rect(3, 4, 3, 10, 'leaf', 0.44)
+    c.rect(12, 5, 12, 10, 'leaf', 0.16)                                      # shaded side
+    c.rect(4, 11, 11, 11, 'body', 0.30)                                      # frame
+    c.rect(4, 12, 5, 14, 'body', 0.36); c.rect(10, 12, 11, 14, 'body', 0.36) # feet
     c.rect(2, 15, 13, 15, 'ink', 0)
     return c
 
 
-def tile_water_station():
+def prop_water_station():
     """Cooler and cups. Hydration is a module, so it gets a landmark."""
-    c = _gym_floor(0)
-    c.rect(4, 2, 11, 6, 'body', 0.60)                                        # bottle
-    c.rect(4, 2, 11, 2, 'body', 0.82)
-    c.rect(5, 3, 10, 5, 'belly', 0.72)                                       # water
-    c.rect(3, 7, 12, 14, 'body', 0.28)                                       # cabinet
-    c.rect(3, 7, 3, 14, 'body', 0.44)
-    c.rect(6, 9, 9, 10, 'body', 0.16)                                        # spout recess
-    c.put(7, 11, 'leaf', 0.66); c.put(8, 11, 'leaf', 0.66)                   # taps
+    c = _prop('gymkit')
+    c.rect(4, 2, 11, 6, 'belly', 0.74)                                       # bottle
+    c.rect(4, 2, 11, 2, 'belly', 0.94)
+    c.rect(5, 3, 10, 5, 'belly', 0.52)                                       # water
+    c.rect(3, 7, 12, 14, 'body', 0.26)                                       # cabinet
+    c.rect(3, 7, 3, 14, 'body', 0.50)
+    c.rect(6, 9, 9, 10, 'body', 0.12)                                        # spout recess
+    c.put(7, 11, 'accent', 0.76); c.put(8, 11, 'accent', 0.76)               # taps
     c.rect(2, 15, 13, 15, 'ink', 0)
+    return c
+
+
+def prop_gym_mat():
+    """A bordered training mat — where Resolve work happens."""
+    c = _prop('gym')
+    c.rect(1, 1, 14, 14, 'accent', 0.26)
+    c.rect(2, 2, 13, 13, 'accent', 0.46)
+    c.rect(2, 2, 13, 2, 'accent', 0.62)                                      # lit top edge
+    c.rect(2, 2, 2, 13, 'accent', 0.56)
+    c.rect(13, 3, 13, 13, 'accent', 0.18)                                    # shaded right
+    c.rect(3, 13, 13, 13, 'accent', 0.18)
+    return c
+
+
+def prop_banner():
+    """Hall colours on the wall. A room with nothing on its walls reads as a
+    corridor, and one banner is the cheapest thing that fixes it."""
+    c = _prop('gymkit')
+    c.rect(2, 0, 13, 12, 'leaf', 0.30)                                       # cloth
+    c.rect(2, 0, 3, 12, 'leaf', 0.50)                                        # lit fold
+    c.rect(12, 0, 13, 12, 'leaf', 0.16)                                      # shaded fold
+    c.rect(4, 3, 11, 4, 'accent', 0.86)                                      # two bars of trim
+    c.rect(4, 7, 11, 8, 'accent', 0.70)
+    for k in range(5):                                                       # pennant hem
+        c.rect(2 + k * 3, 13, 3 + k * 3, 13, 'leaf', 0.24)
+    return c
+
+
+def prop_wall_clock():
+    c = _prop('gymkit')
+    c.sphere(8, 7, 6, 6, 'body', ambient=0.34)                               # case
+    c.sphere(8, 7, 4.6, 4.6, 'belly', ambient=0.86)                          # face
+    c.rect(8, 3, 8, 7, 'body', 0.10)                                         # hands
+    c.rect(8, 7, 11, 7, 'body', 0.10)
+    return c
+
+
+def prop_whiteboard():
+    """Today's session, written up. Gyms have one of these."""
+    c = _prop('gymkit')
+    c.rect(0, 1, 15, 12, 'body', 0.30)                                       # frame
+    c.rect(1, 2, 14, 11, 'belly', 0.96)                                      # board
+    for k, w in ((4, 10), (6, 7), (8, 11), (10, 6)):                         # writing
+        c.rect(2, k, 2 + w, k, 'body', 0.24)
+    c.rect(1, 12, 14, 12, 'body', 0.44)                                      # tray
+    c.rect(3, 12, 5, 12, 'leaf', 0.70)                                       # a marker on it
     return c
 
 
@@ -3441,6 +3544,8 @@ def build_all():
     add_canvas_field('tile_home_wall', home_wall_field())
     add_canvas_field('tile_gym_floor', gym_floor_field())
     add_canvas_field('tile_gym_block', gym_wall_field())
+    add_canvas_field('tile_gym_platform', gym_platform_field())
+    add_canvas_field('tile_gym_turf', gym_turf_field())
 
     # Two more ground variants, as flips of the painted originals.
     add_blended('tile_grass_c', flipped_traced('tile_grass', horizontal=True),
@@ -3482,7 +3587,7 @@ def build_all():
 
     # Training Hall interior
     add('tile_gym_floor', tile_gym_floor(0)); add('tile_gym_floor_b', tile_gym_floor(1))
-    add('tile_gym_mat', tile_gym_mat()); add('tile_gym_wall', tile_gym_wall())
+    add('tile_gym_wall', tile_gym_wall())
     add('tile_gym_wall_side', tile_gym_wall_side())
     add('tile_home_floor', tile_home_floor(0)); add('tile_home_floor_b', tile_home_floor(1))
 
@@ -3498,9 +3603,12 @@ def build_all():
     add('prop_kettlebells', prop_kettlebells()); add('prop_rower', prop_rower())
     add('prop_reception', prop_reception())
     add('tile_gym_mirror', tile_gym_mirror()); add('tile_gym_exit', tile_gym_exit())
-    add('tile_rack_barbell', tile_rack_barbell()); add('tile_rack_dumbbell', tile_rack_dumbbell())
-    add('tile_machine', tile_machine()); add('tile_treadmill', tile_treadmill())
-    add('tile_bench', tile_bench()); add('tile_water_station', tile_water_station())
+    add('prop_gym_mat', prop_gym_mat())
+    add('prop_rack_barbell', prop_rack_barbell()); add('prop_rack_dumbbell', prop_rack_dumbbell())
+    add('prop_machine', prop_machine()); add('prop_treadmill', prop_treadmill())
+    add('prop_bench', prop_bench()); add('prop_water_station', prop_water_station())
+    add('prop_banner', prop_banner()); add('prop_wall_clock', prop_wall_clock())
+    add('prop_whiteboard', prop_whiteboard())
     # Every committed piece of traced art must actually reach a sprite.
     #
     # add() prefers traced_<name>.json and silently falls back to the procedural
