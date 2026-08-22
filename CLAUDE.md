@@ -376,16 +376,52 @@ the shared one.
   cooking methods are common knowledge and dish styles belong to the cuisines
   that made them, but no phrasing is lifted from anyone's book or app, and that
   has to stay true of anything added. The sofa is a stillness check-in.
-- **Training Hall** — zoned rather than scattered: a wood lifting platform
-  under the racks, a turf lane down one side, rubber everywhere else, and the
-  wall carries a banner, a clock and a whiteboard. Equipment moved from tiles to
-  props so it could take its own `gymkit` palette — colour-coded bumper plates
-  are most of what makes a rack read as a rack at a quarter of a tile, and the
-  room's steel-and-rubber palette could not give them. The iron is where you
-  WRITE a session (racks, dumbbells,
-  cable, pull-up bar, kettlebells all open the Forge); Coach hands you one off
-  the shelf; treadmill and rower are cardio with nothing to interrupt you. That
-  split is the logic of the room: equipment is the work, people are the advice.
+- **Training Hall** — laid out on the ordinary commercial-gym convention rather
+  than as equipment spread evenly over a rectangle, which is a warehouse.
+  Perimeter for the things that back onto a wall, centre for the things that do
+  not: **power racks along the north wall** on the lifting platform (a rack is
+  bolted to a wall in every gym that owns one — floating them mid-floor was the
+  most wrong thing about the first plan), **free weights down the west wall**
+  (kettlebells, the dumbbell run against the wall with a working aisle in front
+  of it, benches and the EZ-bar cradle out on the floor beside it, mirrors at
+  the far end), **cardio down the east wall** in one unbroken line with the
+  water station at its head, **selectorised machines in the middle** in two rows
+  with an aisle between them and a cross-aisle through the middle, the
+  **functional end at the south** — turf lane one side, matting the other — and
+  **front of house at the door**, lockers one side and reception the other.
+  Equipment is props rather than tiles so it can take its own `gymkit` palette —
+  colour-coded bumper plates are most of what makes a rack read as a rack at a
+  quarter of a tile. The iron is where you WRITE a session (racks, dumbbells,
+  EZ bars, cable, pull-up bar, kettlebells all open the Forge); Coach hands you
+  one off the shelf; treadmill and rower are cardio with nothing to interrupt
+  you. That split is the logic of the room: equipment is the work, people are
+  the advice.
+- **Floors are ZONES, not tile codes.** A zone is a REGION a map declares
+  (`map.zones`, resolved by `zoneAt` in `TileMap`), and what stands on it is a
+  separate question — which is also how a floor plan is drawn. As codes a zone
+  could only ever be the floor a tile WAS, so the moment a rack went on a square
+  the platform under it vanished and the rack stood on rubber in the middle of
+  the wood. `tile_zone_n/e/s/w` overlays draw the joint where a zone stops: a
+  dead-straight value step four tiles long reads as a grid line even when
+  neither material does, so a zone is drawn as an INLAY — dark joint all round,
+  north and west inner edges in the shadow of the lip, south and east catching
+  the light. The treadmill deck's running lane uses the same machinery.
+- **The Hall is lit by fixtures, not evenly.** `light_pool()` bakes a pool of
+  light into each gym floor field. A field is already exactly four tiles across,
+  so the pools land on the fixture grid for free and the floor between them
+  falls away. The first pass drew lighting as its own dithered layer, but a
+  single-colour layer can only fake a gradient by scattering and at this tile
+  size the scatter read as television static laid over the rubber. Where a
+  gradient IS unavoidable (the zone joints) it uses an **ordered Bayer
+  threshold**, which reads as a ramp where hash noise reads as static.
+- **The turf and the mats are the two zones you use.** Walking into the stretch
+  rig at the head of the turf lane opens `Turf Lane Warm-Up` (dynamic walking
+  stretches — you need the length, which is why the lane is a lane and not a
+  mat); the medicine balls on the matting open `Mat Floor Circuit` (bodyweight
+  and core, nothing to load and nothing to queue for). A station names the
+  routine it IS via `params.workoutId`, so it opens that routine rather than the
+  list of every routine with it somewhere inside — you already said which one
+  you wanted by walking there — and backing out returns to the Hall.
 
 **The Hall is the menu, and cardio has two forms.** The hub menu listed
 fourteen destinations, which made the Training Hall decoration — everything it

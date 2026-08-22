@@ -12,13 +12,21 @@ import { WORKOUTS } from '../data/workouts';
 import { pacingForGoal } from '../data/route';
 import { workoutComplete, levelUpLine } from '../coach';
 
-export default function WorkoutScreen() {
+export default function WorkoutScreen({ params = {} }) {
   const { state, dispatch } = useGame();
   const companion = useCompanion();
   const { navigate } = useNav();
 
-  const [phase, setPhase] = useState('list');
-  const [selected, setSelected] = useState(null);
+  // A station can name the routine it IS. Walking onto the turf lane is
+  // already a choice, so the turf opens the warm-up rather than the list of
+  // every routine with the warm-up somewhere in it. Backing out of one of
+  // those goes back to the room, not to a list you never asked for.
+  const pinned = params.workoutId && WORKOUTS.some((w) => w.id === params.workoutId)
+    ? params.workoutId
+    : null;
+
+  const [phase, setPhase] = useState(pinned ? 'detail' : 'list');
+  const [selected, setSelected] = useState(pinned);
   const [resultLines, setResultLines] = useState([]);
 
   const workout = selected ? WORKOUTS.find((w) => w.id === selected) : null;
@@ -48,7 +56,7 @@ export default function WorkoutScreen() {
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={110} bob />
         </View>
-        <DialogueBox lines={resultLines} onComplete={() => navigate('hub')} />
+        <DialogueBox lines={resultLines} onComplete={() => navigate(pinned ? 'gym' : 'hub')} />
       </Screen>
     );
   }
@@ -87,7 +95,13 @@ export default function WorkoutScreen() {
           </Window>
         </ScrollView>
         <View style={{ flexDirection: 'row', marginTop: space.sm }}>
-          <PixelButton label="Back" tone="plain" sound="cancel" style={{ flex: 1, marginRight: 6 }} onPress={() => setPhase('list')} />
+          <PixelButton
+            label={pinned ? 'Back to the Hall' : 'Back'}
+            tone="plain"
+            sound="cancel"
+            style={{ flex: 1, marginRight: 6 }}
+            onPress={() => (pinned ? navigate('gym') : setPhase('list'))}
+          />
           <PixelButton label="I Did It!" tone="gold" style={{ flex: 1, marginLeft: 6 }} onPress={complete} />
         </View>
       </Screen>

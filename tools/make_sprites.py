@@ -2685,18 +2685,6 @@ def tile_gym_floor(variant=0):
     return _gym_floor(variant)
 
 
-def tile_gym_mat():
-    """A bordered training mat — where Resolve work happens."""
-    c = _gym_floor(0)
-    c.rect(1, 1, 14, 14, 'accent', 0.26)                     # mat body
-    c.rect(2, 2, 13, 13, 'accent', 0.44)
-    c.rect(2, 2, 13, 2, 'accent', 0.60)                      # lit top edge
-    c.rect(2, 2, 2, 13, 'accent', 0.54)
-    c.rect(13, 3, 13, 13, 'accent', 0.20)                    # shaded right edge
-    c.rect(3, 13, 13, 13, 'accent', 0.20)
-    return c
-
-
 def tile_gym_wall():
     c = tile('gym')
     mottle(c, 'body', 0.30, 0.03, 47, cell=4)
@@ -2819,6 +2807,7 @@ def gym_floor_field(span=FIELD_SPAN):
         c.rect_px(k + 1, 0, k + 1, px - 1, 'belly', 0.56)
         c.rect_px(0, k, px - 1, k, 'belly', 0.47)
         c.rect_px(0, k + 1, px - 1, k + 1, 'belly', 0.56)
+    light_pool(c, 0.22)
     return c
 
 
@@ -2841,6 +2830,7 @@ def gym_platform_field(span=FIELD_SPAN):
                 c._set(x, y, 'body', tone + grain + (hsh(x // 2, y, 217) - 0.5) * 0.016)
         c.rect_px(0, top, px - 1, top, 'body', tone - 0.09)
         c.rect_px(0, top + 1, px - 1, top + 1, 'body', tone + 0.07)
+    light_pool(c, 0.15)
     return c
 
 
@@ -2859,6 +2849,103 @@ def gym_turf_field(span=FIELD_SPAN):
                 c._set(x, y, 'body', 0.27)          # blade flecks
     for lane in range(0, px, 64):                    # one lane line every two tiles
         c.rect_px(lane, 0, lane, px - 1, 'belly', 0.90)
+    light_pool(c, 0.13)
+    return c
+
+
+def gym_mat_field(span=FIELD_SPAN):
+    """Interlocking foam matting: the bodyweight and core floor.
+
+    The mats used to be individual bright props dotted over the rubber, which
+    from a phone's distance read as a handful of blue tiles dropped in the
+    middle of the room rather than as an area you would go and train on.
+    Matting is a SURFACE. It belongs down here with the wood and the turf, in
+    the charcoal it actually is, laid in squares two tiles across.
+    """
+    size = TILE * span
+    c = Canvas(size, size, 'gym', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    _mottle_raw(c, 'belly', 0.39, 0.028, 173, px, px, cell=3)
+    for y in range(px):
+        for x in range(px):
+            n = hsh(x, y, 179)
+            if n > 0.945:
+                c._set(x, y, 'belly', 0.52)                  # closed-cell foam speckle
+            elif n < 0.055:
+                c._set(x, y, 'belly', 0.29)
+    for k in range(0, px, 64):
+        c.rect_px(k, 0, k, px - 1, 'belly', 0.22)            # the joint
+        c.rect_px(k + 1, 0, k + 1, px - 1, 'belly', 0.51)    # bevel catching the light
+        c.rect_px(0, k, px - 1, k, 'belly', 0.22)
+        c.rect_px(0, k + 1, px - 1, k + 1, 'belly', 0.51)
+    light_pool(c, 0.19)
+    return c
+
+
+# A gradient made of one colour has to be dithered, and WHICH dither matters.
+# Hash scatter reads as television static at 32px; an ordered threshold reads as
+# a ramp, which is what a pool of light under a fixture is.
+BAYER4 = ((0, 8, 2, 10), (12, 4, 14, 6), (3, 11, 1, 9), (15, 7, 13, 5))
+
+
+def _ordered(x, y):
+    return (BAYER4[y % 4][x % 4] + 0.5) / 16.0
+
+
+def light_pool(c, amount=0.12):
+    """Bake a hall fixture's pool of light into a floor field.
+
+    The first pass drew the lighting as its OWN dithered layer over the floor.
+    A single-colour layer can only fake a gradient by scattering, and at this
+    tile size the scatter read as television static laid over the rubber.
+
+    A floor field is already exactly one fixture cell across, so the light
+    belongs in the material's own ramp: every pixel is lifted or dropped by
+    where it sits under the fixture. That is a real gradient rather than a
+    dither, it costs no extra layer, and the pools land every four tiles
+    because that is where the lights are.
+    """
+    px = c.w
+    cx = cy = (px - 1) / 2.0
+    reach = px * 0.62
+    for y in range(px):
+        for x in range(px):
+            cur = c.px[y][x]
+            if cur is None:
+                continue
+            d = math.hypot(x - cx, y - cy) / reach
+            ramp, shade, cov, lit = cur
+            c.px[y][x] = (ramp, max(0.0, min(1.0, shade + amount * (1.0 - d * d))), cov, lit)
+    return c
+
+
+def zone_edge(side):
+    """The joint where a floor zone stops.
+
+    Wood, turf and matting butted straight against the rubber with nothing in
+    between, and that was the one place left indoors where the tile grid was
+    still visible: a dead-straight value step four tiles long reads as a grid
+    line even when neither material does.
+
+    A zone is an INLAY, so it is drawn slightly recessed — a dark joint all the
+    way round, the north and west inner edges in the shadow of the lip above
+    them, and the south and east inner edges catching the light that gets in.
+    Only ever drawn inside the zone, so it composites over any material.
+    """
+    c = tile('gym').clear()
+    size = c.w
+    k = size / float(TILE)
+    shaded = side in ('n', 'w')
+    for y in range(size):
+        for x in range(size):
+            depth = {'n': y, 's': size - 1 - y, 'w': x, 'e': size - 1 - x}[side] / k
+            if depth < 0.55:
+                c._set(x, y, 'ink', 0)                       # the joint itself
+            elif shaded:
+                if depth < 3.0 and _ordered(x, y) < (3.0 - depth) / 3.4:
+                    c._set(x, y, 'ink', 0)                   # falloff under the lip
+            elif depth < 0.75 and _ordered(x, y) < 0.75:
+                c._set(x, y, 'white', 0)                     # lit inner edge
     return c
 
 
@@ -3248,12 +3335,14 @@ def prop_treadmill():
 def prop_bench():
     """Flat bench: pad, frame, feet."""
     c = _prop('gymkit')
-    c.rect(3, 4, 12, 10, 'leaf', 0.30)                                       # pad
-    c.rect(3, 4, 12, 4, 'leaf', 0.52)                                        # lit top
-    c.rect(3, 4, 3, 10, 'leaf', 0.44)
-    c.rect(12, 5, 12, 10, 'leaf', 0.16)                                      # shaded side
-    c.rect(4, 11, 11, 11, 'body', 0.30)                                      # frame
-    c.rect(4, 12, 5, 14, 'body', 0.36); c.rect(10, 12, 11, 14, 'body', 0.36) # feet
+    c.rect(2, 10, 13, 12, 'body', 0.46)                                      # steel frame
+    c.rect(2, 10, 13, 10, 'body', 0.74)                                      # lit rail
+    c.rect(3, 3, 12, 10, 'body', 0.14)                                       # vinyl pad
+    c.rect(3, 3, 12, 3, 'body', 0.30)                                        # lit top edge
+    c.rect(3, 3, 3, 10, 'body', 0.24)
+    c.rect(12, 4, 12, 10, 'body', 0.07)                                      # shaded side
+    c.rect(4, 6, 11, 6, 'leaf', 0.34)                                        # stitched seam
+    c.rect(3, 13, 4, 15, 'body', 0.40); c.rect(11, 13, 12, 15, 'body', 0.40) # feet
     c.rect(2, 15, 13, 15, 'ink', 0)
     return c
 
@@ -3272,15 +3361,64 @@ def prop_water_station():
     return c
 
 
-def prop_gym_mat():
-    """A bordered training mat — where Resolve work happens."""
-    c = _prop('gym')
-    c.rect(1, 1, 14, 14, 'accent', 0.26)
-    c.rect(2, 2, 13, 13, 'accent', 0.46)
-    c.rect(2, 2, 13, 2, 'accent', 0.62)                                      # lit top edge
-    c.rect(2, 2, 2, 13, 'accent', 0.56)
-    c.rect(13, 3, 13, 13, 'accent', 0.18)                                    # shaded right
-    c.rect(3, 13, 13, 13, 'accent', 0.18)
+def prop_ez_bars():
+    """EZ curl and fixed barbells in a low floor cradle.
+
+    They sit on the floor beside the dumbbells in every gym, which is exactly
+    why the free-weight corner was not convincing: it had a rack at chest
+    height, a shelf at waist height and nothing at all at knee height.
+    """
+    c = _prop('gymkit')
+    for top, ramp, inset in ((3, 'belly', 3), (6, 'leaf', 2), (9, 'accent', 1)):
+        c.rect(2 + inset, top, 13 - inset, top, 'body', 0.88)        # chrome shaft
+        c.rect(2 + inset, top + 1, 13 - inset, top + 1, 'body', 0.38)
+        c.rect(inset, top - 1, 2 + inset, top + 2, ramp, 0.42)       # end plates
+        c.rect(inset, top - 1, inset, top + 2, ramp, 0.68)           # lit rim
+        c.rect(13 - inset, top - 1, 15 - inset, top + 2, ramp, 0.26) # shaded rim
+    c.rect(0, 12, 15, 13, 'body', 0.24)                              # cradle rail
+    c.rect(0, 12, 15, 12, 'body', 0.54)
+    c.rect(1, 14, 2, 15, 'body', 0.20); c.rect(13, 14, 14, 15, 'body', 0.20)
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_stretch_rig():
+    """Rollers and bands at the head of the turf lane.
+
+    The turf needed something to walk up to. A lane of grass with nothing on it
+    is scenery; a rack of rollers and bands at the top of it is the place you
+    go to warm up, and it is what the lane is for.
+    """
+    c = _prop('gymkit')
+    for top, ramp in ((1, 'leaf'), (3, 'belly')):                    # rollers, lying down
+        c.rect(2, top, 13, top + 1, ramp, 0.30)
+        c.rect(2, top, 13, top, ramp, 0.62)                          # lit along the top
+        c.rect(2, top, 2, top + 1, ramp, 0.16)                       # foam end caps
+        c.rect(13, top, 13, top + 1, ramp, 0.16)
+    c.rect(1, 5, 14, 6, 'body', 0.28)                                # upper shelf
+    c.rect(1, 5, 14, 5, 'body', 0.60)
+    for bx, ramp in ((3, 'accent'), (7, 'leaf'), (11, 'belly')):     # bands hanging off it
+        c.rect(bx, 7, bx, 9, ramp, 0.64)
+        c.rect(bx + 1, 7, bx + 1, 9, ramp, 0.32)
+    c.rect(1, 10, 14, 11, 'body', 0.28)                              # lower shelf
+    c.rect(1, 10, 14, 10, 'body', 0.60)
+    c.rect(1, 12, 2, 15, 'body', 0.22); c.rect(13, 12, 14, 15, 'body', 0.22)
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_ball_rack():
+    """Medicine balls in a two-tier cradle — the mat floor's landmark."""
+    c = _prop('gymkit')
+    c.rect(0, 7, 15, 8, 'body', 0.26)                                # upper rail
+    c.rect(0, 7, 15, 7, 'body', 0.58)
+    for cx, ramp in ((3, 'leaf'), (8, 'belly'), (13, 'accent')):
+        c.sphere(cx, 4, 3.0, 3.0, ramp, ambient=0.28)
+        c.sphere(cx, 11, 2.6, 2.6, ramp, ambient=0.22)
+    c.rect(0, 13, 15, 14, 'body', 0.26)                              # lower rail
+    c.rect(0, 13, 15, 13, 'body', 0.58)
+    c.rect(0, 14, 1, 15, 'body', 0.20); c.rect(14, 14, 15, 15, 'body', 0.20)
+    c.rect(0, 15, 15, 15, 'ink', 0)
     return c
 
 
@@ -3546,6 +3684,7 @@ def build_all():
     add_canvas_field('tile_gym_block', gym_wall_field())
     add_canvas_field('tile_gym_platform', gym_platform_field())
     add_canvas_field('tile_gym_turf', gym_turf_field())
+    add_canvas_field('tile_gym_mats', gym_mat_field())
 
     # Two more ground variants, as flips of the painted originals.
     add_blended('tile_grass_c', flipped_traced('tile_grass', horizontal=True),
@@ -3603,12 +3742,15 @@ def build_all():
     add('prop_kettlebells', prop_kettlebells()); add('prop_rower', prop_rower())
     add('prop_reception', prop_reception())
     add('tile_gym_mirror', tile_gym_mirror()); add('tile_gym_exit', tile_gym_exit())
-    add('prop_gym_mat', prop_gym_mat())
     add('prop_rack_barbell', prop_rack_barbell()); add('prop_rack_dumbbell', prop_rack_dumbbell())
     add('prop_machine', prop_machine()); add('prop_treadmill', prop_treadmill())
     add('prop_bench', prop_bench()); add('prop_water_station', prop_water_station())
     add('prop_banner', prop_banner()); add('prop_wall_clock', prop_wall_clock())
     add('prop_whiteboard', prop_whiteboard())
+    add('prop_ez_bars', prop_ez_bars()); add('prop_stretch_rig', prop_stretch_rig())
+    add('prop_ball_rack', prop_ball_rack())
+    for _side in ('n', 'e', 's', 'w'):
+        add('tile_zone_%s' % _side, zone_edge(_side))
     # Every committed piece of traced art must actually reach a sprite.
     #
     # add() prefers traced_<name>.json and silently falls back to the procedural

@@ -81,11 +81,13 @@ const PROP_SPRITES = {
   j: 'prop_kettlebells',
   q: 'prop_rower',
   N: 'prop_reception',
-  m: 'prop_gym_mat',
   R: 'prop_rack_barbell',
   b: 'prop_rack_dumbbell',
   K: 'prop_machine',
   t: 'prop_treadmill',
+  z: 'prop_ez_bars',
+  S: 'prop_stretch_rig',
+  Q: 'prop_ball_rack',
   B: 'prop_bench',
   w: 'prop_water_station',
   V: 'prop_banner',
@@ -93,11 +95,30 @@ const PROP_SPRITES = {
   Z: 'prop_whiteboard',
 };
 
-// Floor zones. These sit under the props like any other ground, so a rack can
-// stand on wood and a sled lane on turf without either knowing about the other.
-// 'g', not 'G' — the capital is the route gate in the hub, and turf standing
-// in for it would have swapped the way out of town for a strip of AstroTurf.
-const ZONE_FIELDS = { P: 'tile_gym_platform', g: 'tile_gym_turf' };
+// Floor zones are REGIONS a map declares, not tile codes.
+//
+// As codes they could only ever be the floor a tile WAS, so the moment a rack
+// went on a square the platform under it vanished and the rack stood on rubber
+// in the middle of the wood. A zone is an area; what stands on it is a separate
+// question, which is also how a real floor plan is drawn.
+function zoneAt(map, x, y) {
+  if (!map || !map.zones) return null;
+  for (const z of map.zones) {
+    if (x >= z.x0 && x <= z.x1 && y >= z.y0 && y <= z.y1) return z.field;
+  }
+  return null;
+}
+
+// The joint where a zone stops. Wood, turf and matting used to butt straight
+// against the rubber, and a dead-straight value step four tiles long reads as a
+// grid line even when neither material does.
+function zoneEdges(map, x, y, field) {
+  const out = [];
+  for (const [side, dx, dy] of [['n', 0, -1], ['e', 1, 0], ['s', 0, 1], ['w', -1, 0]]) {
+    if (zoneAt(map, x + dx, y + dy) !== field) out.push({ key: `tile_zone_${side}`, opacity: 0.34 });
+  }
+  return out;
+}
 
 // Props that belong to a wall rather than a floor.
 const WALL_DRESSING = new Set(['V', 'O', 'Z']);
@@ -142,7 +163,7 @@ const SHADOW_CASTERS = new Set([
   'T', 'W', 'H', 'Y', 'h', 'y', 'D', 'd', 'G',
   '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w',
   'e', 'E', 'v', 'k', 'f', 'a', 'c', 'F', 'o',
-  'L', 'U', 'j', 'q', 'N',
+  'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q',
 ]);
 
 function codeAt(map, x, y) {
@@ -209,10 +230,13 @@ function variantFor(x, y, count) {
 
 // The full stack for one cell: ground, material, diagonal notches, shading.
 function layersFor(map, code, x, y, frame, floor, wallField) {
-  const field = floor || GROUND_FIELD;
-  const ground = groundKey(field, x, y);
-  const zone = ZONE_FIELDS[code];
-  const isFloorCode = code === '.' || code === ',' || !!zone || (floor && code === '#');
+  const zoneField = zoneAt(map, x, y);
+  const ground = groundKey(zoneField || floor || GROUND_FIELD, x, y);
+  const edges = zoneField ? zoneEdges(map, x, y, zoneField) : [];
+  // What the CODE is, not where it is. Folding `zoneField` in here meant every
+  // square inside a zone counted as bare floor, so the whole rack row drew as
+  // empty platform: the props never reached their own branch.
+  const isFloorCode = code === '.' || code === ',' || (floor && code === '#');
 
   let layers;
   if (!floor && PATH_CODES.has(code) && code === '#') {
@@ -227,21 +251,24 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
     ];
   } else if (isFloorCode) {
     // Flowers are an overlay now, so the ground runs on underneath them.
-    layers = zone
-      ? [{ key: groundKey(zone, x, y) }]
-      : code === ',' && !floor
-        ? [{ key: ground }, { key: 'prop_flowers' }]
-        : [{ key: ground }];
+    layers = code === ',' && !floor
+      ? [{ key: ground }, ...edges, { key: 'prop_flowers' }]
+      : [{ key: ground }, ...edges];
   } else if (PROP_SPRITES[code]) {
     // Wall dressing hangs on the wall, not on the floor.
-    const under = WALL_DRESSING.has(code) ? groundKey(wallField || GROUND_FIELD, x, y) : ground;
-    layers = [{ key: under }, { key: PROP_SPRITES[code] }];
+    const onWall = WALL_DRESSING.has(code);
+    const under = onWall ? groundKey(wallField || GROUND_FIELD, x, y) : ground;
+    layers = [{ key: under }, ...(onWall ? [] : edges), { key: PROP_SPRITES[code] }];
   } else if (FIELD_CODES[code]) {
     const wall = code === 'W' && wallField ? wallField : FIELD_CODES[code];
     layers = [{ key: groundKey(wall, x, y) }];
   } else {
     const keys = TILE_SPRITES[code];
-    layers = [{ key: keys ? keys[variantFor(x, y, keys.length)] : ground }];
+    // No tile of its own means somebody is standing here — TileMap draws the
+    // person over the floor, so the floor still owes its zone and its edges.
+    layers = keys
+      ? [{ key: keys[variantFor(x, y, keys.length)] }]
+      : [{ key: ground }, ...edges];
   }
 
   if (BUILDING_WALL_CODES.has(code) && ROOF_CODES.has(codeAt(map, x, y - 1))) {

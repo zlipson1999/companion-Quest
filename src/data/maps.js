@@ -27,41 +27,69 @@ export const HUB = {
   ],
 };
 
-// The Training Hall interior. Stepping through the gym door used to jump
-// straight to the exercise list, so the building the whole onboarding walks you
-// toward had no inside. It is a real room now: equipment you can walk up to,
-// each piece standing for the system it teaches.
+// The Training Hall interior.
 //
-// Zoned, not scattered. A gym that is one continuous surface with objects
-// dotted evenly over it reads as a warehouse; wood under the iron, turf down
-// one side and rubber everywhere else is most of what makes it a place.
+// Laid out the way a real fitness floor is laid out, because the first pass was
+// equipment scattered evenly over a rectangle and that reads as a warehouse.
+// The zoning below is the ordinary commercial convention — perimeter for the
+// things that back onto a wall, centre for the things that do not:
+//
+//   - Racks along the NORTH wall on the lifting platform. A power rack is
+//     bolted to a wall in every gym that owns one; floating them in the middle
+//     of the room was the single most wrong thing about the old plan.
+//   - Free weights down the WEST wall: kettlebells, then the dumbbell run
+//     against the wall with a working aisle in front of it, benches and the
+//     EZ-bar cradle out on the floor beside it, mirrors at the far end.
+//   - Cardio down the EAST wall in one unbroken line, treadmills then rowers,
+//     with the water station at the head of it.
+//   - Selectorised machines in the MIDDLE, two rows with an aisle between them
+//     and a cross-aisle through the middle, which is how a circuit is walked.
+//   - The functional end at the SOUTH: turf lane on one side for dynamic
+//     stretching, matting on the other for bodyweight and core work.
+//   - Front of house at the door: lockers one side, reception the other.
 //
 //   =  front wall     |  side wall      M  mirror       .  rubber floor
-//   P  wood platform  g  turf lane      m  training mat
-//   R  barbell rack   b  dumbbell rack  U  pull-up bar   j  kettlebells
-//   K  cable machine  t  treadmill      q  rower         B  bench
-//   w  water station  L  lockers        N  reception     p  plant
+//   R  power rack     b  dumbbell run   z  EZ-bar cradle  B  bench
+//   K  machine        t  treadmill      q  rower        U  pull-up bar
+//   j  kettlebells    S  stretch rig    Q  medicine balls
+//   w  water station  L  lockers        N  reception
 //   V  banner         O  clock          Z  whiteboard
 //   C  Coach Maple    A  Rowan          X  exit -> hub
+//
+// Floors are ZONES rather than tile codes (see TileMap.zoneAt): an area of the
+// plan is wood or turf or matting, and what stands on it is a separate
+// question. As codes, a rack could only ever replace the platform it was
+// supposed to be standing on.
 export const GYM = {
   id: 'gym',
-  cols: 15,
-  rows: 13,
-  spawn: { x: 7, y: 11 },
+  cols: 17,
+  rows: 19,
+  spawn: { x: 8, y: 17 },
   grid: [
-    '====V=====O=Z==',
-    '|MMMM...PPPPPU|',
-    '|.......PRRRP.|',
-    '|.B.b...PPPPP.|',
-    '|.......P...P.|',
-    '|g..mmm.PbbbP.|',
-    '|g..mmm.PPPPP.|',
-    '|g...A.C......|',
-    '|g.j.......KK.|',
-    '|g.t.t.....KK.|',
-    '|...q.....w.p.|',
-    '|LLL.N...N....|',
-    '======X========',
+    '====V=====O==Z===',
+    '|.R..R..R..R..U.|',
+    '|...............|',
+    '|...............|',
+    '|j.............w|',
+    '|b.B...........t|',
+    '|b.B...K.K.....t|',
+    '|b.....K.K.....t|',
+    '|b.z...........t|',
+    '|M.z...K.K.....q|',
+    '|M.....K.K.....q|',
+    '|M.............q|',
+    '|S.............Q|',
+    '|...............|',
+    '|...............|',
+    '|.........CA....|',
+    '|...............|',
+    '|LLL.........NN.|',
+    '========X========',
+  ],
+  zones: [
+    { field: 'tile_gym_platform', x0: 1, y0: 1, x1: 15, y1: 3 },
+    { field: 'tile_gym_turf', x0: 1, y0: 12, x1: 7, y1: 15 },
+    { field: 'tile_gym_mats', x0: 9, y0: 12, x1: 15, y1: 15 },
   ],
 };
 
@@ -70,7 +98,7 @@ const BLOCKED = new Set([
   'W', '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w', 'C', 'A', 'V', 'O', 'Z',
   // Furniture. A rug is walkable; everything else you walk around.
   'e', 'E', 'v', 'k', 'f', 'a', 'c', 'F', 'o', 'p',
-  'L', 'U', 'j', 'q', 'N',
+  'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q',
 ]);
 
 // Walking into a station is how you use it. A blocked tile that answers a bump
@@ -91,6 +119,7 @@ const INTERACTIONS = {
   b: { screen: 'forge', label: 'Dumbbell rack — build your own session' },
   K: { screen: 'forge', label: 'Cable machine — build your own session' },
   U: { screen: 'forge', label: 'Pull-up bar — build your own session' },
+  z: { screen: 'forge', label: 'EZ-bar cradle — build your own session' },
   j: { screen: 'forge', label: 'Kettlebells — build your own session' },
   t: { screen: 'treadmill', params: { mode: 'treadmill' }, label: 'Treadmill — cardio, no interruptions' },
   q: { screen: 'treadmill', params: { mode: 'treadmill' }, label: 'Rower — cardio, no interruptions' },
@@ -108,6 +137,11 @@ const INTERACTIONS = {
   // re-running the goal screen on a live save would replace the party.
   C: { screen: 'workout', label: 'Coach Maple — take a session off the shelf' },
   A: { screen: 'workout', label: 'Rowan — mid-session, and happy to spot you' },
+  // The two zones at the south end. Each opens the routine it is FOR rather
+  // than the list of all of them: you walked to the turf, so you already
+  // said which one you wanted.
+  S: { screen: 'workout', params: { workoutId: 'warmup' }, label: 'Turf lane — dynamic walking stretches' },
+  Q: { screen: 'workout', params: { workoutId: 'core' }, label: 'Mat floor — bodyweight and core' },
   // Route 1 is the version WITH encounters. This is the one without.
   // (See the treadmill entry above.)
 };

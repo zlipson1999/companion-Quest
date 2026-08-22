@@ -47,9 +47,10 @@ function routeRow(r, cols, treadmill) {
   for (let x = 0; x < cols; x += 1) {
     const n = ((h ^ (x * 2246822519)) >>> 0) % 100;
     if (treadmill) {
-      // Indoors: the belt runs up the middle of the Hall's floor. No trees, no
-      // tall grass — there is nothing out here to find, which is the point.
-      row += x >= lane0 && x < lane0 + laneW ? 'm' : '.';
+      // Indoors: plain Hall floor. The running lane itself is a ZONE declared
+      // on the scene map below, not a code per square — the belt used to be a
+      // row of mat props and so it had a hard sawn edge down each side.
+      row += '.';
     } else if (x >= lane0 && x < lane0 + laneW) {
       row += '#';
     } else if (x < 1 || x > cols - 2) {
@@ -95,7 +96,20 @@ function ScrollingScene({ width, height, moving, treadmill }) {
   // autotiled edges and its trees — the scene came out as a field of grass.
   const sceneMap = useMemo(() => {
     const grid = Array.from({ length: rows * 2 }, (_, r) => routeRow(r % rows, cols, treadmill));
-    return { id: treadmill ? 'gym' : 'route', cols, rows: rows * 2, grid };
+    const laneW = Math.max(3, Math.round(cols * 0.3));
+    const lane0 = Math.floor((cols - laneW) / 2);
+    return {
+      id: treadmill ? 'gym' : 'route',
+      cols,
+      rows: rows * 2,
+      grid,
+      // The deck's running surface, as a zone: it gets the same joint and lip
+      // the Hall's own matting has, so it reads as a lane let into the floor
+      // rather than as a strip laid on top of it.
+      zones: treadmill
+        ? [{ field: 'tile_gym_mats', x0: lane0, y0: 0, x1: lane0 + laneW - 1, y1: rows * 2 - 1 }]
+        : undefined,
+    };
   }, [rows, cols, treadmill]);
 
   const strip = useMemo(
