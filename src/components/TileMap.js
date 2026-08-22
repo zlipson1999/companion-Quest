@@ -56,7 +56,7 @@ const TILE_SPRITES = {
   W: ['tile_wall'],
   '=': ['tile_gym_wall'],
   '|': ['tile_gym_wall_side'],
-  M: ['tile_gym_mirror'],
+  M: ['tile_gym_mirror', 'tile_gym_mirror_b'],
   X: ['tile_gym_exit'],
 };
 

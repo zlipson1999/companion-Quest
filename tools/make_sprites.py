@@ -3313,23 +3313,29 @@ def tile_gym_wall_side():
 
 
 
-def tile_gym_mirror():
-    """A mirrored panel, mounted ON the wall.
+def tile_gym_mirror(glint=0):
+    """A mirrored wall panel. The WHOLE west wall is these now.
 
-    It used to be built on the FRONT wall and then placed on the floor square
-    beside the west wall, which is two mistakes compounding: the room appeared
-    to bulge inward where the mirrors were, and a front-facing panel standing
-    in a side wall read as a piece of equipment rather than as a wall. It is
-    the side wall now, and it goes in the wall column.
+    Which changes how it has to be drawn. The first version framed the glass on
+    all four sides, and seventeen of those stacked put a rung across the wall
+    every sixteen pixels — the tile grid, drawn, in the one room that had just
+    had its grid taken out of the floor. The glass runs the full height of the
+    tile and the only frame is the vertical edge, so a run of them is one
+    continuous mirror.
+
+    The `glint` variant is a brighter reflection band, and it is VERTICAL for
+    the same reason: a diagonal streak would be chopped off at every tile
+    boundary. Scattered by `variantFor`, it breaks up a long wall without ever
+    landing on a seam.
     """
     c = tile_gym_wall_side()
-    c.rect(3, 0, 12, 15, 'body', 0.16)                       # frame
-    c.rect(4, 1, 11, 14, 'body', 0.68)                       # glass, floor to ceiling
-    for k in range(9):                                        # diagonal glint
-        c.put(5 + (k // 3), 12 - k, 'body', 0.92)
-        c.put(6 + (k // 3), 12 - k, 'body', 0.80)
-    c.rect(4, 1, 11, 1, 'body', 0.86)                        # lit top rail
-    c.rect(11, 2, 11, 14, 'body', 0.44)                      # shaded far edge
+    c.rect(2, 0, 13, 15, 'body', 0.14)                       # frame, vertical only
+    c.rect(3, 0, 12, 15, 'body', 0.64)                       # glass, full height
+    c.rect(3, 0, 3, 15, 'body', 0.84)                        # lit near edge
+    c.rect(12, 0, 12, 15, 'body', 0.42)                      # shaded far edge
+    if glint:
+        c.rect(5, 0, 6, 15, 'body', 0.80)                    # what the room throws back
+        c.rect(9, 0, 9, 15, 'body', 0.73)
     return c
 
 
@@ -3853,7 +3859,7 @@ def build_all():
     add('prop_lockers', prop_lockers()); add('prop_pullup_bar', prop_pullup_bar())
     add('prop_kettlebells', prop_kettlebells()); add('prop_rower', prop_rower())
     add('prop_reception', prop_reception())
-    add('tile_gym_mirror', tile_gym_mirror()); add('tile_gym_exit', tile_gym_exit())
+    add('tile_gym_mirror', tile_gym_mirror()); add('tile_gym_mirror_b', tile_gym_mirror(1)); add('tile_gym_exit', tile_gym_exit())
     add('prop_rack_barbell', prop_rack_barbell()); add('prop_rack_dumbbell', prop_rack_dumbbell())
     add('prop_machine', prop_machine()); add('prop_treadmill', prop_treadmill())
     add('prop_bench', prop_bench()); add('prop_water_station', prop_water_station())

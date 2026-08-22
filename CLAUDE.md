@@ -534,11 +534,19 @@ incentive deliberately: finishing strong earns the knot, where grinding
 something into the ground at any cost earns nothing. Save `version` **8**; an
 old save's Bond Tokens carry across as Knots rather than being voided.
 
-**Mirrors are wall.** They used to be front-wall panels standing on the floor
-squares beside the west wall, which made the room appear to bulge inward and
-made a mirror read as a piece of equipment. They are drawn on the SIDE wall now
-and they live in the wall column; the floor in front of one is where you stand
-to use it.
+**The whole west wall is mirror.** They used to be front-wall panels standing on
+the floor squares beside the wall, which made the room appear to bulge inward
+and made a mirror read as a piece of equipment. They are side-wall panels in the
+wall column now, and the wall runs mirrored floor to ceiling the way a real
+free-weight wall does. That changed how the tile has to be DRAWN: the first
+version framed the glass on all four sides, and seventeen of those stacked put a
+rung across the wall every sixteen pixels — the tile grid, redrawn, in the one
+room that had just had its grid taken out of the floor. The glass runs the full
+height of the tile, the only frame is the vertical edge, and the `_b` variant's
+reflection band is VERTICAL for the same reason (a diagonal streak would be
+chopped off at every boundary), scattered by `variantFor` so a long wall is
+neither seamed nor dead flat. Ten of the seventeen are reachable; the rest have
+a dumbbell rack in front of them, which is also true of a real one.
 
 ## Phase 6 — ideas, not committed
 

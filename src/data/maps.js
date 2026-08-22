@@ -50,7 +50,7 @@ export const HUB = {
 //     smoothie bar, which is where a juice counter sits in every gym that has
 //     one — you pass it on the way in and on the way out.
 //
-//   =  front wall     |  side wall      M  mirrored wall panel   .  floor
+//   =  front wall     |  side wall      M  mirrored wall     .  floor
 //   R  power rack     b  dumbbell run   z  EZ-bar cradle  B  bench
 //   K  machine        t  treadmill      q  rower        U  pull-up bar
 //   j  kettlebells    S  stretch rig    Q  medicine balls
@@ -70,23 +70,23 @@ export const GYM = {
   spawn: { x: 8, y: 17 },
   grid: [
     '====V=====O==Z===',
-    '|.R..R..R..R..U.|',
-    '|...............|',
-    '|...............|',
-    '|j.............w|',
-    '|b.B...........t|',
-    '|b.B...K.K.....t|',
-    '|b.....K.K.....t|',
-    '|b.z...........t|',
+    'M.R..R..R..R..U.|',
+    'M...............|',
+    'M...............|',
+    'Mj.............w|',
+    'Mb.B...........t|',
+    'Mb.B...K.K.....t|',
+    'Mb.....K.K.....t|',
+    'Mb.z...........t|',
     'M..z...K.K.....q|',
     'M......K.K.....q|',
     'M..............q|',
-    '|S.............Q|',
-    '|...............|',
-    '|...............|',
-    '|.........CA....|',
-    '|...............|',
-    '|LLL.NN...JIJ...|',
+    'MS.............Q|',
+    'M...............|',
+    'M...............|',
+    'M.........CA....|',
+    'M...............|',
+    'MLLL.NN...JIJ...|',
     '========X========',
   ],
   zones: [
