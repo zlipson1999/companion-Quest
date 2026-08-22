@@ -16,7 +16,8 @@ import { getCreature } from '../data/creatures';
 import { canEvolve } from '../state/evolution';
 import { battleMovesFor, movesLearnedBetween } from '../data/exercises';
 import {
-  wildIntro, movePrompt, moveLanded, victoryLines, defeatLines, levelUpLine, evolveLines,
+  wildIntro,
+  sparIntro, movePrompt, moveLanded, victoryLines, defeatLines, levelUpLine, evolveLines,
   catchSuccessLines, catchFailLine, catchFullLine, noTokenLine, companionFledLines, swapLine,
 } from '../coach';
 
@@ -26,16 +27,24 @@ function clamp(n, lo, hi) {
 
 // Accept either a Phase-1.5 encounter {targetId,isCompanion,...} or a legacy
 // {encounterId} pointing at an obstacle.
+//
+// A sparring partner is a third case: a PERSON, passed in whole as `opponent`
+// rather than looked up in the creature table. Coach's push-up contest is the
+// first battle a new player sees, and it teaches the loop by being the real
+// loop — same moves, same Resolve, same victory path. Faking it with a
+// creature would have taught the wrong thing, and adding a person to the
+// creature table would have put them in the Index.
 function resolveTarget(params) {
   const id = params.targetId || params.creatureId;
   if (id) {
     return {
       targetId: id,
-      isCompanion: !!params.isCompanion,
+      // You cannot befriend a person, and a spar is never a catch.
+      isCompanion: !params.opponent && !!params.isCompanion,
       hp: params.hp || 40,
       xp: params.xp || 20,
       bond: params.bond || 6,
-      catchRate: params.catchRate || 0,
+      catchRate: params.opponent ? 0 : params.catchRate || 0,
     };
   }
   const e = ENCOUNTERS[params.encounterId] || ENCOUNTERS.sludgewad;
@@ -78,8 +87,9 @@ export default function BattleScreen({ params }) {
   const { navigate } = useNav();
 
   const target = resolveTarget(params);
-  const wild = getCreature(target.targetId);
-  const returnTo = params.from === 'route' ? 'route' : 'hub';
+  // A sparring partner is supplied whole; everything else is a creature.
+  const wild = params.opponent || getCreature(target.targetId);
+  const returnTo = params.from === 'route' ? 'route' : params.from === 'gym' ? 'gym' : 'hub';
   const tokens = state.bag.token || 0;
   const teamFull = party.members.length >= 6;
 
@@ -87,7 +97,11 @@ export default function BattleScreen({ params }) {
   const [companionHp, setCompanionHp] = useState(Math.max(1, Math.round(companion.hp)));
 
   const [phase, setPhase] = useState('message');
-  const [lines, setLines] = useState(() => wildIntro(companion.creature.name, wild.name, target.isCompanion));
+  const [lines, setLines] = useState(() =>
+    params.opponent
+      ? sparIntro(companion.creature.name, wild.name)
+      : wildIntro(companion.creature.name, wild.name, target.isCompanion)
+  );
   const thenRef = useRef(() => setPhase('menu'));
 
   const [selectedMove, setSelectedMove] = useState(null);
@@ -339,7 +353,7 @@ export default function BattleScreen({ params }) {
   // A balanced field-console composition: both participants receive matched
   // instruments and share one trail plane. Do not tune this against another
   // title's diagonal cards or platform layout.
-  const stageTone = params.from === 'route' ? 'grass' : 'trail';
+  const stageTone = params.opponent ? 'hall' : params.from === 'route' ? 'grass' : 'trail';
 
   const top = (
     <BattleStage tone={stageTone} horizon={0.16}>
@@ -349,7 +363,7 @@ export default function BattleScreen({ params }) {
             name={wild.name}
             hp={wildHp}
             maxHp={target.hp}
-            tag={target.isCompanion ? 'wild' : 'obstacle'}
+            tag={params.opponent ? 'sparring' : target.isCompanion ? 'wild' : 'obstacle'}
             tagColor={target.isCompanion ? palette.hpHigh : palette.danger}
             style={{ flex: 1, marginRight: space.lg }}
           />

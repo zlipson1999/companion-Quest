@@ -316,6 +316,15 @@ bar, rower, kettlebells, lockers, reception and more racks. Props are
 transparent overlays over the room's floor — see `docs/ART_KIT.md`. The bed is
 solid, so `HomeRestScreen` sleeps when you walk *into* it rather than onto it.
 
+**The first battle is a push-up contest.** Coach Maple is mid-session with
+another trailkeeper, Rowan, when you walk into the Hall; once you have your
+companion she puts you against him. `SparIntroScreen` frames it and hands
+straight to the REAL `BattleScreen` — same moves, same Resolve, same victory
+path. `resolveTarget` gained a third case for it: a sparring partner is a
+person passed in whole as `params.opponent` rather than looked up in the
+creature table, so a human opponent never lands in the Index and can never be
+befriended. It stages on `hall` rather than in a meadow.
+
 **The Hall is the menu, and cardio has two forms.** The hub menu listed
 fourteen destinations, which made the Training Hall decoration — everything it
 stands for was one tap away. It lists six places now; training, the Forge,

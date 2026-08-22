@@ -130,6 +130,13 @@ export function workoutComplete() {
 
 // --- Phase 1.5: wild companions, catching, team swaps ---
 
+export function sparIntro(activeName, partnerName) {
+  return [
+    { speaker: 'Coach Maple', text: `${partnerName} sets up. On my count — best effort, both of you.` },
+    { speaker: activeName, text: 'Pick a movement and do it for real. Every rep you finish is Resolve I can spend.' },
+  ];
+}
+
 export function wildIntro(activeName, wildName, isCompanion) {
   if (isCompanion) {
     return [

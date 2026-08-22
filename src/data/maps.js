@@ -36,7 +36,7 @@ export const HUB = {
 //   m  training mat   R  barbell rack   b  dumbbell rack   U  pull-up bar
 //   K  cable machine  t  treadmill      q  rower           j  kettlebells
 //   B  bench          w  water station  L  lockers         N  reception
-//   p  plant          C  Coach Maple    X  exit -> hub
+//   p  plant          C  Coach Maple    A  Rowan (training)   X  exit -> hub
 export const GYM = {
   id: 'gym',
   cols: 15,
@@ -50,7 +50,7 @@ export const GYM = {
     '|.............|',
     '|.q..mmm..KK..|',
     '|....mmm..KK..|',
-    '|.j.....C.....|',
+    '|.j...A.C.....|',
     '|.............|',
     '|.t.t.......w.|',
     '|...........p.|',
@@ -61,7 +61,7 @@ export const GYM = {
 
 const BLOCKED = new Set([
   'T', '~', 'h', 'H', 'y', 'Y',
-  'W', '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w', 'C',
+  'W', '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w', 'C', 'A',
   // Furniture. A rug is walkable; everything else you walk around.
   'e', 'E', 'v', 'k', 'f', 'a', 'c', 'F', 'o', 'p',
   'L', 'U', 'j', 'q', 'N',
@@ -94,6 +94,7 @@ const INTERACTIONS = {
   // conversation happens; afterwards it is the coach chat. Sending an existing
   // save to the goal screen would re-run START_GAME and replace the party.
   C: { screen: 'coach', label: 'Coach Maple — talk it through' },
+  A: { screen: 'workout', label: 'Rowan — mid-session, and happy to spot you' },
 };
 
 export function interactionForCode(code) {

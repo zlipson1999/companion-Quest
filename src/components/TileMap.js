@@ -345,11 +345,11 @@ export default function TileMap({ map, player, tileSize, style, viewport }) {
       map.grid.map((row, y) => (
         <View key={y} style={{ flexDirection: 'row' }}>
           {row.split('').map((code, x) => (
-            code === 'C' ? (
+            code === 'C' || code === 'A' ? (
               <View key={x} style={{ width: s, height: s }}>
                 <Tile code="." s={s} frame={frame} x={x} y={y} floor={floor} map={map} wallField={wallField} />
                 <View style={{ position: 'absolute', left: 0, top: 0 }}>
-                  <StandingSprite spriteKey={COACH_SPRITE} s={s} />
+                  <StandingSprite spriteKey={code === 'A' ? 'hero_man_down' : COACH_SPRITE} s={s} />
                 </View>
               </View>
             ) : (
