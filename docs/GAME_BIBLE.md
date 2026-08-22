@@ -210,8 +210,10 @@ Evolve points are **per companion** — earned by whoever is active.
 
 **Evolution gate** = level AND points, checked after battle level-ups
 (`canEvolve`): stage 1→2 at Lv 5 + 30 pts; stage 2→3 at Lv 14 + 110 pts.
-Three full lines: Sproutle→Bloomtail→Groveheart, Emberkit→Pyrelynx→Cindermane,
-Dewbble→Tidewade→Maelstride. Creatures carry explicit `stage: 1|2|3`.
+Six full lines: Sproutle→Bloomtail→Groveheart, Emberkit→Pyrelynx→Cindermane,
+Dewbble→Tidewade→Maelstride, Pebblepup→Cairnhound→Monolithound,
+Wispurr→Galegait→Skywhorl and Sporelet→Mycobloom→Canopore. Creatures carry
+explicit `stage: 1|2|3`. Wild-family evolution names remain clearance candidates.
 
 ### 5.4 The Route & distance (`screens/RouteScreen.js`, `state/useDistance.js`)
 
@@ -374,8 +376,8 @@ faint.
 
 ### 8.3 Sprite inventory (54)
 
-- Creatures 48×48 authored @2× = 96 px: 3 starters (TRACED), 6 evolutions
-  (procedural, AWAITING trace), 3 wild (pebblepup, wispurr, sporelet), 4
+- Creatures 48×48 authored @2× = 96 px: all 9 members of the three first-bond
+  families (TRACED), 3 wild (pebblepup, wispurr, sporelet), 4
   obstacles (sludgewad, snoozeghoul, achefang, couchlurk) — procedural.
 - Hero 24×32: 4 facings × 3 frames, distinct silhouettes per facing.
 - Items/module icons 24×24: apple, water, energybar, charm, token, droplet,
@@ -478,7 +480,7 @@ Status labels:
 | What devices and OS versions are supported? | **OPEN.** Portrait is forced and tablets are allowed; minimum Android/iOS versions, screen sizes, low-end device floor and tablet UX are unspecified. |
 | Is the game free, paid, ad-supported or subscription-based? | **OPEN.** No monetization or entitlement code exists. |
 | Is an account required? Is there cloud sync or multi-device play? | **CURRENT: no.** One local save, no auth, no cloud backup, no export/import. Whether this is permanent is **OPEN**. |
-| What is the content target at launch? | **OPEN.** Current roster is 12 companions plus 4 obstacles; roadmap expansion is aspiration, not a launch commitment. |
+| What is the content target at launch? | **OPEN.** Current roster is 18 companion forms across 6 families plus 4 obstacles; roadmap expansion is aspiration, not a launch commitment. |
 | What is the expected play cadence and session length? | **OPEN.** Daily modules and route pacing imply daily play, but retention, encounter-rate and time-to-evolution targets are not specified or validated. |
 | Are notifications/reminders part of the product? | **CURRENT: no.** Desired reminders, quiet hours, consent and notification copy are **OPEN**. |
 | What does “done” mean for a feature? | **DECIDED below in §13.7.** Code that merely renders in web is not sufficient for sensor, persistence, camera, GL or audio work. |
@@ -642,8 +644,8 @@ A change is done only when all applicable items are true:
 
 ### Product/content debt
 
-9. **Six evolutions + 7 wild/obstacle creatures are procedural** — visibly a
-   different art tier next to the traced starters. Blocked on reference images.
+9. **Four obstacle creatures and a few structural tiles remain procedural.**
+   All 18 companion forms and 14 world materials now derive from authored art.
 10. `state/usePedometer.js` is dead code (still exported).
 11. Evolution ceremony is a strobe + swap; it needs both a stronger scene and a
     reduced-motion alternative.
@@ -672,8 +674,7 @@ A change is done only when all applicable items are true:
    harden the Coach only if generative chat is in the MVP.
 6. Run balance simulations and a small real-player test; tune time-to-encounter,
    catch economy, exercise volume and evolution pacing.
-7. Trace the 6 evolutions, then wild/obstacle creatures; add a reduced-motion
-   evolution ceremony.
+7. Trace the wild/obstacle creatures; add a reduced-motion evolution ceremony.
 8. Add progression charts from PR/weight history.
 9. Expand toward 20 companion families only after the content validator,
    rights/provenance record and balance targets exist.

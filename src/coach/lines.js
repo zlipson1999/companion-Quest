@@ -2,15 +2,13 @@
 // journey; once paired, your companion speaks by name. Always encouraging,
 // always in your corner — never preachy, never guilt-trippy.
 
-export const COACH = 'Coach';
+export const COACH = 'Coach Maple';
 
 export const introLines = [
-  { speaker: COACH, text: 'Oh! Hello there. I was hoping you\'d come.' },
-  { speaker: COACH, text: 'Welcome, trailkeeper. You can call me Coach.' },
-  { speaker: COACH, text: 'This is a world where your real life is the adventure. Every step you take outside... moves you here too.' },
-  { speaker: COACH, text: 'There are no fake shortcuts. No "walk" buttons. Your effort is the only magic that works here.' },
-  { speaker: COACH, text: 'And you won\'t go alone. A companion is waiting to grow alongside you — cheering every healthy choice you make.' },
-  { speaker: COACH, text: 'First things first. Tell me... what are you hoping for?' },
+  { speaker: COACH, text: 'Welcome to Companion Quest! I’m Coach Maple, and I’ll help you learn how this world works.' },
+  { speaker: COACH, text: 'Here, caring for yourself powers an adventure you can see and share.' },
+  { speaker: COACH, text: 'Your real movement, workouts, meals, water, rest, and daily habits help you explore, grow, and bond with companions.' },
+  { speaker: COACH, text: 'Your journey begins at home. Come outside and meet me at the gym next door—I’ll teach you everything there.' },
 ];
 
 export function pairingLines(companionName, goalName) {

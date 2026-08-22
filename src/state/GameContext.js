@@ -30,7 +30,7 @@ import {
 const today = todayKey;
 const STARTING_TOKENS = 3;
 const MAX_PARTY = 6;
-const SAVE_VERSION = 5;
+const SAVE_VERSION = 6;
 
 function daysBetween(a, b) {
   if (!a || !b) return 0;
@@ -42,6 +42,8 @@ function daysBetween(a, b) {
 const FRESH = {
   version: SAVE_VERSION,
   started: false,
+  playerOutfit: null,
+  playerGender: null,
   goalId: null,
   party: [],
   activeIndex: 0,
@@ -150,6 +152,8 @@ function reducer(state, action) {
       // v4: the daily history. Older saves simply start recording from now —
       // there is no honest way to reconstruct days nobody logged.
       merged.history = trim(saved.history || {}, today());
+      // v6 adds one-time outfit and gender choices. Their null defaults keep
+      // older saves in setup until both choices have been recorded.
       merged.version = SAVE_VERSION;
 
       // v3 also moved "today" from a UTC date to a LOCAL one. A pre-v3
@@ -186,6 +190,18 @@ function reducer(state, action) {
         modules: rollAllModules(state.modules, today()),
       };
     }
+
+    case 'SET_PLAYER_OUTFIT':
+      if (state.playerOutfit) return state;
+      return { ...state, playerOutfit: action.payload.id };
+
+    case 'SET_PLAYER_CHARACTER':
+      if (state.playerOutfit && state.playerGender) return state;
+      return {
+        ...state,
+        playerOutfit: state.playerOutfit || action.payload.outfitId,
+        playerGender: state.playerGender || action.payload.gender,
+      };
 
     case 'ADD_DISTANCE': {
       const mi = Math.max(0, action.payload.miles || 0);

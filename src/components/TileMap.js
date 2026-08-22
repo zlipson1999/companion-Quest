@@ -12,6 +12,8 @@ import PixelArt from './PixelArt';
 import PixelSprite from './PixelSprite';
 import { palette } from '../theme';
 import { SPRITES } from '../data/sprites';
+import { outfitPalette } from '../data/outfits';
+import { useGame } from '../state';
 
 // Tile code -> sprite key. Animated tiles list their frames.
 const TILE_SPRITES = {
@@ -20,6 +22,7 @@ const TILE_SPRITES = {
   '#': ['tile_path', 'tile_path_b'],
   G: ['tile_gate'],
   T: ['tile_tree'],
+  W: ['tile_wall'],
   '~': ['tile_water', 'tile_water_b'],
   h: ['tile_roof_rest'],
   y: ['tile_roof_gym'],
@@ -57,6 +60,7 @@ export function Tile({ code, s, frame, x, y }) {
 }
 
 export default function TileMap({ map, player, tileSize, style }) {
+  const { state } = useGame();
   const s = tileSize;
   const pos = useRef(new Animated.ValueXY({ x: player.x * s, y: player.y * s })).current;
   const [frame, setFrame] = useState(0);
@@ -109,7 +113,7 @@ export default function TileMap({ map, player, tileSize, style }) {
           transform: [{ translateX: pos.x }, { translateY: pos.y }],
         }}
       >
-        <PixelSprite spriteKey={spriteKey} size={s * 1.25} />
+        <PixelSprite spriteKey={spriteKey} palette={outfitPalette(state.playerOutfit)} size={s * 1.25} />
       </Animated.View>
     </View>
   );

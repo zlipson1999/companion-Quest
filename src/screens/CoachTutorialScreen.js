@@ -1,6 +1,6 @@
 import React from 'react';
-import { View } from 'react-native';
-import { Screen, DualPane, DialogueBox, PixelText, PixelSprite, Window } from '../components';
+import { Image, View } from 'react-native';
+import { Screen, DualPane, DialogueBox, PixelText, Window } from '../components';
 import { palette, space } from '../theme';
 import { useNav } from './navContext';
 
@@ -20,10 +20,9 @@ export default function CoachTutorialScreen() {
   return (
     <Screen padTop={false}>
       <DualPane
-        top={<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.bgAlt }}><PixelText size="small" color={palette.secondary}>Maple Training Hall</PixelText><PixelSprite spriteKey="coach_maple" size={150} bob /><Window tone="dark" pad={7} style={{ marginTop: space.sm }}><PixelText size="tiny" color={palette.windowFill}>COACH MAPLE · TRAIL MENTOR</PixelText></Window></View>}
+        top={<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.bgAlt }}><PixelText size="small" color={palette.secondary}>Maple Training Hall</PixelText><Image source={require('../../assets/characters/coach-maple-dialogue-v1.png')} resizeMode="contain" accessibilityLabel="Coach Maple welcoming you to the Training Hall" style={{ width: '88%', height: 260 }} /><Window tone="dark" pad={7} style={{ marginTop: space.sm }}><PixelText size="tiny" color={palette.windowFill}>COACH MAPLE · TRAIL MENTOR</PixelText></Window></View>}
         bottom={<View style={{ flex: 1, justifyContent: 'flex-end', padding: space.md }}><DialogueBox lines={lessons} onComplete={() => navigate('goal')} /></View>}
       />
     </Screen>
   );
 }
-

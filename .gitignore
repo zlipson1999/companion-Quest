@@ -4,6 +4,7 @@ node_modules/
 # Expo
 .expo/
 dist/
+dist-*-test/
 web-build/
 expo-env.d.ts
 
@@ -37,6 +38,7 @@ yarn-error.*
 # build artifacts
 *.bundle
 tools/sprite_preview.png
+serve-root/
 
 # Python bytecode from tools/
 __pycache__/

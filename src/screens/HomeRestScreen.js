@@ -10,12 +10,12 @@ import { playSfx } from '../audio';
 const FLOORS = {
   downstairs: {
     name: 'Home — Downstairs', cols: 7, rows: 7, spawn: { x: 3, y: 5 }, stairs: { x: 5, y: 2 },
-    grid: ['TTTTTTT', 'THHHHHT', 'TH...DT', 'TH...HT', 'TH...HT', 'TH###HT', 'TTTTTTT'],
+    grid: ['WWWWWWW', 'WHHHHHW', 'WH...DW', 'WH...HW', 'WH...HW', 'WH###HW', 'WWWWWWW'],
     hint: 'Sleep is upstairs. Walk to the stair door.',
   },
   upstairs: {
     name: 'Home — Bedroom', cols: 7, rows: 7, spawn: { x: 5, y: 4 }, bed: { x: 2, y: 2 },
-    grid: ['TTTTTTT', 'THHHHHT', 'THD..HT', 'TH...HT', 'TH...HT', 'TH###HT', 'TTTTTTT'],
+    grid: ['WWWWWWW', 'WHHHHHW', 'WHD..HW', 'WH...HW', 'WH...HW', 'WH###HW', 'WWWWWWW'],
     hint: 'Walk to your bed and sleep.',
   },
 };
@@ -66,4 +66,3 @@ export default function HomeRestScreen() {
     </Screen>
   );
 }
-
