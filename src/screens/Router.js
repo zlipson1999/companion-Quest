@@ -4,7 +4,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { NavContext } from './navContext';
+import { NavContext, PLACE_LABELS } from './navContext';
 import { useGame } from '../state';
 import { playBgm, setMuted, setBgmMuted } from '../audio';
 import BattleTransition from '../components/BattleTransition';
@@ -85,13 +85,6 @@ const PLACES = new Set(['hub', 'gym', 'rest', 'route', 'title', 'homeIntro']);
 
 // Only places get named on a back button. Anywhere else it is just "Back",
 // because "Back to the movement picker" is worse than saying nothing.
-const PLACE_LABELS = {
-  hub: 'Maple Lane',
-  gym: 'the gym',
-  rest: 'Home',
-  route: 'Route 1',
-};
-
 export default function Router() {
   const { state, hydrated } = useGame();
   const [route, setRoute] = useState(null);

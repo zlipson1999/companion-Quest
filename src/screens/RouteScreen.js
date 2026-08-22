@@ -17,7 +17,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { Screen, Window, ProgressBar, PixelText, PixelSprite, PixelButton, TrailAction, CardioConsole, Tile, MenuButton, TOP_INSET } from '../components';
 import { palette, space, screen, tokens } from '../theme';
 import { useGame, useCompanion } from '../state';
-import { useNav } from './navContext';
+import { useNav, PLACE_LABELS } from './navContext';
 import { playSfx } from '../audio';
 import { pacingForGoal, formatMiles } from '../data/route';
 import { rollWildEncounter } from '../data/wild';
@@ -379,7 +379,7 @@ export default function RouteScreen({ params = {} }) {
             </PixelText>
             <ScrollView showsVerticalScrollIndicator={false}>{stepPanel}</ScrollView>
             <TrailAction
-              label="Back to Town"
+              label={`Back to ${PLACE_LABELS.hub}`}
               tone="quiet"
               onPress={() => {
                 setSheetOpen(false);

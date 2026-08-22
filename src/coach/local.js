@@ -225,7 +225,7 @@ const INTENTS = [
     id: 'plans',
     test: /\b(my plans?|saved plan|routine|program|what.s in|forge)\b/i,
     answer: (f) => {
-      if (!f.plans.length) return 'No saved plans yet. Town → Forge → New Plan builds one: search 140 movements, then set sets, reps and weight per block.';
+      if (!f.plans.length) return 'No saved plans yet. Walk into any of the iron here — a rack, the dumbbells, a bench — and New Plan builds one: search 140 movements, then set sets, reps and weight per block.';
       const bits = f.plans.map((p) => {
         const a = analysePlan(p);
         return a.sets ? `"${p.name}" — ${a.focus}, ${a.sets} sets, about ${a.minutes} min` : `"${p.name}" — empty`;

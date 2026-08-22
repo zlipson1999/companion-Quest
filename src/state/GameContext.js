@@ -266,10 +266,6 @@ function reducer(state, action) {
       };
     }
 
-    case 'SET_PLAYER_OUTFIT':
-      if (state.playerOutfit) return state;
-      return { ...state, playerOutfit: action.payload.id };
-
     case 'SET_PLAYER_CHARACTER':
       if (state.playerOutfit && state.playerGender) return state;
       return {
@@ -368,6 +364,9 @@ function reducer(state, action) {
     case 'GAIN_XP':
       return updateActive(state, (m) => ({ ...m, xp: m.xp + (action.payload.amount || 0) }));
 
+    // No caller today: rewards reach bond through applyEffect. It stays
+    // because CLAUDE.md offers it to life modules as part of the
+    // module-agnostic progression contract.
     case 'GAIN_BOND':
       return updateActive(state, (m) => ({ ...m, bond: m.bond + (action.payload.amount || 0) }));
 

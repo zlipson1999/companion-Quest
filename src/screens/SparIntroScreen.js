@@ -67,7 +67,7 @@ export default function SparIntroScreen() {
           </View>
         </View>
         <Window tone="dark" pad={10} style={{ marginTop: space.lg }}>
-          <PixelText size="tiny" color={palette.secondary}>MAPLE TRAINING HALL</PixelText>
+          <PixelText size="tiny" color={palette.secondary}>QUEST FITNESS</PixelText>
           <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 5, lineHeight: 13 }}>
             A session already in progress.
           </PixelText>

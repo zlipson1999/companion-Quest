@@ -8,13 +8,18 @@ export const ENCOUNTERS = {
   couchlurk: { creatureId: 'couchlurk', hp: 75, xp: 70, bond: 16, minMilestone: 4 },
 };
 
+// Which obstacles a walk this far along can turn up, and one of them.
+//
+// This lived here AND inline in wild.js, and only the inline copy was reachable
+// — so the gating rule had two definitions and the tunable one was the copy.
+// It belongs with the encounter table it gates.
 export function encounterPoolForMilestone(milestone) {
-  return Object.values(ENCOUNTERS).filter((e) => e.minMilestone <= milestone);
+  const pool = Object.values(ENCOUNTERS).filter((e) => e.minMilestone <= milestone);
+  return pool.length ? pool : [ENCOUNTERS.sludgewad];
 }
 
 export function pickEncounter(milestone) {
   const pool = encounterPoolForMilestone(milestone);
-  if (pool.length === 0) return ENCOUNTERS.sludgewad;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
