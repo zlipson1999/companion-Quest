@@ -90,7 +90,7 @@ export default function HubScreen() {
             { label: 'Route 1', value: 'route', sublabel: 'real miles' },
             { label: 'Train', value: 'workout', sublabel: 'quick sets' },
             { label: 'Forge', value: 'forge', sublabel: 'your plans' },
-            { label: 'Rest', value: 'rest', sublabel: 'heal team' },
+            { label: 'Go Home', value: 'rest', sublabel: 'sleep upstairs' },
             { label: 'Team', value: 'party', sublabel: 'companions' },
             { label: 'Habits', value: 'habits', sublabel: 'daily life' },
             { label: 'Coach', value: 'coach', sublabel: 'AI chat' },
@@ -113,3 +113,4 @@ export default function HubScreen() {
     </Screen>
   );
 }
+
