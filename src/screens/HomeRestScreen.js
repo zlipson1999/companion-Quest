@@ -92,7 +92,7 @@ export default function HomeRestScreen() {
     if (blocked) {
       const station = interactionForCode(floor.grid[ny] && floor.grid[ny][nx], floor);
       setFacing(station);
-      if (station) {
+      if (station && station.screen) {
         playSfx('confirm');
         setTimeout(() => navigate(station.screen, station.params || {}), 140);
       }

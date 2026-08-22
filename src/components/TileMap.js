@@ -96,6 +96,11 @@ const PROP_SPRITES = {
   l: 'prop_lamp',
   P: 'prop_wardrobe',
   g: 'prop_nightstand',
+  i: 'prop_signpost',
+  '!': 'prop_lamppost',
+  '+': 'prop_park_bench',
+  '%': 'prop_mailbox',
+  '-': 'prop_fence',
   B: 'prop_bench',
   w: 'prop_water_station',
   V: 'prop_banner',
@@ -136,7 +141,7 @@ const WALL_DRESSING = new Set(['V', 'O', 'Z']);
 // wardrobes — the same mistake as the kitchen run where every counter had its
 // own sink. A run prop picks an end from its own neighbours, exactly the way a
 // path picks its edge, so a piece of furniture can be as wide as it needs to be.
-const RUN_PROPS = new Set(['f', 'P']);
+const RUN_PROPS = new Set(['f', 'P', '-']);
 
 function runSuffix(map, code, x, y) {
   const left = codeAt(map, x - 1, y) === code;
@@ -189,6 +194,7 @@ const SHADOW_CASTERS = new Set([
   'e', 'E', 'v', 'k', 'f', 'a', 'c', 'F', 'o',
   'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q', 'J', 'I',
   'n', 'u', 'm', 'x', 'l', 'P', 'g',
+  'i', '!', '+', '%', '-',
 ]);
 
 function codeAt(map, x, y) {
@@ -299,6 +305,12 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
 
   if (BUILDING_WALL_CODES.has(code) && ROOF_CODES.has(codeAt(map, x, y - 1))) {
     layers.push({ key: 'prop_eave' });
+  }
+  // ...and the top of a roof gets its ridge, from the same kind of test. A
+  // building's form comes out of its own shape rather than out of extra codes
+  // somebody has to remember to place.
+  if (ROOF_CODES.has(code) && !ROOF_CODES.has(codeAt(map, x, y - 1))) {
+    layers.push({ key: 'prop_ridge' });
   }
 
   // Contact shading, only onto ground the player can see past — a wall does not

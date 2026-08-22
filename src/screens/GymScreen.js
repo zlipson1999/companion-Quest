@@ -53,7 +53,7 @@ export default function GymScreen() {
       // answer. Anything else in the room is just a wall.
       const station = interactionForCode(code, GYM);
       setFacingStation(station);
-      if (station) {
+      if (station && station.screen) {
         playSfx('confirm');
         // Coach is the goal conversation until you have a companion, and the
         // chat after that. Re-running the goal screen on a live save would

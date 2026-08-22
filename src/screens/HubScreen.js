@@ -13,7 +13,8 @@ import { palette, space, tokens } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
-import { HUB, isWalkable, tileAt, triggerForCode } from '../data/maps';
+import { HUB, isWalkable, tileAt, triggerForCode, interactionForCode } from '../data/maps';
+import { recallSpot, rememberSpot } from './placeMemory';
 
 const MENU = [
   { label: 'Route 1', value: 'route', sublabel: 'real miles, encounters' },
@@ -29,11 +30,15 @@ export default function HubScreen() {
   const companion = useCompanion();
   const { navigate } = useNav();
 
-  const [player, setPlayer] = useState({ x: HUB.spawn.x, y: HUB.spawn.y, facing: 'down' });
+  const [player, setPlayer] = useState(() =>
+    recallSpot('hub', { x: HUB.spawn.x, y: HUB.spawn.y, facing: 'down' }, (s) => isWalkable(HUB, s.x, s.y))
+  );
+  const [facingThing, setFacingThing] = useState(null);
   const playerRef = useRef(player);
   const apply = (np) => {
     playerRef.current = np;
     setPlayer(np);
+    rememberSpot('hub', np);
   };
 
   const move = (dir) => {
@@ -42,9 +47,20 @@ export default function HubScreen() {
     const ny = dir === 'up' ? y - 1 : dir === 'down' ? y + 1 : y;
     if (!isWalkable(HUB, nx, ny)) {
       apply({ x, y, facing: dir });
+      // The lane has things on it now, and the same rule applies outdoors as
+      // in: what you walk into is what you use. Some of them only have
+      // something to SAY — a signpost that opened a menu would be a menu — so
+      // the label goes to the ribbon and nothing is navigated.
+      const thing = interactionForCode(tileAt(HUB, nx, ny), HUB);
+      setFacingThing(thing);
+      if (thing && thing.screen) {
+        playSfx('confirm');
+        setTimeout(() => navigate(thing.screen, thing.params || {}), 140);
+      }
       return;
     }
     apply({ x: nx, y: ny, facing: dir });
+    setFacingThing(null);
     const trigger = triggerForCode(tileAt(HUB, nx, ny));
     if (trigger) {
       playSfx('confirm');
@@ -52,7 +68,7 @@ export default function HubScreen() {
     }
   };
 
-  const objective = !companion
+  const objective = facingThing ? facingThing.label : !companion
     ? 'Meet Coach Maple inside Quest Fitness'
     : state.stats.distanceMi < 0.1
       ? 'Head out through the north gate and walk Route 1'

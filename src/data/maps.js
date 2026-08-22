@@ -6,25 +6,45 @@
 //   ,  flowers      h  rest roof    H  rest wall (blk)   D  rest door -> rest
 //   y  gym roof     Y  gym wall     d  gym door -> Quest Fitness interior
 //   G  route gate -> route
+//   i  signpost     !  lamppost     +  bench             %  post box
+//   -  picket fence
+//
+// Roofs are TWO rows deep. One row of shingle has no apex, so a building read
+// as a coloured rectangle with a strip under it; with two, the top row gets a
+// ridge cap and the wall below gets its eave, both applied from the shape of
+// the building rather than from codes somebody has to remember to place.
 
 export const HUB = {
   id: 'hub',
-  cols: 11,
-  rows: 11,
-  spawn: { x: 5, y: 9 },
+  cols: 13,
+  rows: 17,
+  spawn: { x: 6, y: 15 },
   grid: [
-    'TTTTTGTTTTT',
-    'T....#....T',
-    'Thhh.#.yyyT',
-    'THDH.#.YdYT',
-    'T.,..#..,.T',
-    'T.#######.T',
-    'T....#....T',
-    'T.~~.#....T',
-    'T..,.#.,..T',
-    'T....#....T',
-    'TTTTTTTTTTT',
+    'TTTTTTGTTTTTT',
+    'T....i#.....T',
+    'T.....#.....T',
+    'Thhhh.#.yyyyT',
+    'Thhhh.#.yyyyT',
+    'THDHH.#.YdYYT',
+    'T%#...#..#..T',
+    'T.########..T',
+    'T....!#!....T',
+    'T.....#.....T',
+    'T.~~~.#..---T',
+    'T.~~~+#..,,,T',
+    'T.~~~.#..,,,T',
+    'T.....#.....T',
+    'T.,...#...,.T',
+    'T.....#.....T',
+    'TTTTTTTTTTTTT',
   ],
+  interactions: {
+    // A bench by the water does what the sofa indoors does.
+    '+': { screen: 'habit', params: { moduleId: 'meditation' }, label: 'Bench — sit by the water' },
+    // Label only, no screen. A signpost that opened a menu would be a menu.
+    i: { label: 'Signpost — Route 1, through the north gate' },
+    '%': { label: 'Your post box. Nothing today.' },
+  },
 };
 
 // Quest Fitness — the gym interior.
@@ -176,6 +196,24 @@ export const BEDROOM = {
   },
 };
 
+// Every map's grid must match the cols/rows it claims.
+//
+// Cheap to assert, and it fails at import rather than as a blank screen or a
+// player standing in a wall. Added after a bulk edit spliced the whole gym out
+// of this file between two anchors and nothing noticed until the door to it
+// threw at runtime.
+for (const [name, map] of Object.entries({ HUB, GYM, DOWNSTAIRS, BEDROOM })) {
+  if (map.grid.length !== map.rows) {
+    throw new Error(`maps.js: ${name} claims ${map.rows} rows and has ${map.grid.length}`);
+  }
+  const wrong = map.grid.findIndex((row) => row.length !== map.cols);
+  if (wrong >= 0) {
+    throw new Error(
+      `maps.js: ${name} row ${wrong} is ${map.grid[wrong].length} wide, expected ${map.cols}`
+    );
+  }
+}
+
 const BLOCKED = new Set([
   'T', '~', 'h', 'H', 'y', 'Y',
   'W', '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w', 'C', 'A', 'V', 'O', 'Z',
@@ -184,6 +222,8 @@ const BLOCKED = new Set([
   'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q', 'J', 'I',
   // House furniture.
   'n', 'u', 'm', 'x', 'l', 'P', 'g',
+  // Out on the lane.
+  'i', '!', '+', '%', '-',
 ]);
 
 // Walking into a station is how you use it. A blocked tile that answers a bump

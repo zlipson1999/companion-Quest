@@ -68,7 +68,7 @@ export default function HomeIntroScreen() {
     if (blocked) {
       const station = interactionForCode(area.grid[ny] && area.grid[ny][nx], area);
       setFacing(station);
-      if (station) {
+      if (station && station.screen) {
         playSfx('confirm');
         setTimeout(() => navigate(station.screen, station.params || {}), 140);
       }

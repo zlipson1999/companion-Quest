@@ -3430,6 +3430,111 @@ def prop_eave():
     return c
 
 
+def prop_ridge():
+    """The cap along the top of a roof.
+
+    A roof drawn as one flat field of shingle has no apex, so a building read
+    as a coloured rectangle with a strip under it. The ridge is where the two
+    pitches meet: capping tiles, the sky on the very top edge, and the shadow
+    the cap throws down the pitch. Applied automatically to any roof with no
+    roof above it, the same way the eave is applied to any wall with a roof
+    above — so a building gets its form from its own shape, not from new codes.
+    """
+    c = _prop('couch')
+    c.rect(0, 0, 15, 0, 'leaf', 0.94)        # sky on the very top edge
+    c.rect(0, 1, 15, 2, 'leaf', 0.62)        # capping tiles
+    for k in range(0, 16, 4):
+        c.rect(k, 1, k, 2, 'leaf', 0.42)     # joints between them
+    c.rect(0, 3, 15, 3, 'leaf', 0.30)        # under the cap
+    c.rect(0, 4, 15, 4, 'ink', 0)            # shadow down the pitch
+    return c
+
+
+def prop_signpost():
+    """A fingerpost at the gate. Lettering illegible on purpose — the arrow is
+    the message, and inventing a legible word at this size means inventing a
+    typeface nobody asked for."""
+    c = _prop('couch')
+    c.rect(7, 8, 8, 15, 'body', 0.34)                       # post
+    c.rect(7, 8, 7, 15, 'body', 0.54)                       # lit side
+    c.rect(1, 2, 12, 8, 'leaf', 0.58)                       # board
+    c.rect(1, 2, 12, 2, 'leaf', 0.78)                       # lit top edge
+    c.rect(1, 8, 12, 8, 'leaf', 0.26)                       # shaded underside
+    c.poly([(12, 2), (15, 5), (12, 8)], 'leaf', 0.48)       # the point of it
+    c.rect(3, 4, 10, 4, 'body', 0.26)                       # two lines of writing
+    c.rect(3, 6, 8, 6, 'body', 0.26)
+    c.rect(6, 15, 9, 15, 'ink', 0)
+    return c
+
+
+def prop_lamppost():
+    """A lane lamp: base, post, lantern.
+
+    No pool of light on the ground — it is the middle of the day out here, and
+    a lamp that glows in daylight reads as a mistake rather than as a lamp.
+    """
+    c = _prop('rock')
+    c.rect(7, 6, 8, 14, 'body', 0.30)                       # post
+    c.rect(7, 6, 7, 14, 'body', 0.50)                       # lit side
+    c.rect(5, 14, 10, 15, 'body', 0.24)                     # base
+    c.rect(4, 1, 11, 2, 'body', 0.44)                       # cap
+    c.rect(5, 2, 10, 6, 'body', 0.34)                       # lantern housing
+    c.rect(6, 3, 9, 5, 'leaf', 0.92)                        # the glass
+    c.rect(6, 3, 6, 5, 'leaf', 1.0)
+    c.rect(5, 15, 10, 15, 'ink', 0)
+    return c
+
+
+def prop_park_bench():
+    """A bench by the water. Not `prop_bench` — that one is the flat bench in
+    the gym, and two very different objects sharing a name is how you end up
+    sitting on a weight bench in a park."""
+    c = _prop('couch')
+    c.rect(0, 2, 15, 4, 'body', 0.30)                       # back rail
+    c.rect(0, 2, 15, 2, 'body', 0.54)
+    c.rect(0, 6, 15, 12, 'leaf', 0.52)                      # seat
+    c.rect(0, 6, 15, 6, 'leaf', 0.74)                       # lit front edge
+    for k in (8, 10, 12):
+        c.rect(0, k, 15, k, 'leaf', 0.34)                   # slat gaps
+    c.rect(1, 13, 3, 14, 'body', 0.24)                      # legs
+    c.rect(12, 13, 14, 14, 'body', 0.24)
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_mailbox():
+    """A post box at the end of your path."""
+    c = _prop('rock')
+    c.rect(7, 8, 8, 15, 'leaf', 0.34)                       # post
+    c.rect(3, 3, 12, 8, 'body', 0.46)                       # box
+    c.rect(3, 3, 12, 3, 'body', 0.68)                       # lit top
+    c.rect(12, 4, 12, 8, 'body', 0.26)                      # shaded side
+    c.rect(4, 5, 10, 6, 'body', 0.20)                       # the slot
+    c.rect(13, 2, 13, 5, 'belly', 0.82)                     # the little flag, up
+    c.put(14, 2, 'belly', 0.94)
+    c.rect(6, 15, 9, 15, 'ink', 0)
+    return c
+
+
+def prop_fence(half=None):
+    """Picket fence — a run prop, so a length of it has two ends rather than an
+    end post every sixteen pixels pretending to be one."""
+    c = _prop('couch')
+    for k in (1, 6, 11):
+        c.rect(k, 4, k + 1, 14, 'body', 0.56)               # pickets
+        c.rect(k, 4, k, 14, 'body', 0.72)
+        c.put(k, 3, 'body', 0.64); c.put(k + 1, 3, 'body', 0.48)
+    c.rect(0, 6, 15, 7, 'body', 0.44)                       # top rail
+    c.rect(0, 6, 15, 6, 'body', 0.60)
+    c.rect(0, 11, 15, 12, 'body', 0.36)                     # lower rail
+    if half in (None, 'l'):
+        c.rect(0, 2, 1, 15, 'body', 0.32)                   # end post
+    if half in (None, 'r'):
+        c.rect(14, 2, 15, 15, 'body', 0.26)
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
 def prop_bookshelf():
     c = _prop('couch')
     c.rect(1, 0, 14, 15, 'body', 0.26)                       # carcass
@@ -4063,10 +4168,14 @@ def build_all():
     add('prop_chair', prop_chair()); add('prop_coffee_table', prop_coffee_table())
     add('prop_lamp', prop_lamp()); add('prop_wardrobe', prop_wardrobe())
     add('prop_nightstand', prop_nightstand())
+    add('prop_ridge', prop_ridge()); add('prop_signpost', prop_signpost())
+    add('prop_lamppost', prop_lamppost()); add('prop_park_bench', prop_park_bench())
+    add('prop_mailbox', prop_mailbox()); add('prop_fence', prop_fence())
     # Ends and middles for the furniture that spans more than one tile.
     for _h in ('l', 'm', 'r'):
         add('prop_sofa_%s' % _h, prop_sofa(_h))
         add('prop_wardrobe_%s' % _h, prop_wardrobe(_h))
+        add('prop_fence_%s' % _h, prop_fence(_h))
     add('prop_flowers', prop_flowers()); add('prop_eave', prop_eave())
     add('prop_lockers', prop_lockers()); add('prop_pullup_bar', prop_pullup_bar())
     add('prop_kettlebells', prop_kettlebells()); add('prop_rower', prop_rower())

@@ -644,6 +644,46 @@ standing is a fact about the last ten seconds, not about your training, and it
 should not survive closing the app. Sleeping clears it too, since the day is
 over and coming home should start at the front door.
 
+## Phase 11 — DONE: Maple Lane, and the door nobody could see
+
+The gym and the house had both been replanned; the lane between them had not.
+
+**The front door of your own house was rendering as blank brick.** `add()`
+prefers `traced_<name>.json` over the procedural drawing, and the traced art
+for `tile_door` and `tile_wall` was **the wrong way round** — the file feeding
+`tile_door` held plain brickwork, and the one feeding `tile_wall` held the door.
+It went unnoticed because `tile_wall` (singular) is dead at runtime: `W`
+resolves through `FIELD_CODES` to the wall FIELD, so the only thing that ever
+drew the door art was nothing at all. Swapping the two files fixed both
+buildings at once.
+
+**Buildings have a form now.** A roof was ONE row of shingle, which has no apex,
+so a building read as a coloured rectangle with a strip under it. Roofs are two
+rows, the top one gets `prop_ridge` (capping tiles, sky on the top edge, the
+shadow it throws down the pitch), and the wall below still gets its eave. Both
+are applied from the building's own SHAPE — a roof with no roof above it, a wall
+with a roof above it — so nothing has to be remembered and placed.
+
+**The lane is a place.** 13x17, so it fills the phone: a lane north to the gate
+with a signpost at it, your house and Quest Fitness facing each other across it
+with doorstep paths onto a cross lane, lamps at the crossroads, a post box by
+your door, and a green at the south end with a pond, a bench and a fenced
+flower plot. Five new props — signpost, lamppost, park bench (NOT `prop_bench`,
+which is the gym's flat bench), post box, and a picket fence that runs with
+`RUN_PROPS` like the sofa.
+
+**Outdoors uses bump-to-use too**, and a station may be a LABEL with no screen:
+the signpost and the post box put their line in the objective ribbon and go
+nowhere, because a signpost that opened a menu would be a menu. Every walking
+screen now checks `station.screen` before navigating. The bench is a real
+station — it logs Stillness, the same as the sofa indoors. The lane also
+remembers where you were standing, like the other two places.
+
+**`maps.js` asserts its own grids at import.** A bulk edit spliced the entire
+gym out of the file between two anchors, and nothing noticed until the door to
+it threw `undefined.spawn` at runtime. Every map's grid now has to match the
+cols and rows it claims.
+
 ## Phase 6 — ideas, not committed
 
 Reading / chores / social check-in modules; per-movement progression charts off
