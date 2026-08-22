@@ -15,6 +15,7 @@ import { GYM, isWalkable, tileAt, triggerForCode, interactionForCode } from '../
 
 const MENU = [
   { label: 'Back to Maple Lane', value: 'hub', sublabel: 'the lane outside' },
+  { label: 'Talk to Coach', value: 'coach', sublabel: 'ask her anything' },
   { label: 'Route 1', value: 'route', sublabel: 'real miles, encounters' },
   { label: 'Team', value: 'party', sublabel: 'companions' },
   { label: 'Options', value: 'options', sublabel: 'settings' },
@@ -44,7 +45,7 @@ export default function GymScreen() {
       apply({ x, y, facing: dir });
       // Bumping a station is how you use it, so a blocked tile still has to
       // answer. Anything else in the room is just a wall.
-      const station = interactionForCode(code);
+      const station = interactionForCode(code, GYM);
       setFacingStation(station);
       if (station) {
         playSfx('confirm');

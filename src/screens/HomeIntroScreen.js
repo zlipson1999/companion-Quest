@@ -4,7 +4,7 @@ import { WorldScreen, CompanionStatus } from '../components';
 import { palette, screen, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
-import { isWalkable } from '../data/maps';
+import { isWalkable, interactionForCode } from '../data/maps';
 import { playSfx } from '../audio';
 
 const AREAS = {
@@ -30,6 +30,15 @@ const AREAS = {
       'W........sW',
       'WWWWWWWWWWW',
     ],
+    // Furniture that does something. Same rule as the Training Hall: the thing
+    // that does the job is the thing you walk up to.
+    interactions: {
+      e: { screen: 'habit', params: { moduleId: 'sleep' }, label: 'Bed — log last night' },
+      E: { screen: 'habit', params: { moduleId: 'sleep' }, label: 'Bed — log last night' },
+      k: { screen: 'habits', label: 'Desk — your daily habits' },
+      o: { screen: 'index', label: 'Shelf — your creature index' },
+      v: { screen: 'week', label: 'Screen — this week so far' },
+    },
     hint: 'Your room. The stairs are in the far corner.', next: 'downstairs',
   },
   downstairs: {
@@ -48,6 +57,13 @@ const AREAS = {
       'W....D....W',
       'WWWWWWWWWWW',
     ],
+    interactions: {
+      c: { screen: 'habit', params: { moduleId: 'diet' }, label: 'Counter — log a meal' },
+      F: { screen: 'habit', params: { moduleId: 'diet' }, label: 'Fridge — log a meal' },
+      a: { screen: 'habit', params: { moduleId: 'diet' }, label: 'Table — log a meal' },
+      o: { screen: 'cookbook', label: 'Shelf — the kitchen cookbook' },
+      f: { screen: 'habit', params: { moduleId: 'meditation' }, label: 'Sofa — sit and be still' },
+    },
     hint: 'Head through your front door.', next: 'outside',
   },
   outside: {
@@ -64,6 +80,7 @@ export default function HomeIntroScreen() {
   const [areaId, setAreaId] = useState('bedroom');
   const area = AREAS[areaId];
   const [player, setPlayer] = useState({ ...area.spawn, facing: 'down' });
+  const [facing, setFacing] = useState(null);
   const playerRef = useRef(player);
 
   const enter = (next) => {
@@ -79,9 +96,24 @@ export default function HomeIntroScreen() {
     const { x, y } = playerRef.current;
     const nx = dir === 'left' ? x - 1 : dir === 'right' ? x + 1 : x;
     const ny = dir === 'up' ? y - 1 : dir === 'down' ? y + 1 : y;
-    const next = isWalkable(area, nx, ny) ? { x: nx, y: ny, facing: dir } : { x, y, facing: dir };
+    const blocked = !isWalkable(area, nx, ny);
+    const next = blocked ? { x, y, facing: dir } : { x: nx, y: ny, facing: dir };
     playerRef.current = next;
     setPlayer(next);
+
+    // Walking into your own furniture uses it, the same way the Hall's
+    // equipment works. The bed logs last night, the desk opens your habits,
+    // the kitchen shelf is the cookbook.
+    if (blocked) {
+      const station = interactionForCode(area.grid[ny] && area.grid[ny][nx], area);
+      setFacing(station);
+      if (station) {
+        playSfx('confirm');
+        setTimeout(() => navigate(station.screen, station.params || {}), 140);
+      }
+      return;
+    }
+    setFacing(null);
     if (next.x === area.exit.x && next.y === area.exit.y) setTimeout(() => enter(area.next), 120);
   };
 
@@ -91,7 +123,7 @@ export default function HomeIntroScreen() {
       player={player}
       onMove={move}
       place={area.name}
-      objective={area.hint}
+      objective={facing ? facing.label : area.hint}
       status={<CompanionStatus companion={companion} stats={state.stats} />}
     />
   );

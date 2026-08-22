@@ -78,11 +78,14 @@ const BLOCKED = new Set([
 // miles, the same milestones, the same progression — and nothing that stops
 // you. Encounters and trail challenges belong to Route 1, outdoors.
 const INTERACTIONS = {
-  R: { screen: 'workout', label: 'Barbell rack — pick a session, or build one' },
-  U: { screen: 'workout', label: 'Pull-up bar — pick a session, or build one' },
-  j: { screen: 'workout', label: 'Kettlebells — pick a session, or build one' },
-  b: { screen: 'forge', label: 'Dumbbell rack — build your own plan' },
-  K: { screen: 'forge', label: 'Cable machine — build your own plan' },
+  // The iron is where you WRITE a session. Ask Coach if you want one handed to
+  // you. That split is the whole logic of the room: equipment is the work,
+  // people are the advice.
+  R: { screen: 'forge', label: 'Barbell rack — build your own session' },
+  b: { screen: 'forge', label: 'Dumbbell rack — build your own session' },
+  K: { screen: 'forge', label: 'Cable machine — build your own session' },
+  U: { screen: 'forge', label: 'Pull-up bar — build your own session' },
+  j: { screen: 'forge', label: 'Kettlebells — build your own session' },
   t: { screen: 'treadmill', params: { mode: 'treadmill' }, label: 'Treadmill — cardio, no interruptions' },
   q: { screen: 'treadmill', params: { mode: 'treadmill' }, label: 'Rower — cardio, no interruptions' },
   L: { screen: 'bag', label: 'Lockers — your supplies' },
@@ -93,11 +96,20 @@ const INTERACTIONS = {
   // Resolved in GymScreen: before you have a companion this is where the goal
   // conversation happens; afterwards it is the coach chat. Sending an existing
   // save to the goal screen would re-run START_GAME and replace the party.
-  C: { screen: 'coach', label: 'Coach Maple — talk it through' },
+  // Coach hands you a session already written. Before you have a companion she
+  // is the goal conversation instead — GymScreen resolves that, because
+  // re-running the goal screen on a live save would replace the party.
+  C: { screen: 'workout', label: 'Coach Maple — take a session off the shelf' },
   A: { screen: 'workout', label: 'Rowan — mid-session, and happy to spot you' },
+  // Route 1 is the version WITH encounters. This is the one without.
+  // (See the treadmill entry above.)
 };
 
-export function interactionForCode(code) {
+// A map may override what its own furniture does. The bookshelf in a kitchen is
+// a cookbook and the one in a bedroom is not, so the meaning belongs to the
+// room rather than to the tile code.
+export function interactionForCode(code, map) {
+  if (map && map.interactions && map.interactions[code]) return map.interactions[code];
   return INTERACTIONS[code] || null;
 }
 

@@ -351,6 +351,25 @@ person passed in whole as `params.opponent` rather than looked up in the
 creature table, so a human opponent never lands in the Index and can never be
 befriended. It stages on `hall` rather than in a meadow.
 
+**Furniture is the interface, in every room.** Walking into a thing uses it,
+and what a thing does belongs to the ROOM rather than to the tile code — a
+bookshelf in a kitchen is a cookbook and the one in a bedroom is not. Maps carry
+their own `interactions` table; `interactionForCode(code, map)` checks it before
+the shared one.
+
+- **Bedroom** — bed logs last night's sleep, desk opens your daily habits,
+  the screen shows the week, the shelf is your creature index.
+- **Kitchen** — counter, fridge and table log a meal to Nourish; the shelf is
+  `CookbookScreen`, six plain recipes with a time, a short list and steps you
+  can follow while tired. Each names the Nourish check-in it honestly counts
+  as, so "I Made This" is one motion. Deliberately not calorie maths — the
+  module is check-in based because the game rewards showing up, and the
+  cookbook has to agree with it. The sofa is a stillness check-in.
+- **Training Hall** — the iron is where you WRITE a session (racks, dumbbells,
+  cable, pull-up bar, kettlebells all open the Forge); Coach hands you one off
+  the shelf; treadmill and rower are cardio with nothing to interrupt you. That
+  split is the logic of the room: equipment is the work, people are the advice.
+
 **The Hall is the menu, and cardio has two forms.** The hub menu listed
 fourteen destinations, which made the Training Hall decoration — everything it
 stands for was one tap away. It lists six places now; training, the Forge,
