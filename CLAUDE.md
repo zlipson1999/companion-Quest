@@ -3,6 +3,11 @@
 Read this first. It's the working memory for anyone (including a fresh Claude
 session) picking up this repo.
 
+**Deep reference: `docs/GAME_BIBLE.md`** — the full audit of every system with
+the exact numbers (formulas, reward tables, timings, save schema, known gaps).
+This file is the summary; the bible is the source of truth for tuning. If you
+change a number in code, change it there in the same commit.
+
 ## What this is
 
 A DS-era **creature-companion RPG that gamifies real-life healthy behavior** —
