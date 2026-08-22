@@ -67,7 +67,9 @@ const FRESH = {
   dex: {},
   modules: {},
   history: {},
-  settings: { muted: false, bgmMuted: false, units: 'lb' },
+  // 'stick' by default: crossing a map one deliberate tap per square is the
+  // single most tiring thing about the overworld.
+  settings: { muted: false, bgmMuted: false, units: 'lb', control: 'stick' },
   meta: { createdAt: today(), lastPlayedDate: today() },
 };
 

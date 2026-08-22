@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { Screen, Window, PixelText, PixelButton } from '../components';
+import { Screen, Window, PixelText, PixelButton, CONTROL_MODES } from '../components';
 import { palette, space } from '../theme';
 import { useGame, wipeSave } from '../state';
 import { useNav } from './navContext';
@@ -74,6 +74,22 @@ export default function OptionsScreen() {
       <Window tone="dark" pad={16}>
         <Toggle label="Sound FX" value={sfxOn} onToggle={toggleSfx} />
         <Toggle label="Music" value={bgmOn} onToggle={toggleBgm} />
+        <PixelText size="tiny" color={palette.secondary} style={{ marginTop: space.md }}>Movement</PixelText>
+        <View style={{ flexDirection: 'row', marginTop: 4 }}>
+          {CONTROL_MODES.map((m, i) => (
+            <PixelButton
+              key={m.id}
+              label={m.name}
+              size="small"
+              tone={(state.settings.control || 'stick') === m.id ? 'gold' : 'dark'}
+              style={{ flex: 1, marginLeft: i ? 4 : 0 }}
+              onPress={() => dispatch({ type: 'SET_SETTING', payload: { key: 'control', value: m.id } })}
+            />
+          ))}
+        </View>
+        <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 5, lineHeight: 13 }}>
+          {(CONTROL_MODES.find((m) => m.id === (state.settings.control || 'stick')) || CONTROL_MODES[0]).blurb}
+        </PixelText>
         <UnitPicker
           value={state.settings.units || 'lb'}
           onPick={(u) => {

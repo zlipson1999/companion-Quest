@@ -70,20 +70,30 @@ const BLOCKED = new Set([
 // Walking into a station is how you use it. A blocked tile that answers a bump
 // gives the room its affordances: the equipment IS the menu, so the Hall does
 // not need a wall of buttons explaining itself.
+// The Hall's equipment IS the menu. Each piece opens the system it stands for,
+// so the room teaches by being walked around rather than by listing itself.
+//
+// The cardio deck is the one that needed a distinction rather than a link.
+// Treadmill and rower run Route's machinery in `treadmill` mode: the same
+// miles, the same milestones, the same progression — and nothing that stops
+// you. Encounters and trail challenges belong to Route 1, outdoors.
 const INTERACTIONS = {
-  R: { screen: 'workout', label: 'Barbell rack — train Resolve' },
-  U: { screen: 'workout', label: 'Pull-up bar — train Resolve' },
-  j: { screen: 'workout', label: 'Kettlebells — train Resolve' },
-  q: { screen: 'route', label: 'Rower — log real distance' },
+  R: { screen: 'workout', label: 'Barbell rack — pick a session, or build one' },
+  U: { screen: 'workout', label: 'Pull-up bar — pick a session, or build one' },
+  j: { screen: 'workout', label: 'Kettlebells — pick a session, or build one' },
+  b: { screen: 'forge', label: 'Dumbbell rack — build your own plan' },
+  K: { screen: 'forge', label: 'Cable machine — build your own plan' },
+  t: { screen: 'treadmill', params: { mode: 'treadmill' }, label: 'Treadmill — cardio, no interruptions' },
+  q: { screen: 'treadmill', params: { mode: 'treadmill' }, label: 'Rower — cardio, no interruptions' },
   L: { screen: 'bag', label: 'Lockers — your supplies' },
   N: { screen: 'summary', label: 'Reception — your record so far' },
-  b: { screen: 'forge', label: 'Dumbbell rack — Workout Forge' },
-  K: { screen: 'forge', label: 'Cable machine — build a plan' },
-  t: { screen: 'route', label: 'Treadmill — head out on the trail' },
   B: { screen: 'rest', label: 'Bench — rest and recover' },
   w: { screen: 'habits', label: 'Water station — daily habits' },
   M: { screen: 'formcheck', label: 'Mirror — form check' },
-  C: { screen: 'coach', label: 'Coach Maple' },
+  // Resolved in GymScreen: before you have a companion this is where the goal
+  // conversation happens; afterwards it is the coach chat. Sending an existing
+  // save to the goal screen would re-run START_GAME and replace the party.
+  C: { screen: 'coach', label: 'Coach Maple — talk it through' },
 };
 
 export function interactionForCode(code) {

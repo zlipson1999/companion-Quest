@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
-import { Screen, DualPane, TileMap, Dpad, Window, PixelText, DialogueBox } from '../components';
+import { Screen, DualPane, TileMap, MoveControl, Window, PixelText, DialogueBox } from '../components';
 import { palette, screen, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
@@ -83,7 +83,7 @@ export default function HomeRestScreen() {
     <Screen padTop={false}>
       <DualPane
         top={<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#302841' }}><TileMap map={floor} player={player} tileSize={tileSize} /></View>}
-        bottom={sleeping ? <View style={{ flex: 1, justifyContent: 'flex-end', padding: space.md }}><DialogueBox lines={lines} onComplete={() => navigate('hub')} /></View> : <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: space.md }}><Dpad onMove={move} /><Window tone="dark" pad={12} style={{ flex: 1, marginLeft: space.md }}><PixelText size="small" color={palette.secondary}>{floor.name}</PixelText><PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 10, lineHeight: 15 }}>{floor.hint}</PixelText></Window></View>}
+        bottom={sleeping ? <View style={{ flex: 1, justifyContent: 'flex-end', padding: space.md }}><DialogueBox lines={lines} onComplete={() => navigate('hub')} /></View> : <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: space.md }}><MoveControl onMove={move} /><Window tone="dark" pad={12} style={{ flex: 1, marginLeft: space.md }}><PixelText size="small" color={palette.secondary}>{floor.name}</PixelText><PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 10, lineHeight: 15 }}>{floor.hint}</PixelText></Window></View>}
       />
     </Screen>
   );

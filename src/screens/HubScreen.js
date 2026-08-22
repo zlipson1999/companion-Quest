@@ -4,7 +4,7 @@
 
 import React, { useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Screen, DualPane, TileMap, Dpad, Window, Menu, PixelText, PixelSprite, ObjectiveRibbon } from '../components';
+import { Screen, DualPane, TileMap, MoveControl, Window, Menu, PixelText, PixelSprite, ObjectiveRibbon } from '../components';
 import { palette, space, screen, tokens } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
@@ -85,10 +85,7 @@ export default function HubScreen() {
   const bottom = (
     <View style={{ flex: 1, flexDirection: 'row', padding: space.sm }}>
       <View style={{ justifyContent: 'center', paddingRight: space.sm }}>
-        <Dpad onMove={move} />
-        <PixelText size="tiny" color={palette.windowTextDim} align="center" style={{ marginTop: 6, lineHeight: 12 }}>
-          walk to a door
-        </PixelText>
+        <MoveControl onMove={move} hint="walk to a door" />
       </View>
       {/* The menu grows as modules are installed; it must scroll rather than
           spill out of the fixed lower pane on a small screen. */}
@@ -97,19 +94,19 @@ export default function HubScreen() {
           tone="dark"
           pad={10}
           columns={2}
+          // Places, not a system index.
+          //
+          // This used to list fourteen destinations, which meant the Training
+          // Hall and its equipment were decoration — everything the room stands
+          // for was one tap away down here. Training, the Forge, habits, your
+          // bag, your record and the coach all live on the gym floor now and
+          // are reached by walking to the thing that does them. What is left is
+          // the places you go and the two lines that are not places at all.
           options={[
-            { label: 'Route 1', value: 'route', sublabel: 'real miles' },
-            { label: 'Train', value: 'workout', sublabel: 'quick sets' },
-            { label: 'The Hall', value: 'gym', sublabel: 'gym floor' },
-            { label: 'Forge', value: 'forge', sublabel: 'your plans' },
+            { label: 'Route 1', value: 'route', sublabel: 'real miles, encounters' },
+            { label: 'The Hall', value: 'gym', sublabel: 'train, cardio, coach' },
             { label: 'Go Home', value: 'rest', sublabel: 'sleep upstairs' },
             { label: 'Team', value: 'party', sublabel: 'companions' },
-            { label: 'Habits', value: 'habits', sublabel: 'daily life' },
-            { label: 'Coach', value: 'coach', sublabel: 'AI chat' },
-            { label: 'Bag', value: 'bag', sublabel: 'items' },
-            { label: 'Status', value: 'summary', sublabel: 'stats' },
-            { label: 'Week', value: 'week', sublabel: 'rollup' },
-            { label: 'Index', value: 'index', sublabel: 'creatures' },
             { label: 'Options', value: 'options', sublabel: 'settings' },
             { label: 'Title', value: 'title', sublabel: 'menu' },
           ]}

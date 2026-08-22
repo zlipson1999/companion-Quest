@@ -8,15 +8,16 @@
 
 import React, { useRef, useState } from 'react';
 import { View } from 'react-native';
-import { Screen, DualPane, TileMap, Dpad, PixelText, FieldCard, TrailAction, ObjectiveRibbon } from '../components';
+import { Screen, DualPane, TileMap, MoveControl, PixelText, FieldCard, TrailAction, ObjectiveRibbon } from '../components';
 import { palette, space, screen, tokens } from '../theme';
-import { useGame } from '../state';
+import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { GYM, isWalkable, tileAt, triggerForCode, interactionForCode } from '../data/maps';
 
 export default function GymScreen() {
   const { state } = useGame();
+  const companion = useCompanion();
   const { navigate } = useNav();
 
   const [player, setPlayer] = useState({ x: GYM.spawn.x, y: GYM.spawn.y, facing: 'up' });
@@ -42,7 +43,11 @@ export default function GymScreen() {
       setFacingStation(station);
       if (station) {
         playSfx('confirm');
-        setTimeout(() => navigate(station.screen), 140);
+        // Coach is the goal conversation until you have a companion, and the
+        // chat after that. Re-running the goal screen on a live save would
+        // dispatch START_GAME and replace the party.
+        const target = code === 'C' && !companion ? 'goal' : station.screen;
+        setTimeout(() => navigate(target, station.params || {}), 140);
       }
       return;
     }
@@ -76,16 +81,13 @@ export default function GymScreen() {
   const bottom = (
     <View style={{ flex: 1, flexDirection: 'row', padding: space.sm }}>
       <View style={{ justifyContent: 'center', paddingRight: space.sm }}>
-        <Dpad onMove={move} />
-        <PixelText size="tiny" color={palette.windowTextDim} align="center" style={{ marginTop: 6, lineHeight: 12 }}>
-          walk into a station
-        </PixelText>
+        <MoveControl onMove={move} hint="walk into a station" />
       </View>
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <FieldCard
           title="In this room"
           accent={tokens.growth}
-          caption="Barbell rack trains Resolve. Dumbbells and the cable machine open the Forge. The treadmill heads out to the trail. The bench is recovery, the cooler is your daily habits, and the mirror is form check."
+          caption="Racks and kettlebells pick a session or build one. Dumbbells and the cable machine go straight to the Forge. Treadmill and rower are cardio with nothing to interrupt you — Route 1 outside is where encounters happen. Coach Maple talks goals, the bench is recovery, the cooler is habits, lockers are your bag, reception is your record, and the mirror is form check."
         />
         <TrailAction
           label="Back to Maple Lane"

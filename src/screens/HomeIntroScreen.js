@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { View } from 'react-native';
-import { Screen, DualPane, TileMap, Dpad, Window, PixelText } from '../components';
+import { Screen, DualPane, TileMap, MoveControl, Window, PixelText } from '../components';
 import { palette, screen, space } from '../theme';
 import { useNav } from './navContext';
 import { isWalkable } from '../data/maps';
@@ -81,7 +81,7 @@ export default function HomeIntroScreen() {
     <Screen padTop={false}>
       <DualPane
         top={<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.grassDark }}><TileMap map={area} player={player} tileSize={tileSize} /></View>}
-        bottom={<View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: space.md }}><Dpad onMove={move} /><Window tone="dark" pad={12} style={{ flex: 1, marginLeft: space.md }}><PixelText size="small" color={palette.secondary}>{area.name}</PixelText><PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 10, lineHeight: 15 }}>{area.hint}</PixelText></Window></View>}
+        bottom={<View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: space.md }}><MoveControl onMove={move} /><Window tone="dark" pad={12} style={{ flex: 1, marginLeft: space.md }}><PixelText size="small" color={palette.secondary}>{area.name}</PixelText><PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 10, lineHeight: 15 }}>{area.hint}</PixelText></Window></View>}
       />
     </Screen>
   );

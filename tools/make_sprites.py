@@ -3012,6 +3012,22 @@ def prop_flowers():
     return c
 
 
+def prop_eave():
+    """The overhang at the bottom of a roof, drawn onto the wall below it.
+
+    Roofs used to meet their walls on a flat seam, so a building read as two
+    coloured rectangles stacked up rather than as a thing with a front and a
+    top. An eave gives the roof thickness: a lit fascia board, the dark
+    underside of the projection, and the shadow it throws down the wall.
+    """
+    c = _prop('couch')
+    c.rect(0, 0, 15, 0, 'leaf', 0.78)        # lit top lip of the fascia
+    c.rect(0, 1, 15, 2, 'leaf', 0.50)        # fascia face
+    c.rect(0, 3, 15, 3, 'leaf', 0.22)        # underside of the projection
+    c.rect(0, 4, 15, 4, 'ink', 0)            # shadow it throws on the wall
+    return c
+
+
 def prop_bookshelf():
     c = _prop('couch')
     c.rect(1, 0, 14, 15, 'body', 0.26)                       # carcass
@@ -3477,7 +3493,7 @@ def build_all():
     add('prop_table', prop_table()); add('prop_counter', prop_counter())
     add('prop_fridge', prop_fridge()); add('prop_stairs', prop_stairs())
     add('prop_plant', prop_plant()); add('prop_bookshelf', prop_bookshelf())
-    add('prop_flowers', prop_flowers())
+    add('prop_flowers', prop_flowers()); add('prop_eave', prop_eave())
     add('prop_lockers', prop_lockers()); add('prop_pullup_bar', prop_pullup_bar())
     add('prop_kettlebells', prop_kettlebells()); add('prop_rower', prop_rower())
     add('prop_reception', prop_reception())

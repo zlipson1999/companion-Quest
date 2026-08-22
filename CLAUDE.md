@@ -316,6 +316,26 @@ bar, rower, kettlebells, lockers, reception and more racks. Props are
 transparent overlays over the room's floor — see `docs/ART_KIT.md`. The bed is
 solid, so `HomeRestScreen` sleeps when you walk *into* it rather than onto it.
 
+**The Hall is the menu, and cardio has two forms.** The hub menu listed
+fourteen destinations, which made the Training Hall decoration — everything it
+stands for was one tap away. It lists six places now; training, the Forge,
+habits, bag, record and coach are reached by walking into the equipment that
+does them. The one distinction that needed more than a link is cardio:
+
+- `route` — Route 1, outdoors. Trail markers reveal encounters and challenges.
+- `treadmill` — the Hall's deck. Same `RouteScreen`, same miles, same
+  milestones, same progression, and **nothing that stops you**: no encounters,
+  no companion alongside, no GPS toggle, and an indoor scene on the gym floor.
+
+Coach Maple resolves by state — the goal conversation before you have a
+companion, the chat after. Sending a live save to the goal screen would re-run
+`START_GAME` and replace the party.
+
+**Movement.** `MoveControl` picks between a thumb stick (default) and the D-pad
+from `settings.control`. Crossing a map one deliberate tap per square was the
+most tiring thing about the overworld; the stick reports a direction and repeats
+it on a timer, so movement stays grid-stepped underneath.
+
 **Training Hall.** The gym door used to jump straight to the exercise list. It
 is a room now (`GYM` in `src/data/maps.js`, `src/screens/GymScreen.js`) with
 barbell and dumbbell racks, cable machines, a treadmill, bench, mirrors, water

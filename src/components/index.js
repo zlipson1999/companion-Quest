@@ -20,3 +20,6 @@ export { default as StatusPlate } from './StatusPlate';
 export { default as FieldCard } from './FieldCard';
 export { default as TrailAction } from './TrailAction';
 export { default as ObjectiveRibbon } from './ObjectiveRibbon';
+export { default as Joystick } from './Joystick';
+export { default as MoveControl, CONTROL_MODES } from './MoveControl';
+export { default as TileImage } from './TileImage';

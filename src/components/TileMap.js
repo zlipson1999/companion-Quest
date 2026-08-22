@@ -31,6 +31,12 @@ const FIELD_CODES = {
 // says which it wants. A house using the outdoor wall read as a castle.
 const WALL_FIELD_BY_MAP = { home: 'tile_home_wall', gym: 'tile_gym_block' };
 
+// A roof needs somewhere to overhang. Any wall directly under one gets an eave
+// drawn across its top: without it a building is two coloured rectangles
+// stacked up rather than a thing with a front and a top.
+const ROOF_CODES = new Set(['h', 'y']);
+const BUILDING_WALL_CODES = new Set(['H', 'Y', 'D', 'd']);
+
 // Tile code -> sprite key. Animated tiles list their frames.
 const TILE_SPRITES = {
   '.': ['tile_grass', 'tile_grass_b'],
@@ -221,6 +227,10 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
     layers = [{ key: keys ? keys[variantFor(x, y, keys.length)] : ground }];
   }
 
+  if (BUILDING_WALL_CODES.has(code) && ROOF_CODES.has(codeAt(map, x, y - 1))) {
+    layers.push({ key: 'prop_eave' });
+  }
+
   // Contact shading, only onto ground the player can see past — a wall does not
   // need shade painted over its own face.
   const shadable =
@@ -235,9 +245,14 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
 }
 
 export function Tile({ code, s, frame, x, y, floor, map, wallField }) {
+  // Derive from the map when the caller has not said. RouteScreen renders Tile
+  // directly rather than through TileMap, so without this its indoor cardio
+  // scene came out standing on grass.
+  const ground = floor || (map && FIELD_BY_MAP[map.id]);
+  const walls = wallField || (map && WALL_FIELD_BY_MAP[map.id]);
   const layers = map
-    ? layersFor(map, code, x, y, frame, floor, wallField)
-    : [{ key: groundKey(floor || GROUND_FIELD, x, y) }];
+    ? layersFor(map, code, x, y, frame, ground, walls)
+    : [{ key: groundKey(ground || GROUND_FIELD, x, y) }];
   if (!hasTile(layers[0] && layers[0].key)) {
     return <View style={{ width: s, height: s, backgroundColor: palette.grass }} />;
   }

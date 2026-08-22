@@ -123,6 +123,17 @@ export default function WorkoutScreen() {
           </View>
         ))}
       </ScrollView>
+      {/* The weights offer both: take one off the shelf, or write your own.
+          Sending the player back to the hub to find the Forge made the rack a
+          dead end for half of what it is meant to stand for. */}
+      <PixelButton
+        label="Build Your Own (Forge)"
+        tone="dark"
+        sound="confirm"
+        style={{ marginBottom: space.sm }}
+        onPress={() => navigate('forge')}
+      />
+
       <PixelButton label="Back to Town" tone="plain" sound="cancel" onPress={() => navigate('hub')} style={{ marginTop: space.sm }} />
     </Screen>
   );
