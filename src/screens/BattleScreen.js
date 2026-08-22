@@ -224,6 +224,8 @@ export default function BattleScreen({ params }) {
 
   const confirmMove = () => {
     const move = getMove(selectedMove);
+    // You just did the exercise. Record it before anything else happens to it.
+    dispatch({ type: 'LOG_EXERCISE', payload: { kind: move.kind, target: move.target } });
     const dmg = move.power + Math.floor((companion.level - 1) * 2);
     const newWildHp = Math.max(0, wildHp - dmg);
     // Choreography: the companion steps INTO the strike, and only then does the
@@ -251,7 +253,7 @@ export default function BattleScreen({ params }) {
         );
       } else {
         const afterXp = companion.xp + target.xp;
-        dispatch({ type: 'WIN_BATTLE', payload: { xp: target.xp, bond: target.bond, targetId: target.targetId, companionHp } });
+        dispatch({ type: 'WIN_BATTLE', payload: { xp: target.xp, bond: target.bond, targetId: target.targetId, companionHp, spar: !!params.opponent } });
         playSfx('victory');
         say(victoryLines(companion.creature.name, wild.name, target.xp), () => runLevelEvolveThen(beforeLevel, afterXp, finish));
       }

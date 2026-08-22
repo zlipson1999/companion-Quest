@@ -42,9 +42,13 @@ function Readout({ label, value, unit, big, live }) {
 
 export default function CardioConsole({
   station = 'treadmill',
+  // What the fascia calls itself. The trail is not a treadmill.
+  title,
   seconds = 0,
   miles = 0,
   steps = 0,
+  reps = 0,
+  holdSec = 0,
   bodyWeightLb,
   moving = false,
   note,
@@ -53,6 +57,9 @@ export default function CardioConsole({
   // offers these; without them here the deck is a console that can never move,
   // which is worse than no console.
   onInject,
+  // Anything the place adds of its own — the trail hangs its milestone and
+  // encounter meters here.
+  children,
   style,
 }) {
   const pace = paceFor(miles, seconds);
@@ -73,7 +80,7 @@ export default function CardioConsole({
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ letterSpacing: 1 }}>
-          {station === 'rower' ? 'ROWER' : 'TREADMILL'}
+          {title || (station === 'rower' ? 'ROWER' : 'TREADMILL')}
         </PixelText>
         {/* The one moving part of a console you are not touching. */}
         <PixelText size="tiny" color={moving ? palette.secondary : tokens.disabledInk}>
@@ -91,6 +98,10 @@ export default function CardioConsole({
         <Readout label="PACE" value={formatPace(pace)} unit="/mi" />
         <Readout label="KCAL" value={String(Math.round(kcal))} />
         <Readout label="STEPS" value={steps.toLocaleString()} />
+        {/* What you did that was not walking. Challenges on the trail are real
+            sets of real exercises, and they used to pay their damage and then
+            disappear without being counted anywhere. */}
+        <Readout label="REPS" value={holdSec > 0 && reps === 0 ? `${holdSec}s` : String(reps)} />
       </View>
 
       {/* Which of these the machine actually knows. */}
@@ -119,18 +130,24 @@ export default function CardioConsole({
         </View>
       ) : null}
 
+      {children}
+
       {note ? (
         <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6, lineHeight: 13 }}>
           {note}
         </PixelText>
       ) : null}
 
-      <TrailAction
-        label={station === 'rower' ? 'Off the rower' : 'Step off the deck'}
-        tone="primary"
-        style={{ marginTop: space.sm }}
-        onPress={onStop}
-      />
+      {/* Outdoors there is no getting off a trail, so the trail passes no
+          onStop and keeps its own way back. */}
+      {onStop ? (
+        <TrailAction
+          label={station === 'rower' ? 'Off the rower' : 'Step off the deck'}
+          tone="primary"
+          style={{ marginTop: space.sm }}
+          onPress={onStop}
+        />
+      ) : null}
     </View>
   );
 }

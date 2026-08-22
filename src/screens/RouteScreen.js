@@ -14,7 +14,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Modal, Pressable, ScrollView, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Screen, Window, ProgressBar, PixelText, PixelSprite, PixelButton, TrailAction, Tile, MenuButton, TOP_INSET } from '../components';
+import { Screen, Window, ProgressBar, PixelText, PixelSprite, PixelButton, TrailAction, CardioConsole, Tile, MenuButton, TOP_INSET } from '../components';
 import { palette, space, screen, tokens } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
@@ -26,6 +26,8 @@ import { outfitPalette } from '../data/outfits';
 import { playerSprite } from '../data/characters';
 import { routeCheer, pickupLine } from '../coach';
 import useCardio from './useCardio';
+import { forgetSpot, recallSpot, rememberSpot } from './placeMemory';
+import { DEFAULT_BODY_WEIGHT_LB } from '../state/cardioMaths';
 
 // The trail itself.
 //
@@ -128,6 +130,35 @@ export default function RouteScreen({ params = {} }) {
   // trail was drawing the standing one, so a scrolling scene carried a
   // motionless figure across it.
   const [stride, setStride] = useState(0);
+  // This walk, as opposed to every walk you have ever taken.
+  //
+  // Taken from the LIFETIME stats rather than from the pedometer's own
+  // counters, because a challenge unmounts this screen and useDistance
+  // restarts from zero with it. The baseline is parked in placeMemory so a
+  // battle in the middle of a walk does not end the walk.
+  const session = useRef(
+    recallSpot('route:session', null) || {
+      miles: state.stats.distanceMi,
+      steps: state.stats.totalSteps,
+      reps: state.stats.reps,
+      holdSec: state.stats.holdSec,
+      startedAt: Date.now(),
+    }
+  );
+  useEffect(() => {
+    rememberSpot('route:session', session.current);
+  }, []);
+
+  const [seconds, setSeconds] = useState(
+    Math.floor((Date.now() - session.current.startedAt) / 1000)
+  );
+  useEffect(() => {
+    const t = setInterval(
+      () => setSeconds(Math.floor((Date.now() - session.current.startedAt) / 1000)),
+      1000
+    );
+    return () => clearInterval(t);
+  }, []);
 
   const encMiRef = useRef(0);
   const encThreshRef = useRef(pacing.encMin + Math.random() * (pacing.encMax - pacing.encMin));
@@ -154,6 +185,10 @@ export default function RouteScreen({ params = {} }) {
   });
 
   const running = moving || dist.running;
+  const sessionMiles = Math.max(0, state.stats.distanceMi - session.current.miles);
+  const sessionSteps = Math.max(0, state.stats.totalSteps - session.current.steps);
+  const sessionReps = Math.max(0, state.stats.reps - session.current.reps);
+  const sessionHold = Math.max(0, state.stats.holdSec - session.current.holdSec);
 
   useEffect(() => {
     if (!running) {
@@ -182,26 +217,34 @@ export default function RouteScreen({ params = {} }) {
     }
   };
 
+  // The same console the cardio deck runs. The measurement is identical out
+  // here — real distance, real time — so there is no reason the trail should
+  // report it in a different, smaller vocabulary. What the trail adds is the
+  // two things only it has: how close the next milestone is, and how close the
+  // next trail sign is.
   const trailPanel = (
-    <Window tone="dark" pad={8}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <PixelText size="tiny" color={palette.secondary}>
-          {pacing.trail}
+    <CardioConsole
+      title={pacing.trail.toUpperCase()}
+      seconds={seconds}
+      miles={sessionMiles}
+      steps={sessionSteps}
+      reps={sessionReps}
+      holdSec={sessionHold}
+      bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}
+      moving={running}
+      onInject={dist.showInjector ? dist.injectSteps : null}
+    >
+      {dist.running ? (
+        <PixelText size="tiny" color={palette.hpHigh} style={{ marginTop: space.sm }}>
+          ● GPS RUN
         </PixelText>
-        {dist.running ? (
-          <PixelText size="tiny" color={palette.hpHigh}>
-            ● GPS RUN
-          </PixelText>
-        ) : null}
-      </View>
-      <ProgressBar value={state.stats.routeMi} max={pacing.milestoneMi} color={palette.hpHigh} height={12} label="Next milestone" showText={false} style={{ marginTop: 6 }} />
-      {(
-        <ProgressBar value={encMeter} max={1} color={palette.accent} height={8} label="Trail signs" showText={false} style={{ marginTop: 6 }} />
-      )}
+      ) : null}
+      <ProgressBar value={state.stats.routeMi} max={pacing.milestoneMi} color={palette.hpHigh} height={12} label="Next milestone" showText={false} style={{ marginTop: space.sm }} />
+      <ProgressBar value={encMeter} max={1} color={palette.accent} height={8} label="Trail signs" showText={false} style={{ marginTop: 6 }} />
       <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6 }}>
-        {formatMiles(state.stats.distanceMi)} · {state.stats.milestonesReached} milestones
+        {formatMiles(state.stats.distanceMi)} lifetime · {state.stats.milestonesReached} milestones
       </PixelText>
-    </Window>
+    </CardioConsole>
   );
 
   // Everything that explains the step counter rather than showing the trail.
@@ -327,6 +370,7 @@ export default function RouteScreen({ params = {} }) {
               onPress={() => {
                 setSheetOpen(false);
                 if (dist.running) dist.stopRun();
+                forgetSpot('route:session');
                 navigate('hub');
               }}
             />

@@ -11,7 +11,7 @@ import { WorldScreen, CompanionStatus, CardioConsole } from '../components';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
-import { GYM, isWalkable, tileAt, triggerForCode, interactionForCode } from '../data/maps';
+import { GYM, mapWithout, isWalkable, tileAt, triggerForCode, interactionForCode } from '../data/maps';
 import { recallSpot, rememberSpot } from './placeMemory';
 import { useKeepAwake } from 'expo-keep-awake';
 import useCardio from './useCardio';
@@ -35,13 +35,16 @@ const MENU = [
 
 export default function GymScreen() {
   const { state } = useGame();
+  // Rowan is here for the push-up contest and then he has done his session and
+  // gone. Coach stays — she keeps the place.
+  const map = state.meta.sparDone ? mapWithout(GYM, ['A']) : GYM;
   const companion = useCompanion();
   const { navigate } = useNav();
 
   // Walk into a rack, write a session, come back — and you were at the door
   // again, halfway across the room from the thing you had just used.
   const [player, setPlayer] = useState(() =>
-    recallSpot('gym', { x: GYM.spawn.x, y: GYM.spawn.y, facing: 'up' }, (s) => isWalkable(GYM, s.x, s.y))
+    recallSpot('gym', { x: GYM.spawn.x, y: GYM.spawn.y, facing: 'up' }, (s) => isWalkable(map, s.x, s.y))
   );
   const [facingStation, setFacingStation] = useState(null);
   // Standing on a machine. Cardio used to be a whole separate screen that took
@@ -76,7 +79,12 @@ export default function GymScreen() {
     setCardio({
       station: kind,
       from: { ...playerRef.current },
-      base: { miles: dist.miles, steps: dist.steps },
+      base: {
+        miles: state.stats.distanceMi,
+        steps: state.stats.totalSteps,
+        reps: state.stats.reps,
+        holdSec: state.stats.holdSec,
+      },
     });
     // Walking onto the machine IS the animation: the same tween every other
     // step in this room uses, so the character steps up rather than cutting to
@@ -98,13 +106,13 @@ export default function GymScreen() {
     const { x, y } = playerRef.current;
     const nx = dir === 'left' ? x - 1 : dir === 'right' ? x + 1 : x;
     const ny = dir === 'up' ? y - 1 : dir === 'down' ? y + 1 : y;
-    const code = tileAt(GYM, nx, ny);
+    const code = tileAt(map, nx, ny);
 
-    if (!isWalkable(GYM, nx, ny)) {
+    if (!isWalkable(map, nx, ny)) {
       apply({ x, y, facing: dir });
       // Bumping a station is how you use it, so a blocked tile still has to
       // answer. Anything else in the room is just a wall.
-      const station = interactionForCode(code, GYM);
+      const station = interactionForCode(code, map);
       setFacingStation(station);
       if (station && station.cardio) {
         stepOn(code, { x: nx, y: ny }, station.cardio);
@@ -130,12 +138,14 @@ export default function GymScreen() {
     }
   };
 
-  const sessionMiles = cardio ? Math.max(0, dist.miles - cardio.base.miles) : 0;
-  const sessionSteps = cardio ? Math.max(0, dist.steps - cardio.base.steps) : 0;
+  const sessionMiles = cardio ? Math.max(0, state.stats.distanceMi - cardio.base.miles) : 0;
+  const sessionSteps = cardio ? Math.max(0, state.stats.totalSteps - cardio.base.steps) : 0;
+  const sessionReps = cardio ? Math.max(0, state.stats.reps - cardio.base.reps) : 0;
+  const sessionHold = cardio ? Math.max(0, state.stats.holdSec - cardio.base.holdSec) : 0;
 
   return (
     <WorldScreen
-      map={GYM}
+      map={map}
       player={player}
       onMove={move}
       place="Quest Fitness"
@@ -158,6 +168,8 @@ export default function GymScreen() {
               seconds={seconds}
               miles={sessionMiles}
               steps={sessionSteps}
+              reps={sessionReps}
+              holdSec={sessionHold}
               bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}
               moving={moving}
               note={note}

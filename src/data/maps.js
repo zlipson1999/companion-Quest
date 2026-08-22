@@ -286,6 +286,22 @@ const INTERACTIONS = {
 // A map may override what its own furniture does. The bookshelf in a kitchen is
 // a cookbook and the one in a bedroom is not, so the meaning belongs to the
 // room rather than to the tile code.
+// A map with some of its people taken out of it.
+//
+// Rowan is mid-session with Coach when you first walk in, and the push-up
+// contest is that scene. Afterwards he has finished and gone home — leaving him
+// standing on the mats forever made the one staged moment in the room read as
+// furniture. Returns the SAME object when there is nothing to remove, so the
+// common case allocates nothing and TileMap's memo does not churn.
+export function mapWithout(map, codes) {
+  const drop = new Set(codes);
+  if (!map.grid.some((row) => [...row].some((c) => drop.has(c)))) return map;
+  return {
+    ...map,
+    grid: map.grid.map((row) => [...row].map((c) => (drop.has(c) ? '.' : c)).join('')),
+  };
+}
+
 export function interactionForCode(code, map) {
   if (map && map.interactions && map.interactions[code]) return map.interactions[code];
   return INTERACTIONS[code] || null;

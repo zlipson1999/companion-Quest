@@ -67,6 +67,9 @@ const FRESH = {
     itemsCollected: 0,
     habitLogs: 0,
     habitGoalsHit: 0,
+    // Real exercise done in challenges: repetitions, and seconds held.
+    reps: 0,
+    holdSec: 0,
     daysActive: 1,
     streak: 1,
   },
@@ -79,7 +82,8 @@ const FRESH = {
   // bodyWeightLb is stored in pounds whatever the display unit is, so the
   // number never has to be reinterpreted when someone switches units.
   settings: { muted: false, bgmMuted: false, units: 'lb', control: 'stick', bodyWeightLb: DEFAULT_BODY_WEIGHT_LB },
-  meta: { createdAt: today(), lastPlayedDate: today() },
+  // Rowan is only in the gym until the push-up contest is done.
+  meta: { createdAt: today(), lastPlayedDate: today(), sparDone: false },
 };
 
 function clamp(n, lo, hi) {
@@ -370,7 +374,7 @@ function reducer(state, action) {
       return { ...state, activeIndex: clamp(action.payload.index, 0, state.party.length - 1) };
 
     case 'WIN_BATTLE': {
-      const { xp = 0, bond = 0, targetId, companionHp } = action.payload;
+      const { xp = 0, bond = 0, targetId, companionHp, spar } = action.payload;
       const next = updateActive(state, (m) => ({
         ...applyEffect(m, { evo: pointsFor('battle') }),
         xp: m.xp + xp,
@@ -388,6 +392,10 @@ function reducer(state, action) {
           battlesWon: state.stats.battlesWon + 1,
         },
         dex: { ...state.dex, [targetId]: state.dex[targetId] || 'seen' },
+        // Winning the spar is the end of that scene. A person is not a
+        // creature, so this does not touch the Index — it just means Rowan has
+        // finished his session and gone.
+        meta: spar ? { ...state.meta, sparDone: true } : state.meta,
       };
     }
 
@@ -456,6 +464,25 @@ function reducer(state, action) {
       if (day && day.rested) return state;
       const next = updateActive(state, (m) => applyEffect(m, { bond: 6, heal: 40 }));
       return { ...next, history: remember(state, { rested: true, bond: 6 }) };
+    }
+
+    // A challenge move IS an exercise you actually did. It paid damage and XP
+    // and then vanished, so nothing in the app could ever tell you how many
+    // push-ups you had done — the one number a fitness game should never lose.
+    case 'LOG_EXERCISE': {
+      const { kind, target = 0 } = action.payload || {};
+      if (target <= 0) return state;
+      const reps = kind === 'hold' ? 0 : target;
+      const holdSec = kind === 'hold' ? target : 0;
+      return {
+        ...state,
+        history: remember(state, { reps, holdSec }),
+        stats: {
+          ...state.stats,
+          reps: state.stats.reps + reps,
+          holdSec: state.stats.holdSec + holdSec,
+        },
+      };
     }
 
     case 'COMPLETE_WORKOUT': {

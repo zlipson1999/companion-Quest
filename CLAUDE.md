@@ -729,6 +729,36 @@ from the router. The runner's legs move on the trail either way: `playerSprite`
 has always had walk frames per facing and the trail was drawing the standing
 one, so a scrolling scene carried a motionless figure across it.
 
+## Phase 13 — DONE: Rowan goes home, and the console counts what you did
+
+**Rowan only stays for his scene.** He is mid-session with Coach when you first
+walk in, and the push-up contest IS that scene — leaving him standing on the
+mats forever afterwards turned the one staged moment in the room into
+furniture. Winning the spar sets `meta.sparDone`, and `mapWithout(GYM, ['A'])`
+takes him out. Coach stays; she keeps the place. `mapWithout` returns the SAME
+object when there is nothing to remove, so the ordinary case allocates nothing.
+
+**The trail runs the same console the deck does.** The measurement outdoors is
+identical — real distance, real time — so there was no reason for Route 1 to
+report it in a smaller, different vocabulary. `CardioConsole` takes a `title`
+(the trail names itself) and `children` (the trail hangs its milestone and
+trail-sign meters underneath), and the stop button is optional because outdoors
+there is no getting off a trail.
+
+**Exercises are counted.** A challenge move is a real set of a real exercise —
+ten push-ups, a twenty-second plank — and it used to pay its damage and then
+vanish, so nothing in the app could tell you how many push-ups you had ever
+done. That is the one number a fitness game should not lose. `LOG_EXERCISE`
+banks reps and held seconds into `stats` and into the daily history, and the
+console shows the session's REPS beside its distance.
+
+**A session survives a challenge**, which is what made the above worth doing. A
+battle unmounts the trail and `useDistance` restarts from zero with it, so the
+session baseline is taken from the LIFETIME stats (which persist) and parked in
+`placeMemory` across the round trip. Walk a fifth of a mile, get stopped by a
+Sludgewad, do ten push-ups, come back — the console still reads 0.20 mi, and
+now reads the reps too. "Back to Town" is what ends the walk.
+
 ## Phase 6 — ideas, not committed
 
 Reading / chores / social check-in modules; per-movement progression charts off
