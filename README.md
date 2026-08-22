@@ -53,7 +53,8 @@ src/
   screens/     28 screens + the Router (with a real back stack)
 assets/sfx/    generated 8-bit WAV SFX + looping chiptune tracks
 assets/tiles/  generated tile atlas + room lighting
-tools/         asset generators (make_sprites.py, make_audio.py)
+tools/         asset generators (make_sprites.py, make_audio.py), the three
+               reference-art converters, and check_docs.py
 ```
 
 ### Original assets are generated, not copied
@@ -69,11 +70,13 @@ tools/         asset generators (make_sprites.py, make_audio.py)
   from square/triangle/noise waves into WAVs in `assets/sfx/`. Seeded, so re-running
   it and diffing tells you whether the committed audio is what the code produces.
 
-Regenerate any time:
+Regenerate any time (the generators need Pillow; `make_audio.py` needs nothing):
 
 ```bash
+python3 -m pip install -r tools/requirements.txt
 python3 tools/make_sprites.py
 python3 tools/make_audio.py
+python3 tools/check_docs.py      # docs still agree with the code
 ```
 
 ## What's in this build

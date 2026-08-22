@@ -127,6 +127,40 @@ WORDS = {0: 'zero', 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five',
          11: 'eleven', 12: 'twelve', 13: 'thirteen', 14: 'fourteen'}
 
 
+def paired_source_checks():
+    """Things duplicated in two files that MUST stay byte-identical.
+
+    The coach proxy is a separate CommonJS process, deliberately outside the
+    Metro graph, so it cannot import the client's guardrail — it carries its own
+    copy of the jailbreak regex and the refusal line. Both had already drifted:
+    the server was missing a word boundary after "act as" (so it refused "exact
+    assessment" where the client did not), and its refusal said "my lane" where
+    the client says "in character".
+
+    Two hand-maintained copies of a security rule is how one ends up quietly
+    weaker than the other, so the difference is a build failure now.
+    """
+    server = read('server/index.js')
+    pairs = [
+        ('coach jailbreak regex',
+         first(r'const JAILBREAK =\n  (/.+/i);', read('src/coach/guardrail.js'), 'client regex'),
+         first(r'const JAILBREAK =\n  (/.+/i);', server, 'server regex')),
+        ('coach refusal line',
+         first(r'export const JAILBREAK_LINE =\n  "(.+)";', read('src/coach/persona.js'), 'client line'),
+         first(r'reply: "(Nice try!.+)",', server, 'server line')),
+    ]
+    bad = []
+    for label, client, srv in pairs:
+        good = client == srv
+        print(f"{'ok  ' if good else 'DRIFT'} {label:<30} "
+              f"{'client == server' if good else 'client != server'}")
+        if not good:
+            bad.append(label)
+            print(f'      client: {client}')
+            print(f'      server: {srv}')
+    return bad
+
+
 def main():
     bible, checks, other = build_checks()
     bad = []
@@ -141,14 +175,16 @@ def main():
         if not good:
             bad.append(label)
 
+    bad += paired_source_checks()
+
     print()
     if bad:
-        print(f'{len(bad)} documented figure(s) no longer match the code:')
+        print(f'{len(bad)} check(s) failed:')
         for b in bad:
             print(f'  - {b}')
         print('\nFix the doc (and the prose around the number, not just the digit).')
         return 1
-    print(f'The docs agree with the code on all {len(checks) + len(other)} checked figures.')
+    print(f'The docs agree with the code on all {len(checks) + len(other)} checked figures,\nand the coach guardrail matches on both sides.')
     return 0
 
 

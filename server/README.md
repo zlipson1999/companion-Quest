@@ -50,5 +50,23 @@ it tells you the coach server isn't connected.
 - **No medical advice:** injuries/medical concerns are referred to a
   professional.
 
-Endpoints: `POST /chat` (`{ messages, companionName, goalName }` → `{ reply }`),
-`GET /health`.
+## Endpoints
+
+`POST /chat`
+- **in** — `{ messages: [{ role, content }], companionName, goalName, context }`.
+  `context` is the compact factual brief about the player's own logged activity
+  (`src/coach/context.js`). It is fenced as DATA and length-capped; nothing in it
+  can change the rules.
+- **out** — `{ reply }`, plus `refused: true` when the server-side jailbreak
+  filter short-circuited (the client uses it to pick a sound), or
+  `truncated: true` when the model ran out of `max_tokens` before finishing.
+
+`GET /health` — `{ ok, model }`.
+
+## What this proxy does NOT do
+
+It keeps the key off the phone, and that is all it does. There is no auth, no
+rate limit, and `cors()` is wide open. On a public host it is an open relay to
+the key it exists to protect, so put it behind whatever your deployment gives you
+— an auth header, a rate limiter, or simply not exposing it publicly — before it
+leaves your machine.

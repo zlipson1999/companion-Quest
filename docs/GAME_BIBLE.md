@@ -127,6 +127,7 @@ npm install
 npx expo start                                   # Expo Go
 EXPO_OFFLINE=1 CI=1 npx expo export --platform android --output-dir /tmp/cq   # bundle check
 npx expo export --platform web --output-dir dist # web build
+python3 -m pip install -r tools/requirements.txt # Pillow, the only Python dep
 python3 tools/make_sprites.py                    # regenerate ALL art
 python3 tools/make_audio.py                      # regenerate ALL audio
 node --check server/index.js                     # server is outside Metro graph

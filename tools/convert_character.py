@@ -9,6 +9,19 @@ width x height box and a wider palette, and can crop one figure out of a
 multi-character lineup card.
 
 The committed PNG stays the visual source of truth; this only re-indexes it.
+
+The CLI defaults (--box 48x64, --colors 48) match NONE of the committed outputs,
+because every real invocation passed explicit values and nothing recorded them.
+Regenerating meant reverse-engineering the arguments out of the JSON dimensions,
+so here they are:
+
+    portraits   --box 64x128  --colors 44     (Coach Maple: --box 88x128)
+    walk poses  --box 26x48   --colors 26     (Coach Maple: --box 30x48)
+
+--colors is an upper bound, so the emitted palettes come out a little under it
+(portraits land at 37-41, walk poses at 21-24). The heights are what matter: a
+traced figure is tall and slim, and `data/characters.js` sizes them by HEIGHT for
+exactly that reason.
 """
 import argparse
 import json

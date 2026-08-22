@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Convert the authored 4x4 world atlas into traced runtime tile sprites.
 
-Two products per material. A single 16x16 tile is what an autotile mask
-composites against. A **field** is the same cell resolved at FIELD px and cut
-into FIELD/16 squared tiles by make_sprites, so the ground reads as one
+Two products per material. A single SIZE-square tile (32 px) is what an autotile
+mask composites against — 16 is the AUTHOR-space grid unit, and TILE_SCALE = 2
+doubles it. A **field** is the same cell resolved at FIELD px (128) and cut into
+FIELD/SIZE = 4 tiles per side by make_sprites, so the ground reads as one
 continuous texture across a block of tiles instead of the same 16 pixels
 stamped over and over — which is the thing that makes a floor look like a grid
 of chunks even when every tile is beautiful.
@@ -48,7 +49,7 @@ def make_seamless(image):
 
     The atlas cells are inset by a few pixels to keep the separator lines out of
     the game, and that inset breaks whatever tiling the painted swatch had. Over
-    one 16px tile nobody notices; across a 64px field it draws a visible seam
+    one tile nobody notices; across a FIELD-px field it draws a visible seam
     every four tiles.
 
     Rolling by half the image puts the original edges in the middle, where the

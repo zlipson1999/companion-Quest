@@ -1,0 +1,11 @@
+# The asset generators need exactly one third-party package.
+#
+# It was documented nowhere, so `python3 tools/make_sprites.py` — the command in
+# the README, the bible and CLAUDE.md — failed on a clean machine with
+# ModuleNotFoundError and no hint as to what was missing.
+#
+#     python3 -m pip install -r tools/requirements.txt
+#
+# make_sprites.py itself needs Pillow only to write the preview PNG and the tile
+# atlas; the three converters need it to read the source art.
+Pillow>=10.0

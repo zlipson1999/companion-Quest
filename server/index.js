@@ -15,10 +15,15 @@ const Anthropic = AnthropicPkg.default || AnthropicPkg.Anthropic || AnthropicPkg
 
 const PORT = process.env.PORT || 8787;
 const MODEL = process.env.COACH_MODEL || 'claude-opus-5';
-// Coach replies are short, but Opus 5 runs adaptive thinking by default (those
-// tokens count toward the cap), so leave headroom. Set COACH_MODEL=claude-haiku-4-5
-// for a snappier/cheaper coach with no default thinking.
-const MAX_TOKENS = 1024;
+// Coach replies are short — 2-5 sentences — but Opus 5 runs adaptive thinking by
+// default and those tokens come out of this same cap. At 1024 a long think could
+// consume the whole budget and return a response with no completed text, which
+// this server used to hand back as the generic "Let's keep moving" line with a
+// 200. The coach would appear to answer every question with the same sentence
+// and nothing would say why. The headroom is for the thinking, not the reply.
+// Set COACH_MODEL=claude-haiku-4-5 for a snappier/cheaper coach with no default
+// thinking.
+const MAX_TOKENS = 4096;
 
 const client = new Anthropic(); // reads ANTHROPIC_API_KEY from env
 
@@ -68,8 +73,19 @@ function systemPrompt(companionName, goalName, context) {
 }
 
 // Server-side guardrail (defense in depth — never trust the client).
+//
+// This regex and the refusal line below are DUPLICATES of `src/coach/guardrail.js`
+// and `src/coach/persona.js`. They have to be: the server is a separate CommonJS
+// process and is deliberately outside the Metro graph, so it cannot import from
+// `src/`. Both copies had already drifted — the server was missing a word
+// boundary after "act as", so it refused "exact assessment", and its refusal
+// line said "my lane" where the client says "in character".
+//
+// `tools/check_docs.py` now compares the two pairs and fails on any difference,
+// because two hand-maintained copies of a security rule is how one of them ends
+// up subtly weaker than the other.
 const JAILBREAK =
-  /\b(ignore|disregard|forget)\b.{0,20}\b(previous|prior|above|earlier|all|the|your)\b|system prompt|your instructions|reveal (your|the)|developer mode|jail\s?break|\bDAN\b|you are now|pretend (to|you|that|we)|role\s?-?play|act as|override|bypass/i;
+  /\b(ignore|disregard|forget)\b.{0,20}\b(previous|prior|above|earlier|all|the|your)\b|system prompt|your instructions|reveal (your|the)|developer mode|jail\s?break|\bDAN\b|you are now|pretend (to|you|that|we)|role\s?-?play|act as\b|override|bypass/i;
 
 const app = express();
 app.use(cors());
@@ -86,7 +102,7 @@ app.post('/chat', async (req, res) => {
 
     if (JAILBREAK.test(lastText)) {
       return res.json({
-        reply: "Nice try! But I stay in my lane — I only coach fitness, food, hydration, and recovery. So... what are we training today?",
+        reply: "Nice try! But I stay in character — I only coach fitness, food, hydration, and recovery. So... what are we training today?",
         refused: true,
       });
     }
@@ -115,7 +131,17 @@ app.post('/chat', async (req, res) => {
       .join('\n')
       .trim();
 
-    res.json({ reply: reply || "Let's keep moving — ask me about your training!" });
+    // An empty reply is not one thing. Say which, in the log, so a truncated
+    // answer is never silently indistinguishable from a real short one.
+    if (!reply) {
+      console.warn('coach: no text in response, stop_reason =', response.stop_reason);
+      const excuse = response.stop_reason === 'max_tokens'
+        ? 'That got away from me — ask me again and I will keep it short.'
+        : "Let's keep moving — ask me about your training!";
+      return res.json({ reply: excuse, truncated: response.stop_reason === 'max_tokens' });
+    }
+
+    res.json({ reply });
   } catch (err) {
     console.error('coach error:', err && err.message ? err.message : err);
     res.status(500).json({ error: 'coach_error', message: 'The coach is catching its breath. Try again in a moment.' });
