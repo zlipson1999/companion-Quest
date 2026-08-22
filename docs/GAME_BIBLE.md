@@ -156,7 +156,7 @@ credit. Your house: the bed sleeps or logs last night, the desk is your habits,
 the kitchen counters log a meal, the kitchen shelf is the cookbook, the sofa is
 stillness, the wardrobe is your bag.
 
-## 4. Screens (all 28, registered in `screens/Router.js`)
+## 4. Screens (all 30, registered in `screens/Router.js`)
 
 Router holds the `SCREENS` map, `navigate(name, params)`, `toBattle(params)`
 (which plays the `BattleTransition` flash/wipe first), a `TOWN_BGM` set — every
@@ -581,7 +581,7 @@ faint.
 4. `backlight()` (rim opposite the key light) and `spec()` (hotspots) are what
    read as "modern".
 
-### 8.3 Sprite inventory (101 runtime sprites + 415 atlas cells)
+### 8.3 Sprite inventory (101 runtime sprites + 416 atlas cells)
 
 - Creatures 48×48 authored @2× = 96 px: **18 companions — 6 families of 3
   stages, every one of them TRACED** (sproutle→bloomtail→groveheart,
@@ -610,7 +610,7 @@ faint.
   plate, check (fallback), barbell, moon, still.
 - **Tiles and props do not live in `sprites.js` any more.** They are packed
   into `assets/tiles/tile-atlas.png` with a frame table in `data/tileAtlas.js`
-  (415 cells) and drawn by `TileImage`, which crops the atlas. `PixelArt` emits
+  (416 cells) and drawn by `TileImage`, which crops the atlas. `PixelArt` emits
   a View per colour run per row — 236 Views for one grass tile, ~28,000 for a
   map — and that was the ceiling that made higher resolution impossible. The
   live page is ~1,350 nodes at 4× the art resolution. `TILE_SCALE = 2`, so a

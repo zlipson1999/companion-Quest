@@ -889,6 +889,41 @@ its own drift, and two of them were in the coach proxy:
 `check_docs.py` covers four docs and both sides of the coach guardrail: 25
 figures plus 2 paired-source checks.
 
+## Phase 15 — DONE: friends, boards, and the first reason to cheat
+
+Accounts (Sign in with Apple/Google), per-day sync, friendships and four weekly
+boards, on the proxy that already existed for the Coach. Full design in
+**`docs/ACCOUNTS.md`**; the short version:
+
+- **A leaderboard is the first thing here that gives anyone a REASON to fake
+  their numbers.** `stats.distanceMi` has always been editable and it never
+  mattered, because the only person you could fool was yourself. So the unit of
+  sync is a **DAY, never a lifetime total** — a total can only be believed, a
+  day can be checked — and `server/validate.js` refuses what is not possible
+  (75 mi/day, steps and distance required to agree with each other, no future
+  days, no rewriting a fortnight later). A flagged day is KEPT and left off the
+  boards; the server does not get to edit someone's log.
+- **Privacy is one function.** `friendIdsOf` is the only place that decides who
+  can see you, and every board is built from it. Friendship is one row per pair
+  with `CHECK (a_id < b_id)`, so it cannot be accepted one-way.
+- **Accounts are optional and additive.** The game still works with no account,
+  no server and no network. The session lives under its OWN AsyncStorage key —
+  starting a new journey must not sign you out, and signing out must not delete
+  your companion.
+- **Three of the four boards reset Monday.** An all-time board ranks seniority;
+  a week gives everyone the same empty column. Bests are the exception.
+- The noticeboard hangs by reception (`G`). Cork and pinned cards, because a
+  board of your friends' weeks is notes somebody put up, not a stock ticker.
+
+Two bugs found by driving it in a browser rather than reading it: `BarFill`
+wants an `Animated.Value` and took the board white when handed a number, and
+Google's auth hook THROWS when no client id is set for the platform — so the
+button that needs it is now its own component, mounted only when configured.
+
+**Not proven:** the Apple and Google handshakes themselves need real client ids
+and a device. Everything downstream of the token is tested —
+`npm --prefix server run test:friends`, 21 checks over HTTP.
+
 ## Phase 6 — ideas, not committed
 
 Reading / chores / social check-in modules; per-movement progression charts off
