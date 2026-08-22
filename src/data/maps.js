@@ -118,9 +118,13 @@ const INTERACTIONS = {
   // The iron is where you WRITE a session. Ask Coach if you want one handed to
   // you. That split is the whole logic of the room: equipment is the work,
   // people are the advice.
-  R: { screen: 'forge', label: 'Barbell rack — build your own session' },
-  b: { screen: 'forge', label: 'Dumbbell rack — build your own session' },
-  K: { screen: 'forge', label: 'Cable machine — build your own session' },
+  // EVERY piece of equipment in the room opens the Forge. There is one place
+  // you write a session, and which lump of iron you happened to walk up to
+  // does not change that — the label says what you are standing at, the
+  // destination is always the same.
+  R: { screen: 'forge', label: 'Power rack — build your own session' },
+  b: { screen: 'forge', label: 'Dumbbell run — build your own session' },
+  K: { screen: 'forge', label: 'Machine — build your own session' },
   U: { screen: 'forge', label: 'Pull-up bar — build your own session' },
   z: { screen: 'forge', label: 'EZ-bar cradle — build your own session' },
   j: { screen: 'forge', label: 'Kettlebells — build your own session' },
