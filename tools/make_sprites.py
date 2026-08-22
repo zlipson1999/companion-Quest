@@ -431,6 +431,17 @@ class Canvas:
             rn, sh, cov, lit = self.px[y][x]
             self.px[y][x] = (rn, max(0.0, sh - strength * amt), cov, lit)
 
+    def rect_px(self, x0, y0, x1, y1, ramp_name, shade=0.6):
+        """rect() in RESOLVED pixels rather than author units.
+
+        A field draws its own texture at output resolution — a plank seam is one
+        pixel wide however big the tile is, and going through author space would
+        have doubled it along with everything else.
+        """
+        for y in range(max(0, int(y0)), min(self.h, int(y1) + 1)):
+            for x in range(max(0, int(x0)), min(self.w, int(x1) + 1)):
+                self._set(x, y, ramp_name, shade)
+
     def rect(self, x0, y0, x1, y1, ramp_name, shade=0.6):
         S = self.scale
         for y in range(int(y0) * S, (int(y1) + 1) * S):
@@ -2084,8 +2095,20 @@ def mod_still():
 TILE = 16
 
 
+# Tiles are authored on a 16-unit grid and RESOLVED at twice that. Canvas
+# supersamples its shapes, so the same drawing code emits genuinely smoother
+# art rather than a doubled-up copy — curves and contact shadows gain real
+# steps. Only put(), which is explicit pixel placement, fills a block.
+#
+# This is only affordable because tiles render from an atlas image now. Drawing
+# a 32px tile as run-length Views cost roughly a thousand of them per tile, and
+# a single grass map already needed 28,000 at 16px.
+TILE_SCALE = 2
+TILE_PX = TILE * TILE_SCALE
+
+
 def tile(palette):
-    return Canvas(TILE, TILE, palette)
+    return Canvas(TILE, TILE, palette, scale=TILE_SCALE)
 
 
 def hsh(x, y, seed=0):
@@ -2102,12 +2125,7 @@ def hsh(x, y, seed=0):
 
 def mottle_field(c, ramp_name, base, spread, seed, size, cell=2):
     """mottle() over an arbitrary extent, for textures larger than one tile."""
-    for y in range(0, size, cell):
-        for x in range(0, size, cell):
-            v = base + (hsh(x // cell, y // cell, seed) - 0.5) * 2 * spread
-            for dy in range(cell):
-                for dx in range(cell):
-                    c.put(x + dx, y + dy, ramp_name, v)
+    _mottle_raw(c, ramp_name, base, spread, seed, c.w, c.h, cell)
 
 
 def mottle(c, ramp_name, base, spread, seed, cell=2):
@@ -2116,13 +2134,23 @@ def mottle(c, ramp_name, base, spread, seed, cell=2):
     Per-pixel noise at tile scale is a screen door: it reads as a woven texture
     and it shimmers when the map scrolls. Clumping the noise into 2x2 cells is
     what makes ground read as ground.
+
+    Written straight into the resolved buffer rather than through put(), so the
+    clusters stay the same size on screen as the tile resolution rises — going
+    through author space would just have doubled each blob and thrown the extra
+    resolution away.
     """
-    for y in range(0, TILE, cell):
-        for x in range(0, TILE, cell):
+    _mottle_raw(c, ramp_name, base, spread, seed, c.w, c.h, cell)
+
+
+def _mottle_raw(c, ramp_name, base, spread, seed, w, h, cell=2):
+    for y in range(0, h, cell):
+        for x in range(0, w, cell):
             v = base + (hsh(x // cell, y // cell, seed) - 0.5) * 2 * spread
             for dy in range(cell):
                 for dx in range(cell):
-                    c.put(x + dx, y + dy, ramp_name, v)
+                    if x + dx < w and y + dy < h:
+                        c._set(x + dx, y + dy, ramp_name, v)
 
 
 def draw_grass(c, variant=0, turf='body', detail='leaf'):
@@ -2191,41 +2219,44 @@ def tile_grass(variant=0):
 # the mask to eight bits, which would be 256 tiles per material.
 # =========================================================================
 NBR_N, NBR_E, NBR_S, NBR_W = 1, 2, 4, 8
-EDGE_INSET = 2.2
+EDGE_INSET = 2.2      # in 16-unit author space; scaled to the tile below
 
 
-def _open_distance(x, y, mask):
+def _open_distance(x, y, mask, size=TILE):
     """How far this pixel sits from the nearest edge that has no same-material
     neighbour. Large when the material continues in every open direction."""
-    far = 99.0
+    far = 1e9
     return min(
         far if mask & NBR_N else float(y),
-        far if mask & NBR_S else float(15 - y),
+        far if mask & NBR_S else float(size - 1 - y),
         far if mask & NBR_W else float(x),
-        far if mask & NBR_E else float(15 - x),
+        far if mask & NBR_E else float(size - 1 - x),
     )
 
 
-def _edge_shape(mask, seed):
+def _edge_shape(mask, seed, size=TILE):
     """(inside, rim, scatter) pixel sets for one mask.
 
     `inside` is solid material, `rim` is the darker contact line just within the
     boundary, and `scatter` are lone material pixels thrown out into the ground
     so the transition feathers instead of stopping dead.
     """
+    # Every threshold is a fraction of the tile, so the boundary keeps the same
+    # shape and the same rim thickness on screen as the tile resolution rises.
+    k = size / float(TILE)
     inside, rim, scatter = set(), set(), set()
-    for y in range(16):
-        for x in range(16):
-            d = _open_distance(x, y, mask)
+    for y in range(size):
+        for x in range(size):
+            d = _open_distance(x, y, mask, size)
             # A wobbling threshold is what keeps the boundary from being a
             # straight inset rectangle with rounded corners.
-            edge = EDGE_INSET + (hsh(x, y, seed) - 0.5) * 2.2
-            if d >= edge + 1.0:
+            edge = (EDGE_INSET + (hsh(x // 2, y // 2, seed) - 0.5) * 2.2) * k
+            if d >= edge + k:
                 inside.add((x, y))
             elif d >= edge:
                 inside.add((x, y))
                 rim.add((x, y))
-            elif d >= edge - 1.1 and hsh(x, y, seed + 91) > 0.72:
+            elif d >= edge - 1.1 * k and hsh(x, y, seed + 91) > 0.72:
                 scatter.add((x, y))
     return inside, rim, scatter
 
@@ -2269,11 +2300,12 @@ def blended_tile(ground, over, mask, seed, rim_mul=0.72):
     colors += [_shift(c, rim_mul) for c in o['palette']]
     g_off, o_off = 1, 1 + len(g['palette'])
 
-    inside, rim, scatter = _edge_shape(mask, seed)
+    size = len(g['rows'])
+    inside, rim, scatter = _edge_shape(mask, seed, size)
     rows = []
-    for y in range(16):
+    for y in range(size):
         row = ''
-        for x in range(16):
+        for x in range(size):
             gi = TRACE_INDEX[g['rows'][y][x]] - 1
             oi = TRACE_INDEX[o['rows'][y][x]] - 1
             if (x, y) in rim:
@@ -2357,14 +2389,16 @@ def blended_corner(ground, corner):
     if not g:
         return None
     colors = ['transparent'] + list(g['palette'])
-    cx = 0 if corner in ('nw', 'sw') else 15
-    cy = 0 if corner in ('nw', 'ne') else 15
+    size = len(g['rows'])
+    k = size / float(TILE)
+    cx = 0 if corner in ('nw', 'sw') else size - 1
+    cy = 0 if corner in ('nw', 'ne') else size - 1
     rows = []
-    for y in range(16):
+    for y in range(size):
         row = ''
-        for x in range(16):
+        for x in range(size):
             d = max(abs(x - cx), abs(y - cy))
-            if d <= 2 + (hsh(x, y, 77) - 0.5) * 1.4:
+            if d <= (2 + (hsh(x // 2, y // 2, 77) - 0.5) * 1.4) * k:
                 row += DIGITS[1 + TRACE_INDEX[g['rows'][y][x]] - 1]
             else:
                 row += TRANSPARENT
@@ -2429,10 +2463,10 @@ def inner_corner(corner, ramp, shade):
     """A notch of ground at a diagonal where the material wraps around an
     outside corner. Transparent everywhere else — this stacks over the base."""
     c = tile('terra').clear()
-    cx = 0 if corner in ('nw', 'sw') else 15
-    cy = 0 if corner in ('nw', 'ne') else 15
-    for y in range(16):
-        for x in range(16):
+    cx = 0 if corner in ('nw', 'sw') else TILE - 1
+    cy = 0 if corner in ('nw', 'ne') else TILE - 1
+    for y in range(TILE):
+        for x in range(TILE):
             d = max(abs(x - cx), abs(y - cy))
             if d <= 2 + (hsh(x, y, 77) - 0.5) * 1.4:
                 c.put(x, y, ramp, shade)
@@ -2447,15 +2481,17 @@ def ao_overlay(sides):
     it reads as shade over any ground rather than as a painted stripe.
     """
     c = tile('terra').clear()
-    for y in range(16):
-        for x in range(16):
-            depth = 99
+    size = c.w
+    k = size / float(TILE)
+    for y in range(size):
+        for x in range(size):
+            depth = 1e9
             if 'n' in sides:
                 depth = min(depth, y)
             if 'w' in sides:
                 depth = min(depth, x)
-            if depth <= 3 - (hsh(x, y, 55) * 1.2):
-                c.put(x, y, 'ink', 0)
+            if depth <= (3 - (hsh(x // 2, y // 2, 55) * 1.2)) * k:
+                c._set(x, y, 'ink', 0)
     return c
 
 
@@ -2682,36 +2718,116 @@ def home_floor_field(span=FIELD_SPAN):
     for us. Across a field the boards run for four tiles, the butt joints
     stagger course by course, and no seam coincides with a tile boundary except
     by accident.
+
+    At 32px a board is wide enough to hold what actually makes wood read as
+    wood: each plank sits at its own value, grain runs along its length, and
+    the occasional knot interrupts it. A flat mottle at 16px could only ever
+    look like speckled card.
     """
     size = TILE * span
-    c = Canvas(size, size, 'couch')
-    mottle_field(c, 'body', 0.56, 0.05, 61, size, cell=2)
-    course = 0
-    for by in range(0, size, 6):
-        c.rect(0, by, size - 1, by, 'body', 0.34)            # board seam
-        c.rect(0, by + 1, size - 1, by + 1, 'body', 0.72)    # lit lip below it
+    c = Canvas(size, size, 'couch', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    _mottle_raw(c, 'body', 0.54, 0.03, 61, px, px, cell=2)
+
+    # Wide boards, few joints. At 11px deep with a hard seam every course the
+    # floor read as brickwork — a plank is half a tile deep and runs most of the
+    # field before it breaks.
+    board = 16
+    for course, top in enumerate(range(0, px, board)):
+        # Each plank is cut from a different part of the tree.
+        tone = 0.52 + (hsh(course, 3, 71) - 0.5) * 0.035
+        for y in range(top, min(top + board, px)):
+            for x in range(px):
+                # Grain: long, low-frequency streaks along the board, plus a
+                # finer flicker so it does not read as printed stripes.
+                # Long streaks along the board carry the direction; the fine
+                # flicker stops them reading as printed stripes.
+                grain = ((hsh(x // 15, course, 83) - 0.5) * 0.048
+                         + (hsh(x // 3, course, 87) - 0.5) * 0.020)
+                fleck = (hsh(x // 2, y, 89) - 0.5) * 0.016
+                c._set(x, y, 'body', tone + grain + fleck)
+        c.rect_px(0, top, px - 1, top, 'body', tone - 0.065)         # seam
+        c.rect_px(0, top + 1, px - 1, top + 1, 'body', tone + 0.05)  # lit lip
+
         # Joints move along by a third of a board each course, the way boards
         # are actually laid, so no two courses break in the same place.
-        offset = (course * 11) % 21
-        for bx in range(offset, size, 21):
-            c.rect(bx, by + 1, bx, by + 5, 'body', 0.40)
-        course += 1
+        offset = (course * 41) % 113
+        for bx in range(offset, px, 113):
+            c.rect_px(bx, top + 2, bx, min(top + board - 1, px - 1), 'body', tone - 0.055)
+            c.rect_px(bx + 1, top + 2, bx + 1, min(top + board - 1, px - 1), 'body', tone + 0.035)
+
+        # A knot every few boards, offset so they never line up.
+        if hsh(course, 7, 97) > 0.62:
+            kx = int(hsh(course, 11, 101) * (px - 12)) + 6
+            ky = top + board // 2
+            for ry in range(-2, 3):
+                for rx in range(-3, 4):
+                    if rx * rx * 0.5 + ry * ry <= 4 and 0 <= ky + ry < px:
+                        c._set(kx + rx, ky + ry, 'body', tone - 0.10)
+            c._set(kx, ky, 'body', tone - 0.16)
+    return c
+
+
+def home_wall_field(span=FIELD_SPAN):
+    """Interior plaster. Rooms were using the outdoor stone wall, which read as
+    a castle; a house wants a flat painted surface with a little life in it."""
+    size = TILE * span
+    c = Canvas(size, size, 'couch', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    for y in range(px):
+        for x in range(px):
+            # Soft blotching, the way emulsion dries, plus a whisper of grain.
+            # An earlier vertical drift at 0.05 read as corrugated iron.
+            v = (0.80
+                 + (hsh(x // 11, y // 9, 113) - 0.5) * 0.030
+                 + (hsh(x // 4, y // 4, 127) - 0.5) * 0.014
+                 + (hsh(x, y, 131) - 0.5) * 0.010)
+            c._set(x, y, 'belly', v)
     return c
 
 
 def gym_floor_field(span=FIELD_SPAN):
     """Rubber matting in panels several tiles across."""
     size = TILE * span
-    c = Canvas(size, size, 'gym')
-    mottle_field(c, 'belly', 0.52, 0.05, 41, size, cell=2)
+    c = Canvas(size, size, 'gym', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    _mottle_raw(c, 'belly', 0.52, 0.04, 41, px, px, cell=2)
+    # Fleck: recycled rubber is speckled, and at 32px the speckle is the whole
+    # reason the floor reads as rubber rather than as flat paint.
+    for y in range(px):
+        for x in range(px):
+            n = hsh(x, y, 137)
+            if n > 0.955:
+                c._set(x, y, 'belly', 0.74)
+            elif n < 0.045:
+                c._set(x, y, 'belly', 0.34)
     # Panels two tiles across and barely there. At one-and-a-bit tiles with a
     # hard value step they read as a grid drawn over the floor, which is the
     # thing being got rid of — matting has joints, but you should have to look.
-    for k in range(0, size, 32):
-        c.rect(k, 0, k, size - 1, 'belly', 0.47)
-        c.rect(k + 1, 0, k + 1, size - 1, 'belly', 0.56)
-        c.rect(0, k, size - 1, k, 'belly', 0.47)
-        c.rect(0, k + 1, size - 1, k + 1, 'belly', 0.56)
+    for k in range(0, px, 64):
+        c.rect_px(k, 0, k, px - 1, 'belly', 0.47)
+        c.rect_px(k + 1, 0, k + 1, px - 1, 'belly', 0.56)
+        c.rect_px(0, k, px - 1, k, 'belly', 0.47)
+        c.rect_px(0, k + 1, px - 1, k + 1, 'belly', 0.56)
+    return c
+
+
+def gym_wall_field(span=FIELD_SPAN):
+    """Painted block wall — coursed, but softly, so it does not stripe."""
+    size = TILE * span
+    c = Canvas(size, size, 'gym', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    _mottle_raw(c, 'body', 0.30, 0.02, 47, px, px, cell=3)
+    course_h, block_w = 16, 32
+    for row, top in enumerate(range(0, px, course_h)):
+        shift = (row % 2) * (block_w // 2)
+        for y in range(top, min(top + course_h, px)):
+            for x in range(px):
+                c._set(x, y, 'body', 0.30 + (hsh((x + shift) // block_w, row, 149) - 0.5) * 0.05
+                       + (hsh(x, y, 151) - 0.5) * 0.02)
+        c.rect_px(0, top, px - 1, top, 'body', 0.24)                 # mortar course
+        for bx in range(shift, px, block_w):
+            c.rect_px(bx, top, bx, min(top + course_h - 1, px - 1), 'body', 0.24)
     return c
 
 
@@ -3306,7 +3422,9 @@ def build_all():
             used_traced.add(_field)
 
     add_canvas_field('tile_home_floor', home_floor_field())
+    add_canvas_field('tile_home_wall', home_wall_field())
     add_canvas_field('tile_gym_floor', gym_floor_field())
+    add_canvas_field('tile_gym_block', gym_wall_field())
 
     # Two more ground variants, as flips of the painted originals.
     add_blended('tile_grass_c', flipped_traced('tile_grass', horizontal=True),
@@ -3461,6 +3579,103 @@ def render_contact_sheet(cols=8, cell=56, scale=2):
     print('  wrote %s (%dx%d)' % (out, IW, IH))
 
 
+# Names that reached the atlas, so emit_js can leave their grids out of the JS.
+ATLASED = set()
+
+
+def emit_room_light(size=96):
+    """A soft falloff laid over a whole room, stretched to fit.
+
+    Every other shading cue here is baked per tile, which means it repeats with
+    the field and can never describe the room as a whole. This is one image
+    scaled across the map: the middle stays open and the edges and corners sit
+    back, so a room reads as a lit space rather than as an evenly bright plane.
+    It carries real alpha, unlike the atlas, which is opaque by construction.
+    """
+    buf = []
+    for y in range(size):
+        for x in range(size):
+            u = (x + 0.5) / size * 2 - 1
+            v = (y + 0.5) / size * 2 - 1
+            # Elliptical falloff, biased so the lit side is upper-left in line
+            # with every other light cue in the game.
+            d = math.sqrt((u + 0.10) ** 2 + (v + 0.14) ** 2) / math.sqrt(2)
+            a = max(0.0, (d - 0.34) / 0.66)
+            buf.append([10, 10, 20, int(min(1.0, a ** 1.5) * 132)])
+    png_dir = os.path.join(ROOT, 'assets', 'tiles')
+    os.makedirs(png_dir, exist_ok=True)
+    write_png(os.path.join(png_dir, 'room-light.png'), buf, size, size)
+    print('  wrote %s (%dx%d)' % (os.path.join('assets', 'tiles', 'room-light.png'), size, size))
+
+
+def emit_tile_atlas():
+    """Pack every tile and prop into one PNG plus a frame table.
+
+    Tiles used to render as run-length Views, one per colour run per row. A
+    single grass tile was 236 of them and an 11x11 map 28,000, which is the
+    ceiling that made higher resolution impossible — 32px tiles would have been
+    four times that. As one image the whole map costs a couple of hundred Views
+    however detailed the art is, so resolution is now a question about file size
+    rather than about frame rate.
+
+    Characters and creatures stay on PixelArt: there are only a few on screen,
+    and they need runtime palette swaps for outfits, which an atlas cannot do.
+    """
+    names = sorted(n for n in SPRITES if n.startswith(('tile_', 'prop_')))
+    cell = TILE_PX
+    sized = []
+    for name in names:
+        grid = SPRITES[name]['grid']
+        if len(grid) == cell and len(grid[0]) == cell:
+            sized.append(name)
+    cols = int(math.ceil(math.sqrt(len(sized)))) or 1
+    rows_n = (len(sized) + cols - 1) // cols
+    width, height = cols * cell, rows_n * cell
+
+    buf = [[0, 0, 0, 0] for _ in range(width * height)]
+    frames = {}
+    for i, name in enumerate(sized):
+        spr = SPRITES[name]
+        pal = PALETTES[spr['palette']]
+        ox, oy = (i % cols) * cell, (i // cols) * cell
+        frames[name] = [ox, oy]
+        for y, row in enumerate(spr['grid']):
+            for x, ch in enumerate(row):
+                if ch == TRANSPARENT:
+                    continue
+                color = pal[DIGITS.index(ch)]
+                if color in (None, 'transparent'):
+                    continue
+                buf[(oy + y) * width + ox + x] = [
+                    int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16), 255
+                ]
+
+    ATLASED.update(sized)
+    png_dir = os.path.join(ROOT, 'assets', 'tiles')
+    os.makedirs(png_dir, exist_ok=True)
+    write_png(os.path.join(png_dir, 'tile-atlas.png'), buf, width, height)
+
+    body = (
+        '// AUTO-GENERATED by tools/make_sprites.py - do not edit.\n'
+        '//\n'
+        '// One image for every tile and prop, with a frame table. See\n'
+        '// emit_tile_atlas() for why tiles are not PixelArt any more.\n\n'
+        'export const TILE_ATLAS = require(\'../../assets/tiles/tile-atlas.png\');\n'
+        'export const ROOM_LIGHT = require(\'../../assets/tiles/room-light.png\');\n'
+        'export const TILE_CELL = %d;\n'
+        'export const ATLAS_WIDTH = %d;\n'
+        'export const ATLAS_HEIGHT = %d;\n\n'
+        'export const TILE_FRAMES = %s;\n\n'
+        'export default TILE_FRAMES;\n'
+    ) % (cell, width, height, json.dumps(frames, indent=2, sort_keys=True))
+    out = os.path.join(ROOT, 'src', 'data', 'tileAtlas.js')
+    with open(out, 'w') as f:
+        f.write(body)
+    print('  wrote %s (%dx%d, %d tiles)' % (
+        os.path.join('assets', 'tiles', 'tile-atlas.png'), width, height, len(sized)))
+    print('  wrote %s' % out)
+
+
 def emit_js():
     body = ('// AUTO-GENERATED by tools/make_sprites.py — original pixel art.\n'
             '// Grids are rows of base-36 palette indices; "." is transparent.\n'
@@ -3481,7 +3696,13 @@ def emit_js():
             spans[name] = [first, first + RAMP_LEN[key] - 1]
         ramp_spans[key] = spans
     body += 'export const SPRITE_RAMPS = ' + json.dumps(ramp_spans, indent=2) + ';\n\n'
-    body += 'export const SPRITES = ' + json.dumps(SPRITES, indent=2) + ';\n\nexport default SPRITES;\n'
+    # Anything in the tile atlas is drawn from the PNG, so shipping its grid in
+    # JS as well would be a megabyte of dead weight parsed on every cold start.
+    runtime = {k: v for k, v in SPRITES.items() if k not in ATLASED}
+    body += ('// Tiles and props are NOT here — they render from the tile atlas\n'
+             '// (src/data/tileAtlas.js). This holds what still draws through\n'
+             '// PixelArt: characters, creatures, items and module icons.\n')
+    body += 'export const SPRITES = ' + json.dumps(runtime, indent=2) + ';\n\nexport default SPRITES;\n'
     out = os.path.join(ROOT, 'src', 'data', 'sprites.js')
     with open(out, 'w') as f:
         f.write(body)
@@ -3493,6 +3714,8 @@ if __name__ == '__main__':
     validate()
     print('Rendering preview...')
     render_contact_sheet()
+    emit_tile_atlas()
+    emit_room_light()
     emit_js()
     print('Done.')
 

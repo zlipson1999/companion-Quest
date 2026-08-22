@@ -324,6 +324,15 @@ equipment *is* the menu, so the room demonstrates the systems the tutorial used
 to explain in a wall of text. Interiors also stopped being carpeted in lawn:
 maps declare an `id` and `FLOOR_BY_MAP` gives them floorboards or rubber matting.
 
+**Tiles are 32px and render from a PNG atlas.** `PixelArt` emits a View per
+colour run per row, which cost 236 Views for one grass tile and ~28,000 for a
+map — the ceiling that made higher resolution impossible. `assets/tiles/tile-atlas.png`
+plus `src/data/tileAtlas.js` replaced that; the live page is ~1,350 nodes at 4x
+the art resolution, and tile grids are stripped out of `sprites.js`. Interiors
+gained plank grain, plaster, rubber fleck and a room-lighting pass
+(`assets/tiles/room-light.png`). Going higher is now a file-size question:
+change `TILE_SCALE`. See `docs/ART_KIT.md`.
+
 **Ground is a field, not a tile.** A 16x16 tile stamped everywhere puts an
 identical patch on every square, which reads as chunks however good the tile is.
 Grass, path, water, canopy, walls, roofs and both indoor floors are 64x64

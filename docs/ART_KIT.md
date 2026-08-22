@@ -68,6 +68,49 @@ green, appliance grey, terracotta bedding — without dragging a mismatched patc
 of floor in with it. A prop carrying its own floor is the same mistake that made
 the ground go patchy when the autotiles were generated procedurally.
 
+## Resolution, and why tiles are an image now
+
+Tiles are **32px**, authored on the same 16-unit grid and resolved at twice it.
+`Canvas` supersamples its shapes, so the same drawing code emits genuinely
+smoother art rather than a doubled-up copy; only `put()`, which is explicit
+pixel placement, fills a block. `mottle` and the field textures write straight
+into the resolved buffer (`_set`, `rect_px`) so their detail stays the same size
+on screen as the resolution rises instead of being doubled along with it.
+
+That was only affordable because **tiles render from a PNG atlas** rather than
+through `PixelArt`, which emits a View per colour run per row. Measured before
+the change: one 16x16 grass tile was 236 Views and an 11x11 map about 28,000.
+At 32px that would have been four times as many. Cropping one shared image
+costs a couple of hundred nodes for a whole map however detailed the art is —
+the live page went from 28,000+ to about 1,350 for the entire screen.
+
+`emit_tile_atlas()` packs every `tile_*` and `prop_*` into
+`assets/tiles/tile-atlas.png` with a frame table in `src/data/tileAtlas.js`, and
+**leaves their grids out of `sprites.js`** — shipping both would be a megabyte
+of dead JSON parsed on every cold start. Characters and creatures stay on
+`PixelArt`: only a few are on screen at once, and they need runtime palette
+swaps for outfits, which an atlas cannot do.
+
+Raising resolution further is now a question about atlas file size rather than
+frame rate: change `TILE_SCALE`, re-run the two tools.
+
+## Interiors
+
+Rooms get the same treatment the outdoors got. `home_floor_field` lays boards
+half a tile deep with per-plank tone, grain streaking along the length, staggered
+butt joints and the odd knot; `home_wall_field` is soft-blotched plaster rather
+than the outdoor stone, which made a house read as a castle; `gym_floor_field`
+is flecked rubber, which is what makes it read as rubber and not as flat paint
+at this size. Two tuning notes worth keeping: boards at 11px deep with a hard
+seam per course read as **brickwork**, and a vertical drift of 0.05 on plaster
+reads as **corrugated iron**. Both had to come down by roughly half.
+
+`emit_room_light()` writes `assets/tiles/room-light.png`, a soft elliptical
+falloff stretched across the whole map under the player. Every other shading cue
+is baked per tile and therefore repeats with the field; this is the only one
+that can describe the room as a whole, and it carries real alpha, which the
+atlas does not.
+
 ## Fields — why the grid stopped showing
 
 Autotiling fixed the joins *between* materials. It did nothing about the repeat

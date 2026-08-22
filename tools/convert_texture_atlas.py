@@ -14,10 +14,10 @@ from PIL import Image
 
 HERE = Path(__file__).resolve().parent
 SOURCE = HERE.parent / 'assets' / 'textures' / 'masters' / 'world-material-atlas-v1.png'
-SIZE = 16
-COLORS = 18
-FIELD = 64
-FIELD_COLORS = 40
+SIZE = 32
+COLORS = 26
+FIELD = 128
+FIELD_COLORS = 62
 ALPHABET = (
     'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     'abcdefghijklmnopqrstuvwxyz'

@@ -7,8 +7,9 @@
 // and a scattered second grass variant so large fields do not tile visibly.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, View } from 'react-native';
-import PixelArt from './PixelArt';
+import { Animated, Image, View } from 'react-native';
+import TileImage, { hasTile } from './TileImage';
+import { ROOM_LIGHT } from '../data/tileAtlas';
 import PixelSprite from './PixelSprite';
 import { palette } from '../theme';
 import { SPRITES } from '../data/sprites';
@@ -25,6 +26,10 @@ const FIELD_CODES = {
   h: 'tile_roof_rest',
   y: 'tile_roof_gym',
 };
+
+// Interior walls are a different material from the outdoor stone, and a room
+// says which it wants. A house using the outdoor wall read as a castle.
+const WALL_FIELD_BY_MAP = { home: 'tile_home_wall', gym: 'tile_gym_block' };
 
 // Tile code -> sprite key. Animated tiles list their frames.
 const TILE_SPRITES = {
@@ -185,7 +190,7 @@ function variantFor(x, y, count) {
 }
 
 // The full stack for one cell: ground, material, diagonal notches, shading.
-function layersFor(map, code, x, y, frame, floor) {
+function layersFor(map, code, x, y, frame, floor, wallField) {
   const field = floor || GROUND_FIELD;
   const ground = groundKey(field, x, y);
   const isFloorCode = code === '.' || code === ',' || (floor && code === '#');
@@ -209,7 +214,8 @@ function layersFor(map, code, x, y, frame, floor) {
   } else if (PROP_SPRITES[code]) {
     layers = [{ key: ground }, { key: PROP_SPRITES[code] }];
   } else if (FIELD_CODES[code]) {
-    layers = [{ key: groundKey(FIELD_CODES[code], x, y) }];
+    const wall = code === 'W' && wallField ? wallField : FIELD_CODES[code];
+    layers = [{ key: groundKey(wall, x, y) }];
   } else {
     const keys = TILE_SPRITES[code];
     layers = [{ key: keys ? keys[variantFor(x, y, keys.length)] : ground }];
@@ -228,35 +234,26 @@ function layersFor(map, code, x, y, frame, floor) {
   return layers;
 }
 
-export function Tile({ code, s, frame, x, y, floor, map }) {
+export function Tile({ code, s, frame, x, y, floor, map, wallField }) {
   const layers = map
-    ? layersFor(map, code, x, y, frame, floor)
+    ? layersFor(map, code, x, y, frame, floor, wallField)
     : [{ key: groundKey(floor || GROUND_FIELD, x, y) }];
-  const base = SPRITES[layers[0] && layers[0].key];
-  if (!base) return <View style={{ width: s, height: s, backgroundColor: palette.grass }} />;
-  const cell = s / base.grid[0].length;
+  if (!hasTile(layers[0] && layers[0].key)) {
+    return <View style={{ width: s, height: s, backgroundColor: palette.grass }} />;
+  }
   return (
-    <View style={{ width: s, height: s, overflow: 'hidden' }}>
-      {layers.map((layer, i) => {
-        const sprite = SPRITES[layer.key];
-        if (!sprite) return null;
-        return (
-          <View
-            key={layer.key + i}
-            style={i === 0 ? null : { position: 'absolute', left: 0, top: 0, opacity: layer.opacity }}
-          >
-            <PixelArt grid={sprite.grid} palette={sprite.palette} pixelSize={cell} />
-          </View>
-        );
-      })}
+    <View style={{ width: s, height: s }}>
+      {layers.map((layer, i) => (
+        <TileImage key={layer.key + i} name={layer.key} size={s} opacity={layer.opacity} layered={i > 0} />
+      ))}
     </View>
   );
 }
 
-// Characters are traced from the cards now, so their sprites are tall and slim
-// rather than a square 24x32 block. Sizing by width would make a 26x48 figure
-// nearly twice the height of the old one; every character is placed by the
-// height it should stand, and its width follows from its own aspect.
+// Characters are traced from the cards, so their sprites are tall and slim
+// rather than a square block. Sizing by width would make a 26x48 figure nearly
+// twice the height of the old one; every character is placed by the height it
+// should stand, and its width follows from its own aspect.
 function widthForHeight(spriteKey, targetHeight) {
   const sprite = SPRITES[spriteKey];
   if (!sprite) return targetHeight;
@@ -299,6 +296,7 @@ export default function TileMap({ map, player, tileSize, style }) {
 
   // Rows are static once the map is set; only the player and water move.
   const floor = FIELD_BY_MAP[map.id];
+  const wallField = WALL_FIELD_BY_MAP[map.id];
   const rows = useMemo(
     () =>
       map.grid.map((row, y) => (
@@ -306,18 +304,18 @@ export default function TileMap({ map, player, tileSize, style }) {
           {row.split('').map((code, x) => (
             code === 'C' ? (
               <View key={x} style={{ width: s, height: s }}>
-                <Tile code="." s={s} frame={frame} x={x} y={y} floor={floor} map={map} />
+                <Tile code="." s={s} frame={frame} x={x} y={y} floor={floor} map={map} wallField={wallField} />
                 <View style={{ position: 'absolute', left: 0, top: 0 }}>
                   <StandingSprite spriteKey={COACH_SPRITE} s={s} />
                 </View>
               </View>
             ) : (
-              <Tile key={x} code={code} s={s} frame={frame} x={x} y={y} floor={floor} map={map} />
+              <Tile key={x} code={code} s={s} frame={frame} x={x} y={y} floor={floor} map={map} wallField={wallField} />
             )
           ))}
         </View>
       )),
-    [map, s, frame, floor]
+    [map, s, frame, floor, wallField]
   );
 
   const facing = player.facing || 'down';
@@ -326,6 +324,17 @@ export default function TileMap({ map, player, tileSize, style }) {
   return (
     <View style={[{ width: map.cols * s, height: map.rows * s, backgroundColor: palette.grassDark, overflow: 'hidden' }, style]}>
       {rows}
+      {/* Room lighting. Every other shading cue is baked per tile and so
+          repeats with the field; this one image describes the whole space —
+          open in the middle, sitting back at the edges. Drawn under the player
+          so the character stays legible wherever they stand. */}
+      <Image
+        source={ROOM_LIGHT}
+        resizeMode="stretch"
+        pointerEvents="none"
+        fadeDuration={0}
+        style={{ position: 'absolute', left: 0, top: 0, width: map.cols * s, height: map.rows * s }}
+      />
       <Animated.View
         style={{
           position: 'absolute',
