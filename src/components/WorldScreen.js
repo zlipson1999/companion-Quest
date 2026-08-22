@@ -10,7 +10,7 @@
 // button. Nothing that is not needed to walk around is on screen by default.
 
 import React, { useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StatusBar, View } from 'react-native';
 import TileMap from './TileMap';
 import MoveControl from './MoveControl';
 import ObjectiveRibbon from './ObjectiveRibbon';
@@ -19,20 +19,29 @@ import PixelText from './PixelText';
 import Screen from './Screen';
 import { palette, space, screen, tokens, scale } from '../theme';
 
-// Scale so the map covers the phone's height where it can. A fixed tile size
-// left small rooms floating in the middle of a black screen, which is the box
-// problem again wearing a different shape. Clamped at both ends: below 48 the
-// world stops feeling close, above 68 you can see too little of the room to
-// navigate it.
+// Scale so the map ALWAYS covers the phone's height. The width is free to
+// overflow — the camera scrolls it — but a short map must never leave a band of
+// nothing at the bottom of the screen.
+//
+// This was clamped at 68 before, which on a tall phone letterboxed the hub by
+// about a hundred pixels. Filling the height is the point; how many tiles that
+// leaves across the width is a consequence, and the camera makes it a
+// non-issue. The floor of 44 is only for a map tall enough that filling would
+// otherwise make the tiles unreadably small.
 export function worldTileFor(map) {
-  return Math.max(48, Math.min(68, Math.round(screen.height / map.rows)));
+  return Math.max(44, Math.ceil(screen.height / map.rows));
 }
 
 // Where the map does not reach, show the world's own tone rather than black —
 // a letterbox reads as a bug, a margin of ground reads as distance.
 const VOID_BY_MAP = { gym: '#1b2126', home: '#241a12' };
 
-function MenuButton({ onPress }) {
+// The overlay sits over a full-bleed world, so nothing else is holding it clear
+// of the status bar or the notch. On Android that is a measurable number; on
+// iOS SafeAreaView has already inset us, and this is breathing room.
+export const TOP_INSET = Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 8 : 12;
+
+export function MenuButton({ onPress }) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -89,7 +98,7 @@ export default function WorldScreen({
         <View
           style={{
             position: 'absolute',
-            top: space.xl,
+            top: TOP_INSET,
             left: space.sm,
             right: space.sm,
             flexDirection: 'row',
@@ -116,7 +125,7 @@ export default function WorldScreen({
         </View>
 
         {status ? (
-          <View style={{ position: 'absolute', top: space.xl + 74, left: space.sm, right: space.sm }}>{status}</View>
+          <View style={{ position: 'absolute', top: TOP_INSET + 76, left: space.sm, right: space.sm }}>{status}</View>
         ) : null}
 
         {/* The stick lives in the thumb's corner, over the world rather than

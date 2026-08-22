@@ -316,6 +316,14 @@ bar, rower, kettlebells, lockers, reception and more racks. Props are
 transparent overlays over the room's floor — see `docs/ART_KIT.md`. The bed is
 solid, so `HomeRestScreen` sleeps when you walk *into* it rather than onto it.
 
+**Route 1 is full-bleed too.** The trail was a window in the top 42% with a
+panel of step diagnostics under it. The scene is the screen now; the trail
+stats overlay the top, the message and the one action sit at the bottom, and
+everything that explains the step counter — which matters, but is reference
+rather than scenery — lives behind the menu button. `worldTileFor` also fills
+the phone's height outright instead of clamping at 68, which was letterboxing
+tall phones by about a hundred pixels.
+
 **The first battle is a push-up contest.** Coach Maple is mid-session with
 another trailkeeper, Rowan, when you walk into the Hall; once you have your
 companion she puts you against him. `SparIntroScreen` frames it and hands

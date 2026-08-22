@@ -14,10 +14,10 @@
 // Both are real movement. Neither is a "walk" button.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, View } from 'react-native';
+import { Animated, Modal, Pressable, ScrollView, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Screen, DualPane, Window, ProgressBar, PixelText, PixelSprite, PixelButton, Tile } from '../components';
-import { palette, space, screen } from '../theme';
+import { Screen, Window, ProgressBar, PixelText, PixelSprite, PixelButton, TrailAction, Tile, MenuButton, TOP_INSET } from '../components';
+import { palette, space, screen, tokens } from '../theme';
 import { useGame, useCompanion, useDistance } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
@@ -135,6 +135,7 @@ export default function RouteScreen({ params = {} }) {
   );
   const [encMeter, setEncMeter] = useState(0);
   const [moving, setMoving] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const lastMiles = useRef(0);
   const lastSteps = useRef(0);
@@ -199,7 +200,7 @@ export default function RouteScreen({ params = {} }) {
     []
   );
 
-  const sceneH = Math.floor(screen.height * 0.42);
+
   const toggleRun = async () => {
     if (dist.running) {
       dist.stopRun();
@@ -210,133 +211,159 @@ export default function RouteScreen({ params = {} }) {
     }
   };
 
-  const top = (
-    <View style={{ flex: 1, backgroundColor: treadmill ? palette.bgAlt : palette.grass }}>
-      <ScrollingScene width={screen.width} height={sceneH} moving={moving || dist.running} treadmill={treadmill} />
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: space.xl }}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-          <PixelSprite spriteKey={playerSprite(state.playerGender)} palette={outfitPalette(state.playerOutfit, state.playerGender)} size={34} bob={moving || dist.running} />
-          {companion && !treadmill ? (
-            <>
-              <View style={{ width: 8 }} />
-              <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={52} bob={moving || dist.running} />
-            </>
-          ) : null}
-        </View>
-      </View>
-      <View style={{ position: 'absolute', top: space.sm, left: space.sm, right: space.sm }}>
-        <Window tone="dark" pad={8}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <PixelText size="tiny" color={palette.secondary}>
-              {treadmill ? 'Training Hall — cardio deck' : pacing.trail}
-            </PixelText>
-            {dist.running ? (
-              <PixelText size="tiny" color={palette.hpHigh}>
-                ● GPS RUN
-              </PixelText>
-            ) : null}
-          </View>
-          <ProgressBar value={state.stats.routeMi} max={pacing.milestoneMi} color={palette.hpHigh} height={12} label="Next milestone" showText={false} style={{ marginTop: 6 }} />
-          {treadmill ? null : (
-            <ProgressBar value={encMeter} max={1} color={palette.accent} height={8} label="Trail signs" showText={false} style={{ marginTop: 6 }} />
-          )}
-          <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6 }}>
-            {formatMiles(state.stats.distanceMi)} · {state.stats.milestonesReached} milestones
+  const trailPanel = (
+    <Window tone="dark" pad={8}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        <PixelText size="tiny" color={palette.secondary}>
+          {treadmill ? 'Training Hall — cardio deck' : pacing.trail}
+        </PixelText>
+        {dist.running ? (
+          <PixelText size="tiny" color={palette.hpHigh}>
+            ● GPS RUN
           </PixelText>
-        </Window>
+        ) : null}
       </View>
-    </View>
+      <ProgressBar value={state.stats.routeMi} max={pacing.milestoneMi} color={palette.hpHigh} height={12} label="Next milestone" showText={false} style={{ marginTop: 6 }} />
+      {treadmill ? null : (
+        <ProgressBar value={encMeter} max={1} color={palette.accent} height={8} label="Trail signs" showText={false} style={{ marginTop: 6 }} />
+      )}
+      <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6 }}>
+        {formatMiles(state.stats.distanceMi)} · {state.stats.milestonesReached} milestones
+      </PixelText>
+    </Window>
   );
 
-  const bottom = (
-    <View style={{ flex: 1, padding: space.md }}>
-      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }} innerStyle={{ minHeight: 62 }}>
-        <PixelText size="small" color={palette.windowText} style={{ lineHeight: 18 }}>
-          {message}
-        </PixelText>
-      </Window>
-
-      <View style={{ flexDirection: 'row', marginBottom: space.sm }}>
-        {treadmill ? null : (
-          <PixelButton label={dist.running ? 'Stop Run' : 'Start Run (GPS)'} tone={dist.running ? 'danger' : 'primary'} sound="confirm" style={{ flex: 1 }} onPress={toggleRun} />
-        )}
-      </View>
-      {dist.gpsError ? (
-        <PixelText size="tiny" color={palette.danger} style={{ marginBottom: space.sm }}>
-          {dist.gpsError}
+  // Everything that explains the step counter rather than showing the trail.
+  // It matters — "it doesn't work" is not something anyone can act on — but it
+  // is reference, not scenery, so it lives behind the menu button now instead
+  // of taking half the screen.
+  const stepPanel = dist.showInjector ? (
+    <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
+      <PixelText size="tiny" color={palette.danger}>No step counter available</PixelText>
+      {dist.pedDiag ? (
+        <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 5, lineHeight: 13 }}>
+          {dist.pedDiag.host} · {dist.pedDiag.platform}
+          {'\n'}permission: {dist.pedDiag.permission || 'unknown'}
+          {dist.pedDiag.error ? `\nerror: ${dist.pedDiag.error}` : ''}
         </PixelText>
       ) : null}
-
-      {dist.showInjector ? (
-        <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
-          <PixelText size="tiny" color={palette.danger}>
-            No step counter available
-          </PixelText>
-          {/* The exact reason, on screen. "It doesn't work" is not something
-              anyone can act on; a permission status and an error string are. */}
-          {dist.pedDiag ? (
-            <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 5, lineHeight: 13 }}>
-              {dist.pedDiag.host} · {dist.pedDiag.platform}
-              {'\n'}permission: {dist.pedDiag.permission || 'unknown'}
-              {dist.pedDiag.error ? `\nerror: ${dist.pedDiag.error}` : ''}
-            </PixelText>
-          ) : null}
-          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 12 }}>
-            Until it works, these buttons stand in for real steps.
-          </PixelText>
-          <View style={{ flexDirection: 'row', marginTop: space.sm }}>
-            {[[100, '+0.05mi'], [500, '+0.25mi'], [2000, '+1mi']].map(([n, label], i) => (
-              <PixelButton key={n} label={label} tone="primary" size="small" style={{ flex: 1, marginRight: i < 2 ? 6 : 0, paddingVertical: 8 }} sound="cursor" onPress={() => dist.injectSteps(n)} />
-            ))}
-          </View>
-        </Window>
-      ) : (
-        <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
-          <PixelText size="tiny" color={palette.hpHigh}>
-            {dist.source === 'pedometer'
-              ? 'Step counter connected — walk to advance!'
-              : dist.source === 'probing'
-              ? 'Looking for a step counter...'
-              : 'Counting your steps — keep the app open and walk!'}
-          </PixelText>
-          {/* A live count, so "it is working" is something you can watch rather
-              than something the app claims. Walk ten steps and see ten. */}
-          {dist.source === 'motion' ? (
-            <PixelText size="small" color={palette.secondary} style={{ marginTop: 6 }}>
-              {dist.motionSteps} steps detected
-            </PixelText>
-          ) : null}
-          {dist.motionSlow ? (
-            <PixelText size="tiny" color={palette.hpMid} style={{ marginTop: 5, lineHeight: 12 }}>
-              This phone reports motion at {dist.motionHz} Hz, which is too slow to catch every
-              footfall — your real step count is higher than this. A development build fixes it
-              properly; see docs/STEP_COUNTING.md.
-            </PixelText>
-          ) : null}
-          {/* Which source is running, stated plainly. The two are not equivalent
-              and the difference is one the player feels: the OS step counter
-              keeps counting in your pocket, ours cannot. */}
-          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 12 }}>
-            {dist.source === 'pedometer'
-              ? 'Your phone counts steps even with the screen off. Tap Start Run for GPS distance.'
-              : 'No step counter on this build, so the app is reading motion itself — that only works while this screen is open. Start Run uses GPS instead and works better outdoors.'}
-          </PixelText>
-        </Window>
-      )}
-
-      <PixelButton
-        label={treadmill ? 'Step Off the Deck' : 'Back to Town'}
-        tone="plain"
-        sound="cancel"
-        onPress={() => { if (dist.running) dist.stopRun(); navigate(treadmill ? 'gym' : 'hub'); }}
-      />
-    </View>
+      <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 12 }}>
+        Until it works, these buttons stand in for real steps.
+      </PixelText>
+      <View style={{ flexDirection: 'row', marginTop: space.sm }}>
+        {[[100, '+0.05mi'], [500, '+0.25mi'], [2000, '+1mi']].map(([n, label], i) => (
+          <PixelButton key={n} label={label} tone="primary" size="small" style={{ flex: 1, marginRight: i < 2 ? 6 : 0, paddingVertical: 8 }} sound="cursor" onPress={() => dist.injectSteps(n)} />
+        ))}
+      </View>
+    </Window>
+  ) : (
+    <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
+      <PixelText size="tiny" color={palette.hpHigh}>
+        {dist.source === 'pedometer'
+          ? 'Step counter connected — walk to advance!'
+          : dist.source === 'probing'
+          ? 'Looking for a step counter...'
+          : 'Counting your steps — keep the app open and walk!'}
+      </PixelText>
+      {dist.source === 'motion' ? (
+        <PixelText size="small" color={palette.secondary} style={{ marginTop: 6 }}>
+          {dist.motionSteps} steps detected
+        </PixelText>
+      ) : null}
+      {dist.motionSlow ? (
+        <PixelText size="tiny" color={palette.hpMid} style={{ marginTop: 5, lineHeight: 12 }}>
+          This phone reports motion at {dist.motionHz} Hz, which is too slow to catch every
+          footfall — your real step count is higher than this. A development build fixes it
+          properly; see docs/STEP_COUNTING.md.
+        </PixelText>
+      ) : null}
+      <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 12 }}>
+        {dist.source === 'pedometer'
+          ? 'Your phone counts steps even with the screen off. Tap Start Run for GPS distance.'
+          : 'No step counter on this build, so the app is reading motion itself — that only works while this screen is open. Start Run uses GPS instead and works better outdoors.'}
+      </PixelText>
+    </Window>
   );
 
   return (
-    <Screen padTop={false}>
-      <DualPane top={top} bottom={bottom} topFlex={1} bottomFlex={1} />
+    <Screen padTop={false} style={{ padding: 0 }}>
+      <View style={{ flex: 1, backgroundColor: treadmill ? palette.bgAlt : palette.grass }}>
+        {/* The trail is the screen now, not a window at the top of it. */}
+        <ScrollingScene
+          width={screen.width}
+          height={screen.height}
+          moving={moving || dist.running}
+          treadmill={treadmill}
+        />
+
+        {/* You and your companion, standing clear of the panel below. */}
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: screen.height * 0.30, alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+            <PixelSprite
+              spriteKey={playerSprite(state.playerGender)}
+              palette={outfitPalette(state.playerOutfit, state.playerGender)}
+              size={40}
+              bob={moving || dist.running}
+            />
+            {companion && !treadmill ? (
+              <>
+                <View style={{ width: 10 }} />
+                <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={60} bob={moving || dist.running} />
+              </>
+            ) : null}
+          </View>
+        </View>
+
+        <View style={{ position: 'absolute', top: TOP_INSET, left: space.sm, right: space.sm, flexDirection: 'row', alignItems: 'flex-start' }}>
+          <View style={{ flex: 1 }}>{trailPanel}</View>
+          <View style={{ marginLeft: space.sm }}>
+            <MenuButton onPress={() => setSheetOpen(true)} />
+          </View>
+        </View>
+
+        <View style={{ position: 'absolute', left: space.sm, right: space.sm, bottom: space.lg }}>
+          <Window tone="cream" pad={12} innerStyle={{ minHeight: 56 }}>
+            <PixelText size="small" color={palette.windowText} style={{ lineHeight: 18 }}>
+              {message}
+            </PixelText>
+          </Window>
+          {dist.gpsError ? (
+            <PixelText size="tiny" color={palette.danger} style={{ marginTop: space.sm }}>
+              {dist.gpsError}
+            </PixelText>
+          ) : null}
+          {treadmill ? null : (
+            <PixelButton
+              label={dist.running ? 'Stop Run' : 'Start Run (GPS)'}
+              tone={dist.running ? 'danger' : 'primary'}
+              sound="confirm"
+              style={{ marginTop: space.sm }}
+              onPress={toggleRun}
+            />
+          )}
+        </View>
+      </View>
+
+      <Modal visible={sheetOpen} transparent animationType="fade" onRequestClose={() => setSheetOpen(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: '#000000cc' }} onPress={() => setSheetOpen(false)}>
+          <Pressable onPress={() => {}} style={{ marginTop: 'auto', backgroundColor: tokens.surface, borderTopColor: tokens.line, borderTopWidth: 3, padding: space.md, maxHeight: '78%' }}>
+            <PixelText size="small" color={tokens.textOnDark} style={{ marginBottom: space.sm }}>
+              {treadmill ? 'CARDIO DECK' : 'ON THE TRAIL'}
+            </PixelText>
+            <ScrollView showsVerticalScrollIndicator={false}>{stepPanel}</ScrollView>
+            <TrailAction
+              label={treadmill ? 'Step Off the Deck' : 'Back to Town'}
+              tone="quiet"
+              onPress={() => {
+                setSheetOpen(false);
+                if (dist.running) dist.stopRun();
+                navigate(treadmill ? 'gym' : 'hub');
+              }}
+            />
+            <TrailAction label="Close" tone="quiet" style={{ marginTop: space.sm }} onPress={() => setSheetOpen(false)} />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 }
-
