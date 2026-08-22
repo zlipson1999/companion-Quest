@@ -1,4 +1,4 @@
-// The Rest Stop — a warm, safe interior where your companion fully recovers.
+// The Hearth — a caretaker-led recovery space with its own identity.
 
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
@@ -28,7 +28,7 @@ export default function RestScreen() {
       <View style={{ position: 'absolute', bottom: 30, width: 220, height: 70, backgroundColor: palette.accentDark, opacity: 0.5 }} />
       <View style={{ position: 'absolute', bottom: 40, width: 180, height: 50, backgroundColor: palette.accent, opacity: 0.4 }} />
       <PixelText size="small" color={palette.secondary} style={{ marginBottom: space.lg }}>
-        ~ Rest Stop ~
+        ~ The Hearth ~
       </PixelText>
       <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={120} bob={phase === 'resting'} />
       <View style={{ width: 120, height: 18, backgroundColor: palette.windowFill, marginTop: 8, borderWidth: 3, borderColor: palette.windowBorder }} />
@@ -52,7 +52,7 @@ export default function RestScreen() {
             <View>
               <Window tone="cream" pad={14} style={{ marginBottom: space.sm }}>
                 <PixelText size="body" color={palette.windowText} style={{ lineHeight: 20 }}>
-                  Welcome! Shall {companion.creature.name} take a good rest?
+                  The Hearth is quiet. Rest here with {companion.creature.name}?
                 </PixelText>
               </Window>
               <View style={{ flexDirection: 'row' }}>
@@ -68,3 +68,4 @@ export default function RestScreen() {
     </Screen>
   );
 }
+
