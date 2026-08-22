@@ -1,5 +1,5 @@
 // Route 1 — your REAL distance moves you. Steps become miles (or GPS on a run);
-// your character auto-advances along the trail; tall grass rolls wild
+// your character auto-advances along the trail; route markers reveal
 // encounters (befriendable companions or bad-habit obstacles). Milestones drop
 // items. No pedometer? A dev injector lets you simulate distance.
 
@@ -141,7 +141,7 @@ export default function RouteScreen() {
         const c = getCreature(enc.creatureId);
         dispatch({ type: 'SEE_CREATURE', payload: { id: enc.creatureId } });
         playSfx('encounter');
-        setMessage(enc.isCompanion ? `A wild ${c.name} rustles the tall grass!` : `A ${c.name} blocks the path!`);
+        setMessage(enc.isCompanion ? `${c.name} steps onto the trail and watches you.` : `${c.name} gathers across the path.`);
         encTimer.current = setTimeout(() => toBattle({ ...enc, from: 'route' }), 550);
       }
     }
@@ -207,7 +207,7 @@ export default function RouteScreen() {
             ) : null}
           </View>
           <ProgressBar value={state.stats.routeMi} max={pacing.milestoneMi} color={palette.hpHigh} height={12} label="Next milestone" showText={false} style={{ marginTop: 6 }} />
-          <ProgressBar value={encMeter} max={1} color={palette.accent} height={8} label="Tall grass (encounter)" showText={false} style={{ marginTop: 6 }} />
+          <ProgressBar value={encMeter} max={1} color={palette.accent} height={8} label="Trail signs" showText={false} style={{ marginTop: 6 }} />
           <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6 }}>
             {formatMiles(state.stats.distanceMi)} · {state.stats.milestonesReached} milestones
           </PixelText>
@@ -300,3 +300,4 @@ export default function RouteScreen() {
     </Screen>
   );
 }
+
