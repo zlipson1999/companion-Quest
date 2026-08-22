@@ -21,15 +21,18 @@ import { playSfx } from '../audio';
 const CUE_SECONDS = 5;
 
 export default function FormCheckScreen({ params }) {
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
   const movement = getMovement(params.movementId);
   // Return to the session we came from, carrying its progress back with us.
-  const goBack = () =>
+  // Named `leave` rather than `goBack` because the router now owns that name.
+  const leave = () =>
     // `actual` rides along with `checked`: leaving for the mirror mid-set must
     // not discard the weights you have already typed in.
-    navigate('forge', params.planId
-      ? { resume: { planId: params.planId, checked: params.checked || {}, actual: params.actual || {}, from: params.from } }
-      : {});
+    params.planId
+      ? navigate('forge', { resume: { planId: params.planId, checked: params.checked || {}, actual: params.actual || {} } })
+      // No plan means you walked into the mirror on the gym wall, so back is
+      // wherever you came from — not the Forge you were never in.
+      : goBack();
   const [permission, requestPermission] = useCameraPermissions();
   const [mirror, setMirror] = useState(false);
   const [cue, setCue] = useState(0);
@@ -52,19 +55,6 @@ export default function FormCheckScreen({ params }) {
     }
   }, [elapsed, running, movement, cue]);
 
-  if (!movement) {
-    return (
-      <Screen style={{ padding: space.md, justifyContent: 'center' }}>
-        <Window tone="cream" pad={14}>
-          <PixelText size="body" color={palette.windowText} style={{ lineHeight: 20 }}>
-            No movement selected.
-          </PixelText>
-        </Window>
-        <PixelButton label="Back" tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
-      </Screen>
-    );
-  }
-
   const granted = permission && permission.granted;
 
   const openMirror = async () => {
@@ -82,7 +72,7 @@ export default function FormCheckScreen({ params }) {
   return (
     <Screen style={{ padding: space.md }}>
       <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
-        Form Check
+        {movement ? 'Form Check' : 'The Mirror'}
       </PixelText>
 
       {/* upper pane: the mirror, or the offer of one */}
@@ -95,7 +85,9 @@ export default function FormCheckScreen({ params }) {
               <PixelText size="tiny" color={palette.windowBorderLight} align="center" style={{ lineHeight: 15 }}>
                 {permission && !permission.granted && !permission.canAskAgain
                   ? 'Camera is off in your system settings. The cues below still work.'
-                  : 'Turn on the mirror to watch yourself, or just follow the cues.'}
+                  : movement
+                    ? 'Turn on the mirror to watch yourself, or just follow the cues.'
+                    : 'Turn on the mirror to watch yourself work.'}
               </PixelText>
               <PixelButton label="Use Mirror" tone="dark" size="small" onPress={openMirror} style={{ marginTop: space.md }} />
             </View>
@@ -112,26 +104,34 @@ export default function FormCheckScreen({ params }) {
         </View>
       </Window>
 
-      {/* the cue, big and one at a time */}
+      {/* the cue, big and one at a time — only when a movement asked for one.
+          Arriving from the gym wall there is nothing to cue, so the mirror is
+          just a mirror and a set clock, which is what a mirror is. */}
       <Window tone="cream" pad={14} style={{ marginTop: space.sm }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <PixelText size="small" color={palette.accentDark}>{movement.name}</PixelText>
+          <PixelText size="small" color={palette.accentDark}>
+            {movement ? movement.name : 'Set clock'}
+          </PixelText>
           <PixelText size="small" color={palette.windowText}>{mm}:{ss}</PixelText>
         </View>
         <PixelText size="body" color={palette.windowText} style={{ marginTop: space.md, lineHeight: 20, minHeight: 60 }}>
-          {movement.cues[cue]}
+          {movement ? movement.cues[cue] : 'Start a set and watch yourself do it. Pick a movement in the Forge if you want its cues here too.'}
         </PixelText>
-        <View style={{ flexDirection: 'row', marginTop: space.sm }}>
-          {movement.cues.map((_c, i) => (
-            <View
-              key={i}
-              style={{ width: 10, height: 6, marginRight: 4, backgroundColor: i === cue ? palette.accent : palette.windowBorderLight }}
-            />
-          ))}
-        </View>
-        <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: space.sm, lineHeight: 14 }}>
-          Works: {movement.primary.map((id) => MUSCLES[id].name).join(', ')}
-        </PixelText>
+        {movement ? (
+          <>
+            <View style={{ flexDirection: 'row', marginTop: space.sm }}>
+              {movement.cues.map((_c, i) => (
+                <View
+                  key={i}
+                  style={{ width: 10, height: 6, marginRight: 4, backgroundColor: i === cue ? palette.accent : palette.windowBorderLight }}
+                />
+              ))}
+            </View>
+            <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: space.sm, lineHeight: 14 }}>
+              Works: {movement.primary.map((id) => MUSCLES[id].name).join(', ')}
+            </PixelText>
+          </>
+        ) : null}
       </Window>
 
       <PixelText size="tiny" color={palette.windowTextDim} align="center" style={{ marginTop: space.sm, lineHeight: 14 }}>
@@ -140,11 +140,11 @@ export default function FormCheckScreen({ params }) {
 
       <View style={{ flexDirection: 'row', marginTop: space.sm }}>
         <PixelButton
-          label={params.planId ? 'Back to Set' : 'Back'}
+          label={params.planId ? 'Back to Set' : back.label}
           tone="plain"
           sound="cancel"
           style={{ flex: 1, marginRight: 6 }}
-          onPress={goBack}
+          onPress={leave}
         />
         <PixelButton
           label={running ? 'Pause' : 'Start Set'}

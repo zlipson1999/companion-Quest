@@ -37,7 +37,10 @@ export default function PairingScreen({ params }) {
 
   const bottom = (
     <View style={{ flex: 1, justifyContent: 'flex-end', padding: space.md }}>
-      <DialogueBox lines={lines} onComplete={() => navigate('hub')} />
+      {/* Straight from meeting your companion into Coach's push-up contest:
+            the battle loop gets introduced by a person in a gym, not by a bad
+            habit ambushing you on a trail. */}
+      <DialogueBox lines={lines} onComplete={() => navigate('sparIntro')} />
     </View>
   );
 

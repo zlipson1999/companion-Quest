@@ -23,7 +23,7 @@ instead of guessed at.
 100% original art. Nothing here is traced, copied or derived from anyone else's
 work; the shapes are all built from primitives in this file.
 """
-import os, struct, zlib, json, math
+import os, struct, zlib, json, math, glob
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -105,7 +105,19 @@ def ramp(dark, light, steps=6, gamma=0.82):
         # value and saturation interpolate; hue swings through the base
         v = vd + (vl - vd) * t
         s_ = (sd * SHADOW_SAT) + ((sl * LIGHT_SAT) - (sd * SHADOW_SAT)) * t
-        h = (hd + SHADOW_HUE) + (((hl + LIGHT_HUE) - (hd + SHADOW_HUE)) * t)
+        # Hue is a circle, so it has to travel the short way round. Interpolated
+        # as a plain number, a ramp whose ends straddle red (hue ~350 deg to
+        # ~10 deg) takes the 340-degree detour through cyan rather than the
+        # 20-degree hop
+        # across the wrap — which is why a red-to-coral character ramp came out
+        # purple in the midtones and blue at the top. Greens and blues never
+        # straddle the seam, which is why no creature ever showed it.
+        h0 = hd + SHADOW_HUE
+        h1 = hl + LIGHT_HUE
+        delta = (h1 - h0) % 360.0
+        if delta > 180.0:
+            delta -= 360.0
+        h = h0 + delta * t
         out.append(rgb_to_hex(hsv_to_rgb(h, max(0.0, min(1.0, s_)), max(0.0, min(1.0, v)))))
     return out
 
@@ -129,12 +141,27 @@ PALETTE_SPECS = {
     'snooze':  {'body': ('#2a2650', '#b9b6ee'), 'leaf': ('#413a72', '#d5d2ff'), 'belly': ('#38346a', '#c9c6f7')},
     'ache':    {'body': ('#6b1730', '#ffb0c4'), 'leaf': ('#93253f', '#ffd0dc'), 'belly': ('#7d2038', '#ffc2d2')},
     'couch':   {'body': ('#3f2a17', '#d4a374'), 'leaf': ('#5a3d22', '#e8c49a'), 'belly': ('#4d3520', '#dcb387')},
-    'hero':    {'body': ('#1b2f6b', '#8fb4ff'), 'leaf': ('#8a5a1e', '#ffd98a'), 'belly': ('#8a5636', '#ffd2ad')},
+    # Interior plaster. Its own palette because the wall and the floor were
+    # both warm browns off the furniture ramp, so a room read as a brown box
+    # with the corners missing. A painted wall is cooler and much paler than a
+    # board floor, and that difference IS the edge of the room.
+    'plaster': {'body': ('#5e5648', '#f4efe4'), 'leaf': ('#403a30', '#c3b8a5'),
+                'belly': ('#6b5f4e', '#e6dccb'), 'accent': ('#7a4b2a', '#d9a06a')},
+    # A wool rug: muted terracotta with a cream motif. The old one was drawn
+    # in the candy 'item' pink, which is why it read as six sweets on the floor.
+    'rug':     {'body': ('#4a1f18', '#c96a4a'), 'leaf': ('#5c4a2a', '#ead8ae'),
+                'belly': ('#3a2418', '#a08060')},
     'item':    {'body': ('#7a1440', '#ff9dc0'), 'leaf': ('#a8801a', '#ffe486'), 'belly': ('#1d6b3a', '#8ef0a8')},
+    # The Kinship Knot: waxed cord and a wooden bead. Its own palette because
+    # the item ramps are candy-bright and a braided cord is not.
+    'cord':    {'body': ('#5c3418', '#e0a463'), 'leaf': ('#3a1f0c', '#b8763a'), 'belly': ('#6b4a2a', '#f4d9a8')},
     'rock':    {'body': ('#2f3040', '#c8ccdc'), 'leaf': ('#4a4d63', '#e2e6f2'), 'belly': ('#3a3c4f', '#d4d8e8')},
     'air':     {'body': ('#3f5f7a', '#e8f8ff'), 'leaf': ('#5c7f9c', '#ffffff'), 'belly': ('#4d6e8a', '#f4fcff')},
     'spore':   {'body': ('#6b1a2a', '#ff9c9c'), 'leaf': ('#8a2f24', '#ffd0b0'), 'belly': ('#8a5c48', '#ffe0c8')},
     'terra':   {'body': ('#2a4a1c', '#9fd96a'), 'leaf': ('#7a5a1e', '#e8c46a'), 'belly': ('#4a6b2a', '#c8e88a')},
+    # Water meeting grass has to live in ONE tile, so the shore palette carries
+    # both banks: body is the water, leaf is the turf, belly is the wet margin.
+    'shore':   {'body': ('#0b3350', '#63c9e8'), 'leaf': ('#2a4a1c', '#9fd96a'), 'belly': ('#6b5a34', '#f2e4ba')},
     'bloom':   {'body': ('#1a5c44', '#8ce8b0'), 'leaf': ('#a8285e', '#ffb8d8'), 'belly': ('#c49a1e', '#fff0a8')},
     'pyre':    {'body': ('#6b1408', '#ff9440'), 'leaf': ('#c47a0a', '#ffe066'), 'belly': ('#8c2a0e', '#ffb870')},
     'tide':    {'body': ('#0a2f52', '#7fd4ff'), 'leaf': ('#1a7a8c', '#a8f4ff'), 'belly': ('#14507a', '#c8f0ff')},
@@ -145,18 +172,91 @@ PALETTE_SPECS = {
     # through the face rather than a lighter patch of fur.
     'cinder':  {'body': ('#5c1005', '#ff8a3d'), 'leaf': ('#8a1f06', '#ffd45e'), 'belly': ('#7a3418', '#ffc48a')},
     'maels':   {'body': ('#04203f', '#6cc4ff'), 'leaf': ('#0d5c7a', '#9fe8ff'), 'belly': ('#123a5e', '#d0f2ff')},
+
+    # People. One palette per character card, sampled from the committed art in
+    # assets/characters/ rather than invented, so the overworld sprite and the
+    # traced portrait are the same person. The roles are fixed across all four:
+    #   body   = clothing (the only ramp outfitPalette() is allowed to touch)
+    #   leaf   = hair
+    #   belly  = skin
+    #   accent = trim, shoes, and Maple's scarf
+    # 'hero' is kept as the unstyled fallback for any sprite that predates the
+    # per-character split.
+    'hero':    {'body': ('#1b2f6b', '#8fb4ff'), 'leaf': ('#8a5a1e', '#ffd98a'), 'belly': ('#8a5636', '#ffd2ad')},
+    'pc_woman': {
+        'body': ('#1b2138', '#3f7fd6'), 'leaf': ('#2e1a0f', '#a56b45'),
+        'belly': ('#7d4526', '#f7c79a'), 'accent': ('#4a4757', '#f2e1da'),
+    },
+    'pc_man': {
+        'body': ('#1c2c1f', '#6f9a63'), 'leaf': ('#14120a', '#6b4526'),
+        'belly': ('#6d4423', '#f7ddb6'), 'accent': ('#43401f', '#cbb488'),
+    },
+    'pc_nonbinary': {
+        'body': ('#4a1d1e', '#f2836a'), 'leaf': ('#3d2540', '#c79cbd'),
+        'belly': ('#7a3a22', '#f4bd91'), 'accent': ('#5a2728', '#f9ebdd'),
+    },
+    # The Training Hall. Steel for the equipment, warm wood for benches and
+    # trim, rubber for the floor — one indoor material set so the room reads as
+    # a place rather than as a pile of props.
+    'gym': {
+        'body': ('#232833', '#c2cad6'), 'leaf': ('#4a2f18', '#e0b878'),
+        'belly': ('#1e2427', '#7f8d88'), 'accent': ('#123c44', '#5fbfae'),
+    },
+    # The kit itself, separate from the room. Bumper plates are colour-coded in
+    # every real gym and that colour is most of what makes a rack read as a
+    # rack rather than a grey lump, so the equipment needs a palette the room's
+    # steel-and-rubber one cannot give it.
+    'gymkit': {
+        'body': ('#1b2028', '#e2e8f0'),      # steel, up to a chrome highlight
+        'leaf': ('#5c1418', '#f0574e'),      # red plates
+        'belly': ('#10314f', '#4aa3e8'),     # blue plates
+        'accent': ('#6b5210', '#ffd45e'),    # yellow plates and trim
+    },
+    # The Hall's smoothie bar. Wood and steel for the counter, and one palette
+    # per blend so a single cup drawing renders all three — the colour IS how
+    # they are told apart on a real counter.
+    'juicebar': {
+        'body': ('#3b2a1c', '#c9a071'), 'leaf': ('#1d4b2a', '#7fd08a'),
+        'belly': ('#2a3038', '#dfe6ee'), 'accent': ('#7a2a12', '#ff9d4d'),
+    },
+    'blend_green': {
+        'body': ('#1b4423', '#8fd66a'), 'leaf': ('#54381f', '#f2e4cc'),
+        'belly': ('#3a4a3c', '#e6f2df'), 'accent': ('#7a2a12', '#ff9d4d'),
+    },
+    'blend_berry': {
+        'body': ('#4a1030', '#e0629b'), 'leaf': ('#54381f', '#f2e4cc'),
+        'belly': ('#452c3d', '#f4e2ec'), 'accent': ('#123c44', '#5fbfae'),
+    },
+    'blend_gold': {
+        'body': ('#6b3a08', '#ffc25c'), 'leaf': ('#54381f', '#f2e4cc'),
+        'belly': ('#4a3a22', '#fff0d2'), 'accent': ('#7d2f4a', '#e8698f'),
+    },
+    'coach': {
+        'body': ('#12301f', '#5b9a68'), 'leaf': ('#42423a', '#e2e0d2'),
+        'belly': ('#6b3d20', '#e8b184'), 'accent': ('#8a3b12', '#f2a35c'),
+    },
 }
 
 RAMP_STEPS = 26
 
 
-def build_palette(spec):
-    """Flatten a palette spec into (index list, {(ramp, step): index})."""
+def build_palette(spec, steps=RAMP_STEPS):
+    """Flatten a palette spec into (index list, {(ramp, step): index}).
+
+    `steps` is per-palette because the sprite alphabet holds 90 entries and a
+    four-ramp character palette does not fit at the creature ramp length. People
+    are small on screen and made of flat garment panels, so they lose nothing to
+    a shorter ramp; a creature turning a lit surface needs every step it has.
+    """
     colors = [None]          # 0 is always transparent
     index = {}
-    for name in ('body', 'leaf', 'belly'):
-        steps = ramp(*spec[name], steps=RAMP_STEPS)
-        for i, c in enumerate(steps):
+    # 'accent' is optional and comes last, so a spec without one keeps exactly
+    # the index layout everything else was built against. body stays first
+    # because outfitPalette() recolours that range and nothing else.
+    ramps = ['body', 'leaf', 'belly'] + (['accent'] if 'accent' in spec else [])
+    for name in ramps:
+        band = ramp(*spec[name], steps=steps)
+        for i, c in enumerate(band):
             index[(name, i)] = len(colors)
             colors.append(c)
         # A keyline that is merely the ramp's darkest step reads as a coloured
@@ -165,17 +265,23 @@ def build_palette(spec):
         # surface, not enough to glow. At 0.62 a warm creature still came out
         # ringed in bright red-brown and read as a sticker; 0.80 sits down.
         index[(name, 'line')] = len(colors)
-        colors.append(mix(steps[0], INK, 0.80))
+        colors.append(mix(band[0], INK, 0.80))
     for name, c in (('ink', INK), ('white', WHITE), ('eye', EYE_DARK)):
         index[(name, 0)] = len(colors)
         colors.append(c)
     return colors, index
 
 
+# A palette carrying an 'accent' ramp spends four ramps inside the same 90-entry
+# alphabet, so it runs at a shorter ramp length.
+CHARACTER_RAMP_STEPS = 18
+
 PALETTES = {}
 RAMP_INDEX = {}
+RAMP_LEN = {}
 for _k, _spec in PALETTE_SPECS.items():
-    PALETTES[_k], RAMP_INDEX[_k] = build_palette(_spec)
+    RAMP_LEN[_k] = CHARACTER_RAMP_STEPS if 'accent' in _spec else RAMP_STEPS
+    PALETTES[_k], RAMP_INDEX[_k] = build_palette(_spec, RAMP_LEN[_k])
 
 
 # ----------------------------------------------------------------- canvas ---
@@ -234,6 +340,13 @@ class Canvas:
             # read as woven fabric rather than ground and shingles.
             self.px[y][x] = (ramp_name, max(0.0, min(1.0, shade)), cov, lit)
             self.lay[y][x] = self.layer
+
+    def clear(self):
+        """Empty the surface. Overlay sprites start from nothing and draw only
+        the few pixels they contribute, so they can stack over a base tile."""
+        self.px = [[None] * self.w for _ in range(self.h)]
+        self.lay = [[0] * self.w for _ in range(self.h)]
+        return self
 
     def put(self, x, y, ramp_name, shade):
         """Author-space pixel — fills a scale x scale block."""
@@ -359,6 +472,17 @@ class Canvas:
         for x, y, amt in edits:
             rn, sh, cov, lit = self.px[y][x]
             self.px[y][x] = (rn, max(0.0, sh - strength * amt), cov, lit)
+
+    def rect_px(self, x0, y0, x1, y1, ramp_name, shade=0.6):
+        """rect() in RESOLVED pixels rather than author units.
+
+        A field draws its own texture at output resolution — a plank seam is one
+        pixel wide however big the tile is, and going through author space would
+        have doubled it along with everything else.
+        """
+        for y in range(max(0, int(y0)), min(self.h, int(y1) + 1)):
+            for x in range(max(0, int(x0)), min(self.w, int(x1) + 1)):
+                self._set(x, y, ramp_name, shade)
 
     def rect(self, x0, y0, x1, y1, ramp_name, shade=0.6):
         S = self.scale
@@ -524,6 +648,7 @@ class Canvas:
     # -- output -------------------------------------------------------------
     def resolve(self):
         idx = RAMP_INDEX[self.palette]
+        nsteps = RAMP_LEN[self.palette]
         rows = []
         for y in range(self.h):
             row = ''
@@ -546,7 +671,7 @@ class Canvas:
                     # A flat fill is authored intent — the shade IS the colour
                     # choice. Band it and a tile artist loses half the values
                     # they were picking between, so take the ramp step directly.
-                    step = int(round(sh * (RAMP_STEPS - 1)))
+                    step = int(round(sh * (nsteps - 1)))
                 else:
                     nb = self.bands
                     pos = sh * (nb - 1)
@@ -562,8 +687,8 @@ class Canvas:
                         elif frac >= hi:
                             band += 1
                     band = max(0, min(nb - 1, band))
-                    step = int(round(band * (RAMP_STEPS - 1) / float(nb - 1)))
-                step = max(0, min(RAMP_STEPS - 1, step))
+                    step = int(round(band * (nsteps - 1) / float(nb - 1)))
+                step = max(0, min(nsteps - 1, step))
                 row += DIGITS[idx[(name, step)]]
             rows.append(row)
         return rows
@@ -1595,15 +1720,179 @@ def achefang(pal='ache'):
 HERO_W, HERO_H = 24, 32
 
 
-def hero(facing='down', step=0):
-    """One sprite per facing, and the facings must actually differ.
+# =========================================================================
+# WALK SETS
+#
+# The overworld sprite has to be the person on the character card, not a chunky
+# stand-in that merely shares its colours. The card is one front-facing pose,
+# so the rest of the set is derived from it rather than drawn again:
+#
+#   down   the traced pose, plus two stride frames
+#   up     the same silhouette with the face covered by hair
+#   left   the figure narrowed, which is what turning actually does to a
+#          silhouette; right is its mirror
+#
+# Working on the traced indices keeps every frame in the card's own palette, so
+# a facing can never drift away from the character.
+# =========================================================================
+def _walk_rows(blob):
+    """Traced rows as palette indices (0 = transparent)."""
+    return [[0 if ch == '.' else TRACE_INDEX[ch] for ch in row] for row in blob['rows']]
 
-    The first pass drew the same front-facing figure four times with only the
-    eyes moved, so turning around changed nothing on screen. Up shows the back
-    of the head and no face at all; the profiles narrow the body, show one eye,
-    and put the near arm in front.
+
+def _figure_bounds(grid):
+    rows = [y for y, row in enumerate(grid) if any(row)]
+    if not rows:
+        return 0, len(grid) - 1
+    return min(rows), max(rows)
+
+
+def _blank(w, h):
+    return [[0] * w for _ in range(h)]
+
+
+def _stride(grid, phase):
+    """Swing the legs. The split is the figure's own centre line, so a leg goes
+    forward rather than the whole lower half sliding sideways."""
+    h = len(grid)
+    w = len(grid[0])
+    top, bottom = _figure_bounds(grid)
+    hip = top + int((bottom - top) * 0.62)
+    xs = [x for y in range(h) for x in range(w) if grid[y][x]]
+    mid = (min(xs) + max(xs)) // 2 if xs else w // 2
+
+    out = [row[:] for row in grid]
+    for y in range(hip, h):
+        for x in range(w):
+            out[y][x] = 0
+    for y in range(hip, h):
+        for x in range(w):
+            if not grid[y][x]:
+                continue
+            near = (x <= mid) if phase > 0 else (x > mid)
+            ny = y - 2 if near else y
+            if 0 <= ny < h:
+                out[ny][x] = grid[y][x]
+    return out
+
+
+def _back_view(grid, palette):
+    """Cover the face. Turning around should show hair, not a face on backwards."""
+    h = len(grid)
+    w = len(grid[0])
+    top, bottom = _figure_bounds(grid)
+    head_bottom = top + int((bottom - top) * 0.20)
+
+    # Take the first few rows of the head that are actually wide enough to hold
+    # hair. Scanning a fixed band instead picked up whatever the sparse crown
+    # rows happened to contain — skin on one character, jacket on another.
+    tally = {}
+    taken = 0
+    for y in range(top, head_bottom + 1):
+        run = [x for x in range(w) if grid[y][x]]
+        if len(run) < 5:
+            continue
+        for x in range(min(run) + 1, max(run)):
+            if grid[y][x]:
+                tally[grid[y][x]] = tally.get(grid[y][x], 0) + 1
+        taken += 1
+        # Only the very top of the head is reliably hair. One character's crop
+        # is two rows deep before the face begins, and four rows of tally handed
+        # back skin.
+        if taken >= 2:
+            break
+    if not tally:
+        return [row[:] for row in grid]
+    hair = max(tally, key=tally.get)
+
+    out = [row[:] for row in grid]
+    for y in range(top, head_bottom + 1):
+        run = [x for x in range(w) if grid[y][x]]
+        if len(run) < 3:
+            continue
+        # keep the outline column either side so the head keeps its edge
+        for x in range(min(run) + 1, max(run)):
+            if grid[y][x]:
+                out[y][x] = hair
+    return out
+
+
+def _narrow(grid, factor=0.68):
+    """Squeeze horizontally. A front view compressed toward its centre line is
+    what a turn looks like in silhouette, and it costs no new artwork."""
+    h = len(grid)
+    w = len(grid[0])
+    xs = [x for y in range(h) for x in range(w) if grid[y][x]]
+    if not xs:
+        return [row[:] for row in grid]
+    lo, hi = min(xs), max(xs)
+    span = hi - lo + 1
+    new_span = max(3, int(round(span * factor)))
+    start = lo + (span - new_span) // 2
+
+    out = _blank(w, h)
+    for y in range(h):
+        for i in range(new_span):
+            sx = lo + int(i / factor)
+            if sx > hi:
+                sx = hi
+            value = grid[y][sx]
+            if value:
+                out[y][start + i] = value
+    return out
+
+
+def _mirror(grid):
+    return [list(reversed(row)) for row in grid]
+
+
+def _encode(grid, palette):
+    colors = ['transparent'] + list(palette)
+    rows = [''.join(TRANSPARENT if v == 0 else DIGITS[v] for v in row) for row in grid]
+    return colors, rows
+
+
+def walk_set(name):
+    """{suffix: (palette, rows)} for one character, or None with no traced art."""
+    blob = _raw_traced('walk_%s' % name)
+    if not blob:
+        return None
+    base = _walk_rows(blob)
+    palette = blob['palette']
+
+    poses = {}
+    down = {'': base, '_a': _stride(base, 1), '_b': _stride(base, -1)}
+    back = _back_view(base, palette)
+    up = {'': back, '_a': _stride(back, 1), '_b': _stride(back, -1)}
+    side = _narrow(base)
+    left = {'': side, '_a': _stride(side, 1), '_b': _stride(side, -1)}
+
+    for suffix, grid in down.items():
+        poses['down' + suffix] = _encode(grid, palette)
+    for suffix, grid in up.items():
+        poses['up' + suffix] = _encode(grid, palette)
+    for suffix, grid in left.items():
+        poses['left' + suffix] = _encode(grid, palette)
+        poses['right' + suffix] = _encode(_mirror(grid), palette)
+    return poses
+
+
+def hero(facing='down', step=0, pal='hero', hair='short'):
+    """One overworld sprite per facing, per character.
+
+    Two things had to be true at once. The facings must actually differ — the
+    first pass drew the same front-facing figure four times with only the eyes
+    moved, so turning around changed nothing on screen. And the figure has to be
+    the person on the character card, which is what `pal` and `hair` carry: the
+    palette supplies that character's clothing, hair and skin, the hair style
+    supplies their silhouette. A faithful downscale of the card itself is not an
+    option here — a realistic 1:3 standing figure lands on about fifteen pixels
+    of width, which cannot hold a readable face or a walk cycle. The card is
+    traced at portrait size instead; this is its overworld counterpart.
     """
-    c = Canvas(HERO_W, HERO_H, 'hero')
+    c = Canvas(HERO_W, HERO_H, pal)
+    has_accent = 'accent' in PALETTE_SPECS[pal]
+    trim = 'accent' if has_accent else 'belly'
     swing = (0, 2, 0, -2)[step % 4]
     side = facing in ('left', 'right')
     c.shadow(12, 30, 7, 2)
@@ -1614,8 +1903,8 @@ def hero(facing='down', step=0):
         top, sole = 23, 29 + lift
         c.rect(x0, top, x1, sole - 1, 'body', 0.24)
         c.rect(x0, top, x0, sole - 1, 'body', 0.34)          # inner highlight
-        c.rect(x0 - 1, sole, x1 + 1, sole + 1, 'ink', 0)     # shoe
-        c.rect(x0 - 1, sole, x1, sole, 'body', 0.16)         # laces catch light
+        c.rect(x0 - 1, sole, x1 + 1, sole + 1, trim, 0.18)   # shoe
+        c.rect(x0 - 1, sole, x1, sole, trim, 0.72)           # laces catch light
 
     leg(7, 10, max(0, swing))
     leg(13, 16, max(0, -swing))
@@ -1623,6 +1912,13 @@ def hero(facing='down', step=0):
     # body: narrower in profile so the turn reads on silhouette alone
     c.sphere(12, 19, 5.5 if side else 7, 6, 'body')
     c.rect(5 if not side else 7, 24, 19 if not side else 17, 24, 'body', 0.30)   # shirt hem
+    # Jacket trim. Every card has a contrast placket or shoulder stripe, and it
+    # is most of what tells the three characters apart at a glance in the field.
+    if not side:
+        c.rect(11, 15, 13, 24, trim, 0.66)
+    else:
+        c.rect(9 if facing == 'left' else 14, 16, 10 if facing == 'left' else 15, 23, trim, 0.58)
+
     if side:
         # only the near arm is visible, and it swings
         ax = 8 if facing == 'left' else 16
@@ -1641,23 +1937,40 @@ def hero(facing='down', step=0):
     # head
     c.sphere(12, 10, 7.5 if side else 8, 8, 'belly')
 
+    def crown(back):
+        """The hair mass, shaped per character so they differ in silhouette."""
+        if back:
+            c.sphere(12, 10, 8.2, 8, 'leaf', ambient=0.5)
+            c.sphere(12, 13, 5, 3, 'leaf', ambient=0.35)
+        else:
+            c.sphere(12, 5.6, 8.2, 4.8, 'leaf', ambient=0.5)
+            c.rect(4, 5, 20, 6, 'leaf', 0.8)
+        if hair == 'bun':
+            # gathered high and tied off — reads at 24px where loose hair does not
+            c.sphere(12, 2.6, 3.4, 2.6, 'leaf', ambient=0.62)
+            c.rect(10, 4, 14, 4, 'leaf', 0.30)
+        elif hair == 'crop':
+            c.rect(5, 4, 19, 5, 'leaf', 0.42)
+        elif hair == 'swept':
+            c.sphere(14.5, 4.6, 5.6, 2.8, 'leaf', ambient=0.72)
+            c.rect(5, 7, 8, 9, 'leaf', 0.34)                 # shaved-in side
+        elif hair == 'curls':
+            for cx, cy in ((6.5, 6), (10, 4.2), (14, 4.2), (17.5, 6), (8, 8.5), (16, 8.5)):
+                c.sphere(cx, cy, 2.6, 2.4, 'leaf', ambient=0.66)
+
     if facing == 'up':
-        # back of the head: hair covers everything, no face
-        c.sphere(12, 10, 8.2, 8, 'leaf', ambient=0.5)
-        c.sphere(12, 13, 5, 3, 'leaf', ambient=0.35)
+        crown(True)
     else:
-        c.sphere(12, 6.5, 8.2, 5.5, 'leaf', ambient=0.5)
-        c.rect(4, 6, 20, 7, 'leaf', 0.8)
+        crown(False)
         if facing == 'down':
-            c.eye(9, 11, 2)
-            c.eye(15, 11, 2)
-            c.blob(12, 14.5, 1.4, 0.8, 'eye', 0.0)
+            c.eye(9.5, 11, 1.4)
+            c.eye(14.5, 11, 1.4)
         elif facing == 'left':
-            c.eye(8, 11, 2)
+            c.eye(8.5, 11, 1.4)
             c.blob(5.5, 12, 1.6, 2.2, 'belly', 0.9)      # nose in profile
             c.sphere(16, 8, 4, 5, 'leaf', ambient=0.4)   # hair sweeps back
         else:
-            c.eye(16, 11, 2)
+            c.eye(15.5, 11, 1.4)
             c.blob(18.5, 12, 1.6, 2.2, 'belly', 0.9)
             c.sphere(8, 8, 4, 5, 'leaf', ambient=0.4)
 
@@ -1667,26 +1980,45 @@ def hero(facing='down', step=0):
 
 
 def coach_maple():
-    """Original trail mentor: field jacket, satchel, silver curls, leaf badge."""
-    c = Canvas(48, 64, 'hero')
-    c.shadow(24, 61, 16, 3)
-    c.rect(13, 47, 21, 58, 'body', 0.12); c.rect(27, 47, 35, 58, 'body', 0.12)
-    c.rect(11, 57, 21, 60, 'ink', 0); c.rect(27, 57, 37, 60, 'ink', 0)
-    c.sphere(24, 39, 15, 17, 'leaf', ambient=0.48)
-    c.rect(21, 28, 27, 50, 'belly', 0.74)
-    c.rect(9, 33, 13, 51, 'leaf', 0.28); c.rect(35, 33, 39, 51, 'leaf', 0.28)
-    c.blob(11, 53, 3, 3, 'belly', 0.8); c.blob(37, 53, 3, 3, 'belly', 0.8)
-    c.rect(31, 40, 43, 52, 'body', 0.5)
-    for i in range(15):
-        c.rect(30 + i // 2, 25 + i, 32 + i // 2, 27 + i, 'body', 0.62)
-    c.rect(21, 20, 27, 25, 'belly', 0.5)
-    c.sphere(24, 15, 12, 13, 'belly')
-    c.sphere(24, 8, 13, 8, 'body', ambient=0.58)
-    c.sphere(12, 15, 5, 8, 'body', ambient=0.5); c.sphere(36, 15, 5, 8, 'body', ambient=0.5)
-    c.eye(19, 16, 2.5); c.eye(29, 16, 2.5)
-    c.rect(19, 11, 22, 12, 'body', 0.15); c.rect(27, 11, 30, 12, 'body', 0.15)
-    c.blob(24, 22, 3, 1.2, 'eye', 0.0)
-    c.blob(15, 34, 3, 5, 'body', 0.86); c.rect(15, 36, 16, 41, 'body', 0.28)
+    """Trail mentor: silver curls, green field jacket, orange scarf, satchel.
+
+    The ramps used to be crossed here — hair was drawn on 'body' and the jacket
+    on 'leaf', and since this ran on the player's navy 'hero' palette it put a
+    blue-haired stranger on the title screen. On the 'coach' palette the roles
+    are the same as every other person: body is the jacket, leaf is the hair,
+    belly is skin, accent is the scarf.
+
+    Draw order matters as much as colour. The head is laid down before the
+    scarf, because a face sphere wide enough to hold two eyes also covers the
+    collar, and painting it last wiped the scarf off her neck entirely.
+    """
+    c = Canvas(48, 64, 'coach')
+    c.shadow(24, 61, 15, 3)
+
+    # legs and shoes
+    c.rect(15, 44, 22, 57, 'body', 0.10); c.rect(26, 44, 33, 57, 'body', 0.10)
+    c.rect(13, 57, 22, 60, 'accent', 0.08); c.rect(26, 57, 35, 60, 'accent', 0.08)
+
+    # jacket. Head is roughly a quarter of the figure, not a third — at the old
+    # radius she read as a bobblehead next to her own portrait.
+    c.sphere(24, 36, 12, 13, 'body', ambient=0.48)
+    c.rect(11, 28, 15, 46, 'body', 0.26); c.rect(33, 28, 37, 46, 'body', 0.26)   # sleeves
+    c.blob(12, 47, 2.6, 2.8, 'belly', 0.80); c.blob(36, 47, 2.6, 2.8, 'belly', 0.80)
+    c.rect(31, 34, 41, 45, 'body', 0.44)                                          # satchel
+    for i in range(12):
+        c.rect(29 + i // 2, 24 + i, 31 + i // 2, 26 + i, 'body', 0.58)            # strap
+    c.rect(22, 26, 26, 42, 'accent', 0.58)                                        # open placket
+    c.blob(17, 33, 2.4, 3.4, 'accent', 0.86)                                      # leaf badge
+
+    # head, then the collar that sits on top of it
+    c.sphere(24, 14, 9, 9.5, 'belly')
+    for cx, cy in ((15, 9), (19, 5.4), (24, 4.4), (29, 5.4), (33, 9), (14, 15), (34, 15)):
+        c.sphere(cx, cy, 4.4, 3.8, 'leaf', ambient=0.62)
+    c.eye(20, 14, 1.9); c.eye(28, 14, 1.9)
+    c.blob(24, 18.5, 1.7, 0.7, 'eye', 0.0)                                        # smile
+    c.rect(20, 22, 28, 26, 'accent', 0.80)                                        # scarf
+    c.rect(17, 23, 31, 25, 'accent', 0.70)
+
     c.rim('leaf'); c.outline(); return c
 
 
@@ -1731,12 +2063,53 @@ def item_charm():
     c.rim('leaf'); c.outline(); return c
 
 
-def item_token():
-    c = Canvas(ITEM, ITEM, 'item')
-    c.sphere(12, 12, 10, 10, 'body')
-    c.rect(2, 11, 22, 12, 'leaf', 0.25)
-    c.sphere(12, 12, 4, 4, 'belly')
-    c.blob(12, 12, 2, 2, 'white', 1.0)
+def item_knot():
+    """The Kinship Knot: two braided loops, tied.
+
+    What this replaces was a sphere with an equator band and a button in the
+    middle, thrown at a weakened creature until it gave in. That is somebody
+    else's object wearing somebody else's mechanic, and no amount of renaming
+    fixes a silhouette. A knot is the opposite idea and it looks like it: worn
+    rather than thrown, one loop each, and nothing about it is a container.
+    """
+    c = Canvas(ITEM, ITEM, 'cord')
+
+    def loop(cx, cy, r, squash, phase):
+        # Braided, so the strand alternates which face catches the light as it
+        # twists. That twist is the whole reason it reads as cord and not wire.
+        for deg in range(0, 360, 2):
+            t = math.radians(deg)
+            x = int(round(cx + math.cos(t) * r))
+            y = int(round(cy + math.sin(t) * r * squash))
+            lit = ((deg // 26) + phase) % 2 == 0
+            c.put(x, y, 'body', 0.86 if lit else 0.44)
+            c.put(x, y + 1, 'leaf', 0.26)                # the strand's underside
+
+    loop(8, 9, 5.4, 0.92, 0)
+    loop(15, 14, 5.0, 0.92, 1)
+    # The two tails, falling away from where the loops cross.
+    for i, (bx, by) in enumerate(((10, 17), (13, 19))):
+        c.rect(bx, by, bx + 1, by + 3, 'body', 0.62 if i else 0.74)
+        c.rect(bx, by + 3, bx + 1, by + 3, 'leaf', 0.30)
+    c.blob(11, 12, 2.2, 2.0, 'belly', 0.90)              # the bead over the crossing
+    c.put(10, 11, 'belly', 1.0)
+    c.rim('leaf'); c.outline(); return c
+
+
+def item_smoothie(pal):
+    """A cup with a domed lid and a straw.
+
+    One drawing, three palettes. Naming a blend after its colour is not a
+    shortcut — it is how you order one, and it means adding a fourth is a
+    palette rather than another sprite.
+    """
+    c = Canvas(ITEM, ITEM, pal)
+    c.rect(13, 0, 15, 8, 'accent', 0.74)                     # straw
+    c.rect(13, 0, 13, 8, 'accent', 0.96)
+    c.sphere(12, 8, 7.5, 3.2, 'belly', ambient=0.62)         # domed lid
+    c.poly([(5, 9), (19, 9), (17, 22), (7, 22)], 'leaf', 0.90)    # the cup
+    c.poly([(7, 11), (17, 11), (15, 20), (9, 20)], 'body', 0.60)  # the blend
+    c.rect(6, 13, 18, 14, 'leaf', 1.0)                       # band around it
     c.rim('leaf'); c.outline(); return c
 
 
@@ -1805,8 +2178,20 @@ def mod_still():
 TILE = 16
 
 
+# Tiles are authored on a 16-unit grid and RESOLVED at twice that. Canvas
+# supersamples its shapes, so the same drawing code emits genuinely smoother
+# art rather than a doubled-up copy — curves and contact shadows gain real
+# steps. Only put(), which is explicit pixel placement, fills a block.
+#
+# This is only affordable because tiles render from an atlas image now. Drawing
+# a 32px tile as run-length Views cost roughly a thousand of them per tile, and
+# a single grass map already needed 28,000 at 16px.
+TILE_SCALE = 2
+TILE_PX = TILE * TILE_SCALE
+
+
 def tile(palette):
-    return Canvas(TILE, TILE, palette)
+    return Canvas(TILE, TILE, palette, scale=TILE_SCALE)
 
 
 def hsh(x, y, seed=0):
@@ -1821,19 +2206,72 @@ def hsh(x, y, seed=0):
     return ((n ^ (n >> 16)) & 0xffff) / 65536.0
 
 
+def mottle_field(c, ramp_name, base, spread, seed, size, cell=2):
+    """mottle() over an arbitrary extent, for textures larger than one tile."""
+    _mottle_raw(c, ramp_name, base, spread, seed, c.w, c.h, cell)
+
+
 def mottle(c, ramp_name, base, spread, seed, cell=2):
     """Low-frequency value noise in CLUSTERS.
 
     Per-pixel noise at tile scale is a screen door: it reads as a woven texture
     and it shimmers when the map scrolls. Clumping the noise into 2x2 cells is
     what makes ground read as ground.
+
+    Written straight into the resolved buffer rather than through put(), so the
+    clusters stay the same size on screen as the tile resolution rises — going
+    through author space would just have doubled each blob and thrown the extra
+    resolution away.
     """
-    for y in range(0, TILE, cell):
-        for x in range(0, TILE, cell):
+    _mottle_raw(c, ramp_name, base, spread, seed, c.w, c.h, cell)
+
+
+def _mottle_raw(c, ramp_name, base, spread, seed, w, h, cell=2):
+    for y in range(0, h, cell):
+        for x in range(0, w, cell):
             v = base + (hsh(x // cell, y // cell, seed) - 0.5) * 2 * spread
             for dy in range(cell):
                 for dx in range(cell):
-                    c.put(x + dx, y + dy, ramp_name, v)
+                    if x + dx < w and y + dy < h:
+                        c._set(x + dx, y + dy, ramp_name, v)
+
+
+def draw_grass(c, variant=0, turf='body', detail='leaf'):
+    """Lay turf onto an existing canvas using the ramps it names.
+
+    Water and grass have to share a tile to have a shoreline at all, and a tile
+    carries one palette — so the turf ramp cannot be hard-coded to 'body'.
+    """
+    seed = 11 + variant * 7
+    mottle(c, turf, 0.58, 0.042, seed)
+    BLADES = (
+        ((3, 5), (10, 3), (6, 11), (13, 9)),
+        ((8, 4), (2, 10), (12, 12), (5, 7)),
+        ((5, 2), (12, 6), (2, 8), (9, 13)),
+        ((11, 4), (4, 6), (14, 11), (7, 9)),
+    )
+    for bx, by in BLADES[variant % len(BLADES)]:
+        c.put(bx, by - 2, turf, 0.92)
+        c.put(bx, by - 1, turf, 0.88)
+        c.put(bx, by, turf, 0.78)
+        c.put(bx + 1, by - 1, turf, 0.30)    # the blade's own shadow
+        c.put(bx + 1, by, turf, 0.34)
+        c.put(bx - 1, by, turf, 0.70)        # a second, shorter leaf
+    if variant == 1:
+        for px_, py_ in ((14, 4), (4, 13)):
+            c.put(px_, py_, detail, 0.62)
+            c.put(px_, py_ + 1, detail, 0.3)
+    elif variant == 2:
+        for px_, py_ in ((7, 6), (13, 13)):
+            c.put(px_, py_, turf, 0.82)
+            c.put(px_ - 1, py_, turf, 0.74)
+            c.put(px_, py_ - 1, turf, 0.78)
+            c.put(px_ + 1, py_ + 1, turf, 0.36)
+    elif variant == 3:
+        for k in range(4):
+            c.put(3 + k, 12 - (k // 2), detail, 0.44)
+            c.put(3 + k, 13 - (k // 2), detail, 0.22)
+    return c
 
 
 def tile_grass(variant=0):
@@ -1842,24 +2280,301 @@ def tile_grass(variant=0):
     A base value, clustered mottle for depth, and a handful of blades with a
     dark pixel behind each so the tuft reads as standing up off the ground.
     """
-    c = tile('terra')
-    seed = 11 + variant * 7
-    # Spread is deliberately small: at seven ramp steps most cells land on the
-    # same colour and only a few break away, which is depth. Widen it and the
-    # tile turns into visible 2x2 squares.
-    mottle(c, 'body', 0.58, 0.042, seed)
-    blades = ((3, 5), (10, 3), (6, 11), (13, 9)) if variant == 0 else ((8, 4), (2, 10), (12, 12), (5, 7))
-    for bx, by in blades:
-        c.put(bx, by - 2, 'body', 0.92)
-        c.put(bx, by - 1, 'body', 0.88)
-        c.put(bx, by, 'body', 0.78)
-        c.put(bx + 1, by - 1, 'body', 0.30)  # the blade's own shadow
-        c.put(bx + 1, by, 'body', 0.34)
-        c.put(bx - 1, by, 'body', 0.70)      # a second, shorter leaf
-    if variant == 1:                          # a couple of pebbles, sparingly
-        for px_, py_ in ((14, 4), (4, 13)):
-            c.put(px_, py_, 'leaf', 0.62)
-            c.put(px_, py_ + 1, 'leaf', 0.3)
+    return draw_grass(tile('terra'), variant)
+
+
+# =========================================================================
+# AUTOTILING
+#
+# A path used to be one square of dirt butted against one square of grass, and
+# a pond was a rectangle. That hard join is what made the overworld read as a
+# spreadsheet: the eye follows the straight seams and sees the grid, not the
+# ground.
+#
+# Each material is generated once per neighbour mask instead. Bits are set for
+# the cardinal neighbours that are the SAME material; any side without one has
+# the material pulled back from that edge along a noisy boundary, with the
+# ground showing through, a contact shadow just inside it and a scatter of the
+# material dithered out into the ground. Two open sides meet at a corner and
+# round it for free.
+#
+# Diagonals are handled by four small overlay sprites rather than by widening
+# the mask to eight bits, which would be 256 tiles per material.
+# =========================================================================
+NBR_N, NBR_E, NBR_S, NBR_W = 1, 2, 4, 8
+EDGE_INSET = 2.2      # in 16-unit author space; scaled to the tile below
+
+
+def _open_distance(x, y, mask, size=TILE):
+    """How far this pixel sits from the nearest edge that has no same-material
+    neighbour. Large when the material continues in every open direction."""
+    far = 1e9
+    return min(
+        far if mask & NBR_N else float(y),
+        far if mask & NBR_S else float(size - 1 - y),
+        far if mask & NBR_W else float(x),
+        far if mask & NBR_E else float(size - 1 - x),
+    )
+
+
+def _edge_shape(mask, seed, size=TILE):
+    """(inside, rim, scatter) pixel sets for one mask.
+
+    `inside` is solid material, `rim` is the darker contact line just within the
+    boundary, and `scatter` are lone material pixels thrown out into the ground
+    so the transition feathers instead of stopping dead.
+    """
+    # Every threshold is a fraction of the tile, so the boundary keeps the same
+    # shape and the same rim thickness on screen as the tile resolution rises.
+    k = size / float(TILE)
+    inside, rim, scatter = set(), set(), set()
+    for y in range(size):
+        for x in range(size):
+            d = _open_distance(x, y, mask, size)
+            # A wobbling threshold is what keeps the boundary from being a
+            # straight inset rectangle with rounded corners.
+            edge = (EDGE_INSET + (hsh(x // 2, y // 2, seed) - 0.5) * 2.2) * k
+            if d >= edge + k:
+                inside.add((x, y))
+            elif d >= edge:
+                inside.add((x, y))
+                rim.add((x, y))
+            elif d >= edge - 1.1 * k and hsh(x, y, seed + 91) > 0.72:
+                scatter.add((x, y))
+    return inside, rim, scatter
+
+
+# --- blending the PAINTED materials --------------------------------------
+#
+# The procedural grass and the atlas grass are different art. Generating the
+# autotiles procedurally therefore laid hand-drawn tiles next to painted ones
+# and the field went patchy — the grid problem again, in a different colour.
+#
+# These build each mask by compositing the committed painted tiles instead:
+# ground where the material has been pulled back, material where it has not, a
+# shaded or wetted rim along the boundary, and a scatter of material dithered
+# out into the ground so the join feathers.
+def _raw_traced(name):
+    path = os.path.join(TRACED_DIR, 'traced_%s.json' % name)
+    if not os.path.exists(path):
+        return None
+    with open(path) as f:
+        return json.load(f)
+
+
+def _shift(hex_color, mul):
+    r, g, b = hex_to_rgb(hex_color)
+    return rgb_to_hex((
+        max(0, min(255, int(r * mul))),
+        max(0, min(255, int(g * mul))),
+        max(0, min(255, int(b * mul))),
+    ))
+
+
+def blended_tile(ground, over, mask, seed, rim_mul=0.72):
+    """One painted material laid over another along a soft, noisy boundary."""
+    g = _raw_traced(ground)
+    o = _raw_traced(over)
+    if not g or not o:
+        return None
+
+    colors = ['transparent'] + list(g['palette']) + list(o['palette'])
+    rim_base = len(colors)
+    colors += [_shift(c, rim_mul) for c in o['palette']]
+    g_off, o_off = 1, 1 + len(g['palette'])
+
+    size = len(g['rows'])
+    inside, rim, scatter = _edge_shape(mask, seed, size)
+    rows = []
+    for y in range(size):
+        row = ''
+        for x in range(size):
+            gi = TRACE_INDEX[g['rows'][y][x]] - 1
+            oi = TRACE_INDEX[o['rows'][y][x]] - 1
+            if (x, y) in rim:
+                row += DIGITS[rim_base + oi]
+            elif (x, y) in inside or (x, y) in scatter:
+                row += DIGITS[o_off + oi]
+            else:
+                row += DIGITS[g_off + gi]
+        rows.append(row)
+    return colors, rows
+
+
+FIELD_SPAN = 4          # tiles across one field texture
+
+
+def field_slices(name, span=FIELD_SPAN):
+    """Cut one large texture into span x span tiles that line up edge to edge.
+
+    A 16x16 ground tile repeated across a field shows its seam every square, and
+    that is what makes a floor read as a grid of chunks however good the tile
+    is. Windowing one 64x64 texture instead makes the ground continuous across
+    a 4x4 block, so the repeat is four times further apart and there is no seam
+    inside it at all.
+    """
+    blob = _raw_traced(name)
+    if not blob:
+        return None
+    rows = blob['rows']
+    size = len(rows)
+    step = size // span
+    colors = ['transparent'] + list(blob['palette'])
+    out = []
+    for ty in range(span):
+        for tx in range(span):
+            tile_rows = [
+                ''.join(
+                    DIGITS[TRACE_INDEX[rows[ty * step + y][tx * step + x]]]
+                    for x in range(step)
+                )
+                for y in range(step)
+            ]
+            out.append((colors, tile_rows))
+    return out
+
+
+def field_from_canvas(canvas, span=FIELD_SPAN):
+    """Same idea for a procedurally drawn field."""
+    rows = canvas.resolve()
+    step = len(rows) // span
+    out = []
+    for ty in range(span):
+        for tx in range(span):
+            out.append([row[tx * step:(tx + 1) * step] for row in rows[ty * step:(ty + 1) * step]])
+    return out
+
+
+def flipped_traced(name, horizontal=False, vertical=False):
+    """A painted tile turned around.
+
+    Extra ground variants have to be the SAME artwork as the ones beside them.
+    Drawing new ones procedurally put hand-made tiles next to atlas tiles and
+    the field went patchy; a flip is free, keeps the palette and the average
+    value identical, and still breaks the repeat.
+    """
+    t = _raw_traced(name)
+    if not t:
+        return None
+    rows = [list(r) for r in t['rows']]
+    if horizontal:
+        rows = [list(reversed(r)) for r in rows]
+    if vertical:
+        rows = list(reversed(rows))
+    colors = ['transparent'] + list(t['palette'])
+    out = [''.join(DIGITS[TRACE_INDEX[ch]] for ch in r) for r in rows]
+    return colors, out
+
+
+def blended_corner(ground, corner):
+    """Ground showing through at a diagonal where a material wraps a corner."""
+    g = _raw_traced(ground)
+    if not g:
+        return None
+    colors = ['transparent'] + list(g['palette'])
+    size = len(g['rows'])
+    k = size / float(TILE)
+    cx = 0 if corner in ('nw', 'sw') else size - 1
+    cy = 0 if corner in ('nw', 'ne') else size - 1
+    rows = []
+    for y in range(size):
+        row = ''
+        for x in range(size):
+            d = max(abs(x - cx), abs(y - cy))
+            if d <= (2 + (hsh(x // 2, y // 2, 77) - 0.5) * 1.4) * k:
+                row += DIGITS[1 + TRACE_INDEX[g['rows'][y][x]] - 1]
+            else:
+                row += TRANSPARENT
+        rows.append(row)
+    return colors, rows
+
+
+def path_tile(mask, variant=0):
+    """Trail over grass, its edges dissolving into the turf."""
+    c = tile_grass(variant)
+    seed = 5 + variant * 17
+    inside, rim, scatter = _edge_shape(mask, seed + 3)
+
+    for x, y in inside:
+        c.put(x, y, 'leaf', 0.62 + (hsh(x // 2, y // 2, seed) - 0.5) * 0.12)
+    for x, y in scatter:
+        # trodden dirt showing through the grass at the margin
+        c.put(x, y, 'leaf', 0.50 + (hsh(x, y, seed + 7) - 0.5) * 0.16)
+    for x, y in rim:
+        # the trail sits slightly below the turf, so its lip is in shadow
+        c.put(x, y, 'leaf', 0.30)
+
+    stones = ((2, 4), (9, 2), (12, 11), (7, 14)) if variant == 0 else ((5, 3), (13, 6), (3, 12), (10, 9))
+    for gx, gy in stones:
+        if (gx, gy) not in inside or (gx, gy) in rim:
+            continue
+        c.put(gx, gy, 'leaf', 0.86)
+        c.put(gx + 1, gy, 'leaf', 0.74)
+        c.put(gx, gy + 1, 'leaf', 0.34)
+        c.put(gx + 1, gy + 1, 'leaf', 0.40)
+    # A lit lip only where the trail actually ends, not on every square.
+    if not mask & NBR_N:
+        for x in range(16):
+            for y in range(16):
+                if (x, y) in inside and (x, y - 1) not in inside:
+                    c.put(x, y, 'leaf', 0.88)
+                    break
+    return c
+
+
+def water_tile(mask, frame=0):
+    """Pond over grass, with a wet shoreline rather than a cut edge."""
+    c = draw_grass(tile('shore'), 2 if frame else 0, turf='leaf', detail='belly')
+    seed = 31 + frame * 13
+    inside, rim, scatter = _edge_shape(mask, seed)
+
+    for x, y in inside:
+        c.put(x, y, 'body', 0.42 + (hsh(x // 2, (y + frame) // 2, seed) - 0.5) * 0.14)
+    for x, y in scatter:
+        c.put(x, y, 'belly', 0.44)                    # damp ground at the margin
+    for x, y in rim:
+        c.put(x, y, 'belly', 0.88)                    # bright wet shoreline
+
+    for y in range(3 + frame, 16, 5):                 # ripples, drifting per frame
+        for x in range(2, 14):
+            if (x, y) in inside and (x, y) not in rim and hsh(x, y, seed + 5) > 0.45:
+                c.put(x, y, 'body', 0.70)
+    return c
+
+
+def inner_corner(corner, ramp, shade):
+    """A notch of ground at a diagonal where the material wraps around an
+    outside corner. Transparent everywhere else — this stacks over the base."""
+    c = tile('terra').clear()
+    cx = 0 if corner in ('nw', 'sw') else TILE - 1
+    cy = 0 if corner in ('nw', 'ne') else TILE - 1
+    for y in range(TILE):
+        for x in range(TILE):
+            d = max(abs(x - cx), abs(y - cy))
+            if d <= 2 + (hsh(x, y, 77) - 0.5) * 1.4:
+                c.put(x, y, ramp, shade)
+    return c
+
+
+def ao_overlay(sides):
+    """Contact shading cast onto the ground by whatever blocks it.
+
+    World light is upper-left, so a wall or a tree darkens the ground on its
+    lower-right. Drawn opaque here and composited at low opacity by TileMap, so
+    it reads as shade over any ground rather than as a painted stripe.
+    """
+    c = tile('terra').clear()
+    size = c.w
+    k = size / float(TILE)
+    for y in range(size):
+        for x in range(size):
+            depth = 1e9
+            if 'n' in sides:
+                depth = min(depth, y)
+            if 'w' in sides:
+                depth = min(depth, x)
+            if depth <= (3 - (hsh(x // 2, y // 2, 55) * 1.2)) * k:
+                c._set(x, y, 'ink', 0)
     return c
 
 
@@ -2020,20 +2735,1163 @@ def tile_door(pal):
     return c
 
 
-def tile_gate():
-    """The way out of town. Two stone posts either side of the path, so it reads
-    as a gap you walk through rather than a decoration."""
-    c = tile_path()
-    for px_ in (0, 13):
-        c.rect(px_, 2, px_ + 2, 15, 'leaf', 0.30)            # post
-        c.rect(px_, 2, px_, 15, 'leaf', 0.48)                # lit face
-        c.rect(px_ + 2, 2, px_ + 2, 15, 'leaf', 0.16)        # shadow face
-        c.rect(px_, 1, px_ + 2, 1, 'leaf', 0.58)             # cap
-        for k in range(4, 15, 5):                            # grain
-            c.put(px_ + 1, k, 'leaf', 0.22)
-    c.rect(2, 3, 13, 4, 'leaf', 0.42)                        # rail across the top
-    c.rect(2, 5, 13, 5, 'leaf', 0.18)
+# -------------------------------------------------------------------------
+# Training Hall interior. Equipment is drawn from the same lit primitives as
+# everything else so the room does not read as icons pasted onto a floor: each
+# piece gets a contact shadow, a lit top-left face and a darker right face.
+# -------------------------------------------------------------------------
+def _gym_floor(variant=0):
+    """Rubber matting. Seamed into panels so the floor shows its own grid
+    instead of borrowing the tile grid."""
+    c = tile('gym')
+    mottle(c, 'belly', 0.52, 0.05, 41 + variant, cell=2)
+    c.rect(0, 0, 15, 0, 'belly', 0.40)                       # panel seam
+    c.rect(0, 0, 0, 15, 'belly', 0.40)
+    c.rect(1, 1, 15, 1, 'belly', 0.60)                       # light catching the lip
+    if variant:
+        for k in range(3, 14, 4):
+            c.put(k, 8, 'belly', 0.44)
     return c
+
+
+def tile_gym_floor(variant=0):
+    return _gym_floor(variant)
+
+
+def tile_gym_wall():
+    c = tile('gym')
+    mottle(c, 'body', 0.30, 0.03, 47, cell=4)
+    c.rect(0, 12, 15, 13, 'leaf', 0.34)                      # dado rail
+    c.rect(0, 12, 15, 12, 'leaf', 0.52)
+    c.rect(0, 14, 15, 15, 'body', 0.20)                      # skirting in shadow
+    return c
+
+
+def tile_home_floor(variant=0):
+    """Interior floorboards. Rooms used to fall back to the grass tile, so the
+    bedroom and the front room were carpeted in lawn."""
+    c = tile('couch')
+    mottle(c, 'body', 0.56, 0.05, 61 + variant, cell=2)
+    run = 5 if variant else 4
+    for by in range(0, 16, run):
+        c.rect(0, by, 15, by, 'body', 0.36)                  # board seam
+        c.rect(0, by + 1, 15, by + 1, 'body', 0.70)          # lit lip below it
+    stagger = 0 if variant == 0 else 6
+    for bx in range((stagger + 7) % 16, 16, 11):             # butt joints
+        c.rect(bx, 0, bx, 15, 'body', 0.40)
+    return c
+
+
+def home_floor_field(span=FIELD_SPAN):
+    """Floorboards laid across a whole 4x4 block of tiles.
+
+    The first pass read as BRICKWORK, and for the reasons brickwork reads as
+    brickwork: every course was the same depth, every plank was the same tone
+    to within a rounding error, and the butt joints came round twice per field.
+    Regular short rectangles all the same colour is a wall, whatever you meant.
+
+    What makes wood read as wood is that no two boards match. Each plank here
+    is cut from a different part of the tree and sits at its own value, the
+    grain runs the length of it hard enough to see, and a joint is RARE — a
+    board runs the width of the room and then some.
+    """
+    size = TILE * span
+    c = Canvas(size, size, 'couch', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    _mottle_raw(c, 'body', 0.54, 0.03, 61, px, px, cell=2)
+
+    board = 16
+    for course, top in enumerate(range(0, px, board)):
+        # Wide tone spread, so neighbouring boards are plainly different
+        # boards. At the old +/-0.035 they were one surface with lines ruled
+        # across it.
+        tone = 0.53 + (hsh(course, 3, 71) - 0.5) * 0.14
+        for y in range(top, min(top + board, px)):
+            depth = (y - top) / float(board)
+            # Boards are not flat: each one crowns slightly, so the middle
+            # catches light and the edges fall away into the seam.
+            crown = (0.5 - abs(depth - 0.5)) * 0.055
+            for x in range(px):
+                grain = ((hsh(x // 19, course, 83) - 0.5) * 0.075
+                         + (hsh(x // 5, course, 87) - 0.5) * 0.030
+                         + (hsh(x // 2, course * 7 + (y - top), 93) - 0.5) * 0.014)
+                c._set(x, y, 'body', tone + crown + grain)
+        c.rect_px(0, top, px - 1, top, 'body', tone - 0.10)          # the seam
+        c.rect_px(0, top + 1, px - 1, top + 1, 'body', tone + 0.07)  # lit lip below it
+
+        # One butt joint per course at most, and not on every course. Two per
+        # field was what turned the boards into bricks.
+        if hsh(course, 13, 107) > 0.42:
+            bx = int(hsh(course, 17, 109) * (px - 24)) + 12
+            c.rect_px(bx, top + 2, bx, min(top + board - 1, px - 1), 'body', tone - 0.085)
+            c.rect_px(bx + 1, top + 2, bx + 1, min(top + board - 1, px - 1), 'body', tone + 0.05)
+
+        # A knot every few boards, offset so they never line up.
+        if hsh(course, 7, 97) > 0.62:
+            kx = int(hsh(course, 11, 101) * (px - 12)) + 6
+            ky = top + board // 2
+            for ry in range(-2, 3):
+                for rx in range(-3, 4):
+                    if rx * rx * 0.5 + ry * ry <= 4 and 0 <= ky + ry < px:
+                        c._set(kx + rx, ky + ry, 'body', tone - 0.12)
+            c._set(kx, ky, 'body', tone - 0.19)
+    light_pool(c, 0.15)
+    return c
+
+
+def home_wall_field(span=FIELD_SPAN):
+    """Interior plaster, painted.
+
+    Rooms first used the outdoor stone wall, which read as a castle. Then it
+    was plaster off the furniture palette, which read as more floor — a room
+    whose wall and floor are the same warm brown has no visible corners, and
+    that was most of why the house looked like a box with things in it.
+
+    Emulsion is not flat: it dries in soft blotches and it takes the light from
+    the room, so the fixture pool runs across it the way it runs across
+    everything else.
+    """
+    size = TILE * span
+    c = Canvas(size, size, 'plaster', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    for y in range(px):
+        for x in range(px):
+            # Soft blotching the way emulsion dries, plus a whisper of grain.
+            # An earlier vertical drift at 0.05 read as corrugated iron.
+            v = (0.82
+                 + (hsh(x // 11, y // 9, 113) - 0.5) * 0.026
+                 + (hsh(x // 4, y // 4, 127) - 0.5) * 0.013
+                 + (hsh(x, y, 131) - 0.5) * 0.009)
+            c._set(x, y, 'body', v)
+    return c
+
+
+def home_rug_field(span=FIELD_SPAN):
+    """A woven rug, as a SURFACE.
+
+    It used to be six bright prop squares dropped in the middle of BOTH rooms —
+    the same mistake as the training mats in the gym, and just as visible from
+    arm's length. A rug is something the floor is covered with, so it belongs
+    down here with the boards and the vinyl, and the zone joint gives it its
+    edge.
+    """
+    size = TILE * span
+    c = Canvas(size, size, 'rug', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    _mottle_raw(c, 'body', 0.40, 0.028, 149, px, px, cell=2)
+    # Warp and weft, a pixel each: cloth up close, texture at arm's length.
+    for y in range(px):
+        for x in range(px):
+            if (x + y) % 4 == 0:
+                c._set(x, y, 'body', 0.49)
+            elif (x - y) % 5 == 0:
+                c._set(x, y, 'body', 0.34)
+    # A repeating motif, one every two tiles, in the cream.
+    for cy in range(32, px, 64):
+        for cx in range(32, px, 64):
+            for dy in range(-13, 14):
+                for dx in range(-13, 14):
+                    d = abs(dx) + abs(dy)
+                    if 10 <= d <= 12:
+                        c._set(cx + dx, cy + dy, 'leaf', 0.60)
+                    elif d <= 4:
+                        c._set(cx + dx, cy + dy, 'leaf', 0.48)
+    light_pool(c, 0.12)
+    return c
+
+
+def home_kitchen_field(span=FIELD_SPAN):
+    """Kitchen vinyl.
+
+    Deliberately NOT a tiled floor. A tile grid at this scale can only land on
+    the game's own tile boundaries — 128 divides by 32 and by nothing useful in
+    between — and drawing the grid back onto the ground is the one thing the
+    ground is not allowed to do. Speckled sheet vinyl reads as a kitchen from
+    across the room and has no grid in it at all.
+    """
+    size = TILE * span
+    c = Canvas(size, size, 'plaster', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    _mottle_raw(c, 'belly', 0.60, 0.020, 163, px, px, cell=3)
+    for y in range(px):
+        for x in range(px):
+            n = hsh(x, y, 167)
+            if n > 0.935:
+                c._set(x, y, 'belly', 0.78)
+            elif n < 0.065:
+                c._set(x, y, 'belly', 0.46)
+            elif n > 0.885:
+                c._set(x, y, 'accent', 0.42)      # the odd fleck of warmth
+    light_pool(c, 0.14)
+    return c
+
+
+def gym_floor_field(span=FIELD_SPAN):
+    """Rubber matting in panels several tiles across."""
+    size = TILE * span
+    c = Canvas(size, size, 'gym', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    _mottle_raw(c, 'belly', 0.52, 0.04, 41, px, px, cell=2)
+    # Fleck: recycled rubber is speckled, and at 32px the speckle is the whole
+    # reason the floor reads as rubber rather than as flat paint.
+    for y in range(px):
+        for x in range(px):
+            n = hsh(x, y, 137)
+            if n > 0.955:
+                c._set(x, y, 'belly', 0.74)
+            elif n < 0.045:
+                c._set(x, y, 'belly', 0.34)
+    # Panels two tiles across and barely there. At one-and-a-bit tiles with a
+    # hard value step they read as a grid drawn over the floor, which is the
+    # thing being got rid of — matting has joints, but you should have to look.
+    for k in range(0, px, 64):
+        c.rect_px(k, 0, k, px - 1, 'belly', 0.47)
+        c.rect_px(k + 1, 0, k + 1, px - 1, 'belly', 0.56)
+        c.rect_px(0, k, px - 1, k, 'belly', 0.47)
+        c.rect_px(0, k + 1, px - 1, k + 1, 'belly', 0.56)
+    light_pool(c, 0.22)
+    return c
+
+
+def gym_platform_field(span=FIELD_SPAN):
+    """The lifting platform: oiled hardwood, laid across several tiles.
+
+    A gym that is one continuous surface reads as a warehouse. Zoning it — wood
+    under the iron, turf down one side, rubber everywhere else — is most of what
+    makes a real gym feel like a place rather than a floor with objects on it.
+    """
+    size = TILE * span
+    c = Canvas(size, size, 'couch', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    board = 14
+    for course, top in enumerate(range(0, px, board)):
+        tone = 0.32 + (hsh(course, 5, 211) - 0.5) * 0.05
+        for y in range(top, min(top + board, px)):
+            for x in range(px):
+                grain = (hsh(x // 13, course, 213) - 0.5) * 0.045
+                c._set(x, y, 'body', tone + grain + (hsh(x // 2, y, 217) - 0.5) * 0.016)
+        c.rect_px(0, top, px - 1, top, 'body', tone - 0.09)
+        c.rect_px(0, top + 1, px - 1, top + 1, 'body', tone + 0.07)
+    light_pool(c, 0.15)
+    return c
+
+
+def gym_turf_field(span=FIELD_SPAN):
+    """Sled and sprint turf, with lane lines running up it."""
+    size = TILE * span
+    c = Canvas(size, size, 'sprout', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    # Indoor turf, not a lawn. The first pass ran bright lane lines every tile
+    # and a hot green under them, and the strip read as somebody had left the
+    # garden door open.
+    _mottle_raw(c, 'body', 0.20, 0.030, 223, px, px, cell=2)
+    for y in range(px):
+        for x in range(px):
+            if hsh(x, y, 227) > 0.92:
+                c._set(x, y, 'body', 0.27)          # blade flecks
+    for lane in range(0, px, 64):                    # one lane line every two tiles
+        c.rect_px(lane, 0, lane, px - 1, 'belly', 0.90)
+    light_pool(c, 0.13)
+    return c
+
+
+def gym_mat_field(span=FIELD_SPAN):
+    """Interlocking foam matting: the bodyweight and core floor.
+
+    The mats used to be individual bright props dotted over the rubber, which
+    from a phone's distance read as a handful of blue tiles dropped in the
+    middle of the room rather than as an area you would go and train on.
+    Matting is a SURFACE. It belongs down here with the wood and the turf, in
+    the charcoal it actually is, laid in squares two tiles across.
+    """
+    size = TILE * span
+    c = Canvas(size, size, 'gym', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    _mottle_raw(c, 'belly', 0.39, 0.028, 173, px, px, cell=3)
+    for y in range(px):
+        for x in range(px):
+            n = hsh(x, y, 179)
+            if n > 0.945:
+                c._set(x, y, 'belly', 0.52)                  # closed-cell foam speckle
+            elif n < 0.055:
+                c._set(x, y, 'belly', 0.29)
+    for k in range(0, px, 64):
+        c.rect_px(k, 0, k, px - 1, 'belly', 0.22)            # the joint
+        c.rect_px(k + 1, 0, k + 1, px - 1, 'belly', 0.51)    # bevel catching the light
+        c.rect_px(0, k, px - 1, k, 'belly', 0.22)
+        c.rect_px(0, k + 1, px - 1, k + 1, 'belly', 0.51)
+    light_pool(c, 0.19)
+    return c
+
+
+# A gradient made of one colour has to be dithered, and WHICH dither matters.
+# Hash scatter reads as television static at 32px; an ordered threshold reads as
+# a ramp, which is what a pool of light under a fixture is.
+BAYER4 = ((0, 8, 2, 10), (12, 4, 14, 6), (3, 11, 1, 9), (15, 7, 13, 5))
+
+
+def _ordered(x, y):
+    return (BAYER4[y % 4][x % 4] + 0.5) / 16.0
+
+
+def light_pool(c, amount=0.12):
+    """Bake a hall fixture's pool of light into a floor field.
+
+    The first pass drew the lighting as its OWN dithered layer over the floor.
+    A single-colour layer can only fake a gradient by scattering, and at this
+    tile size the scatter read as television static laid over the rubber.
+
+    A floor field is already exactly one fixture cell across, so the light
+    belongs in the material's own ramp: every pixel is lifted or dropped by
+    where it sits under the fixture. That is a real gradient rather than a
+    dither, it costs no extra layer, and the pools land every four tiles
+    because that is where the lights are.
+    """
+    px = c.w
+    cx = cy = (px - 1) / 2.0
+    reach = px * 0.62
+    for y in range(px):
+        for x in range(px):
+            cur = c.px[y][x]
+            if cur is None:
+                continue
+            d = math.hypot(x - cx, y - cy) / reach
+            ramp, shade, cov, lit = cur
+            c.px[y][x] = (ramp, max(0.0, min(1.0, shade + amount * (1.0 - d * d))), cov, lit)
+    return c
+
+
+def zone_edge(side):
+    """The joint where a floor zone stops.
+
+    Wood, turf and matting butted straight against the rubber with nothing in
+    between, and that was the one place left indoors where the tile grid was
+    still visible: a dead-straight value step four tiles long reads as a grid
+    line even when neither material does.
+
+    A zone is an INLAY, so it is drawn slightly recessed — a dark joint all the
+    way round, the north and west inner edges in the shadow of the lip above
+    them, and the south and east inner edges catching the light that gets in.
+    Only ever drawn inside the zone, so it composites over any material.
+    """
+    c = tile('gym').clear()
+    size = c.w
+    k = size / float(TILE)
+    shaded = side in ('n', 'w')
+    for y in range(size):
+        for x in range(size):
+            depth = {'n': y, 's': size - 1 - y, 'w': x, 'e': size - 1 - x}[side] / k
+            if depth < 0.55:
+                c._set(x, y, 'ink', 0)                       # the joint itself
+            elif shaded:
+                if depth < 3.0 and _ordered(x, y) < (3.0 - depth) / 3.4:
+                    c._set(x, y, 'ink', 0)                   # falloff under the lip
+            elif depth < 0.75 and _ordered(x, y) < 0.75:
+                c._set(x, y, 'white', 0)                     # lit inner edge
+    return c
+
+
+def gym_wall_field(span=FIELD_SPAN):
+    """Painted block wall — coursed, but softly, so it does not stripe."""
+    size = TILE * span
+    c = Canvas(size, size, 'gym', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    _mottle_raw(c, 'body', 0.30, 0.02, 47, px, px, cell=3)
+    course_h, block_w = 16, 32
+    for row, top in enumerate(range(0, px, course_h)):
+        shift = (row % 2) * (block_w // 2)
+        for y in range(top, min(top + course_h, px)):
+            for x in range(px):
+                c._set(x, y, 'body', 0.30 + (hsh((x + shift) // block_w, row, 149) - 0.5) * 0.05
+                       + (hsh(x, y, 151) - 0.5) * 0.02)
+        c.rect_px(0, top, px - 1, top, 'body', 0.24)                 # mortar course
+        for bx in range(shift, px, block_w):
+            c.rect_px(bx, top, bx, min(top + course_h - 1, px - 1), 'body', 0.24)
+    return c
+
+
+# -------------------------------------------------------------------------
+# PROPS
+#
+# The bedroom and the front room were four walls and a floor, which is why the
+# opening minutes felt like a corridor rather than somewhere the player lives.
+#
+# Every prop is a TRANSPARENT overlay drawn over whatever floor its room has,
+# not a tile with a floor baked in. That keeps a sofa usable in any room, and it
+# lets each prop choose the palette it actually needs — foliage green, appliance
+# grey, terracotta bedding — without dragging a mismatched patch of floor along
+# with it. Mixing art sources inside one tile is what made the ground go patchy
+# the first time, and a prop with its own baked floor is the same mistake.
+#
+# Same lit primitives as everything else: lit top-left face, darker lower-right,
+# contact shadow on the floor.
+# -------------------------------------------------------------------------
+def _prop(pal):
+    return tile(pal).clear()
+
+
+def prop_bed_head():
+    """Head of the bed — pillow and turned-down sheet."""
+    c = _prop('ember')
+    c.rect(1, 2, 14, 15, 'belly', 0.20)                      # frame
+    c.rect(2, 3, 13, 7, 'belly', 0.96)                       # pillow
+    c.rect(3, 4, 12, 6, 'belly', 1.0)
+    c.rect(2, 8, 13, 15, 'body', 0.54)                       # quilt
+    c.rect(2, 8, 13, 9, 'body', 0.74)                        # turned-down cuff
+    c.rect(13, 9, 13, 15, 'body', 0.30)                      # shaded side
+    c.rect(1, 15, 14, 15, 'ink', 0)
+    return c
+
+
+def prop_bed_foot():
+    """Foot of the bed, so a bed is two tiles and reads as furniture."""
+    c = _prop('ember')
+    c.rect(1, 0, 14, 12, 'body', 0.54)
+    c.rect(1, 0, 13, 1, 'body', 0.66)
+    c.rect(13, 0, 14, 12, 'body', 0.30)
+    c.rect(1, 12, 14, 15, 'belly', 0.24)                     # footboard
+    c.rect(1, 12, 14, 12, 'belly', 0.52)
+    c.rect(1, 15, 14, 15, 'ink', 0)
+    return c
+
+
+def prop_tv():
+    """Screen on a low stand, dark glass catching the window."""
+    c = _prop('rock')
+    c.rect(1, 2, 14, 11, 'ink', 0)                           # bezel
+    c.rect(2, 3, 13, 10, 'body', 0.16)                       # glass
+    for k in range(5):
+        c.put(3 + k, 8 - k, 'body', 0.52)                    # reflection
+        c.put(4 + k, 8 - k, 'body', 0.38)
+    c.rect(6, 12, 9, 13, 'ink', 0)                           # neck
+    c.rect(3, 13, 12, 15, 'body', 0.34)                      # stand
+    c.rect(3, 13, 12, 13, 'body', 0.58)
+    return c
+
+
+def prop_desk():
+    """Writing desk with a lamp — where the journal lives."""
+    c = _prop('couch')
+    c.rect(1, 5, 14, 8, 'body', 0.46)                        # top
+    c.rect(1, 5, 14, 5, 'body', 0.70)                        # lit front lip
+    c.rect(2, 9, 4, 15, 'body', 0.24)                        # legs
+    c.rect(11, 9, 13, 15, 'body', 0.24)
+    c.rect(10, 1, 12, 4, 'leaf', 0.86)                       # lamp shade
+    c.put(11, 5, 'body', 0.36)
+    c.rect(3, 2, 7, 4, 'belly', 0.94)                        # open journal
+    c.put(5, 3, 'body', 0.40)
+    c.rect(1, 15, 14, 15, 'ink', 0)
+    return c
+
+
+def _sofa_body(c):
+    """The parts of a sofa that run its whole length, so halves meet cleanly."""
+    c.rect(0, 2, 15, 6, 'body', 0.36)                        # back
+    c.rect(0, 2, 15, 2, 'body', 0.56)                        # lit top of the back
+    c.rect(0, 7, 15, 12, 'body', 0.62)                       # seat
+    c.rect(0, 7, 15, 7, 'body', 0.74)                        # lit front of the cushion
+    return c
+
+
+def prop_sofa(half=None):
+    """Two-seat sofa, back to the wall.
+
+    `half` picks an end when the sofa spans more than one tile. Drawn whole in
+    every tile it occupied, a two-tile sofa was two sofas with four arms — the
+    same mistake as the kitchen run where every counter had its own sink. What
+    runs the length of the sofa is shared, so the halves meet without a seam;
+    only the arm moves.
+    """
+    c = _sofa_body(_prop('snooze'))
+    if half in (None, 'l'):
+        c.rect(0, 4, 2, 13, 'body', 0.44)                    # left arm, lit
+    if half in (None, 'r'):
+        c.rect(13, 4, 15, 13, 'body', 0.26)                  # right arm, shaded
+    if half is None:
+        c.rect(7, 7, 8, 12, 'body', 0.46)                    # one tile seats two
+    elif half == 'l':
+        c.rect(15, 7, 15, 12, 'body', 0.46)                  # cushion seam at the join
+    # The shadow under it runs the whole length too, or the sofa has a gap of
+    # daylight under the join.
+    c.rect(2 if half in (None, 'l') else 0, 13,
+           13 if half in (None, 'r') else 15, 15, 'ink', 0)
+    return c
+
+
+def prop_table():
+    """Kitchen table seen from above."""
+    c = _prop('couch')
+    c.rect(2, 3, 13, 11, 'body', 0.52)
+    c.rect(2, 3, 13, 3, 'body', 0.72)
+    c.rect(2, 11, 13, 11, 'body', 0.26)
+    c.rect(3, 12, 4, 14, 'body', 0.22)                       # legs
+    c.rect(11, 12, 12, 14, 'body', 0.22)
+    c.blob(8, 7, 2.2, 1.8, 'belly', 0.92)                    # a bowl on top
+    c.rect(2, 15, 13, 15, 'ink', 0)
+    return c
+
+
+def prop_counter():
+    """Kitchen counter with a sink."""
+    c = _prop('couch')
+    c.rect(0, 3, 15, 12, 'body', 0.30)                       # cabinet
+    c.rect(0, 3, 15, 4, 'belly', 0.90)                       # worktop
+    c.rect(0, 3, 15, 3, 'belly', 1.0)
+    c.rect(4, 6, 11, 10, 'body', 0.14)                       # sink basin
+    c.rect(5, 7, 10, 9, 'body', 0.22)
+    c.put(7, 5, 'belly', 0.70); c.put(8, 5, 'belly', 0.70)   # tap
+    c.rect(0, 12, 15, 13, 'body', 0.16)                      # kick board
+    return c
+
+
+def prop_worktop():
+    """Plain counter run.
+
+    The kitchen was four counters side by side and every one of them had a sink
+    in it. A worktop is mostly worktop; exactly one of them is the sink.
+    """
+    c = _prop('couch')
+    c.rect(0, 3, 15, 12, 'body', 0.30)                       # cabinet
+    c.rect(0, 3, 15, 4, 'belly', 0.90)                       # worktop
+    c.rect(0, 3, 15, 3, 'belly', 1.0)                        # lit front lip
+    c.rect(0, 7, 15, 7, 'body', 0.20)                        # door line
+    c.rect(3, 8, 5, 8, 'belly', 0.60)                        # handles
+    c.rect(10, 8, 12, 8, 'belly', 0.60)
+    c.rect(0, 12, 15, 13, 'body', 0.16)                      # kick board in shadow
+    return c
+
+
+def prop_oven():
+    """Cooker: hob on the top, door and handle on the front."""
+    c = _prop('rock')
+    c.rect(0, 3, 15, 13, 'body', 0.36)                       # body
+    c.rect(0, 3, 15, 4, 'belly', 0.70)                       # hob
+    c.rect(0, 3, 15, 3, 'belly', 0.90)
+    for cx in (4, 11):
+        c.sphere(cx, 4, 2.2, 1.2, 'body', ambient=0.16)      # rings
+    c.rect(1, 6, 14, 11, 'body', 0.20)                       # oven door
+    c.rect(2, 7, 13, 10, 'belly', 0.28)                      # its glass
+    c.rect(1, 6, 14, 6, 'belly', 0.62)                       # handle
+    c.rect(0, 14, 15, 14, 'ink', 0)
+    return c
+
+
+def prop_chair():
+    """A dining chair from above: back rail, seat, legs."""
+    c = _prop('couch')
+    c.rect(4, 2, 11, 4, 'body', 0.24)                        # back rail
+    c.rect(4, 2, 11, 2, 'body', 0.52)
+    c.rect(3, 5, 12, 12, 'leaf', 0.44)                       # seat
+    c.rect(3, 5, 12, 5, 'leaf', 0.68)                        # lit front edge
+    c.rect(12, 6, 12, 12, 'leaf', 0.26)                      # shaded side
+    c.put(3, 13, 'body', 0.20); c.put(12, 13, 'body', 0.20)  # legs
+    c.rect(3, 14, 12, 14, 'ink', 0)
+    return c
+
+
+def prop_coffee_table():
+    """Low table, with the things that live on one."""
+    c = _prop('couch')
+    c.rect(1, 4, 14, 11, 'leaf', 0.50)                       # top
+    c.rect(1, 4, 14, 4, 'leaf', 0.74)                        # lit edge
+    c.rect(14, 5, 14, 11, 'leaf', 0.30)
+    c.rect(1, 11, 14, 12, 'body', 0.22)                      # apron in shadow
+    c.rect(2, 13, 3, 14, 'body', 0.26); c.rect(12, 13, 13, 14, 'body', 0.26)
+    c.rect(3, 6, 7, 9, 'belly', 0.88)                        # a book, face up
+    c.rect(3, 6, 7, 6, 'belly', 1.0)
+    c.sphere(11, 8, 1.9, 1.9, 'belly', ambient=0.58)         # and a mug
+    c.rect(1, 15, 14, 15, 'ink', 0)
+    return c
+
+
+def prop_lamp():
+    """Floor lamp — the only thing in the room that explains the light."""
+    c = _prop('couch')
+    c.rect(7, 9, 8, 13, 'body', 0.32)                        # stem
+    c.rect(5, 13, 10, 14, 'body', 0.24)                      # base
+    c.poly([(3, 8), (12, 8), (10, 1), (5, 1)], 'belly', 0.92)   # shade
+    c.poly([(4, 7), (11, 7), (9, 2), (6, 2)], 'belly', 1.0)     # lit face
+    c.rect(3, 8, 12, 8, 'belly', 0.60)                          # shaded underside
+    c.rect(4, 15, 11, 15, 'ink', 0)
+    return c
+
+
+def prop_wardrobe(half=None):
+    """Tall cupboard.
+
+    Same story as the sofa: drawn whole in both tiles, a two-tile wardrobe was
+    two wardrobes. The carcass runs through and only the end panel and the door
+    change, with the handles meeting where the doors do.
+    """
+    c = _prop('couch')
+    c.rect(0, 0, 15, 14, 'body', 0.30)                       # carcass
+    c.rect(0, 0, 15, 1, 'body', 0.56)                        # lit top
+    if half in (None, 'l'):
+        c.rect(0, 0, 0, 14, 'body', 0.48)                    # lit end panel
+    if half in (None, 'r'):
+        c.rect(15, 1, 15, 14, 'body', 0.18)                  # shaded end panel
+    if half is None:
+        c.rect(1, 2, 7, 13, 'leaf', 0.42); c.rect(8, 2, 14, 13, 'leaf', 0.36)
+        c.rect(1, 2, 7, 2, 'leaf', 0.60); c.rect(8, 2, 14, 2, 'leaf', 0.54)
+        c.rect(6, 7, 6, 9, 'belly', 0.74); c.rect(9, 7, 9, 9, 'belly', 0.74)
+    else:
+        lo = 1 if half == 'l' else 0
+        hi = 14 if half == 'r' else 15
+        c.rect(lo, 2, hi, 13, 'leaf', 0.40)                  # one door per tile
+        c.rect(lo, 2, hi, 2, 'leaf', 0.58)
+        hx = hi - 2 if half == 'l' else lo + 2
+        c.rect(hx, 7, hx, 9, 'belly', 0.74)                  # handle, at the opening
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_nightstand():
+    """Bedside table, with a lamp on it and a book you did not finish."""
+    c = _prop('couch')
+    c.rect(2, 6, 13, 13, 'body', 0.34)                       # body
+    c.rect(2, 6, 13, 7, 'leaf', 0.58)                        # top
+    c.rect(2, 6, 13, 6, 'leaf', 0.78)
+    c.rect(3, 9, 12, 9, 'body', 0.20)                        # drawer line
+    c.rect(6, 11, 9, 11, 'belly', 0.66)                      # handle
+    c.poly([(4, 5), (10, 5), (9, 1), (5, 1)], 'belly', 0.96)  # the little lamp
+    c.rect(6, 5, 7, 6, 'body', 0.30)
+    c.rect(2, 14, 13, 14, 'ink', 0)
+    return c
+
+
+def prop_fridge():
+    c = _prop('rock')
+    c.rect(2, 0, 13, 15, 'belly', 0.88)                      # body
+    c.rect(2, 0, 3, 15, 'belly', 1.0)                        # lit edge
+    c.rect(13, 0, 13, 15, 'belly', 0.54)
+    c.rect(2, 6, 13, 6, 'belly', 0.36)                       # door split
+    c.rect(11, 3, 12, 5, 'body', 0.30)                       # handles
+    c.rect(11, 8, 12, 10, 'body', 0.30)
+    return c
+
+
+def prop_stairs():
+    """Treads reading upward, so a staircase is obviously a staircase."""
+    c = _prop('couch')
+    for i, y in enumerate(range(1, 15, 3)):
+        w = 13 - i
+        c.rect(2, y, 2 + w, y + 1, 'body', 0.54 - i * 0.06)
+        c.rect(2, y, 2 + w, y, 'body', 0.76 - i * 0.06)
+        c.rect(2, y + 2, 2 + w, y + 2, 'body', 0.20)
+    return c
+
+
+def prop_plant():
+    """A pot plant. Every room needs one thing in it that is alive."""
+    c = _prop('terra')
+    c.rect(5, 10, 10, 15, 'leaf', 0.44)                      # pot
+    c.rect(5, 10, 10, 10, 'leaf', 0.66)
+    c.rect(10, 11, 10, 15, 'leaf', 0.24)
+    for cx, cy in ((8, 5), (5, 7), (11, 7), (7, 3), (10, 3)):
+        c.sphere(cx, cy, 2.6, 2.4, 'body', ambient=0.5)
+    c.rect(5, 15, 10, 15, 'ink', 0)
+    return c
+
+
+def prop_flowers():
+    """Blossoms scattered over whatever ground they sit on.
+
+    The flower TILE was a solid 16x16 square of a different texture, which in
+    the middle of continuous grass is exactly the chunk we are trying to get rid
+    of. As an overlay the ground runs underneath it unbroken.
+    """
+    c = _prop('bloom')
+    for cx, cy, ramp in (
+        (3, 5, 'leaf'), (9, 3, 'belly'), (13, 8, 'leaf'),
+        (6, 11, 'belly'), (11, 13, 'leaf'), (2, 12, 'belly'),
+    ):
+        c.put(cx, cy, ramp, 0.92)
+        c.put(cx - 1, cy, ramp, 0.74)
+        c.put(cx + 1, cy, ramp, 0.74)
+        c.put(cx, cy - 1, ramp, 0.80)
+        c.put(cx, cy + 1, ramp, 0.46)
+        c.put(cx, cy + 2, 'body', 0.40)      # a short stem
+    return c
+
+
+def prop_eave():
+    """The overhang at the bottom of a roof, drawn onto the wall below it.
+
+    Roofs used to meet their walls on a flat seam, so a building read as two
+    coloured rectangles stacked up rather than as a thing with a front and a
+    top. An eave gives the roof thickness: a lit fascia board, the dark
+    underside of the projection, and the shadow it throws down the wall.
+    """
+    c = _prop('couch')
+    c.rect(0, 0, 15, 0, 'leaf', 0.78)        # lit top lip of the fascia
+    c.rect(0, 1, 15, 2, 'leaf', 0.50)        # fascia face
+    c.rect(0, 3, 15, 3, 'leaf', 0.22)        # underside of the projection
+    c.rect(0, 4, 15, 4, 'ink', 0)            # shadow it throws on the wall
+    return c
+
+
+def prop_ridge():
+    """The cap along the top of a roof.
+
+    A roof drawn as one flat field of shingle has no apex, so a building read
+    as a coloured rectangle with a strip under it. The ridge is where the two
+    pitches meet: capping tiles, the sky on the very top edge, and the shadow
+    the cap throws down the pitch. Applied automatically to any roof with no
+    roof above it, the same way the eave is applied to any wall with a roof
+    above — so a building gets its form from its own shape, not from new codes.
+    """
+    c = _prop('couch')
+    c.rect(0, 0, 15, 0, 'leaf', 0.94)        # sky on the very top edge
+    c.rect(0, 1, 15, 2, 'leaf', 0.62)        # capping tiles
+    for k in range(0, 16, 4):
+        c.rect(k, 1, k, 2, 'leaf', 0.42)     # joints between them
+    c.rect(0, 3, 15, 3, 'leaf', 0.30)        # under the cap
+    c.rect(0, 4, 15, 4, 'ink', 0)            # shadow down the pitch
+    return c
+
+
+def prop_signpost():
+    """A fingerpost at the gate. Lettering illegible on purpose — the arrow is
+    the message, and inventing a legible word at this size means inventing a
+    typeface nobody asked for."""
+    c = _prop('couch')
+    c.rect(7, 8, 8, 15, 'body', 0.34)                       # post
+    c.rect(7, 8, 7, 15, 'body', 0.54)                       # lit side
+    c.rect(1, 2, 12, 8, 'leaf', 0.58)                       # board
+    c.rect(1, 2, 12, 2, 'leaf', 0.78)                       # lit top edge
+    c.rect(1, 8, 12, 8, 'leaf', 0.26)                       # shaded underside
+    c.poly([(12, 2), (15, 5), (12, 8)], 'leaf', 0.48)       # the point of it
+    c.rect(3, 4, 10, 4, 'body', 0.26)                       # two lines of writing
+    c.rect(3, 6, 8, 6, 'body', 0.26)
+    c.rect(6, 15, 9, 15, 'ink', 0)
+    return c
+
+
+def prop_lamppost():
+    """A lane lamp: base, post, lantern.
+
+    No pool of light on the ground — it is the middle of the day out here, and
+    a lamp that glows in daylight reads as a mistake rather than as a lamp.
+    """
+    c = _prop('rock')
+    c.rect(7, 6, 8, 14, 'body', 0.30)                       # post
+    c.rect(7, 6, 7, 14, 'body', 0.50)                       # lit side
+    c.rect(5, 14, 10, 15, 'body', 0.24)                     # base
+    c.rect(4, 1, 11, 2, 'body', 0.44)                       # cap
+    c.rect(5, 2, 10, 6, 'body', 0.34)                       # lantern housing
+    c.rect(6, 3, 9, 5, 'leaf', 0.92)                        # the glass
+    c.rect(6, 3, 6, 5, 'leaf', 1.0)
+    c.rect(5, 15, 10, 15, 'ink', 0)
+    return c
+
+
+def prop_park_bench():
+    """A bench by the water. Not `prop_bench` — that one is the flat bench in
+    the gym, and two very different objects sharing a name is how you end up
+    sitting on a weight bench in a park."""
+    c = _prop('couch')
+    c.rect(0, 2, 15, 4, 'body', 0.30)                       # back rail
+    c.rect(0, 2, 15, 2, 'body', 0.54)
+    c.rect(0, 6, 15, 12, 'leaf', 0.52)                      # seat
+    c.rect(0, 6, 15, 6, 'leaf', 0.74)                       # lit front edge
+    for k in (8, 10, 12):
+        c.rect(0, k, 15, k, 'leaf', 0.34)                   # slat gaps
+    c.rect(1, 13, 3, 14, 'body', 0.24)                      # legs
+    c.rect(12, 13, 14, 14, 'body', 0.24)
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_mailbox():
+    """A post box at the end of your path."""
+    c = _prop('rock')
+    c.rect(7, 8, 8, 15, 'leaf', 0.34)                       # post
+    c.rect(3, 3, 12, 8, 'body', 0.46)                       # box
+    c.rect(3, 3, 12, 3, 'body', 0.68)                       # lit top
+    c.rect(12, 4, 12, 8, 'body', 0.26)                      # shaded side
+    c.rect(4, 5, 10, 6, 'body', 0.20)                       # the slot
+    c.rect(13, 2, 13, 5, 'belly', 0.82)                     # the little flag, up
+    c.put(14, 2, 'belly', 0.94)
+    c.rect(6, 15, 9, 15, 'ink', 0)
+    return c
+
+
+def prop_fence(half=None):
+    """Picket fence — a run prop, so a length of it has two ends rather than an
+    end post every sixteen pixels pretending to be one."""
+    c = _prop('couch')
+    for k in (1, 6, 11):
+        c.rect(k, 4, k + 1, 14, 'body', 0.56)               # pickets
+        c.rect(k, 4, k, 14, 'body', 0.72)
+        c.put(k, 3, 'body', 0.64); c.put(k + 1, 3, 'body', 0.48)
+    c.rect(0, 6, 15, 7, 'body', 0.44)                       # top rail
+    c.rect(0, 6, 15, 6, 'body', 0.60)
+    c.rect(0, 11, 15, 12, 'body', 0.36)                     # lower rail
+    if half in (None, 'l'):
+        c.rect(0, 2, 1, 15, 'body', 0.32)                   # end post
+    if half in (None, 'r'):
+        c.rect(14, 2, 15, 15, 'body', 0.26)
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_bookshelf():
+    c = _prop('couch')
+    c.rect(1, 0, 14, 15, 'body', 0.26)                       # carcass
+    c.rect(1, 0, 2, 15, 'body', 0.46)
+    for sy in (4, 9, 14):
+        c.rect(2, sy, 13, sy, 'body', 0.58)                  # shelves
+    for i, bx in enumerate(range(3, 13, 2)):
+        c.rect(bx, 1, bx + 1, 3, 'leaf', 0.32 + (i % 3) * 0.24)
+        c.rect(bx, 6, bx + 1, 8, 'leaf', 0.74 - (i % 3) * 0.20)
+    return c
+
+
+def prop_lockers():
+    """Changing lockers for the Hall."""
+    c = _prop('rock')
+    c.rect(0, 0, 15, 14, 'body', 0.32)
+    for bx in (0, 8):
+        c.rect(bx, 0, bx, 14, 'body', 0.52)                  # lit edge per door
+        c.rect(bx + 7, 0, bx + 7, 14, 'body', 0.18)
+        c.rect(bx + 1, 3, bx + 5, 4, 'body', 0.14)           # vent
+        c.put(bx + 6, 8, 'leaf', 0.70)                       # handle
+    c.rect(0, 14, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_pullup_bar():
+    c = _prop('rock')
+    c.rect(1, 1, 3, 15, 'body', 0.36)                        # uprights
+    c.rect(12, 1, 14, 15, 'body', 0.36)
+    c.rect(1, 1, 1, 15, 'body', 0.54); c.rect(12, 1, 12, 15, 'body', 0.54)
+    c.rect(1, 2, 14, 3, 'body', 0.68)                        # the bar
+    c.rect(1, 2, 14, 2, 'body', 0.88)
+    c.rect(1, 15, 14, 15, 'ink', 0)
+    return c
+
+
+def prop_kettlebells():
+    c = _prop('rock')
+    for i, (cx, base) in enumerate(((4, 14), (8, 15), (12, 13))):
+        r = 2.6 - i * 0.2
+        c.sphere(cx, base - r, r, r, 'body', ambient=0.34)   # bell
+        c.rect(int(cx - 1), int(base - r * 2 - 3), int(cx + 1), int(base - r * 2), 'body', 0.52)
+        c.put(cx - 1, base - r * 2 - 3, 'body', 0.72)        # handle top
+    c.rect(2, 15, 13, 15, 'ink', 0)
+    return c
+
+
+def prop_rower():
+    c = _prop('rock')
+    c.rect(1, 6, 14, 9, 'body', 0.30)                        # rail
+    c.rect(1, 6, 14, 6, 'body', 0.52)
+    c.rect(9, 4, 13, 11, 'body', 0.40)                       # seat
+    c.rect(9, 4, 13, 4, 'body', 0.62)
+    c.sphere(4, 7.5, 3.4, 3.4, 'body', ambient=0.30)         # flywheel housing
+    c.rect(1, 12, 3, 15, 'body', 0.24); c.rect(12, 12, 14, 15, 'body', 0.24)
+    c.rect(1, 15, 14, 15, 'ink', 0)
+    return c
+
+
+def prop_reception():
+    """Front desk — the Hall should greet you."""
+    c = _prop('couch')
+    c.rect(0, 4, 15, 13, 'body', 0.34)                       # desk body
+    c.rect(0, 4, 15, 5, 'belly', 0.86)                       # counter top
+    c.rect(0, 4, 15, 4, 'belly', 0.98)
+    c.rect(2, 7, 6, 10, 'leaf', 0.72)                        # ledger
+    c.rect(10, 7, 13, 9, 'leaf', 0.44)                       # a cup and a stack
+    c.rect(0, 13, 15, 14, 'body', 0.18)
+    return c
+
+
+def tile_gym_wall_side():
+    """Left/right wall. The dado rail is horizontal, so tiling the front wall
+    down a column stacked it into a ladder; the side run gets a pilaster
+    instead, which repeats without reading as a repeat."""
+    c = tile('gym')
+    mottle(c, 'body', 0.30, 0.03, 47, cell=4)
+    c.rect(5, 0, 7, 15, 'body', 0.40)                        # pilaster
+    c.rect(5, 0, 5, 15, 'body', 0.56)                        # lit edge
+    c.rect(7, 0, 7, 15, 'body', 0.20)                        # shaded edge
+    return c
+
+
+
+
+def tile_gym_mirror(glint=0):
+    """A mirrored wall panel. The WHOLE west wall is these now.
+
+    Which changes how it has to be drawn. The first version framed the glass on
+    all four sides, and seventeen of those stacked put a rung across the wall
+    every sixteen pixels — the tile grid, drawn, in the one room that had just
+    had its grid taken out of the floor. The glass runs the full height of the
+    tile and the only frame is the vertical edge, so a run of them is one
+    continuous mirror.
+
+    The `glint` variant is a brighter reflection band, and it is VERTICAL for
+    the same reason: a diagonal streak would be chopped off at every tile
+    boundary. Scattered by `variantFor`, it breaks up a long wall without ever
+    landing on a seam.
+    """
+    c = tile_gym_wall_side()
+    c.rect(2, 0, 13, 15, 'body', 0.14)                       # frame, vertical only
+    c.rect(3, 0, 12, 15, 'body', 0.64)                       # glass, full height
+    c.rect(3, 0, 3, 15, 'body', 0.84)                        # lit near edge
+    c.rect(12, 0, 12, 15, 'body', 0.42)                      # shaded far edge
+    if glint:
+        c.rect(5, 0, 6, 15, 'body', 0.80)                    # what the room throws back
+        c.rect(9, 0, 9, 15, 'body', 0.73)
+    return c
+
+
+def prop_rack_barbell():
+    """Loaded bar on an upright rack, with colour-coded bumper plates.
+
+    The plates are the whole trick. A rack drawn in the room's steel read as a
+    grey lump; give it red and blue bumpers and it reads as a rack from across
+    the room, at a quarter of the tile size.
+    """
+    c = _prop('gymkit')
+    c.rect(1, 3, 3, 15, 'body', 0.24); c.rect(12, 3, 14, 15, 'body', 0.24)   # uprights
+    c.rect(1, 3, 1, 15, 'body', 0.52); c.rect(12, 3, 12, 15, 'body', 0.52)   # lit faces
+    c.rect(2, 6, 3, 6, 'accent', 0.62); c.rect(12, 6, 13, 6, 'accent', 0.62) # J-hooks
+    c.rect(3, 7, 12, 8, 'body', 0.72)                                        # the bar
+    c.rect(3, 7, 12, 7, 'body', 0.95)                                        # chrome highlight
+    for cx, ramp in ((4, 'leaf'), (11, 'belly')):                            # bumper plates
+        c.rect(cx - 1, 3, cx + 1, 12, ramp, 0.36)
+        c.rect(cx - 1, 3, cx - 1, 12, ramp, 0.66)
+        c.rect(cx, 5, cx, 10, ramp, 0.82)
+        c.rect(cx + 1, 4, cx + 1, 11, ramp, 0.20)
+    c.rect(0, 15, 15, 15, 'ink', 0)                                          # contact shadow
+    return c
+
+
+def prop_rack_dumbbell():
+    """Two-tier rack. Pairs get smaller left to right so it reads as a set."""
+    c = _prop('gymkit')
+    c.rect(0, 6, 15, 7, 'body', 0.28)                                        # shelves
+    c.rect(0, 11, 15, 12, 'body', 0.28)
+    c.rect(0, 6, 15, 6, 'body', 0.62); c.rect(0, 11, 15, 11, 'body', 0.62)
+    c.rect(0, 13, 1, 15, 'body', 0.22); c.rect(14, 13, 15, 15, 'body', 0.22)  # legs
+    for row, top, ramp in ((0, 3, 'leaf'), (1, 8, 'belly')):
+        for cx in (3, 7, 11):
+            c.rect(cx - 1, top, cx + 1, top + 2, ramp, 0.34)                 # bells
+            c.rect(cx - 1, top, cx - 1, top + 2, ramp, 0.62)
+            c.rect(cx, top + 1, cx, top + 1, 'body', 0.80)                   # handle
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_machine():
+    """Selectorised stack: housing, plates, pulley, seat pad."""
+    c = _prop('gymkit')
+    c.rect(2, 1, 6, 15, 'body', 0.20)                                        # stack housing
+    c.rect(2, 1, 2, 15, 'body', 0.46)                                        # lit edge
+    for k in range(3, 14, 2):                                                # the plates
+        c.rect(3, k, 5, k, 'body', 0.60)
+        c.rect(3, k + 1, 5, k + 1, 'body', 0.26)
+    c.rect(4, 3, 4, 8, 'accent', 0.70)                                       # selector pin run
+    c.rect(8, 1, 9, 12, 'body', 0.38); c.rect(8, 1, 8, 12, 'body', 0.66)     # upright
+    c.rect(6, 2, 12, 3, 'body', 0.50)                                        # top arm
+    c.put(12, 4, 'body', 0.88); c.put(12, 5, 'body', 0.88)                   # cable
+    c.rect(10, 9, 15, 11, 'leaf', 0.36)                                      # seat pad
+    c.rect(10, 9, 15, 9, 'leaf', 0.58)
+    c.rect(11, 12, 12, 15, 'body', 0.24)                                     # seat post
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_treadmill():
+    """Deck, belt and a lit console."""
+    c = _prop('gymkit')
+    c.rect(2, 6, 13, 14, 'body', 0.22)                                       # deck
+    c.rect(3, 7, 12, 13, 'body', 0.12)                                       # belt
+    for k in range(8, 13, 2):
+        c.rect(3, k, 12, k, 'body', 0.30)                                    # belt slats
+    c.rect(2, 6, 13, 6, 'body', 0.56)                                        # lit deck lip
+    c.rect(3, 1, 12, 3, 'body', 0.34)                                        # console
+    c.rect(3, 1, 12, 1, 'body', 0.70)
+    c.rect(5, 2, 10, 2, 'belly', 0.92)                                       # readout, lit
+    c.rect(3, 4, 3, 6, 'body', 0.44); c.rect(12, 4, 12, 6, 'body', 0.44)     # uprights
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_bench():
+    """Flat bench: pad, frame, feet."""
+    c = _prop('gymkit')
+    c.rect(2, 10, 13, 12, 'body', 0.46)                                      # steel frame
+    c.rect(2, 10, 13, 10, 'body', 0.74)                                      # lit rail
+    c.rect(3, 3, 12, 10, 'body', 0.14)                                       # vinyl pad
+    c.rect(3, 3, 12, 3, 'body', 0.30)                                        # lit top edge
+    c.rect(3, 3, 3, 10, 'body', 0.24)
+    c.rect(12, 4, 12, 10, 'body', 0.07)                                      # shaded side
+    c.rect(4, 6, 11, 6, 'leaf', 0.34)                                        # stitched seam
+    c.rect(3, 13, 4, 15, 'body', 0.40); c.rect(11, 13, 12, 15, 'body', 0.40) # feet
+    c.rect(2, 15, 13, 15, 'ink', 0)
+    return c
+
+
+def prop_water_station():
+    """Cooler and cups. Hydration is a module, so it gets a landmark."""
+    c = _prop('gymkit')
+    c.rect(4, 2, 11, 6, 'belly', 0.74)                                       # bottle
+    c.rect(4, 2, 11, 2, 'belly', 0.94)
+    c.rect(5, 3, 10, 5, 'belly', 0.52)                                       # water
+    c.rect(3, 7, 12, 14, 'body', 0.26)                                       # cabinet
+    c.rect(3, 7, 3, 14, 'body', 0.50)
+    c.rect(6, 9, 9, 10, 'body', 0.12)                                        # spout recess
+    c.put(7, 11, 'accent', 0.76); c.put(8, 11, 'accent', 0.76)               # taps
+    c.rect(2, 15, 13, 15, 'ink', 0)
+    return c
+
+
+def _bar_top(c):
+    """The counter both bar tiles share: worktop, steel rail, shaded lip."""
+    c.rect(0, 3, 15, 12, 'body', 0.34)
+    c.rect(0, 3, 15, 4, 'body', 0.62)                        # lit worktop edge
+    c.rect(0, 5, 15, 5, 'belly', 0.58)                       # steel rail
+    c.rect(0, 12, 15, 13, 'body', 0.18)                      # shaded lip
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_bar_counter():
+    """The smoothie bar's counter run: cups poured and a bowl of fruit."""
+    c = _bar_top(_prop('juicebar'))
+    for cx in (3, 6):
+        c.rect(cx - 1, 6, cx + 1, 11, 'belly', 0.88)         # cup
+        c.rect(cx - 1, 6, cx - 1, 11, 'belly', 1.0)
+        c.rect(cx, 7, cx, 10, 'accent', 0.74)                # what is in it
+    c.sphere(11, 10, 3.6, 2.6, 'belly', ambient=0.38)        # fruit bowl
+    c.sphere(10, 8, 1.7, 1.5, 'leaf', ambient=0.46)
+    c.sphere(12, 8, 1.7, 1.5, 'accent', ambient=0.46)
+    return c
+
+
+def prop_bar_blender():
+    """The blender station. A bar with no machine on it is just a table."""
+    c = _bar_top(_prop('juicebar'))
+    c.rect(5, 9, 10, 12, 'belly', 0.28)                      # motor housing
+    c.rect(5, 9, 5, 12, 'belly', 0.50)
+    c.rect(6, 1, 10, 9, 'belly', 0.92)                       # glass jug
+    c.rect(6, 4, 10, 8, 'leaf', 0.54)                        # mid-blend
+    c.rect(6, 1, 6, 9, 'belly', 1.0)                         # lit glass edge
+    c.rect(10, 2, 10, 9, 'belly', 0.64)
+    c.put(11, 11, 'accent', 0.82)                            # the button
+    return c
+
+
+def prop_ez_bars():
+    """EZ curl and fixed barbells in a low floor cradle.
+
+    They sit on the floor beside the dumbbells in every gym, which is exactly
+    why the free-weight corner was not convincing: it had a rack at chest
+    height, a shelf at waist height and nothing at all at knee height.
+    """
+    c = _prop('gymkit')
+    for top, ramp, inset in ((3, 'belly', 3), (6, 'leaf', 2), (9, 'accent', 1)):
+        c.rect(2 + inset, top, 13 - inset, top, 'body', 0.88)        # chrome shaft
+        c.rect(2 + inset, top + 1, 13 - inset, top + 1, 'body', 0.38)
+        c.rect(inset, top - 1, 2 + inset, top + 2, ramp, 0.42)       # end plates
+        c.rect(inset, top - 1, inset, top + 2, ramp, 0.68)           # lit rim
+        c.rect(13 - inset, top - 1, 15 - inset, top + 2, ramp, 0.26) # shaded rim
+    c.rect(0, 12, 15, 13, 'body', 0.24)                              # cradle rail
+    c.rect(0, 12, 15, 12, 'body', 0.54)
+    c.rect(1, 14, 2, 15, 'body', 0.20); c.rect(13, 14, 14, 15, 'body', 0.20)
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_stretch_rig():
+    """Rollers and bands at the head of the turf lane.
+
+    The turf needed something to walk up to. A lane of grass with nothing on it
+    is scenery; a rack of rollers and bands at the top of it is the place you
+    go to warm up, and it is what the lane is for.
+    """
+    c = _prop('gymkit')
+    for top, ramp in ((1, 'leaf'), (3, 'belly')):                    # rollers, lying down
+        c.rect(2, top, 13, top + 1, ramp, 0.30)
+        c.rect(2, top, 13, top, ramp, 0.62)                          # lit along the top
+        c.rect(2, top, 2, top + 1, ramp, 0.16)                       # foam end caps
+        c.rect(13, top, 13, top + 1, ramp, 0.16)
+    c.rect(1, 5, 14, 6, 'body', 0.28)                                # upper shelf
+    c.rect(1, 5, 14, 5, 'body', 0.60)
+    for bx, ramp in ((3, 'accent'), (7, 'leaf'), (11, 'belly')):     # bands hanging off it
+        c.rect(bx, 7, bx, 9, ramp, 0.64)
+        c.rect(bx + 1, 7, bx + 1, 9, ramp, 0.32)
+    c.rect(1, 10, 14, 11, 'body', 0.28)                              # lower shelf
+    c.rect(1, 10, 14, 10, 'body', 0.60)
+    c.rect(1, 12, 2, 15, 'body', 0.22); c.rect(13, 12, 14, 15, 'body', 0.22)
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_ball_rack():
+    """Medicine balls in a two-tier cradle — the mat floor's landmark."""
+    c = _prop('gymkit')
+    c.rect(0, 7, 15, 8, 'body', 0.26)                                # upper rail
+    c.rect(0, 7, 15, 7, 'body', 0.58)
+    for cx, ramp in ((3, 'leaf'), (8, 'belly'), (13, 'accent')):
+        c.sphere(cx, 4, 3.0, 3.0, ramp, ambient=0.28)
+        c.sphere(cx, 11, 2.6, 2.6, ramp, ambient=0.22)
+    c.rect(0, 13, 15, 14, 'body', 0.26)                              # lower rail
+    c.rect(0, 13, 15, 13, 'body', 0.58)
+    c.rect(0, 14, 1, 15, 'body', 0.20); c.rect(14, 14, 15, 15, 'body', 0.20)
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_banner():
+    """Hall colours on the wall. A room with nothing on its walls reads as a
+    corridor, and one banner is the cheapest thing that fixes it."""
+    c = _prop('gymkit')
+    c.rect(2, 0, 13, 12, 'leaf', 0.30)                                       # cloth
+    c.rect(2, 0, 3, 12, 'leaf', 0.50)                                        # lit fold
+    c.rect(12, 0, 13, 12, 'leaf', 0.16)                                      # shaded fold
+    c.rect(4, 3, 11, 4, 'accent', 0.86)                                      # two bars of trim
+    c.rect(4, 7, 11, 8, 'accent', 0.70)
+    for k in range(5):                                                       # pennant hem
+        c.rect(2 + k * 3, 13, 3 + k * 3, 13, 'leaf', 0.24)
+    return c
+
+
+def prop_wall_clock():
+    c = _prop('gymkit')
+    c.sphere(8, 7, 6, 6, 'body', ambient=0.34)                               # case
+    c.sphere(8, 7, 4.6, 4.6, 'belly', ambient=0.86)                          # face
+    c.rect(8, 3, 8, 7, 'body', 0.10)                                         # hands
+    c.rect(8, 7, 11, 7, 'body', 0.10)
+    return c
+
+
+def prop_whiteboard():
+    """Today's session, written up. Gyms have one of these."""
+    c = _prop('gymkit')
+    c.rect(0, 1, 15, 12, 'body', 0.30)                                       # frame
+    c.rect(1, 2, 14, 11, 'belly', 0.96)                                      # board
+    for k, w in ((4, 10), (6, 7), (8, 11), (10, 6)):                         # writing
+        c.rect(2, k, 2 + w, k, 'body', 0.24)
+    c.rect(1, 12, 14, 12, 'body', 0.44)                                      # tray
+    c.rect(3, 12, 5, 12, 'leaf', 0.70)                                       # a marker on it
+    return c
+
+
+def tile_gym_exit():
+    """The way back out to Maple Lane."""
+    c = tile_gym_wall()
+    c.rect(3, 2, 12, 15, 'leaf', 0.22)                       # frame
+    c.rect(4, 3, 11, 15, 'leaf', 0.44)                       # door face
+    c.rect(4, 3, 4, 15, 'leaf', 0.60)                        # lit edge
+    c.rect(5, 5, 10, 9, 'leaf', 0.30)                        # window panel
+    c.rect(6, 6, 9, 8, 'body', 0.72)
+    c.put(10, 11, 'body', 0.86)                              # handle
+    return c
+
+
 
 
 # =========================================================================
@@ -2051,6 +3909,16 @@ def tile_gate():
 # =========================================================================
 TRACED_DIR = HERE
 
+# Must match TRACE_ALPHABET in tools/convert_character.py. A..Z occupy the same
+# first 26 positions the creature tracer has always used, so every traced_*.json
+# written before the lowercase/digit tail existed still decodes identically.
+TRACE_ALPHABET = (
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    'abcdefghijklmnopqrstuvwxyz'
+    '0123456789'
+)
+TRACE_INDEX = {ch: i + 1 for i, ch in enumerate(TRACE_ALPHABET)}
+
 
 def load_traced(name):
     path = os.path.join(TRACED_DIR, 'traced_%s.json' % name)
@@ -2059,13 +3927,14 @@ def load_traced(name):
     with open(path) as f:
         blob = json.load(f)
     pal = ['transparent'] + list(blob['palette'])
-    # Re-index from the converter's A.. alphabet into the sprite alphabet, with
-    # 0 reserved for transparent as everywhere else.
+    # Re-index from the converter's alphabet into the sprite alphabet, with 0
+    # reserved for transparent as everywhere else. A character card needs more
+    # than the 26 colours a positional ord() could reach, hence the table.
     grid = []
     for row in blob['rows']:
         out = ''
         for ch in row:
-            out += TRANSPARENT if ch == '.' else DIGITS[ord(ch) - 64]
+            out += TRANSPARENT if ch == '.' else DIGITS[TRACE_INDEX[ch]]
         grid.append(out)
     return {'palette': pal, 'grid': grid}
 
@@ -2076,11 +3945,17 @@ def load_traced(name):
 def build_all():
     s = {}
     traced_palettes = {}
+    # Which traced files actually fed a sprite. Tracked by source name rather
+    # than by palette key, because art can reach the registry indirectly — a
+    # walk set derives twelve sprites from one traced pose, and a blended tile
+    # composites two sources into a third name.
+    used_traced = set()
 
     def add(name, canvas):
         # Reference artwork, where we have it, beats anything generated.
         t = load_traced(name)
         if t:
+            used_traced.add(name)
             key = 'art_' + name
             traced_palettes[key] = t['palette']
             s[name] = {'palette': key, 'grid': t['grid']}
@@ -2100,17 +3975,64 @@ def build_all():
     add('sludgewad', sludgewad()); add('snoozeghoul', snoozeghoul())
     add('couchlurk', couchlurk()); add('achefang', achefang())
 
-    # hero: four facings, idle + two step frames
-    for facing in ('down', 'up', 'left', 'right'):
-        add('hero_%s' % facing, hero(facing, 0))
-        add('hero_%s_a' % facing, hero(facing, 1))
-        add('hero_%s_b' % facing, hero(facing, 3))
-    add('coach_maple', coach_maple())
+    # People. Each player character gets its own four facings x three frames on
+    # its own palette, so picking a character changes who walks around rather
+    # than just which colour the same body is painted. hero_* stays as the
+    # unstyled fallback for any save or screen that has no character yet.
+    for who, pal, hair in (
+        (None, 'hero', 'short'),
+        ('woman', 'pc_woman', 'bun'),
+        ('man', 'pc_man', 'crop'),
+        ('nonbinary', 'pc_nonbinary', 'swept'),
+    ):
+        prefix = 'hero' if who is None else 'hero_%s' % who
+        # The traced card art wins when it exists; the drawn set stays as the
+        # fallback for the unstyled 'hero' and for a build with no cards.
+        poses = walk_set(who) if who else None
+        if poses:
+            used_traced.add('walk_%s' % who)
+        for facing in ('down', 'up', 'left', 'right'):
+            for suffix, step in (('', 0), ('_a', 1), ('_b', 3)):
+                key = '%s_%s%s' % (prefix, facing, suffix)
+                pose = poses.get(facing + suffix) if poses else None
+                if pose:
+                    colors, rows = pose
+                    pal_key = 'art_' + key
+                    traced_palettes[pal_key] = colors
+                    s[key] = {'palette': pal_key, 'grid': rows}
+                else:
+                    add(key, hero(facing, step, pal, hair))
+
+    # Coach Maple walks the same way she is drawn on her card.
+    maple = walk_set('maple')
+    if maple:
+        used_traced.add('walk_maple')
+        for key, (colors, rows) in (('coach_maple', maple['down']),) + tuple(
+            ('coach_maple_%s' % k, v) for k, v in maple.items()
+        ):
+            pal_key = 'art_' + key
+            traced_palettes[pal_key] = colors
+            s[key] = {'palette': pal_key, 'grid': rows}
+    else:
+        add('coach_maple', coach_maple())
+
+    # Portraits traced straight off the character cards, for the screens that
+    # show a face big enough to read one.
+    for name in ('portrait_maple', 'portrait_woman', 'portrait_man', 'portrait_nonbinary'):
+        traced = load_traced(name)
+        if not traced:
+            raise SystemExit('missing tools/traced_%s.json — run tools/convert_character.py' % name)
+        used_traced.add(name)
+        key = 'art_' + name
+        traced_palettes[key] = traced['palette']
+        s[name] = {'palette': key, 'grid': traced['grid']}
 
     # items + module icons
     add('item_apple', item_apple()); add('item_water', item_water())
     add('item_energybar', item_energybar()); add('item_charm', item_charm())
-    add('item_token', item_token())
+    add('item_knot', item_knot())
+    for _blend in ('green', 'berry', 'gold'):
+        add('item_smoothie_%s' % _blend, item_smoothie('blend_%s' % _blend))
     add('mod_droplet', mod_droplet()); add('mod_plate', mod_plate())
     add('mod_check', mod_check()); add('mod_barbell', mod_barbell())
     add('mod_moon', mod_moon()); add('mod_still', mod_still())
@@ -2119,12 +4041,160 @@ def build_all():
     add('tile_grass', tile_grass(0)); add('tile_grass_b', tile_grass(1))
     add('tile_tallgrass', tile_tallgrass())
     add('tile_path', tile_path(0)); add('tile_path_b', tile_path(1))
+
+    # Autotiles: one per cardinal-neighbour mask, plus the diagonal notches and
+    # the contact shading. See the AUTOTILING block above.
+    #
+    # Built by compositing the committed painted tiles wherever those exist, so
+    # a blended edge is the same artwork as the tile beside it. The procedural
+    # path_tile/water_tile are the fallback for a build with no atlas.
+    def add_blended(key, colors_rows, fallback):
+        """Register composited art, or fall back to the procedural drawing."""
+        if not colors_rows:
+            add(key, fallback())
+            return
+        colors, rows = colors_rows
+        pal_key = 'art_' + key
+        traced_palettes[pal_key] = colors
+        s[key] = {'palette': pal_key, 'grid': rows}
+
+    # Ground fields: one texture windowed across a 4x4 block of tiles, so the
+    # ground has no seam on any tile edge and its repeat is four tiles apart
+    # rather than one. This is what stops a floor reading as a grid of chunks.
+    def add_field(prefix, slices):
+        if not slices:
+            return False
+        for i, (colors, rows) in enumerate(slices):
+            key = '%s_f%d' % (prefix, i)
+            pal_key = 'art_' + key
+            traced_palettes[pal_key] = colors
+            s[key] = {'palette': pal_key, 'grid': rows}
+        return True
+
+    def add_canvas_field(prefix, canvas):
+        pal = canvas.palette
+        for i, rows in enumerate(field_from_canvas(canvas)):
+            s['%s_f%d' % (prefix, i)] = {'palette': pal, 'grid': rows}
+
+    for _field, _prefix in (
+        ('field_grass', 'tile_grass'),
+        ('field_path', 'tile_path'),
+        ('field_water', 'tile_water'),
+        ('field_water_b', 'tile_waterb'),
+        ('field_tree', 'tile_tree'),
+        ('field_wall', 'tile_wall'),
+        ('field_roof_rest', 'tile_roof_rest'),
+        ('field_roof_gym', 'tile_roof_gym'),
+    ):
+        if add_field(_prefix, field_slices(_field)):
+            used_traced.add(_field)
+
+    add_canvas_field('tile_home_floor', home_floor_field())
+    add_canvas_field('tile_home_wall', home_wall_field())
+    add_canvas_field('tile_home_rug', home_rug_field())
+    add_canvas_field('tile_home_kitchen', home_kitchen_field())
+    add_canvas_field('tile_gym_floor', gym_floor_field())
+    add_canvas_field('tile_gym_block', gym_wall_field())
+    add_canvas_field('tile_gym_platform', gym_platform_field())
+    add_canvas_field('tile_gym_turf', gym_turf_field())
+    add_canvas_field('tile_gym_mats', gym_mat_field())
+
+    # Two more ground variants, as flips of the painted originals.
+    add_blended('tile_grass_c', flipped_traced('tile_grass', horizontal=True),
+                lambda: tile_grass(2))
+    add_blended('tile_grass_d', flipped_traced('tile_grass_b', vertical=True),
+                lambda: tile_grass(3))
+
+    for _mask in range(16):
+        add_blended(
+            'tile_path_m%d' % _mask,
+            blended_tile('tile_grass', 'tile_path' if _mask % 2 == 0 else 'tile_path_b', _mask, 5 + _mask, 0.80),
+            lambda m=_mask: path_tile(m, m % 2),
+        )
+        # A wet margin is brighter than the water, not darker.
+        add_blended(
+            'tile_water_m%d' % _mask,
+            blended_tile('tile_grass', 'tile_water', _mask, 31 + _mask, 1.18),
+            lambda m=_mask: water_tile(m, 0),
+        )
+        add_blended(
+            'tile_water_m%d_b' % _mask,
+            blended_tile('tile_grass_b', 'tile_water_b', _mask, 31 + _mask, 1.18),
+            lambda m=_mask: water_tile(m, 1),
+        )
+    for _corner in ('nw', 'ne', 'sw', 'se'):
+        add_blended('tile_path_ic_%s' % _corner, blended_corner('tile_grass', _corner),
+                    lambda c=_corner: inner_corner(c, 'body', 0.58))
+        add_blended('tile_water_ic_%s' % _corner, blended_corner('tile_grass', _corner),
+                    lambda c=_corner: inner_corner(c, 'body', 0.58))
+    for _sides in ('n', 'w', 'nw'):
+        add('tile_ao_%s' % _sides, ao_overlay(_sides))
     add('tile_tree', tile_tree())
+    add_blended('tile_tree_b', flipped_traced('tile_tree', horizontal=True), tile_tree)
     add('tile_water', tile_water(0)); add('tile_water_b', tile_water(1))
     add('tile_flowers', tile_flowers())
     add('tile_roof_rest', tile_roof('ache')); add('tile_roof_gym', tile_roof('hero'))
     add('tile_wall', tile_wall('couch')); add('tile_window', tile_window('couch'))
-    add('tile_door', tile_door('couch')); add('tile_gate', tile_gate())
+    add('tile_door', tile_door('couch'))
+
+    # Training Hall interior
+    add('tile_gym_floor', tile_gym_floor(0)); add('tile_gym_floor_b', tile_gym_floor(1))
+    add('tile_gym_wall', tile_gym_wall())
+    add('tile_gym_wall_side', tile_gym_wall_side())
+    add('tile_home_floor', tile_home_floor(0)); add('tile_home_floor_b', tile_home_floor(1))
+
+    # Props — transparent overlays stacked on whatever floor their room has.
+    add('prop_bed_head', prop_bed_head()); add('prop_bed_foot', prop_bed_foot())
+    add('prop_tv', prop_tv()); add('prop_desk', prop_desk())
+    add('prop_sofa', prop_sofa())
+    add('prop_table', prop_table()); add('prop_counter', prop_counter())
+    add('prop_fridge', prop_fridge()); add('prop_stairs', prop_stairs())
+    add('prop_plant', prop_plant()); add('prop_bookshelf', prop_bookshelf())
+    add('prop_worktop', prop_worktop()); add('prop_oven', prop_oven())
+    add('prop_chair', prop_chair()); add('prop_coffee_table', prop_coffee_table())
+    add('prop_lamp', prop_lamp()); add('prop_wardrobe', prop_wardrobe())
+    add('prop_nightstand', prop_nightstand())
+    add('prop_ridge', prop_ridge()); add('prop_signpost', prop_signpost())
+    add('prop_lamppost', prop_lamppost()); add('prop_park_bench', prop_park_bench())
+    add('prop_mailbox', prop_mailbox()); add('prop_fence', prop_fence())
+    # Ends and middles for the furniture that spans more than one tile.
+    for _h in ('l', 'm', 'r'):
+        add('prop_sofa_%s' % _h, prop_sofa(_h))
+        add('prop_wardrobe_%s' % _h, prop_wardrobe(_h))
+        add('prop_fence_%s' % _h, prop_fence(_h))
+    add('prop_flowers', prop_flowers()); add('prop_eave', prop_eave())
+    add('prop_lockers', prop_lockers()); add('prop_pullup_bar', prop_pullup_bar())
+    add('prop_kettlebells', prop_kettlebells()); add('prop_rower', prop_rower())
+    add('prop_reception', prop_reception())
+    add('tile_gym_mirror', tile_gym_mirror()); add('tile_gym_mirror_b', tile_gym_mirror(1)); add('tile_gym_exit', tile_gym_exit())
+    add('prop_rack_barbell', prop_rack_barbell()); add('prop_rack_dumbbell', prop_rack_dumbbell())
+    add('prop_machine', prop_machine()); add('prop_treadmill', prop_treadmill())
+    add('prop_bench', prop_bench()); add('prop_water_station', prop_water_station())
+    add('prop_banner', prop_banner()); add('prop_wall_clock', prop_wall_clock())
+    add('prop_whiteboard', prop_whiteboard())
+    add('prop_ez_bars', prop_ez_bars()); add('prop_stretch_rig', prop_stretch_rig())
+    add('prop_ball_rack', prop_ball_rack())
+    add('prop_bar_counter', prop_bar_counter()); add('prop_bar_blender', prop_bar_blender())
+    for _side in ('n', 'e', 's', 'w'):
+        add('tile_zone_%s' % _side, zone_edge(_side))
+    # Every committed piece of traced art must actually reach a sprite.
+    #
+    # add() prefers traced_<name>.json and silently falls back to the procedural
+    # drawing when there isn't one. That silence is how four character cards sat
+    # in assets/characters/ for a release while the overworld kept rendering the
+    # old placeholder people, and every regeneration reported success. Art that
+    # nothing consumes is now a build failure rather than a surprise on a phone.
+    orphans = sorted(
+        os.path.basename(path)
+        for path in glob.glob(os.path.join(TRACED_DIR, 'traced_*.json'))
+        if os.path.basename(path)[len('traced_'):-len('.json')] not in used_traced
+    )
+    if orphans:
+        raise SystemExit(
+            'traced art that no sprite uses: %s\n'
+            'Register it in build_all() or delete it.' % ', '.join(orphans)
+        )
+
     PALETTES.update(traced_palettes)
     return s
 
@@ -2201,13 +4271,131 @@ def render_contact_sheet(cols=8, cell=56, scale=2):
     print('  wrote %s (%dx%d)' % (out, IW, IH))
 
 
+# Names that reached the atlas, so emit_js can leave their grids out of the JS.
+ATLASED = set()
+
+
+def emit_room_light(size=96):
+    """A soft falloff laid over a whole room, stretched to fit.
+
+    Every other shading cue here is baked per tile, which means it repeats with
+    the field and can never describe the room as a whole. This is one image
+    scaled across the map: the middle stays open and the edges and corners sit
+    back, so a room reads as a lit space rather than as an evenly bright plane.
+    It carries real alpha, unlike the atlas, which is opaque by construction.
+    """
+    buf = []
+    for y in range(size):
+        for x in range(size):
+            u = (x + 0.5) / size * 2 - 1
+            v = (y + 0.5) / size * 2 - 1
+            # Elliptical falloff, biased so the lit side is upper-left in line
+            # with every other light cue in the game.
+            d = math.sqrt((u + 0.10) ** 2 + (v + 0.14) ** 2) / math.sqrt(2)
+            a = max(0.0, (d - 0.34) / 0.66)
+            buf.append([10, 10, 20, int(min(1.0, a ** 1.5) * 132)])
+    png_dir = os.path.join(ROOT, 'assets', 'tiles')
+    os.makedirs(png_dir, exist_ok=True)
+    write_png(os.path.join(png_dir, 'room-light.png'), buf, size, size)
+    print('  wrote %s (%dx%d)' % (os.path.join('assets', 'tiles', 'room-light.png'), size, size))
+
+
+def emit_tile_atlas():
+    """Pack every tile and prop into one PNG plus a frame table.
+
+    Tiles used to render as run-length Views, one per colour run per row. A
+    single grass tile was 236 of them and an 11x11 map 28,000, which is the
+    ceiling that made higher resolution impossible — 32px tiles would have been
+    four times that. As one image the whole map costs a couple of hundred Views
+    however detailed the art is, so resolution is now a question about file size
+    rather than about frame rate.
+
+    Characters and creatures stay on PixelArt: there are only a few on screen,
+    and they need runtime palette swaps for outfits, which an atlas cannot do.
+    """
+    names = sorted(n for n in SPRITES if n.startswith(('tile_', 'prop_')))
+    cell = TILE_PX
+    sized = []
+    for name in names:
+        grid = SPRITES[name]['grid']
+        if len(grid) == cell and len(grid[0]) == cell:
+            sized.append(name)
+    cols = int(math.ceil(math.sqrt(len(sized)))) or 1
+    rows_n = (len(sized) + cols - 1) // cols
+    width, height = cols * cell, rows_n * cell
+
+    buf = [[0, 0, 0, 0] for _ in range(width * height)]
+    frames = {}
+    for i, name in enumerate(sized):
+        spr = SPRITES[name]
+        pal = PALETTES[spr['palette']]
+        ox, oy = (i % cols) * cell, (i // cols) * cell
+        frames[name] = [ox, oy]
+        for y, row in enumerate(spr['grid']):
+            for x, ch in enumerate(row):
+                if ch == TRANSPARENT:
+                    continue
+                color = pal[DIGITS.index(ch)]
+                if color in (None, 'transparent'):
+                    continue
+                buf[(oy + y) * width + ox + x] = [
+                    int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16), 255
+                ]
+
+    ATLASED.update(sized)
+    png_dir = os.path.join(ROOT, 'assets', 'tiles')
+    os.makedirs(png_dir, exist_ok=True)
+    write_png(os.path.join(png_dir, 'tile-atlas.png'), buf, width, height)
+
+    body = (
+        '// AUTO-GENERATED by tools/make_sprites.py - do not edit.\n'
+        '//\n'
+        '// One image for every tile and prop, with a frame table. See\n'
+        '// emit_tile_atlas() for why tiles are not PixelArt any more.\n\n'
+        'export const TILE_ATLAS = require(\'../../assets/tiles/tile-atlas.png\');\n'
+        'export const ROOM_LIGHT = require(\'../../assets/tiles/room-light.png\');\n'
+        'export const TILE_CELL = %d;\n'
+        'export const ATLAS_WIDTH = %d;\n'
+        'export const ATLAS_HEIGHT = %d;\n\n'
+        'export const TILE_FRAMES = %s;\n\n'
+        'export default TILE_FRAMES;\n'
+    ) % (cell, width, height, json.dumps(frames, indent=2, sort_keys=True))
+    out = os.path.join(ROOT, 'src', 'data', 'tileAtlas.js')
+    with open(out, 'w') as f:
+        f.write(body)
+    print('  wrote %s (%dx%d, %d tiles)' % (
+        os.path.join('assets', 'tiles', 'tile-atlas.png'), width, height, len(sized)))
+    print('  wrote %s' % out)
+
+
 def emit_js():
     body = ('// AUTO-GENERATED by tools/make_sprites.py — original pixel art.\n'
-            '// Grids are rows of base-36 palette indices; "." is transparent.\n'
+            '// Grids index the palette through PixelArt\'s 90-char printable-ASCII\n'
+            '// alphabet; "." is transparent.\n'
             '// Palettes live here too, so nothing has to be mirrored by hand.\n\n')
     body += 'export const SPRITE_PALETTES = ' + json.dumps(
         {k: ['transparent' if c is None else c for c in v] for k, v in PALETTES.items()}, indent=2) + ';\n\n'
-    body += 'export const SPRITES = ' + json.dumps(SPRITES, indent=2) + ';\n\nexport default SPRITES;\n'
+    # Where each ramp starts and ends inside the flat palette. The client needs
+    # this to recolour one ramp and leave the rest alone — an outfit swap that
+    # assumed "indices 1..26 are clothing" was only ever right for the 26-step
+    # palettes, and silently repainted hair and skin on any other length.
+    ramp_spans = {}
+    for key, spec in PALETTE_SPECS.items():
+        spans = {}
+        for name in ('body', 'leaf', 'belly', 'accent'):
+            if name not in spec:
+                continue
+            first = RAMP_INDEX[key][(name, 0)]
+            spans[name] = [first, first + RAMP_LEN[key] - 1]
+        ramp_spans[key] = spans
+    body += 'export const SPRITE_RAMPS = ' + json.dumps(ramp_spans, indent=2) + ';\n\n'
+    # Anything in the tile atlas is drawn from the PNG, so shipping its grid in
+    # JS as well would be a megabyte of dead weight parsed on every cold start.
+    runtime = {k: v for k, v in SPRITES.items() if k not in ATLASED}
+    body += ('// Tiles and props are NOT here — they render from the tile atlas\n'
+             '// (src/data/tileAtlas.js). This holds what still draws through\n'
+             '// PixelArt: characters, creatures, items and module icons.\n')
+    body += 'export const SPRITES = ' + json.dumps(runtime, indent=2) + ';\n\nexport default SPRITES;\n'
     out = os.path.join(ROOT, 'src', 'data', 'sprites.js')
     with open(out, 'w') as f:
         f.write(body)
@@ -2219,6 +4407,8 @@ if __name__ == '__main__':
     validate()
     print('Rendering preview...')
     render_contact_sheet()
+    emit_tile_atlas()
+    emit_room_light()
     emit_js()
     print('Done.')
 

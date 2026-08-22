@@ -4,7 +4,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { NavContext } from './navContext';
+import { NavContext, PLACE_LABELS } from './navContext';
 import { useGame } from '../state';
 import { playBgm, setMuted, setBgmMuted } from '../audio';
 import BattleTransition from '../components/BattleTransition';
@@ -17,6 +17,10 @@ import CoachTutorialScreen from './CoachTutorialScreen';
 import GoalSelectScreen from './GoalSelectScreen';
 import PairingScreen from './PairingScreen';
 import HubScreen from './HubScreen';
+import GymScreen from './GymScreen';
+import SparIntroScreen from './SparIntroScreen';
+import CookbookScreen from './CookbookScreen';
+import SmoothieBarScreen from './SmoothieBarScreen';
 import RouteScreen from './RouteScreen';
 import BattleScreen from './BattleScreen';
 import WorkoutScreen from './WorkoutScreen';
@@ -44,6 +48,10 @@ const SCREENS = {
   goal: GoalSelectScreen,
   pairing: PairingScreen,
   hub: HubScreen,
+  gym: GymScreen,
+  sparIntro: SparIntroScreen,
+  cookbook: CookbookScreen,
+  smoothiebar: SmoothieBarScreen,
   route: RouteScreen,
   battle: BattleScreen,
   workout: WorkoutScreen,
@@ -66,13 +74,21 @@ const SCREENS = {
 // fleeing a battle returns there, and without an entry here the battle music
 // just kept playing over the walk.
 const TOWN_BGM = new Set([
-  'title', 'intro', 'outfit', 'homeIntro', 'coachTutorial', 'goal', 'pairing', 'hub', 'route', 'rest', 'workout', 'summary', 'index', 'bag',
+  'title', 'intro', 'outfit', 'homeIntro', 'coachTutorial', 'goal', 'pairing', 'sparIntro', 'cookbook', 'smoothiebar', 'hub', 'gym', 'route', 'rest', 'workout', 'summary', 'index', 'bag',
   'party', 'coach', 'options', 'habits', 'habit', 'forge', 'forgeEdit', 'formcheck', 'week',
 ]);
 
+// Somewhere you can WALK AROUND. Arriving at one is a fresh context rather than
+// a step deeper, so it clears the trail behind it: what matters from inside the
+// Forge is that you came from the gym, not everywhere you had been before that.
+const PLACES = new Set(['hub', 'gym', 'rest', 'route', 'title', 'homeIntro']);
+
+// Only places get named on a back button. Anywhere else it is just "Back",
+// because "Back to the movement picker" is worse than saying nothing.
 export default function Router() {
   const { state, hydrated } = useGame();
   const [route, setRoute] = useState(null);
+  const [stack, setStack] = useState([]);
   const [pendingBattle, setPendingBattle] = useState(null);
 
   useEffect(() => {
@@ -89,14 +105,39 @@ export default function Router() {
     else if (TOWN_BGM.has(route.name)) playBgm('town');
   }, [route]);
 
-  const nav = useMemo(
-    () => ({
+  // Every screen used to hardcode where its Back button went, which is why the
+  // Forge sent you to Town whether you had walked in from the gym or opened it
+  // from Habits — and why it had grown its own one-off `from` param to paper
+  // over the worst case. The router knows the answer; the screens should not
+  // have to guess it.
+  const nav = useMemo(() => {
+    const backTo = stack.length ? stack[stack.length - 1].name : 'hub';
+    return {
       route,
-      navigate: (name, params = {}) => setRoute({ name, params }),
+      navigate: (name, params = {}) => {
+        setStack((s) => {
+          if (!route || route.name === name) return s;
+          if (PLACES.has(name)) return [];
+          // Going back to where you just were is a step BACK, not another step
+          // deeper — otherwise the Forge/mirror round trip leaves the mirror on
+          // the stack and the Forge's own Back button returns to it.
+          if (s.length && s[s.length - 1].name === name) return s.slice(0, -1);
+          return [...s, route].slice(-8);
+        });
+        setRoute({ name, params });
+      },
+      goBack: () => {
+        const prev = stack[stack.length - 1];
+        setStack((s) => s.slice(0, -1));
+        setRoute(prev || { name: 'hub', params: {} });
+      },
+      back: {
+        to: backTo,
+        label: PLACE_LABELS[backTo] ? `Back to ${PLACE_LABELS[backTo]}` : 'Back',
+      },
       toBattle: (params = {}) => setPendingBattle(params),
-    }),
-    [route]
-  );
+    };
+  }, [route, stack]);
 
   if (!hydrated || !route) {
     return <LoadingScreen />;

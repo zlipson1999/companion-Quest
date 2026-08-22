@@ -13,7 +13,7 @@ import { ITEMS, getItem } from '../data/items';
 export default function BagScreen() {
   const { state, dispatch } = useGame();
   const companion = useCompanion();
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
   const [toast, setToast] = useState('Pick an item to use it.');
 
   const owned = Object.keys(ITEMS).filter((id) => (state.bag[id] || 0) > 0);
@@ -44,6 +44,11 @@ export default function BagScreen() {
           <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={36} />
           <View style={{ flex: 1, marginLeft: space.sm }}>
             <HPBar hp={companion.hp} maxHp={companion.maxHp} width={180} label="HP" />
+            {/* Your tab, where you keep your things. The bar is the only place
+                it is spent, so this is the only place it needs to be read. */}
+            <PixelText size="tiny" color={palette.secondary} style={{ marginTop: 6 }}>
+              {`${state.credits || 0} Trail Credit`}
+            </PixelText>
           </View>
         </View>
       </Window>
@@ -95,7 +100,7 @@ export default function BagScreen() {
         )}
       </ScrollView>
 
-      <PixelButton label="Back to Town" tone="plain" sound="cancel" onPress={() => navigate('hub')} style={{ marginTop: space.sm }} />
+      <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
     </Screen>
   );
 }

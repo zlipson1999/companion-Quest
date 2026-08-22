@@ -1,5 +1,5 @@
 // Exercise challenge. Your active companion channels real exercises into
-// Resolve. Trail companions may accept a Bond Token after trust is built;
+// Resolve. Trail companions may tie a Kinship Knot with you after trust is built;
 // bad-habit obstacles are cleared. Rotate changes the Circle's lead.
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -16,8 +16,9 @@ import { getCreature } from '../data/creatures';
 import { canEvolve } from '../state/evolution';
 import { battleMovesFor, movesLearnedBetween } from '../data/exercises';
 import {
-  wildIntro, movePrompt, moveLanded, victoryLines, defeatLines, levelUpLine, evolveLines,
-  catchSuccessLines, catchFailLine, catchFullLine, noTokenLine, companionFledLines, swapLine,
+  wildIntro,
+  sparIntro, movePrompt, moveLanded, victoryLines, defeatLines, levelUpLine, evolveLines,
+  catchSuccessLines, catchFailLine, catchFullLine, noKnotLine, companionFledLines, swapLine,
 } from '../coach';
 
 function clamp(n, lo, hi) {
@@ -26,16 +27,24 @@ function clamp(n, lo, hi) {
 
 // Accept either a Phase-1.5 encounter {targetId,isCompanion,...} or a legacy
 // {encounterId} pointing at an obstacle.
+//
+// A sparring partner is a third case: a PERSON, passed in whole as `opponent`
+// rather than looked up in the creature table. Coach's push-up contest is the
+// first battle a new player sees, and it teaches the loop by being the real
+// loop — same moves, same Resolve, same victory path. Faking it with a
+// creature would have taught the wrong thing, and adding a person to the
+// creature table would have put them in the Index.
 function resolveTarget(params) {
   const id = params.targetId || params.creatureId;
   if (id) {
     return {
       targetId: id,
-      isCompanion: !!params.isCompanion,
+      // You cannot befriend a person, and a spar is never a catch.
+      isCompanion: !params.opponent && !!params.isCompanion,
       hp: params.hp || 40,
       xp: params.xp || 20,
       bond: params.bond || 6,
-      catchRate: params.catchRate || 0,
+      catchRate: params.opponent ? 0 : params.catchRate || 0,
     };
   }
   const e = ENCOUNTERS[params.encounterId] || ENCOUNTERS.sludgewad;
@@ -78,16 +87,21 @@ export default function BattleScreen({ params }) {
   const { navigate } = useNav();
 
   const target = resolveTarget(params);
-  const wild = getCreature(target.targetId);
-  const returnTo = params.from === 'route' ? 'route' : 'hub';
-  const tokens = state.bag.token || 0;
+  // A sparring partner is supplied whole; everything else is a creature.
+  const wild = params.opponent || getCreature(target.targetId);
+  const returnTo = params.from === 'route' ? 'route' : params.from === 'gym' ? 'gym' : 'hub';
+  const knots = state.bag.knot || 0;
   const teamFull = party.members.length >= 6;
 
   const [wildHp, setWildHp] = useState(target.hp);
   const [companionHp, setCompanionHp] = useState(Math.max(1, Math.round(companion.hp)));
 
   const [phase, setPhase] = useState('message');
-  const [lines, setLines] = useState(() => wildIntro(companion.creature.name, wild.name, target.isCompanion));
+  const [lines, setLines] = useState(() =>
+    params.opponent
+      ? sparIntro(companion.creature.name, wild.name)
+      : wildIntro(companion.creature.name, wild.name, target.isCompanion)
+  );
   const thenRef = useRef(() => setPhase('menu'));
 
   const [selectedMove, setSelectedMove] = useState(null);
@@ -210,6 +224,8 @@ export default function BattleScreen({ params }) {
 
   const confirmMove = () => {
     const move = getMove(selectedMove);
+    // You just did the exercise. Record it before anything else happens to it.
+    dispatch({ type: 'LOG_EXERCISE', payload: { id: move.id, kind: move.kind, target: move.target } });
     const dmg = move.power + Math.floor((companion.level - 1) * 2);
     const newWildHp = Math.max(0, wildHp - dmg);
     // Choreography: the companion steps INTO the strike, and only then does the
@@ -237,7 +253,7 @@ export default function BattleScreen({ params }) {
         );
       } else {
         const afterXp = companion.xp + target.xp;
-        dispatch({ type: 'WIN_BATTLE', payload: { xp: target.xp, bond: target.bond, targetId: target.targetId, companionHp } });
+        dispatch({ type: 'WIN_BATTLE', payload: { xp: target.xp, bond: target.bond, targetId: target.targetId, companionHp, spar: !!params.opponent } });
         playSfx('victory');
         say(victoryLines(companion.creature.name, wild.name, target.xp), () => runLevelEvolveThen(beforeLevel, afterXp, finish));
       }
@@ -270,19 +286,30 @@ export default function BattleScreen({ params }) {
   };
 
   const attemptCatch = () => {
-    if (tokens <= 0) {
-      say([{ speaker: 'Narration', text: noTokenLine() }], () => setPhase('menu'));
+    if (knots <= 0) {
+      say([{ speaker: 'Narration', text: noKnotLine() }], () => setPhase('menu'));
       return;
     }
     if (teamFull) {
-      dispatch({ type: 'CONSUME_ITEM', payload: { itemId: 'token' } });
+      dispatch({ type: 'CONSUME_ITEM', payload: { itemId: 'knot' } });
       dispatch({ type: 'CATCH', payload: { creatureId: target.targetId, xp: 60, bond: 5 } });
       say([{ speaker: 'Narration', text: catchFullLine(wild.name) }], finish);
       return;
     }
-    dispatch({ type: 'CONSUME_ITEM', payload: { itemId: 'token' } });
-    const hpRatio = wildHp / target.hp;
-    const chance = clamp(target.catchRate * (0.4 + 0.6 * (1 - hpRatio)) + Math.min(0.15, companion.bond / 300), 0.05, 0.95);
+    dispatch({ type: 'CONSUME_ITEM', payload: { itemId: 'knot' } });
+    // You do not wear a companion down and take it home. It ties the other
+    // loop when it has watched you do the work AND you are still going — so
+    // the chance rides on how far through the shared challenge you are and on
+    // YOUR OWN remaining Resolve, not on how weak it has become. That inverts
+    // the incentive on purpose: finishing strong is what earns the knot, where
+    // grinding something into the ground at any cost earns nothing.
+    const shared = 1 - wildHp / target.hp;
+    const standing = companionHp / companion.maxHp;
+    const chance = clamp(
+      target.catchRate * (0.25 + 0.45 * shared + 0.3 * standing) + Math.min(0.15, companion.bond / 300),
+      0.05,
+      0.95
+    );
     if (Math.random() < chance) {
       const beforeLevel = companion.level;
       const afterXp = companion.xp + target.xp;
@@ -339,7 +366,7 @@ export default function BattleScreen({ params }) {
   // A balanced field-console composition: both participants receive matched
   // instruments and share one trail plane. Do not tune this against another
   // title's diagonal cards or platform layout.
-  const stageTone = params.from === 'route' ? 'grass' : 'trail';
+  const stageTone = params.opponent ? 'hall' : params.from === 'route' ? 'grass' : 'trail';
 
   const top = (
     <BattleStage tone={stageTone} horizon={0.16}>
@@ -349,7 +376,7 @@ export default function BattleScreen({ params }) {
             name={wild.name}
             hp={wildHp}
             maxHp={target.hp}
-            tag={target.isCompanion ? 'wild' : 'obstacle'}
+            tag={params.opponent ? 'sparring' : target.isCompanion ? 'wild' : 'obstacle'}
             tagColor={target.isCompanion ? palette.hpHigh : palette.danger}
             style={{ flex: 1, marginRight: space.lg }}
           />
@@ -405,7 +432,7 @@ export default function BattleScreen({ params }) {
 
   let bottom;
   if (phase === 'menu') {
-    const catchDisabled = tokens <= 0;
+    const bondDisabled = knots <= 0;
     bottom = (
       <View style={{ flex: 1, padding: space.md }}>
         <PixelText size="tiny" color={palette.windowTextDim} style={{ marginBottom: 6 }}>
@@ -427,7 +454,7 @@ export default function BattleScreen({ params }) {
             <PixelButton label="Rotate" tone="dark" sound="cursor" style={{ flex: 1, marginRight: 5 }} onPress={() => setPhase('swap')} />
           ) : null}
           {target.isCompanion ? (
-            <PixelButton label={`Offer Bond (${tokens})`} tone="gold" disabled={catchDisabled} style={{ flex: 1 }} onPress={attemptCatch} />
+            <PixelButton label={`Tie a Knot (${knots})`} tone="gold" disabled={bondDisabled} style={{ flex: 1 }} onPress={attemptCatch} />
           ) : null}
         </View>
       </View>

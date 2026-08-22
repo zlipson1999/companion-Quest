@@ -56,7 +56,7 @@ function ActionButton({ action, unit, replaces, preview, onPress }) {
 export default function HabitLogScreen({ params }) {
   const { state, dispatch } = useGame();
   const companion = useCompanion();
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
 
   const module = getModule(params.moduleId);
   const [feedback, setFeedback] = useState(null);
@@ -76,7 +76,7 @@ export default function HabitLogScreen({ params }) {
             That habit isn't installed.
           </PixelText>
         </Window>
-        <PixelButton label="Back" tone="plain" sound="cancel" onPress={() => navigate('habits')} style={{ marginTop: space.sm }} />
+        <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
       </Screen>
     );
   }
@@ -217,7 +217,7 @@ export default function HabitLogScreen({ params }) {
         <View style={{ height: space.sm }} />
       </ScrollView>
 
-      <PixelButton label="Back" tone="plain" sound="cancel" onPress={() => navigate('habits')} style={{ marginTop: space.sm }} />
+      <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
     </Screen>
   );
 }

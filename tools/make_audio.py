@@ -234,6 +234,13 @@ def build_bgm():
 
 
 if __name__ == "__main__":
+    # The hit is a noise burst, and unseeded noise made this generator the one
+    # asset pipeline whose output could not be checked against what is
+    # committed: re-running it rewrote hit.wav every time with a file that
+    # sounded identical and differed in every sample. A fixed seed means "run
+    # the generator and diff" answers the question for audio the way it
+    # already does for the sprites.
+    random.seed(20240611)
     print("Generating SFX ->", OUT)
     build()
     print("Done.")

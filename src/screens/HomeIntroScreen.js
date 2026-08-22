@@ -1,34 +1,47 @@
 import React, { useRef, useState } from 'react';
 import { View } from 'react-native';
-import { Screen, DualPane, TileMap, Dpad, Window, PixelText } from '../components';
+import { WorldScreen, CompanionStatus } from '../components';
 import { palette, screen, space } from '../theme';
+import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
-import { isWalkable } from '../data/maps';
+import { BEDROOM, DOWNSTAIRS, isWalkable, interactionForCode } from '../data/maps';
 import { playSfx } from '../audio';
 
+// The two rooms come from data/maps.js; the intro brings the route through
+// them. They used to be declared here as well as in HomeRestScreen, and the
+// copies had drifted — different grids for the same room.
 const AREAS = {
   bedroom: {
-    name: 'Your Room — Upstairs', cols: 7, rows: 7, spawn: { x: 2, y: 4 }, exit: { x: 5, y: 5 },
-    grid: ['WWWWWWW', 'WHHHHHW', 'WH...HW', 'WH...HW', 'WH...HW', 'WH###DW', 'WWWWWWW'],
-    hint: 'Walk to the stairs by the door.', next: 'downstairs',
+    ...BEDROOM,
+    name: 'Your Room — Upstairs',
+    spawn: { x: 5, y: 8 },
+    exit: { x: 9, y: 11 },
+    hint: 'Your room. The stairs are in the far corner.',
+    next: 'downstairs',
   },
   downstairs: {
-    name: 'Your Home — Downstairs', cols: 7, rows: 7, spawn: { x: 5, y: 4 }, exit: { x: 3, y: 5 },
-    grid: ['WWWWWWW', 'WHHHHHW', 'WH...HW', 'WH...HW', 'WH...HW', 'WH#D#HW', 'WWWWWWW'],
-    hint: 'Head through your front door.', next: 'outside',
+    ...DOWNSTAIRS,
+    name: 'Your Home — Downstairs',
+    spawn: { x: 11, y: 2 },
+    exit: { x: 6, y: 14 },
+    hint: 'Head through your front door.',
+    next: 'outside',
   },
   outside: {
     name: 'Maple Lane', cols: 9, rows: 7, spawn: { x: 2, y: 5 }, exit: { x: 6, y: 2 },
     grid: ['TTTTTTTTT', 'ThhhTyyyT', 'THDHTYdYT', 'T.####..T', 'T.#..#..T', 'T.####..T', 'TTTTTTTTT'],
-    hint: 'The Training Hall is next door. Find its entrance.', next: 'coachTutorial',
+    hint: 'Quest Fitness is next door. Find its entrance.', next: 'coachTutorial',
   },
 };
 
 export default function HomeIntroScreen() {
   const { navigate } = useNav();
+  const { state } = useGame();
+  const companion = useCompanion();
   const [areaId, setAreaId] = useState('bedroom');
   const area = AREAS[areaId];
   const [player, setPlayer] = useState({ ...area.spawn, facing: 'down' });
+  const [facing, setFacing] = useState(null);
   const playerRef = useRef(player);
 
   const enter = (next) => {
@@ -44,19 +57,35 @@ export default function HomeIntroScreen() {
     const { x, y } = playerRef.current;
     const nx = dir === 'left' ? x - 1 : dir === 'right' ? x + 1 : x;
     const ny = dir === 'up' ? y - 1 : dir === 'down' ? y + 1 : y;
-    const next = isWalkable(area, nx, ny) ? { x: nx, y: ny, facing: dir } : { x, y, facing: dir };
+    const blocked = !isWalkable(area, nx, ny);
+    const next = blocked ? { x, y, facing: dir } : { x: nx, y: ny, facing: dir };
     playerRef.current = next;
     setPlayer(next);
+
+    // Walking into your own furniture uses it, the same way the gym's
+    // equipment works. The bed logs last night, the desk opens your habits,
+    // the kitchen shelf is the cookbook.
+    if (blocked) {
+      const station = interactionForCode(area.grid[ny] && area.grid[ny][nx], area);
+      setFacing(station);
+      if (station && station.screen) {
+        playSfx('confirm');
+        setTimeout(() => navigate(station.screen, station.params || {}), 140);
+      }
+      return;
+    }
+    setFacing(null);
     if (next.x === area.exit.x && next.y === area.exit.y) setTimeout(() => enter(area.next), 120);
   };
 
-  const tileSize = Math.floor(Math.min(screen.width - 20, screen.height * 0.45) / area.cols);
   return (
-    <Screen padTop={false}>
-      <DualPane
-        top={<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.grassDark }}><TileMap map={area} player={player} tileSize={tileSize} /></View>}
-        bottom={<View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: space.md }}><Dpad onMove={move} /><Window tone="dark" pad={12} style={{ flex: 1, marginLeft: space.md }}><PixelText size="small" color={palette.secondary}>{area.name}</PixelText><PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 10, lineHeight: 15 }}>{area.hint}</PixelText></Window></View>}
-      />
-    </Screen>
+    <WorldScreen
+      map={area}
+      player={player}
+      onMove={move}
+      place={area.name}
+      objective={facing ? facing.label : area.hint}
+      status={<CompanionStatus companion={companion} stats={state.stats} />}
+    />
   );
 }

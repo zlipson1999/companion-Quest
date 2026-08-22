@@ -10,6 +10,10 @@ import { playSfx } from '../audio';
 function Pad({ dir, onMove }) {
   return (
     <Pressable
+      // The arrows are drawn shapes, so without these the pad is four
+      // unlabelled squares to a screen reader.
+      accessibilityRole="button"
+      accessibilityLabel={`Move ${dir}`}
       onPress={() => {
         playSfx('cursor');
         onMove(dir);

@@ -9,6 +9,8 @@ import { palette, space } from '../theme';
 import { useGame, useCompanion, useModules } from '../state';
 import { useNav } from './navContext';
 import { getGoal } from '../data/goals';
+import { breakdownSince } from '../data/exercises';
+import { getWorkout } from '../data/workouts';
 import { moduleSprite } from '../modules';
 
 function StatCell({ label, value, color }) {
@@ -27,11 +29,19 @@ function StatCell({ label, value, color }) {
 export default function SummaryScreen() {
   const { state } = useGame();
   const companion = useCompanion();
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
   const modules = useModules();
   const goal = getGoal(state.goalId);
   const evo = evolveProgress(companion, companion.creature, companion.level);
   const s = state.stats;
+  // The same diff the cardio console runs, against a zero baseline: the
+  // console reports the walk you are on and forgets it when you go home, and
+  // "how many push-ups have I ever done" is the one number a fitness game
+  // should be able to answer.
+  const everDone = React.useMemo(
+    () => breakdownSince(s.exercises, {}, (id) => (getWorkout(id) || {}).name || id),
+    [s.exercises]
+  );
 
   return (
     <Screen style={{ padding: space.md }}>
@@ -114,6 +124,10 @@ export default function SummaryScreen() {
             <StatCell label="Battles won" value={s.battlesWon} color={palette.success} />
             <StatCell label="Battles lost" value={s.battlesLost} />
             <StatCell label="Workouts" value={s.workoutsDone} color={palette.accentDark} />
+            <StatCell label="Sets" value={(s.sets || 0).toLocaleString()} color={palette.accentDark} />
+            <StatCell label="Reps" value={(s.reps || 0).toLocaleString()} color={palette.accentDark} />
+            <StatCell label="Time held" value={`${s.holdSec || 0}s`} color={palette.accentDark} />
+            <StatCell label="Trail Credit" value={(state.credits || 0).toLocaleString()} color={palette.secondary} />
             <StatCell label="Items found" value={s.itemsCollected} />
             <StatCell label="Habit logs" value={s.habitLogs || 0} color={palette.primaryDark} />
             <StatCell label="Goals met" value={s.habitGoalsHit || 0} color={palette.success} />
@@ -121,6 +135,29 @@ export default function SummaryScreen() {
             <StatCell label="Days active" value={s.daysActive} />
           </View>
         </Window>
+
+        {everDone.length ? (
+          <Window tone="cream" pad={12} style={{ marginTop: space.md }}>
+            <PixelText size="small" color={palette.accentDark} style={{ marginBottom: 6 }}>
+              Every Rep You've Done
+            </PixelText>
+            {everDone.map((e) => (
+              <View
+                key={e.id}
+                style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}
+              >
+                <PixelText size="tiny" color={palette.windowText} style={{ flex: 1 }}>
+                  {e.name}
+                </PixelText>
+                <PixelText size="tiny" color={palette.primaryDark}>
+                  {/* A hold is measured in seconds and a routine in times done;
+                      only a rep count is a count of repetitions. */}
+                  {e.kind === 'hold' ? `${e.amount}s` : e.kind === 'workout' ? `x${e.amount}` : e.amount}
+                </PixelText>
+              </View>
+            ))}
+          </Window>
+        ) : null}
 
         <Window tone="cream" pad={12} style={{ marginTop: space.md }}>
           <PixelText size="small" color={palette.accentDark} style={{ marginBottom: 6 }}>
@@ -143,7 +180,7 @@ export default function SummaryScreen() {
         </Window>
       </ScrollView>
 
-      <PixelButton label="Back to Town" tone="plain" sound="cancel" onPress={() => navigate('hub')} style={{ marginTop: space.sm }} />
+      <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
     </Screen>
   );
 }

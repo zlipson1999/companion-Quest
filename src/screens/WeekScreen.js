@@ -33,7 +33,7 @@ export default function WeekScreen() {
   const { state } = useGame();
   const modules = useModules();
   const recovery = useRecovery();
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
   const today = todayKey();
 
   const days = useMemo(() => weekOf(state.history, today), [state.history, today]);
@@ -146,7 +146,7 @@ export default function WeekScreen() {
         <View style={{ height: space.sm }} />
       </ScrollView>
 
-      <PixelButton label="Back to Town" tone="plain" sound="cancel" onPress={() => navigate('hub')} style={{ marginTop: space.sm }} />
+      <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
     </Screen>
   );
 }

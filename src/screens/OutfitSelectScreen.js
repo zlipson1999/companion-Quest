@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Image, View } from 'react-native';
+import { View } from 'react-native';
 import { Screen, Window, PixelText, PixelSprite, PixelButton } from '../components';
 import { palette, space } from '../theme';
 import { useGame } from '../state';
 import { useNav } from './navContext';
-import { GENDERS, OUTFITS, outfitPalette } from '../data/outfits';
+import { OUTFITS, outfitPalette } from '../data/outfits';
+import { CHARACTERS, playerPortrait, playerSprite } from '../data/characters';
 
 export default function OutfitSelectScreen() {
   const { dispatch } = useGame();
   const { navigate } = useNav();
   const [selected, setSelected] = useState(OUTFITS[0].id);
-  const [gender, setGender] = useState(GENDERS[0].id);
+  const [gender, setGender] = useState(CHARACTERS[0].id);
   const outfit = OUTFITS.find((item) => item.id === selected);
+  const character = CHARACTERS.find((item) => item.id === gender);
 
   const confirm = () => {
     dispatch({ type: 'SET_PLAYER_CHARACTER', payload: { outfitId: selected, gender } });
@@ -22,22 +24,36 @@ export default function OutfitSelectScreen() {
     <Screen style={{ padding: space.lg }}>
       <PixelText size="large" color={palette.secondary} align="center">Create Your Character</PixelText>
       <PixelText size="tiny" color={palette.windowFill} align="center" style={{ marginTop: space.sm, lineHeight: 15 }}>
-        Choose your gender and the gym clothes your character will wear on this journey.
+        Pick who you are on the trail, then the gear you train in.
       </PixelText>
-      <Image
-        source={require('../../assets/characters/player-selection-lineup-v1.png')}
-        resizeMode="contain"
-        accessibilityLabel="Three available player character presentations in Pace Blue, Grove Green, and Spark Coral"
-        style={{ alignSelf: 'center', width: '100%', height: 190, marginTop: space.sm }}
-      />
-      <Window tone="dark" pad={14} style={{ alignItems: 'center', marginTop: space.lg }}>
-        <PixelSprite spriteKey="hero_down" palette={outfitPalette(selected)} size={88} bob />
-        <PixelText size="small" color={palette.secondary} style={{ marginTop: space.sm }}>{outfit.name}</PixelText>
-        <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 5 }}>{outfit.blurb}</PixelText>
+
+      {/* Portrait and field sprite side by side: the portrait is the character
+          card, the sprite is the same person as you will actually see them
+          walking. Showing only one of the two is how the mismatch between them
+          went unnoticed for a release. */}
+      <Window tone="dark" pad={14} style={{ marginTop: space.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <PixelSprite spriteKey={playerPortrait(gender)} size={84} />
+          <View style={{ width: space.lg }} />
+          <View style={{ alignItems: 'center' }}>
+            <PixelSprite
+              spriteKey={playerSprite(gender)}
+              palette={outfitPalette(selected, gender)}
+              size={42}
+              bob
+            />
+            <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6 }}>on the trail</PixelText>
+          </View>
+        </View>
+        <PixelText size="small" color={palette.secondary} align="center" style={{ marginTop: space.sm }}>
+          {character ? character.name : ''} · {outfit.name}
+        </PixelText>
+        <PixelText size="tiny" color={palette.windowFill} align="center" style={{ marginTop: 5 }}>{outfit.blurb}</PixelText>
       </Window>
-      <PixelText size="small" color={palette.secondary} style={{ marginTop: space.md }}>Gender</PixelText>
+
+      <PixelText size="small" color={palette.secondary} style={{ marginTop: space.md }}>Character</PixelText>
       <View style={{ flexDirection: 'row', marginTop: 4 }}>
-        {GENDERS.map((item, index) => (
+        {CHARACTERS.map((item, index) => (
           <PixelButton
             key={item.id}
             label={item.name}
@@ -47,12 +63,20 @@ export default function OutfitSelectScreen() {
           />
         ))}
       </View>
+
       <PixelText size="small" color={palette.secondary} style={{ marginTop: space.md }}>Gym Outfit</PixelText>
       <View style={{ marginTop: space.md }}>
         {OUTFITS.map((item) => (
-          <PixelButton key={item.id} label={item.name} tone={selected === item.id ? 'gold' : 'dark'} onPress={() => setSelected(item.id)} style={{ marginTop: space.sm }} />
+          <PixelButton
+            key={item.id}
+            label={item.name}
+            tone={selected === item.id ? 'gold' : 'dark'}
+            onPress={() => setSelected(item.id)}
+            style={{ marginTop: space.sm }}
+          />
         ))}
       </View>
+
       <PixelButton label="This Is My Character" tone="primary" onPress={confirm} style={{ marginTop: space.lg }} />
     </Screen>
   );

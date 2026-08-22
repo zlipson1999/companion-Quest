@@ -130,11 +130,18 @@ export function workoutComplete() {
 
 // --- Phase 1.5: wild companions, catching, team swaps ---
 
+export function sparIntro(activeName, partnerName) {
+  return [
+    { speaker: 'Coach Maple', text: `${partnerName} sets up. On my count — best effort, both of you.` },
+    { speaker: activeName, text: 'Pick a movement and do it for real. Every rep you finish is Resolve I can spend.' },
+  ];
+}
+
 export function wildIntro(activeName, wildName, isCompanion) {
   if (isCompanion) {
     return [
       { speaker: 'Trail', text: `${wildName} steps out to meet you.` },
-      { speaker: activeName, text: 'A possible new friend! Build trust through real effort, then offer a Bond Token.' },
+      { speaker: activeName, text: 'A possible new friend! Match its effort, stay standing, then offer a Kinship Knot.' },
     ];
   }
   return [
@@ -145,22 +152,22 @@ export function wildIntro(activeName, wildName, isCompanion) {
 
 export function catchSuccessLines(wildName) {
   return [
-    { speaker: 'Narration', text: 'You hold out a Bond Token...' },
-    { speaker: 'Trail', text: `${wildName} accepts and joins your Circle!` },
+    { speaker: 'Narration', text: 'You hold out the Kinship Knot, one loop open...' },
+    { speaker: 'Trail', text: `${wildName} pushes its head through and pulls the braid tight. It joins your Circle!` },
     { speaker: wildName, text: 'I\'ll give it my all alongside you!' },
   ];
 }
 
 export function catchFailLine(wildName) {
-  return `${wildName} isn't quite ready to trust you. Wear it down a little more, then try again!`;
+  return `${wildName} steps back — it hasn't seen enough from you yet. Keep pace with it and stay standing.`;
 }
 
 export function catchFullLine(wildName) {
   return `Your Circle has no open place, so ${wildName} can't join yet — the meeting is recorded in your Journal.`;
 }
 
-export function noTokenLine() {
-  return 'You\'re out of Bond Tokens! Find more on the Route.';
+export function noKnotLine() {
+  return 'You\'re out of Kinship Knots! The trail leaves them at milestones, and the smoothie bar braids them.';
 }
 
 export function companionFledLines(wildName) {

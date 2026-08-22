@@ -1,22 +1,35 @@
-// Route 1 — your REAL distance moves you. Steps become miles (or GPS on a run);
-// your character auto-advances along the trail; route markers reveal
-// encounters (befriendable companions or bad-habit obstacles). Milestones drop
-// items. No pedometer? A dev injector lets you simulate distance.
+// Route 1. Real distance moves you: steps become miles (or GPS on a run), your
+// character advances, milestones drop items, and trail markers reveal
+// encounters — companions to meet and bad habits to work through.
+//
+// This screen used to carry a second mode for the gym's cardio deck. That was
+// always a slightly odd fit — an indoor deck rendered as a scrolling outdoor
+// strip that happened to have its trees turned off — and it took over the whole
+// phone for something you do standing on one spot. The deck lives in the gym
+// now, on the machine, with a console (see CardioConsole). What the two share
+// is `useCardio`, which is the only path real distance takes into the game.
+//
+// Distance out here is where the game happens TO you. Neither is a walk button.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, View } from 'react-native';
+import { Animated, Modal, Pressable, ScrollView, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Screen, DualPane, Window, ProgressBar, PixelText, PixelSprite, PixelButton, Tile } from '../components';
-import { palette, space, screen } from '../theme';
-import { useGame, useCompanion, useDistance } from '../state';
-import { useNav } from './navContext';
+import { Screen, Window, ProgressBar, PixelText, PixelSprite, PixelButton, TrailAction, CardioConsole, Tile, MenuButton, TOP_INSET } from '../components';
+import { palette, space, screen, tokens } from '../theme';
+import { useGame, useCompanion } from '../state';
+import { useNav, PLACE_LABELS } from './navContext';
 import { playSfx } from '../audio';
 import { pacingForGoal, formatMiles } from '../data/route';
-import { PICKUP_POOL, getItem } from '../data/items';
 import { rollWildEncounter } from '../data/wild';
+import { breakdownSince, formatBreakdown } from '../data/exercises';
+import { getWorkout } from '../data/workouts';
 import { getCreature } from '../data/creatures';
 import { outfitPalette } from '../data/outfits';
+import { playerSprite } from '../data/characters';
 import { routeCheer, pickupLine } from '../coach';
+import useCardio from './useCardio';
+import { forgetSpot, recallSpot, rememberSpot } from './placeMemory';
+import { DEFAULT_BODY_WEIGHT_LB } from '../state/cardioMaths';
 
 // The trail itself.
 //
@@ -75,18 +88,24 @@ function ScrollingScene({ width, height, moving }) {
 
   const translate = offset.interpolate({ inputRange: [0, 1], outputRange: [0, ROUTE_TS] });
 
+  // Tile resolves its layers from its neighbours, so the strip has to be a map
+  // rather than loose codes. Handing it rows one at a time cost the trail its
+  // autotiled edges and its trees — the scene came out as a field of grass.
+  const sceneMap = useMemo(() => {
+    const grid = Array.from({ length: rows * 2 }, (_, r) => routeRow(r % rows, cols));
+    return { id: 'route', cols, rows: rows * 2, grid };
+  }, [rows, cols]);
+
   const strip = useMemo(
     () =>
-      Array.from({ length: rows * 2 }).map((_, r) => (
+      sceneMap.grid.map((row, r) => (
         <View key={r} style={{ flexDirection: 'row' }}>
-          {routeRow(r % rows, cols)
-            .split('')
-            .map((code, x) => (
-              <Tile key={x} code={code} s={ROUTE_TS} frame={frame} x={x} y={r} />
-            ))}
+          {row.split('').map((code, x) => (
+            <Tile key={x} code={code} s={ROUTE_TS} frame={frame} x={x} y={r} map={sceneMap} />
+          ))}
         </View>
       )),
-    [rows, cols, frame]
+    [sceneMap, frame]
   );
 
   return (
@@ -98,81 +117,108 @@ function ScrollingScene({ width, height, moving }) {
   );
 }
 
-export default function RouteScreen() {
+export default function RouteScreen({ params = {} }) {
   useKeepAwake();
   const { state, dispatch } = useGame();
   const companion = useCompanion();
   const { navigate, toBattle } = useNav();
-  const dist = useDistance();
   const pacing = pacingForGoal(state.goalId);
 
   const [message, setMessage] = useState('The trail opens up ahead. Every real step carries you forward!');
   const [encMeter, setEncMeter] = useState(0);
-  const [moving, setMoving] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
-  const lastMiles = useRef(0);
-  const lastSteps = useRef(0);
-  const prevMilestones = useRef(state.stats.milestonesReached);
+  // The runner's legs. playerSprite has always had walk frames per facing; the
+  // trail was drawing the standing one, so a scrolling scene carried a
+  // motionless figure across it.
+  const [stride, setStride] = useState(0);
+  // This walk, as opposed to every walk you have ever taken.
+  //
+  // Taken from the LIFETIME stats rather than from the pedometer's own
+  // counters, because a challenge unmounts this screen and useDistance
+  // restarts from zero with it. The baseline is parked in placeMemory so a
+  // battle in the middle of a walk does not end the walk.
+  const session = useRef(
+    recallSpot('route:session', null) || {
+      miles: state.stats.distanceMi,
+      steps: state.stats.totalSteps,
+      sets: state.stats.sets,
+      exercises: state.stats.exercises,
+      reps: state.stats.reps,
+      holdSec: state.stats.holdSec,
+      startedAt: Date.now(),
+    }
+  );
+  useEffect(() => {
+    rememberSpot('route:session', session.current);
+  }, []);
+
+  const [seconds, setSeconds] = useState(
+    Math.floor((Date.now() - session.current.startedAt) / 1000)
+  );
+  useEffect(() => {
+    const t = setInterval(
+      () => setSeconds(Math.floor((Date.now() - session.current.startedAt) / 1000)),
+      1000
+    );
+    return () => clearInterval(t);
+  }, []);
+
   const encMiRef = useRef(0);
   const encThreshRef = useRef(pacing.encMin + Math.random() * (pacing.encMax - pacing.encMin));
   const busyRef = useRef(false);
-  const moveTimer = useRef(null);
   const encTimer = useRef(null);
 
-  // Feed real distance into the game; roll grass encounters as you move.
-  useEffect(() => {
-    const dM = dist.miles - lastMiles.current;
-    const dS = dist.steps - lastSteps.current;
-    if (dM <= 0 && dS <= 0) return;
-    lastMiles.current = dist.miles;
-    lastSteps.current = dist.steps;
-    dispatch({ type: 'ADD_DISTANCE', payload: { miles: dM, steps: dS } });
-
-    // visual "walking" pulse
-    setMoving(true);
-    if (moveTimer.current) clearTimeout(moveTimer.current);
-    moveTimer.current = setTimeout(() => setMoving(false), 900);
-
-    if (dM > 0 && !busyRef.current) {
+  // Real distance becomes progress through the one shared path; the trail adds
+  // the only thing that is its own, which is having somebody to meet.
+  const { dist, moving } = useCardio({
+    onDelta: (dM) => {
+      if (dM <= 0 || busyRef.current) return;
       encMiRef.current += dM;
       setEncMeter(Math.min(1, encMiRef.current / encThreshRef.current));
-      if (encMiRef.current >= encThreshRef.current) {
-        busyRef.current = true;
-        const enc = rollWildEncounter(state.stats.milestonesReached + 1);
-        const c = getCreature(enc.creatureId);
-        dispatch({ type: 'SEE_CREATURE', payload: { id: enc.creatureId } });
-        playSfx('encounter');
-        setMessage(enc.isCompanion ? `${c.name} steps onto the trail and watches you.` : `${c.name} gathers across the path.`);
-        encTimer.current = setTimeout(() => toBattle({ ...enc, from: 'route' }), 550);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dist.miles, dist.steps]);
+      if (encMiRef.current < encThreshRef.current) return;
+      busyRef.current = true;
+      const enc = rollWildEncounter(state.stats.milestonesReached + 1);
+      const c = getCreature(enc.creatureId);
+      dispatch({ type: 'SEE_CREATURE', payload: { id: enc.creatureId } });
+      playSfx('encounter');
+      setMessage(enc.isCompanion ? `${c.name} steps onto the trail and watches you.` : `${c.name} gathers across the path.`);
+      encTimer.current = setTimeout(() => toBattle({ ...enc, from: 'route' }), 550);
+    },
+    onMilestone: (item) => setMessage(`Milestone! ${pickupLine(item.name)} ${routeCheer()}`),
+  });
 
-  // Milestone pickups.
+  const running = moving || dist.running;
+  const sessionMiles = Math.max(0, state.stats.distanceMi - session.current.miles);
+  const sessionSteps = Math.max(0, state.stats.totalSteps - session.current.steps);
+  const breakdown = useMemo(
+    () => formatBreakdown(breakdownSince(state.stats.exercises, session.current.exercises, (id) => {
+      const w = getWorkout(id);
+      return w ? w.name : id;
+    })),
+    [state.stats.exercises]
+  );
+  const sessionSets = Math.max(0, state.stats.sets - session.current.sets);
+  const sessionReps = Math.max(0, state.stats.reps - session.current.reps);
+  const sessionHold = Math.max(0, state.stats.holdSec - session.current.holdSec);
+
   useEffect(() => {
-    const cur = state.stats.milestonesReached;
-    if (cur > prevMilestones.current) {
-      prevMilestones.current = cur;
-      playSfx('milestone');
-      const itemId = PICKUP_POOL[Math.floor(Math.random() * PICKUP_POOL.length)];
-      const item = getItem(itemId);
-      dispatch({ type: 'COLLECT_ITEM', payload: { itemId } });
-      playSfx('item');
-      setMessage(`Milestone! ${pickupLine(item.name)} ${routeCheer()}`);
+    if (!running) {
+      setStride(0);
+      return undefined;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.stats.milestonesReached]);
+    const legs = setInterval(() => setStride((s) => (s + 1) % 3), 150);
+    return () => clearInterval(legs);
+  }, [running]);
 
   useEffect(
     () => () => {
-      if (moveTimer.current) clearTimeout(moveTimer.current);
       if (encTimer.current) clearTimeout(encTimer.current);
     },
     []
   );
 
-  const sceneH = Math.floor(screen.height * 0.42);
+
   const toggleRun = async () => {
     if (dist.running) {
       dist.stopRun();
@@ -183,122 +229,169 @@ export default function RouteScreen() {
     }
   };
 
-  const top = (
-    <View style={{ flex: 1, backgroundColor: palette.grass }}>
-      <ScrollingScene width={screen.width} height={sceneH} moving={moving || dist.running} />
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: space.xl }}>
-        {companion ? (
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-            <PixelSprite spriteKey="hero_down" palette={outfitPalette(state.playerOutfit)} size={56} bob={moving || dist.running} />
-            <View style={{ width: 8 }} />
-            <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={52} bob={moving || dist.running} />
-          </View>
-        ) : null}
-      </View>
-      <View style={{ position: 'absolute', top: space.sm, left: space.sm, right: space.sm }}>
-        <Window tone="dark" pad={8}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <PixelText size="tiny" color={palette.secondary}>
-              {pacing.trail}
-            </PixelText>
-            {dist.running ? (
-              <PixelText size="tiny" color={palette.hpHigh}>
-                ● GPS RUN
-              </PixelText>
-            ) : null}
-          </View>
-          <ProgressBar value={state.stats.routeMi} max={pacing.milestoneMi} color={palette.hpHigh} height={12} label="Next milestone" showText={false} style={{ marginTop: 6 }} />
-          <ProgressBar value={encMeter} max={1} color={palette.accent} height={8} label="Trail signs" showText={false} style={{ marginTop: 6 }} />
-          <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6 }}>
-            {formatMiles(state.stats.distanceMi)} · {state.stats.milestonesReached} milestones
-          </PixelText>
-        </Window>
-      </View>
-    </View>
-  );
-
-  const bottom = (
-    <View style={{ flex: 1, padding: space.md }}>
-      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }} innerStyle={{ minHeight: 62 }}>
-        <PixelText size="small" color={palette.windowText} style={{ lineHeight: 18 }}>
-          {message}
-        </PixelText>
-      </Window>
-
-      <View style={{ flexDirection: 'row', marginBottom: space.sm }}>
-        <PixelButton label={dist.running ? 'Stop Run' : 'Start Run (GPS)'} tone={dist.running ? 'danger' : 'primary'} sound="confirm" style={{ flex: 1 }} onPress={toggleRun} />
-      </View>
-      {dist.gpsError ? (
-        <PixelText size="tiny" color={palette.danger} style={{ marginBottom: space.sm }}>
-          {dist.gpsError}
+  // The same console the cardio deck runs. The measurement is identical out
+  // here — real distance, real time — so there is no reason the trail should
+  // report it in a different, smaller vocabulary. What the trail adds is the
+  // two things only it has: how close the next milestone is, and how close the
+  // next trail sign is.
+  const trailPanel = (
+    <CardioConsole
+      title={pacing.trail.toUpperCase()}
+      seconds={seconds}
+      miles={sessionMiles}
+      steps={sessionSteps}
+      sets={sessionSets}
+      breakdown={breakdown}
+      reps={sessionReps}
+      holdSec={sessionHold}
+      bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}
+      moving={running}
+      onInject={dist.showInjector ? dist.injectSteps : null}
+    >
+      {dist.running ? (
+        <PixelText size="tiny" color={palette.hpHigh} style={{ marginTop: space.sm }}>
+          ● GPS RUN
         </PixelText>
       ) : null}
+      <ProgressBar value={state.stats.routeMi} max={pacing.milestoneMi} color={palette.hpHigh} height={12} label="Next milestone" showText={false} style={{ marginTop: space.sm }} />
+      <ProgressBar value={encMeter} max={1} color={palette.accent} height={8} label="Trail signs" showText={false} style={{ marginTop: 6 }} />
+      <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6 }}>
+        {formatMiles(state.stats.distanceMi)} lifetime · {state.stats.milestonesReached} milestones
+      </PixelText>
+    </CardioConsole>
+  );
 
-      {dist.showInjector ? (
-        <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
-          <PixelText size="tiny" color={palette.danger}>
-            No step counter available
-          </PixelText>
-          {/* The exact reason, on screen. "It doesn't work" is not something
-              anyone can act on; a permission status and an error string are. */}
-          {dist.pedDiag ? (
-            <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 5, lineHeight: 13 }}>
-              {dist.pedDiag.host} · {dist.pedDiag.platform}
-              {'\n'}permission: {dist.pedDiag.permission || 'unknown'}
-              {dist.pedDiag.error ? `\nerror: ${dist.pedDiag.error}` : ''}
-            </PixelText>
-          ) : null}
-          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 12 }}>
-            Until it works, these buttons stand in for real steps.
-          </PixelText>
-          <View style={{ flexDirection: 'row', marginTop: space.sm }}>
-            {[[100, '+0.05mi'], [500, '+0.25mi'], [2000, '+1mi']].map(([n, label], i) => (
-              <PixelButton key={n} label={label} tone="primary" size="small" style={{ flex: 1, marginRight: i < 2 ? 6 : 0, paddingVertical: 8 }} sound="cursor" onPress={() => dist.injectSteps(n)} />
-            ))}
-          </View>
-        </Window>
-      ) : (
-        <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
-          <PixelText size="tiny" color={palette.hpHigh}>
-            {dist.source === 'pedometer'
-              ? 'Step counter connected — walk to advance!'
-              : dist.source === 'probing'
-              ? 'Looking for a step counter...'
-              : 'Counting your steps — keep the app open and walk!'}
-          </PixelText>
-          {/* A live count, so "it is working" is something you can watch rather
-              than something the app claims. Walk ten steps and see ten. */}
-          {dist.source === 'motion' ? (
-            <PixelText size="small" color={palette.secondary} style={{ marginTop: 6 }}>
-              {dist.motionSteps} steps detected
-            </PixelText>
-          ) : null}
-          {dist.motionSlow ? (
-            <PixelText size="tiny" color={palette.hpMid} style={{ marginTop: 5, lineHeight: 12 }}>
-              This phone reports motion at {dist.motionHz} Hz, which is too slow to catch every
-              footfall — your real step count is higher than this. A development build fixes it
-              properly; see docs/STEP_COUNTING.md.
-            </PixelText>
-          ) : null}
-          {/* Which source is running, stated plainly. The two are not equivalent
-              and the difference is one the player feels: the OS step counter
-              keeps counting in your pocket, ours cannot. */}
-          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 12 }}>
-            {dist.source === 'pedometer'
-              ? 'Your phone counts steps even with the screen off. Tap Start Run for GPS distance.'
-              : 'No step counter on this build, so the app is reading motion itself — that only works while this screen is open. Start Run uses GPS instead and works better outdoors.'}
-          </PixelText>
-        </Window>
-      )}
-
-      <PixelButton label="Back to Town" tone="plain" sound="cancel" onPress={() => { if (dist.running) dist.stopRun(); navigate('hub'); }} />
-    </View>
+  // Everything that explains the step counter rather than showing the trail.
+  // It matters — "it doesn't work" is not something anyone can act on — but it
+  // is reference, not scenery, so it lives behind the menu button now instead
+  // of taking half the screen.
+  const stepPanel = dist.showInjector ? (
+    <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
+      <PixelText size="tiny" color={palette.danger}>No step counter available</PixelText>
+      {dist.pedDiag ? (
+        <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 5, lineHeight: 13 }}>
+          {dist.pedDiag.host} · {dist.pedDiag.platform}
+          {'\n'}permission: {dist.pedDiag.permission || 'unknown'}
+          {dist.pedDiag.error ? `\nerror: ${dist.pedDiag.error}` : ''}
+        </PixelText>
+      ) : null}
+      <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 12 }}>
+        Until it works, these buttons stand in for real steps.
+      </PixelText>
+      <View style={{ flexDirection: 'row', marginTop: space.sm }}>
+        {[[100, '+0.05mi'], [500, '+0.25mi'], [2000, '+1mi']].map(([n, label], i) => (
+          <PixelButton key={n} label={label} tone="primary" size="small" style={{ flex: 1, marginRight: i < 2 ? 6 : 0, paddingVertical: 8 }} sound="cursor" onPress={() => dist.injectSteps(n)} />
+        ))}
+      </View>
+    </Window>
+  ) : (
+    <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
+      <PixelText size="tiny" color={palette.hpHigh}>
+        {dist.source === 'pedometer'
+          ? 'Step counter connected — walk to advance!'
+          : dist.source === 'probing'
+          ? 'Looking for a step counter...'
+          : 'Counting your steps — keep the app open and walk!'}
+      </PixelText>
+      {dist.source === 'motion' ? (
+        <PixelText size="small" color={palette.secondary} style={{ marginTop: 6 }}>
+          {dist.motionSteps} steps detected
+        </PixelText>
+      ) : null}
+      {dist.motionSlow ? (
+        <PixelText size="tiny" color={palette.hpMid} style={{ marginTop: 5, lineHeight: 12 }}>
+          This phone reports motion at {dist.motionHz} Hz, which is too slow to catch every
+          footfall — your real step count is higher than this. A development build fixes it
+          properly; see docs/STEP_COUNTING.md.
+        </PixelText>
+      ) : null}
+      <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 12 }}>
+        {dist.source === 'pedometer'
+          ? 'Your phone counts steps even with the screen off. Tap Start Run for GPS distance.'
+          : 'No step counter on this build, so the app is reading motion itself — that only works while this screen is open. Start Run uses GPS instead and works better outdoors.'}
+      </PixelText>
+    </Window>
   );
 
   return (
-    <Screen padTop={false}>
-      <DualPane top={top} bottom={bottom} topFlex={1} bottomFlex={1} />
+    <Screen padTop={false} style={{ padding: 0 }}>
+      <View style={{ flex: 1, backgroundColor: palette.grass }}>
+        {/* The trail is the screen now, not a window at the top of it. */}
+        <ScrollingScene
+          width={screen.width}
+          height={screen.height}
+          moving={running}
+        />
+
+        {/* You and your companion, standing clear of the panel below. */}
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: screen.height * 0.30, alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+            <PixelSprite
+              spriteKey={playerSprite(state.playerGender, 'down', stride)}
+              palette={outfitPalette(state.playerOutfit, state.playerGender)}
+              size={40}
+              bob={running}
+            />
+            {companion ? (
+              <>
+                <View style={{ width: 10 }} />
+                <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={60} bob={running} />
+              </>
+            ) : null}
+          </View>
+        </View>
+
+        <View style={{ position: 'absolute', top: TOP_INSET, left: space.sm, right: space.sm, flexDirection: 'row', alignItems: 'flex-start' }}>
+          <View style={{ flex: 1 }}>{trailPanel}</View>
+          <View style={{ marginLeft: space.sm }}>
+            <MenuButton onPress={() => setSheetOpen(true)} />
+          </View>
+        </View>
+
+        <View style={{ position: 'absolute', left: space.sm, right: space.sm, bottom: space.lg }}>
+          <Window tone="cream" pad={12} innerStyle={{ minHeight: 56 }}>
+            <PixelText size="small" color={palette.windowText} style={{ lineHeight: 18 }}>
+              {message}
+            </PixelText>
+          </Window>
+          {dist.gpsError ? (
+            <PixelText size="tiny" color={palette.danger} style={{ marginTop: space.sm }}>
+              {dist.gpsError}
+            </PixelText>
+          ) : null}
+          {(
+            <PixelButton
+              label={dist.running ? 'Stop Run' : 'Start Run (GPS)'}
+              tone={dist.running ? 'danger' : 'primary'}
+              sound="confirm"
+              style={{ marginTop: space.sm }}
+              onPress={toggleRun}
+            />
+          )}
+        </View>
+      </View>
+
+      <Modal visible={sheetOpen} transparent animationType="fade" onRequestClose={() => setSheetOpen(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: '#000000cc' }} onPress={() => setSheetOpen(false)}>
+          <Pressable onPress={() => {}} style={{ marginTop: 'auto', backgroundColor: tokens.surface, borderTopColor: tokens.line, borderTopWidth: 3, padding: space.md, maxHeight: '78%' }}>
+            <PixelText size="small" color={tokens.textOnDark} style={{ marginBottom: space.sm }}>
+              ON THE TRAIL
+            </PixelText>
+            <ScrollView showsVerticalScrollIndicator={false}>{stepPanel}</ScrollView>
+            <TrailAction
+              label={`Back to ${PLACE_LABELS.hub}`}
+              tone="quiet"
+              onPress={() => {
+                setSheetOpen(false);
+                if (dist.running) dist.stopRun();
+                forgetSpot('route:session');
+                navigate('hub');
+              }}
+            />
+            <TrailAction label="Close" tone="quiet" style={{ marginTop: space.sm }} onPress={() => setSheetOpen(false)} />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 }
-

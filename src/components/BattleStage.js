@@ -19,6 +19,9 @@ const TONES = {
   grass: { sky: '#4a6ea8', far: '#7fa8d8', disc: palette.grassTall, field: 'grass' },
   trail: { sky: '#5f7fb4', far: '#9fc0e0', disc: palette.sand, field: 'path' },
   dusk: { sky: '#3a2c52', far: '#8a6a9e', disc: '#6b5d7a', field: 'grass' },
+  // Indoors. Coach's push-up contest happens on the gym floor, not on a
+  // hillside — a sparring match staged in a meadow reads as a different game.
+  hall: { sky: '#232833', far: '#39404d', disc: '#4f8a7e', field: 'gym_floor' },
 };
 
 // Battle tiles are drawn at 3x the overworld's usual scale — "zoomed in".
@@ -56,12 +59,17 @@ export function Platform({ width = 96, tone = 'grass' }) {
 function TileGround({ field }) {
   const cols = Math.ceil(screen.width / TILE_SIZE) + 1;
   const rows = Math.ceil((screen.height * 0.5) / TILE_SIZE) + 1;
-  const grid = useMemo(() => {
+  // Tile resolves its layers from its neighbours, so the stage floor has to be
+  // a map rather than loose codes. Passing rows one at a time meant every tone
+  // rendered as plain grass whatever its codes said.
+  const sceneMap = useMemo(() => {
     const out = [];
     for (let y = 0; y < rows; y += 1) {
       let row = '';
       for (let x = 0; x < cols; x += 1) {
-        if (field === 'path') {
+        if (field === 'gym_floor') {
+          row += '.';
+        } else if (field === 'path') {
           row += '#';
         } else {
           // mostly grass, the odd tall-grass clump toward the edges — the
@@ -72,15 +80,15 @@ function TileGround({ field }) {
       }
       out.push(row);
     }
-    return out;
+    return { id: field === 'gym_floor' ? 'gym' : 'stage', cols, rows, grid: out };
   }, [field, cols, rows]);
 
   return (
     <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden' }}>
-      {grid.map((row, y) => (
+      {sceneMap.grid.map((row, y) => (
         <View key={y} style={{ flexDirection: 'row' }}>
           {row.split('').map((code, x) => (
-            <Tile key={x} code={code} s={TILE_SIZE} frame={0} x={x} y={y} />
+            <Tile key={x} code={code} s={TILE_SIZE} frame={0} x={x} y={y} map={sceneMap} />
           ))}
         </View>
       ))}

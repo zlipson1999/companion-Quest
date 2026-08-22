@@ -12,7 +12,7 @@ import { playSfx } from '../audio';
 export default function PartyScreen() {
   const { dispatch } = useGame();
   const party = useParty();
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
 
   const setActive = (i) => {
     if (i === party.activeIndex) return;
@@ -61,7 +61,7 @@ export default function PartyScreen() {
           );
         })}
       </ScrollView>
-      <PixelButton label="Back to Town" tone="plain" sound="cancel" onPress={() => navigate('hub')} style={{ marginTop: space.sm }} />
+      <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
     </Screen>
   );
 }

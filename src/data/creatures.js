@@ -161,4 +161,31 @@ export function getCreature(id) {
   return CREATURES[id] || null;
 }
 
+// Every stage of one family, from the form you meet first.
+export function familyChain(rootId) {
+  const chain = [];
+  for (let id = rootId; id && !chain.includes(id); id = getCreature(id).evolvesTo) chain.push(id);
+  return chain;
+}
+
+// The roster in the order a Creature Index should read: each companion family
+// whole, first-bond families first, then the obstacles.
+//
+// The Index used to build this itself and followed evolvesTo exactly ONCE, so
+// it listed thirteen of the twenty-two and not one final evolution among them.
+// Evolving stamped `dex[groveheart] = 'owned'` for a page that could never
+// print the row. Order belongs to the roster, not to the screen that shows it.
+export const INDEX_ORDER = [
+  ...WILD_COMPANION_IDS.flatMap(familyChain),
+  ...OBSTACLE_IDS,
+];
+
+// Same guard as the sprite generator's: a creature nothing lists is a creature
+// nobody can ever see, and that is precisely how the character cards sat unused
+// for a release.
+const unlisted = ALL_CREATURE_IDS.filter((id) => !INDEX_ORDER.includes(id));
+if (unlisted.length) {
+  throw new Error(`creatures: ${unlisted.join(', ')} reach no Index entry`);
+}
+
 export default CREATURES;

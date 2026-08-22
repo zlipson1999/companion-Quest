@@ -6,21 +6,9 @@ import { Screen, Window, PixelText, PixelButton, PixelSprite } from '../componen
 import { palette, space } from '../theme';
 import { useGame } from '../state';
 import { useNav } from './navContext';
-import { STARTER_IDS, WILD_COMPANION_IDS, OBSTACLE_IDS, getCreature } from '../data/creatures';
+import { INDEX_ORDER, getCreature } from '../data/creatures';
 
 const SILHOUETTE = ['transparent', palette.ink, palette.ink, palette.ink, palette.ink, palette.ink, palette.ink];
-
-function buildOrder() {
-  const ids = [];
-  STARTER_IDS.forEach((id) => {
-    ids.push(id);
-    const evo = getCreature(id).evolvesTo;
-    if (evo) ids.push(evo);
-  });
-  WILD_COMPANION_IDS.filter((id) => !STARTER_IDS.includes(id)).forEach((id) => ids.push(id));
-  OBSTACLE_IDS.forEach((id) => ids.push(id));
-  return ids;
-}
 
 function Entry({ id, status }) {
   const c = getCreature(id);
@@ -68,8 +56,8 @@ function Entry({ id, status }) {
 
 export default function IndexScreen() {
   const { state } = useGame();
-  const { navigate } = useNav();
-  const order = buildOrder();
+  const { navigate, goBack, back } = useNav();
+  const order = INDEX_ORDER;
   const owned = order.filter((id) => state.dex[id] === 'owned').length;
   const seen = order.filter((id) => state.dex[id] === 'seen').length;
 
@@ -86,7 +74,7 @@ export default function IndexScreen() {
           <Entry key={id} id={id} status={state.dex[id] || 'unknown'} />
         ))}
       </ScrollView>
-      <PixelButton label="Back to Town" tone="plain" sound="cancel" onPress={() => navigate('hub')} style={{ marginTop: space.sm }} />
+      <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
     </Screen>
   );
 }

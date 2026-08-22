@@ -2,7 +2,7 @@
 // bond invitation and bad-habit obstacles that must be cleared.
 
 import { WILD_COMPANION_IDS, getCreature } from './creatures';
-import { ENCOUNTERS } from './obstacles';
+import { pickEncounter } from './obstacles';
 
 // Encounter stats for trail companions (tuned so bonding is
 // realistic). xp/bond are the rewards for befriending (or defeating).
@@ -25,9 +25,7 @@ export function rollWildEncounter(milestone = 1) {
     const stats = WILD_COMPANIONS[id] || { hp: Math.floor((c.baseHp || 50) * 0.7), xp: 28, bond: 6 };
     return { creatureId: id, isCompanion: true, hp: stats.hp, xp: stats.xp, bond: stats.bond, catchRate: c.catchRate || 0.5 };
   }
-  const pool = Object.values(ENCOUNTERS).filter((e) => e.minMilestone <= milestone);
-  const list = pool.length ? pool : [ENCOUNTERS.sludgewad];
-  const e = list[Math.floor(Math.random() * list.length)];
+  const e = pickEncounter(milestone);
   return { creatureId: e.creatureId, isCompanion: false, hp: e.hp, xp: e.xp, bond: e.bond, catchRate: 0 };
 }
 

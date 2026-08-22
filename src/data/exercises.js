@@ -79,3 +79,41 @@ export function movesLearnedBetween(beforeLevel, afterLevel) {
 }
 
 export default EXERCISES;
+
+
+// ------------------------------------------------------------- breakdown
+// What the session actually consisted of, rather than one total.
+//
+// "42 reps" is a number; "10 push-ups, 15 squats, 20s plank" is what you did.
+// Tallies are kept per exercise id in `stats.exercises` and read here as a
+// difference against a baseline, the same way distance and reps are, so a
+// session breakdown costs no extra bookkeeping while you play.
+//
+// Routines are tallied under a `workout:` prefix in the same map. They count
+// how many TIMES you did the routine, not repetitions of anything, so they
+// format differently and the formatter has to know which is which.
+export const WORKOUT_TALLY_PREFIX = 'workout:';
+
+export function breakdownSince(now = {}, base = {}, workoutName) {
+  return Object.keys(now)
+    .map((id) => ({ id, amount: (now[id] || 0) - (base[id] || 0) }))
+    .filter((e) => e.amount > 0)
+    .map((e) => {
+      if (e.id.startsWith(WORKOUT_TALLY_PREFIX)) {
+        const wid = e.id.slice(WORKOUT_TALLY_PREFIX.length);
+        return { ...e, kind: 'workout', name: (workoutName && workoutName(wid)) || wid };
+      }
+      const ex = EXERCISES[e.id];
+      return { ...e, kind: ex ? ex.kind : 'reps', name: ex ? ex.exercise : e.id };
+    })
+    .sort((a, b) => b.amount - a.amount);
+}
+
+export function formatBreakdown(list) {
+  return list
+    .map((e) => {
+      if (e.kind === 'workout') return e.amount > 1 ? `${e.name} x${e.amount}` : e.name;
+      return e.kind === 'hold' ? `${e.amount}s ${e.name}` : `${e.amount} ${e.name}`;
+    })
+    .join(' · ');
+}
