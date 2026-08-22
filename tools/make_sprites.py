@@ -3892,20 +3892,6 @@ def tile_gym_exit():
     return c
 
 
-def tile_gate():
-    """The way out of town. Two stone posts either side of the path, so it reads
-    as a gap you walk through rather than a decoration."""
-    c = tile_path()
-    for px_ in (0, 13):
-        c.rect(px_, 2, px_ + 2, 15, 'leaf', 0.30)            # post
-        c.rect(px_, 2, px_, 15, 'leaf', 0.48)                # lit face
-        c.rect(px_ + 2, 2, px_ + 2, 15, 'leaf', 0.16)        # shadow face
-        c.rect(px_, 1, px_ + 2, 1, 'leaf', 0.58)             # cap
-        for k in range(4, 15, 5):                            # grain
-            c.put(px_ + 1, k, 'leaf', 0.22)
-    c.rect(2, 3, 13, 4, 'leaf', 0.42)                        # rail across the top
-    c.rect(2, 5, 13, 5, 'leaf', 0.18)
-    return c
 
 
 # =========================================================================
@@ -4149,7 +4135,7 @@ def build_all():
     add('tile_flowers', tile_flowers())
     add('tile_roof_rest', tile_roof('ache')); add('tile_roof_gym', tile_roof('hero'))
     add('tile_wall', tile_wall('couch')); add('tile_window', tile_window('couch'))
-    add('tile_door', tile_door('couch')); add('tile_gate', tile_gate())
+    add('tile_door', tile_door('couch'))
 
     # Training Hall interior
     add('tile_gym_floor', tile_gym_floor(0)); add('tile_gym_floor_b', tile_gym_floor(1))

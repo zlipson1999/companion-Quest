@@ -664,6 +664,12 @@ shadow it throws down the pitch), and the wall below still gets its eave. Both
 are applied from the building's own SHAPE — a roof with no roof above it, a wall
 with a roof above it — so nothing has to be remembered and placed.
 
+**The way out of town is a path, not a door.** `G` used to render a wooden gate
+standing in the tree line — a door to nowhere, in the middle of a hedge. It
+takes the path's own autotiling now, so the trail simply carries on north and
+off the map, with the signpost beside it saying where it goes. `tile_gate` and
+its traced art are deleted; they reach no map.
+
 **The lane is a place.** 13x17, so it fills the phone: a lane north to the gate
 with a signpost at it, your house and Quest Fitness facing each other across it
 with doorstep paths onto a cross lane, lamps at the crossroads, a post box by
@@ -683,6 +689,26 @@ remembers where you were standing, like the other two places.
 gym out of the file between two anchors, and nothing noticed until the door to
 it threw `undefined.spawn` at runtime. Every map's grid now has to match the
 cols and rows it claims.
+
+## Phase 12 — DONE: you climb onto the treadmill
+
+Walking into the treadmill cut straight to a screen where you were already
+running on it, which is the one moment in the whole room where the equipment
+stopped being something you walk up to.
+
+`RouteScreen` holds a **mount phase** in treadmill mode: the figure rises into
+the deck from below over ~0.9s with its legs going and its back to you, and the
+belt does not start until it is standing on it. The message says "Stepping onto
+the deck..." while it happens, and the station names itself — `t` and `q` pass
+`station: 'treadmill' | 'rower'` so the rower does not call itself a deck.
+
+**The runner's legs move now**, on Route 1 as well. `playerSprite` has always
+had walk frames (`_a`/`_b` per facing); the trail was calling it with the
+default standing frame and adding an idle bob, so a deck with a scrolling belt
+and a motionless figure on it read as a still image with a moving background.
+The stride cycles whenever you are actually moving and stops when you are not —
+it is driven by real distance, like everything else, so on the web build (no
+pedometer) the figure correctly stands still.
 
 ## Phase 6 — ideas, not committed
 

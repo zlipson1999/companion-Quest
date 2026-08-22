@@ -42,7 +42,6 @@ const TILE_SPRITES = {
   '.': ['tile_grass', 'tile_grass_b'],
   ',': ['tile_flowers'],
   '#': ['tile_path', 'tile_path_b'],
-  G: ['tile_gate'],
   T: ['tile_tree', 'tile_tree_b'],
   '~': ['tile_water', 'tile_water_b'],
   h: ['tile_roof_rest'],
@@ -270,7 +269,10 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
   const isFloorCode = code === '.' || code === ',' || (floor && code === '#');
 
   let layers;
-  if (!floor && PATH_CODES.has(code) && code === '#') {
+  // The gate takes the path's own autotiling. It used to render a wooden door
+  // standing in the tree line, which is a door to nowhere — the way out of town
+  // is the trail carrying on north, so the trail carries on north.
+  if (!floor && PATH_CODES.has(code)) {
     const mask = maskAt(map, x, y, PATH_CODES);
     layers = [{ key: `tile_path_m${mask}` }, ...innerCorners(map, x, y, PATH_CODES, 'tile_path')];
   } else if (!floor && WATER_CODES.has(code)) {

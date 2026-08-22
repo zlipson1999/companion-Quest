@@ -14,7 +14,7 @@
 // Both are real movement. Neither is a "walk" button.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Modal, Pressable, ScrollView, View } from 'react-native';
+import { Animated, Easing, Modal, Pressable, ScrollView, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Screen, Window, ProgressBar, PixelText, PixelSprite, PixelButton, TrailAction, Tile, MenuButton, TOP_INSET } from '../components';
 import { palette, space, screen, tokens } from '../theme';
@@ -136,6 +136,7 @@ function ScrollingScene({ width, height, moving, treadmill }) {
 export default function RouteScreen({ params = {} }) {
   useKeepAwake();
   const treadmill = params.mode === 'treadmill';
+  const station = params.station === 'rower' ? 'rower' : 'deck';
   const { state, dispatch } = useGame();
   const companion = useCompanion();
   const { navigate, toBattle } = useNav();
@@ -143,13 +144,57 @@ export default function RouteScreen({ params = {} }) {
   const pacing = pacingForGoal(state.goalId);
 
   const [message, setMessage] = useState(
-    params.mode === 'treadmill'
-      ? 'Deck is running. Nothing out here but the miles — go at your own pace.'
+    treadmill
+      ? `Stepping onto the ${station}...`
       : 'The trail opens up ahead. Every real step carries you forward!'
   );
   const [encMeter, setEncMeter] = useState(0);
   const [moving, setMoving] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  // Getting on. Walking into the treadmill used to cut straight to a screen
+  // where you were already running on it, which is the one moment in the room
+  // where the equipment stopped being something you walk up to. You climb on.
+  const [mounted, setMounted] = useState(!treadmill);
+  // Which walk frame the figure is on. A runner whose legs never move is what
+  // made the deck read as a still image with a moving background.
+  const [stride, setStride] = useState(0);
+  const mountY = useRef(new Animated.Value(treadmill ? 1 : 0)).current;
+
+  useEffect(() => {
+    if (!treadmill) return undefined;
+    const legs = setInterval(() => setStride((s) => (s + 1) % 3), 120);
+    const climb = Animated.timing(mountY, {
+      toValue: 0,
+      duration: 880,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    });
+    climb.start(({ finished }) => finished && setMounted(true));
+    return () => {
+      clearInterval(legs);
+      climb.stop();
+    };
+  }, [treadmill, mountY]);
+
+  const running = moving || dist.running;
+
+  // Once you are on, the legs follow whether you are actually moving.
+  useEffect(() => {
+    if (!mounted) return undefined;
+    if (!running) {
+      setStride(0);
+      return undefined;
+    }
+    const legs = setInterval(() => setStride((s) => (s + 1) % 3), 150);
+    return () => clearInterval(legs);
+  }, [mounted, running]);
+
+  useEffect(() => {
+    if (treadmill && mounted) {
+      setMessage(`${station === 'rower' ? 'Rower' : 'Deck'} is running. Nothing out here but the miles — go at your own pace.`);
+    }
+  }, [treadmill, mounted, station]);
 
   const lastMiles = useRef(0);
   const lastSteps = useRef(0);
@@ -306,23 +351,33 @@ export default function RouteScreen({ params = {} }) {
         <ScrollingScene
           width={screen.width}
           height={screen.height}
-          moving={moving || dist.running}
+          moving={running && mounted}
           treadmill={treadmill}
         />
 
         {/* You and your companion, standing clear of the panel below. */}
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: screen.height * 0.30, alignItems: 'center' }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-            <PixelSprite
-              spriteKey={playerSprite(state.playerGender)}
-              palette={outfitPalette(state.playerOutfit, state.playerGender)}
-              size={40}
-              bob={moving || dist.running}
-            />
+            {/* Climbing on: the figure rises into the deck from below with its
+                legs going, facing away, and settles once it is standing on it. */}
+            <Animated.View
+              style={{
+                transform: [
+                  { translateY: mountY.interpolate({ inputRange: [0, 1], outputRange: [0, 74] }) },
+                ],
+              }}
+            >
+              <PixelSprite
+                spriteKey={playerSprite(state.playerGender, mounted ? 'down' : 'up', stride)}
+                palette={outfitPalette(state.playerOutfit, state.playerGender)}
+                size={40}
+                bob={mounted && running}
+              />
+            </Animated.View>
             {companion && !treadmill ? (
               <>
                 <View style={{ width: 10 }} />
-                <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={60} bob={moving || dist.running} />
+                <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={60} bob={running} />
               </>
             ) : null}
           </View>

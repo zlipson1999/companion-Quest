@@ -246,1432 +246,1428 @@ export const TILE_FRAMES = {
     512,
     64
   ],
-  "tile_gate": [
-    544,
-    64
-  ],
   "tile_grass": [
-    576,
+    544,
     64
   ],
   "tile_grass_b": [
-    608,
+    576,
     64
   ],
   "tile_grass_c": [
-    640,
+    608,
     64
   ],
   "tile_grass_d": [
-    0,
-    96
+    640,
+    64
   ],
   "tile_grass_f0": [
-    32,
+    0,
     96
   ],
   "tile_grass_f1": [
-    64,
+    32,
     96
   ],
   "tile_grass_f10": [
-    96,
+    64,
     96
   ],
   "tile_grass_f11": [
-    128,
+    96,
     96
   ],
   "tile_grass_f12": [
-    160,
+    128,
     96
   ],
   "tile_grass_f13": [
-    192,
+    160,
     96
   ],
   "tile_grass_f14": [
-    224,
+    192,
     96
   ],
   "tile_grass_f15": [
-    256,
+    224,
     96
   ],
   "tile_grass_f2": [
-    288,
+    256,
     96
   ],
   "tile_grass_f3": [
-    320,
+    288,
     96
   ],
   "tile_grass_f4": [
-    352,
+    320,
     96
   ],
   "tile_grass_f5": [
-    384,
+    352,
     96
   ],
   "tile_grass_f6": [
-    416,
+    384,
     96
   ],
   "tile_grass_f7": [
-    448,
+    416,
     96
   ],
   "tile_grass_f8": [
-    480,
+    448,
     96
   ],
   "tile_grass_f9": [
-    512,
+    480,
     96
   ],
   "tile_gym_block_f0": [
-    544,
+    512,
     96
   ],
   "tile_gym_block_f1": [
-    576,
+    544,
     96
   ],
   "tile_gym_block_f10": [
-    608,
+    576,
     96
   ],
   "tile_gym_block_f11": [
-    640,
+    608,
     96
   ],
   "tile_gym_block_f12": [
-    0,
-    128
+    640,
+    96
   ],
   "tile_gym_block_f13": [
-    32,
+    0,
     128
   ],
   "tile_gym_block_f14": [
-    64,
+    32,
     128
   ],
   "tile_gym_block_f15": [
-    96,
+    64,
     128
   ],
   "tile_gym_block_f2": [
-    128,
+    96,
     128
   ],
   "tile_gym_block_f3": [
-    160,
+    128,
     128
   ],
   "tile_gym_block_f4": [
-    192,
+    160,
     128
   ],
   "tile_gym_block_f5": [
-    224,
+    192,
     128
   ],
   "tile_gym_block_f6": [
-    256,
+    224,
     128
   ],
   "tile_gym_block_f7": [
-    288,
+    256,
     128
   ],
   "tile_gym_block_f8": [
-    320,
+    288,
     128
   ],
   "tile_gym_block_f9": [
-    352,
+    320,
     128
   ],
   "tile_gym_exit": [
-    384,
+    352,
     128
   ],
   "tile_gym_floor": [
-    416,
+    384,
     128
   ],
   "tile_gym_floor_b": [
-    448,
+    416,
     128
   ],
   "tile_gym_floor_f0": [
-    480,
+    448,
     128
   ],
   "tile_gym_floor_f1": [
-    512,
+    480,
     128
   ],
   "tile_gym_floor_f10": [
-    544,
+    512,
     128
   ],
   "tile_gym_floor_f11": [
-    576,
+    544,
     128
   ],
   "tile_gym_floor_f12": [
-    608,
+    576,
     128
   ],
   "tile_gym_floor_f13": [
-    640,
+    608,
     128
   ],
   "tile_gym_floor_f14": [
-    0,
-    160
+    640,
+    128
   ],
   "tile_gym_floor_f15": [
-    32,
+    0,
     160
   ],
   "tile_gym_floor_f2": [
-    64,
+    32,
     160
   ],
   "tile_gym_floor_f3": [
-    96,
+    64,
     160
   ],
   "tile_gym_floor_f4": [
-    128,
+    96,
     160
   ],
   "tile_gym_floor_f5": [
-    160,
+    128,
     160
   ],
   "tile_gym_floor_f6": [
-    192,
+    160,
     160
   ],
   "tile_gym_floor_f7": [
-    224,
+    192,
     160
   ],
   "tile_gym_floor_f8": [
-    256,
+    224,
     160
   ],
   "tile_gym_floor_f9": [
-    288,
+    256,
     160
   ],
   "tile_gym_mats_f0": [
-    320,
+    288,
     160
   ],
   "tile_gym_mats_f1": [
-    352,
+    320,
     160
   ],
   "tile_gym_mats_f10": [
-    384,
+    352,
     160
   ],
   "tile_gym_mats_f11": [
-    416,
+    384,
     160
   ],
   "tile_gym_mats_f12": [
-    448,
+    416,
     160
   ],
   "tile_gym_mats_f13": [
-    480,
+    448,
     160
   ],
   "tile_gym_mats_f14": [
-    512,
+    480,
     160
   ],
   "tile_gym_mats_f15": [
-    544,
+    512,
     160
   ],
   "tile_gym_mats_f2": [
-    576,
+    544,
     160
   ],
   "tile_gym_mats_f3": [
-    608,
+    576,
     160
   ],
   "tile_gym_mats_f4": [
-    640,
+    608,
     160
   ],
   "tile_gym_mats_f5": [
-    0,
-    192
+    640,
+    160
   ],
   "tile_gym_mats_f6": [
-    32,
+    0,
     192
   ],
   "tile_gym_mats_f7": [
-    64,
+    32,
     192
   ],
   "tile_gym_mats_f8": [
-    96,
+    64,
     192
   ],
   "tile_gym_mats_f9": [
-    128,
+    96,
     192
   ],
   "tile_gym_mirror": [
-    160,
+    128,
     192
   ],
   "tile_gym_mirror_b": [
-    192,
+    160,
     192
   ],
   "tile_gym_platform_f0": [
-    224,
+    192,
     192
   ],
   "tile_gym_platform_f1": [
-    256,
+    224,
     192
   ],
   "tile_gym_platform_f10": [
-    288,
+    256,
     192
   ],
   "tile_gym_platform_f11": [
-    320,
+    288,
     192
   ],
   "tile_gym_platform_f12": [
-    352,
+    320,
     192
   ],
   "tile_gym_platform_f13": [
-    384,
+    352,
     192
   ],
   "tile_gym_platform_f14": [
-    416,
+    384,
     192
   ],
   "tile_gym_platform_f15": [
-    448,
+    416,
     192
   ],
   "tile_gym_platform_f2": [
-    480,
+    448,
     192
   ],
   "tile_gym_platform_f3": [
-    512,
+    480,
     192
   ],
   "tile_gym_platform_f4": [
-    544,
+    512,
     192
   ],
   "tile_gym_platform_f5": [
-    576,
+    544,
     192
   ],
   "tile_gym_platform_f6": [
-    608,
+    576,
     192
   ],
   "tile_gym_platform_f7": [
-    640,
+    608,
     192
   ],
   "tile_gym_platform_f8": [
-    0,
-    224
+    640,
+    192
   ],
   "tile_gym_platform_f9": [
-    32,
+    0,
     224
   ],
   "tile_gym_turf_f0": [
-    64,
+    32,
     224
   ],
   "tile_gym_turf_f1": [
-    96,
+    64,
     224
   ],
   "tile_gym_turf_f10": [
-    128,
+    96,
     224
   ],
   "tile_gym_turf_f11": [
-    160,
+    128,
     224
   ],
   "tile_gym_turf_f12": [
-    192,
+    160,
     224
   ],
   "tile_gym_turf_f13": [
-    224,
+    192,
     224
   ],
   "tile_gym_turf_f14": [
-    256,
+    224,
     224
   ],
   "tile_gym_turf_f15": [
-    288,
+    256,
     224
   ],
   "tile_gym_turf_f2": [
-    320,
+    288,
     224
   ],
   "tile_gym_turf_f3": [
-    352,
+    320,
     224
   ],
   "tile_gym_turf_f4": [
-    384,
+    352,
     224
   ],
   "tile_gym_turf_f5": [
-    416,
+    384,
     224
   ],
   "tile_gym_turf_f6": [
-    448,
+    416,
     224
   ],
   "tile_gym_turf_f7": [
-    480,
+    448,
     224
   ],
   "tile_gym_turf_f8": [
-    512,
+    480,
     224
   ],
   "tile_gym_turf_f9": [
-    544,
+    512,
     224
   ],
   "tile_gym_wall": [
-    576,
+    544,
     224
   ],
   "tile_gym_wall_side": [
-    608,
+    576,
     224
   ],
   "tile_home_floor": [
-    640,
+    608,
     224
   ],
   "tile_home_floor_b": [
-    0,
-    256
+    640,
+    224
   ],
   "tile_home_floor_f0": [
-    32,
+    0,
     256
   ],
   "tile_home_floor_f1": [
-    64,
+    32,
     256
   ],
   "tile_home_floor_f10": [
-    96,
+    64,
     256
   ],
   "tile_home_floor_f11": [
-    128,
+    96,
     256
   ],
   "tile_home_floor_f12": [
-    160,
+    128,
     256
   ],
   "tile_home_floor_f13": [
-    192,
+    160,
     256
   ],
   "tile_home_floor_f14": [
-    224,
+    192,
     256
   ],
   "tile_home_floor_f15": [
-    256,
+    224,
     256
   ],
   "tile_home_floor_f2": [
-    288,
+    256,
     256
   ],
   "tile_home_floor_f3": [
-    320,
+    288,
     256
   ],
   "tile_home_floor_f4": [
-    352,
+    320,
     256
   ],
   "tile_home_floor_f5": [
-    384,
+    352,
     256
   ],
   "tile_home_floor_f6": [
-    416,
+    384,
     256
   ],
   "tile_home_floor_f7": [
-    448,
+    416,
     256
   ],
   "tile_home_floor_f8": [
-    480,
+    448,
     256
   ],
   "tile_home_floor_f9": [
-    512,
+    480,
     256
   ],
   "tile_home_kitchen_f0": [
-    544,
+    512,
     256
   ],
   "tile_home_kitchen_f1": [
-    576,
+    544,
     256
   ],
   "tile_home_kitchen_f10": [
-    608,
+    576,
     256
   ],
   "tile_home_kitchen_f11": [
-    640,
+    608,
     256
   ],
   "tile_home_kitchen_f12": [
-    0,
-    288
+    640,
+    256
   ],
   "tile_home_kitchen_f13": [
-    32,
+    0,
     288
   ],
   "tile_home_kitchen_f14": [
-    64,
+    32,
     288
   ],
   "tile_home_kitchen_f15": [
-    96,
+    64,
     288
   ],
   "tile_home_kitchen_f2": [
-    128,
+    96,
     288
   ],
   "tile_home_kitchen_f3": [
-    160,
+    128,
     288
   ],
   "tile_home_kitchen_f4": [
-    192,
+    160,
     288
   ],
   "tile_home_kitchen_f5": [
-    224,
+    192,
     288
   ],
   "tile_home_kitchen_f6": [
-    256,
+    224,
     288
   ],
   "tile_home_kitchen_f7": [
-    288,
+    256,
     288
   ],
   "tile_home_kitchen_f8": [
-    320,
+    288,
     288
   ],
   "tile_home_kitchen_f9": [
-    352,
+    320,
     288
   ],
   "tile_home_rug_f0": [
-    384,
+    352,
     288
   ],
   "tile_home_rug_f1": [
-    416,
+    384,
     288
   ],
   "tile_home_rug_f10": [
-    448,
+    416,
     288
   ],
   "tile_home_rug_f11": [
-    480,
+    448,
     288
   ],
   "tile_home_rug_f12": [
-    512,
+    480,
     288
   ],
   "tile_home_rug_f13": [
-    544,
+    512,
     288
   ],
   "tile_home_rug_f14": [
-    576,
+    544,
     288
   ],
   "tile_home_rug_f15": [
-    608,
+    576,
     288
   ],
   "tile_home_rug_f2": [
-    640,
+    608,
     288
   ],
   "tile_home_rug_f3": [
-    0,
-    320
+    640,
+    288
   ],
   "tile_home_rug_f4": [
-    32,
+    0,
     320
   ],
   "tile_home_rug_f5": [
-    64,
+    32,
     320
   ],
   "tile_home_rug_f6": [
-    96,
+    64,
     320
   ],
   "tile_home_rug_f7": [
-    128,
+    96,
     320
   ],
   "tile_home_rug_f8": [
-    160,
+    128,
     320
   ],
   "tile_home_rug_f9": [
-    192,
+    160,
     320
   ],
   "tile_home_wall_f0": [
-    224,
+    192,
     320
   ],
   "tile_home_wall_f1": [
-    256,
+    224,
     320
   ],
   "tile_home_wall_f10": [
-    288,
+    256,
     320
   ],
   "tile_home_wall_f11": [
-    320,
+    288,
     320
   ],
   "tile_home_wall_f12": [
-    352,
+    320,
     320
   ],
   "tile_home_wall_f13": [
-    384,
+    352,
     320
   ],
   "tile_home_wall_f14": [
-    416,
+    384,
     320
   ],
   "tile_home_wall_f15": [
-    448,
+    416,
     320
   ],
   "tile_home_wall_f2": [
-    480,
+    448,
     320
   ],
   "tile_home_wall_f3": [
-    512,
+    480,
     320
   ],
   "tile_home_wall_f4": [
-    544,
+    512,
     320
   ],
   "tile_home_wall_f5": [
-    576,
+    544,
     320
   ],
   "tile_home_wall_f6": [
-    608,
+    576,
     320
   ],
   "tile_home_wall_f7": [
-    640,
+    608,
     320
   ],
   "tile_home_wall_f8": [
-    0,
-    352
+    640,
+    320
   ],
   "tile_home_wall_f9": [
-    32,
+    0,
     352
   ],
   "tile_path": [
-    64,
+    32,
     352
   ],
   "tile_path_b": [
-    96,
+    64,
     352
   ],
   "tile_path_f0": [
-    128,
+    96,
     352
   ],
   "tile_path_f1": [
-    160,
+    128,
     352
   ],
   "tile_path_f10": [
-    192,
+    160,
     352
   ],
   "tile_path_f11": [
-    224,
+    192,
     352
   ],
   "tile_path_f12": [
-    256,
+    224,
     352
   ],
   "tile_path_f13": [
-    288,
+    256,
     352
   ],
   "tile_path_f14": [
-    320,
+    288,
     352
   ],
   "tile_path_f15": [
-    352,
+    320,
     352
   ],
   "tile_path_f2": [
-    384,
+    352,
     352
   ],
   "tile_path_f3": [
-    416,
+    384,
     352
   ],
   "tile_path_f4": [
-    448,
+    416,
     352
   ],
   "tile_path_f5": [
-    480,
+    448,
     352
   ],
   "tile_path_f6": [
-    512,
+    480,
     352
   ],
   "tile_path_f7": [
-    544,
+    512,
     352
   ],
   "tile_path_f8": [
-    576,
+    544,
     352
   ],
   "tile_path_f9": [
-    608,
+    576,
     352
   ],
   "tile_path_ic_ne": [
-    640,
+    608,
     352
   ],
   "tile_path_ic_nw": [
-    0,
-    384
+    640,
+    352
   ],
   "tile_path_ic_se": [
-    32,
+    0,
     384
   ],
   "tile_path_ic_sw": [
-    64,
+    32,
     384
   ],
   "tile_path_m0": [
-    96,
+    64,
     384
   ],
   "tile_path_m1": [
-    128,
+    96,
     384
   ],
   "tile_path_m10": [
-    160,
+    128,
     384
   ],
   "tile_path_m11": [
-    192,
+    160,
     384
   ],
   "tile_path_m12": [
-    224,
+    192,
     384
   ],
   "tile_path_m13": [
-    256,
+    224,
     384
   ],
   "tile_path_m14": [
-    288,
+    256,
     384
   ],
   "tile_path_m15": [
-    320,
+    288,
     384
   ],
   "tile_path_m2": [
-    352,
+    320,
     384
   ],
   "tile_path_m3": [
-    384,
+    352,
     384
   ],
   "tile_path_m4": [
-    416,
+    384,
     384
   ],
   "tile_path_m5": [
-    448,
+    416,
     384
   ],
   "tile_path_m6": [
-    480,
+    448,
     384
   ],
   "tile_path_m7": [
-    512,
+    480,
     384
   ],
   "tile_path_m8": [
-    544,
+    512,
     384
   ],
   "tile_path_m9": [
-    576,
+    544,
     384
   ],
   "tile_roof_gym": [
-    608,
+    576,
     384
   ],
   "tile_roof_gym_f0": [
-    640,
+    608,
     384
   ],
   "tile_roof_gym_f1": [
-    0,
-    416
+    640,
+    384
   ],
   "tile_roof_gym_f10": [
-    32,
+    0,
     416
   ],
   "tile_roof_gym_f11": [
-    64,
+    32,
     416
   ],
   "tile_roof_gym_f12": [
-    96,
+    64,
     416
   ],
   "tile_roof_gym_f13": [
-    128,
+    96,
     416
   ],
   "tile_roof_gym_f14": [
-    160,
+    128,
     416
   ],
   "tile_roof_gym_f15": [
-    192,
+    160,
     416
   ],
   "tile_roof_gym_f2": [
-    224,
+    192,
     416
   ],
   "tile_roof_gym_f3": [
-    256,
+    224,
     416
   ],
   "tile_roof_gym_f4": [
-    288,
+    256,
     416
   ],
   "tile_roof_gym_f5": [
-    320,
+    288,
     416
   ],
   "tile_roof_gym_f6": [
-    352,
+    320,
     416
   ],
   "tile_roof_gym_f7": [
-    384,
+    352,
     416
   ],
   "tile_roof_gym_f8": [
-    416,
+    384,
     416
   ],
   "tile_roof_gym_f9": [
-    448,
+    416,
     416
   ],
   "tile_roof_rest": [
-    480,
+    448,
     416
   ],
   "tile_roof_rest_f0": [
-    512,
+    480,
     416
   ],
   "tile_roof_rest_f1": [
-    544,
+    512,
     416
   ],
   "tile_roof_rest_f10": [
-    576,
+    544,
     416
   ],
   "tile_roof_rest_f11": [
-    608,
+    576,
     416
   ],
   "tile_roof_rest_f12": [
-    640,
+    608,
     416
   ],
   "tile_roof_rest_f13": [
-    0,
-    448
+    640,
+    416
   ],
   "tile_roof_rest_f14": [
-    32,
+    0,
     448
   ],
   "tile_roof_rest_f15": [
-    64,
+    32,
     448
   ],
   "tile_roof_rest_f2": [
-    96,
+    64,
     448
   ],
   "tile_roof_rest_f3": [
-    128,
+    96,
     448
   ],
   "tile_roof_rest_f4": [
-    160,
+    128,
     448
   ],
   "tile_roof_rest_f5": [
-    192,
+    160,
     448
   ],
   "tile_roof_rest_f6": [
-    224,
+    192,
     448
   ],
   "tile_roof_rest_f7": [
-    256,
+    224,
     448
   ],
   "tile_roof_rest_f8": [
-    288,
+    256,
     448
   ],
   "tile_roof_rest_f9": [
-    320,
+    288,
     448
   ],
   "tile_tallgrass": [
-    352,
+    320,
     448
   ],
   "tile_tree": [
-    384,
+    352,
     448
   ],
   "tile_tree_b": [
-    416,
+    384,
     448
   ],
   "tile_tree_f0": [
-    448,
+    416,
     448
   ],
   "tile_tree_f1": [
-    480,
+    448,
     448
   ],
   "tile_tree_f10": [
-    512,
+    480,
     448
   ],
   "tile_tree_f11": [
-    544,
+    512,
     448
   ],
   "tile_tree_f12": [
-    576,
+    544,
     448
   ],
   "tile_tree_f13": [
-    608,
+    576,
     448
   ],
   "tile_tree_f14": [
-    640,
+    608,
     448
   ],
   "tile_tree_f15": [
-    0,
-    480
+    640,
+    448
   ],
   "tile_tree_f2": [
-    32,
+    0,
     480
   ],
   "tile_tree_f3": [
-    64,
+    32,
     480
   ],
   "tile_tree_f4": [
-    96,
+    64,
     480
   ],
   "tile_tree_f5": [
-    128,
+    96,
     480
   ],
   "tile_tree_f6": [
-    160,
+    128,
     480
   ],
   "tile_tree_f7": [
-    192,
+    160,
     480
   ],
   "tile_tree_f8": [
-    224,
+    192,
     480
   ],
   "tile_tree_f9": [
-    256,
+    224,
     480
   ],
   "tile_wall": [
-    288,
+    256,
     480
   ],
   "tile_wall_f0": [
-    320,
+    288,
     480
   ],
   "tile_wall_f1": [
-    352,
+    320,
     480
   ],
   "tile_wall_f10": [
-    384,
+    352,
     480
   ],
   "tile_wall_f11": [
-    416,
+    384,
     480
   ],
   "tile_wall_f12": [
-    448,
+    416,
     480
   ],
   "tile_wall_f13": [
-    480,
+    448,
     480
   ],
   "tile_wall_f14": [
-    512,
+    480,
     480
   ],
   "tile_wall_f15": [
-    544,
+    512,
     480
   ],
   "tile_wall_f2": [
-    576,
+    544,
     480
   ],
   "tile_wall_f3": [
-    608,
+    576,
     480
   ],
   "tile_wall_f4": [
-    640,
+    608,
     480
   ],
   "tile_wall_f5": [
-    0,
-    512
+    640,
+    480
   ],
   "tile_wall_f6": [
-    32,
+    0,
     512
   ],
   "tile_wall_f7": [
-    64,
+    32,
     512
   ],
   "tile_wall_f8": [
-    96,
+    64,
     512
   ],
   "tile_wall_f9": [
-    128,
+    96,
     512
   ],
   "tile_water": [
-    160,
+    128,
     512
   ],
   "tile_water_b": [
-    192,
+    160,
     512
   ],
   "tile_water_f0": [
-    224,
+    192,
     512
   ],
   "tile_water_f1": [
-    256,
+    224,
     512
   ],
   "tile_water_f10": [
-    288,
+    256,
     512
   ],
   "tile_water_f11": [
-    320,
+    288,
     512
   ],
   "tile_water_f12": [
-    352,
+    320,
     512
   ],
   "tile_water_f13": [
-    384,
+    352,
     512
   ],
   "tile_water_f14": [
-    416,
+    384,
     512
   ],
   "tile_water_f15": [
-    448,
+    416,
     512
   ],
   "tile_water_f2": [
-    480,
+    448,
     512
   ],
   "tile_water_f3": [
-    512,
+    480,
     512
   ],
   "tile_water_f4": [
-    544,
+    512,
     512
   ],
   "tile_water_f5": [
-    576,
+    544,
     512
   ],
   "tile_water_f6": [
-    608,
+    576,
     512
   ],
   "tile_water_f7": [
-    640,
+    608,
     512
   ],
   "tile_water_f8": [
-    0,
-    544
+    640,
+    512
   ],
   "tile_water_f9": [
-    32,
+    0,
     544
   ],
   "tile_water_ic_ne": [
-    64,
+    32,
     544
   ],
   "tile_water_ic_nw": [
-    96,
+    64,
     544
   ],
   "tile_water_ic_se": [
-    128,
+    96,
     544
   ],
   "tile_water_ic_sw": [
-    160,
+    128,
     544
   ],
   "tile_water_m0": [
-    192,
+    160,
     544
   ],
   "tile_water_m0_b": [
-    224,
+    192,
     544
   ],
   "tile_water_m1": [
-    256,
+    224,
     544
   ],
   "tile_water_m10": [
-    288,
+    256,
     544
   ],
   "tile_water_m10_b": [
-    320,
+    288,
     544
   ],
   "tile_water_m11": [
-    352,
+    320,
     544
   ],
   "tile_water_m11_b": [
-    384,
+    352,
     544
   ],
   "tile_water_m12": [
-    416,
+    384,
     544
   ],
   "tile_water_m12_b": [
-    448,
+    416,
     544
   ],
   "tile_water_m13": [
-    480,
+    448,
     544
   ],
   "tile_water_m13_b": [
-    512,
+    480,
     544
   ],
   "tile_water_m14": [
-    544,
+    512,
     544
   ],
   "tile_water_m14_b": [
-    576,
+    544,
     544
   ],
   "tile_water_m15": [
-    608,
+    576,
     544
   ],
   "tile_water_m15_b": [
-    640,
+    608,
     544
   ],
   "tile_water_m1_b": [
-    0,
-    576
+    640,
+    544
   ],
   "tile_water_m2": [
-    32,
+    0,
     576
   ],
   "tile_water_m2_b": [
-    64,
+    32,
     576
   ],
   "tile_water_m3": [
-    96,
+    64,
     576
   ],
   "tile_water_m3_b": [
-    128,
+    96,
     576
   ],
   "tile_water_m4": [
-    160,
+    128,
     576
   ],
   "tile_water_m4_b": [
-    192,
+    160,
     576
   ],
   "tile_water_m5": [
-    224,
+    192,
     576
   ],
   "tile_water_m5_b": [
-    256,
+    224,
     576
   ],
   "tile_water_m6": [
-    288,
+    256,
     576
   ],
   "tile_water_m6_b": [
-    320,
+    288,
     576
   ],
   "tile_water_m7": [
-    352,
+    320,
     576
   ],
   "tile_water_m7_b": [
-    384,
+    352,
     576
   ],
   "tile_water_m8": [
-    416,
+    384,
     576
   ],
   "tile_water_m8_b": [
-    448,
+    416,
     576
   ],
   "tile_water_m9": [
-    480,
+    448,
     576
   ],
   "tile_water_m9_b": [
-    512,
+    480,
     576
   ],
   "tile_waterb_f0": [
-    544,
+    512,
     576
   ],
   "tile_waterb_f1": [
-    576,
+    544,
     576
   ],
   "tile_waterb_f10": [
-    608,
+    576,
     576
   ],
   "tile_waterb_f11": [
-    640,
+    608,
     576
   ],
   "tile_waterb_f12": [
+    640,
+    576
+  ],
+  "tile_waterb_f13": [
     0,
     608
   ],
-  "tile_waterb_f13": [
+  "tile_waterb_f14": [
     32,
     608
   ],
-  "tile_waterb_f14": [
+  "tile_waterb_f15": [
     64,
     608
   ],
-  "tile_waterb_f15": [
+  "tile_waterb_f2": [
     96,
     608
   ],
-  "tile_waterb_f2": [
+  "tile_waterb_f3": [
     128,
     608
   ],
-  "tile_waterb_f3": [
+  "tile_waterb_f4": [
     160,
     608
   ],
-  "tile_waterb_f4": [
+  "tile_waterb_f5": [
     192,
     608
   ],
-  "tile_waterb_f5": [
+  "tile_waterb_f6": [
     224,
     608
   ],
-  "tile_waterb_f6": [
+  "tile_waterb_f7": [
     256,
     608
   ],
-  "tile_waterb_f7": [
+  "tile_waterb_f8": [
     288,
     608
   ],
-  "tile_waterb_f8": [
+  "tile_waterb_f9": [
     320,
     608
   ],
-  "tile_waterb_f9": [
+  "tile_window": [
     352,
     608
   ],
-  "tile_window": [
+  "tile_zone_e": [
     384,
     608
   ],
-  "tile_zone_e": [
+  "tile_zone_n": [
     416,
     608
   ],
-  "tile_zone_n": [
+  "tile_zone_s": [
     448,
     608
   ],
-  "tile_zone_s": [
-    480,
-    608
-  ],
   "tile_zone_w": [
-    512,
+    480,
     608
   ]
 };
