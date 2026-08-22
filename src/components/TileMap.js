@@ -22,7 +22,7 @@ const TILE_SPRITES = {
   ',': ['tile_flowers'],
   '#': ['tile_path', 'tile_path_b'],
   G: ['tile_gate'],
-  T: ['tile_tree'],
+  T: ['tile_tree', 'tile_tree_b'],
   '~': ['tile_water', 'tile_water_b'],
   h: ['tile_roof_rest'],
   y: ['tile_roof_gym'],
@@ -55,34 +55,148 @@ const FLOOR_BY_MAP = {
 
 const WATER_FRAME_MS = 620;
 
+// --- autotiling ----------------------------------------------------------
+//
+// A path drawn as one sprite per square butts a hard edge against the grass,
+// and the eye follows those straight seams and sees the grid rather than the
+// ground. Each material now picks a sprite from which of its cardinal
+// neighbours are the same material, so its edges pull back and feather only
+// where the material actually ends. Diagonals are four small overlay sprites
+// rather than a 256-entry mask.
+const N = 1;
+const E = 2;
+const S = 4;
+const W_ = 8;
+
+// A gate stands in the middle of the trail, so the trail runs through it.
+const PATH_CODES = new Set(['#', 'G']);
+const WATER_CODES = new Set(['~']);
+
+// Anything solid enough to drop shade onto the ground beside it. World light is
+// upper-left, so a caster darkens the ground to its south and east.
+const SHADOW_CASTERS = new Set([
+  'T', 'W', 'H', 'Y', 'h', 'y', 'D', 'd', 'G',
+  '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w',
+]);
+
+function codeAt(map, x, y) {
+  if (y < 0 || y >= map.grid.length) return null;
+  const row = map.grid[y];
+  if (x < 0 || x >= row.length) return null;
+  return row[x];
+}
+
+// Off-map counts as more of the same material, so a trail runs off the edge of
+// the screen instead of stopping in a rounded cap at the border.
+function isMember(map, x, y, members) {
+  const code = codeAt(map, x, y);
+  if (code === null) return true;
+  return members.has(code);
+}
+
+function maskAt(map, x, y, members) {
+  return (
+    (isMember(map, x, y - 1, members) ? N : 0) |
+    (isMember(map, x + 1, y, members) ? E : 0) |
+    (isMember(map, x, y + 1, members) ? S : 0) |
+    (isMember(map, x - 1, y, members) ? W_ : 0)
+  );
+}
+
+// A notch of ground belongs at a diagonal where the material wraps an outside
+// corner: both neighbours along that corner are material, the corner itself is
+// not.
+const DIAGONALS = [
+  { name: 'nw', a: [0, -1], b: [-1, 0], d: [-1, -1] },
+  { name: 'ne', a: [0, -1], b: [1, 0], d: [1, -1] },
+  { name: 'sw', a: [0, 1], b: [-1, 0], d: [-1, 1] },
+  { name: 'se', a: [0, 1], b: [1, 0], d: [1, 1] },
+];
+
+function innerCorners(map, x, y, members, prefix) {
+  const out = [];
+  for (const { name, a, b, d } of DIAGONALS) {
+    if (
+      isMember(map, x + a[0], y + a[1], members) &&
+      isMember(map, x + b[0], y + b[1], members) &&
+      !isMember(map, x + d[0], y + d[1], members)
+    ) {
+      out.push({ key: `${prefix}_ic_${name}` });
+    }
+  }
+  return out;
+}
+
 // Grass gets a stable per-cell variant so the field looks scattered rather than
 // checkerboarded — derived from the coordinates, not random, so it never
 // reshuffles on re-render.
 function variantFor(x, y, count) {
   if (count <= 1) return 0;
-  return ((x * 7 + y * 13) >>> 0) % count === 0 ? 1 : 0;
+  const h = ((x * 73856093) ^ (y * 19349663)) >>> 0;
+  // Detail variants are accents, not an even shuffle. Spreading four tiles
+  // evenly over a field just replaces the old grid with a patchwork of lighter
+  // and darker squares — the same problem wearing a different colour. Most
+  // cells stay on the plain tile and the rest are scattered thinly through it.
+  if (h % 100 < 64) return 0;
+  return 1 + ((h >>> 8) % (count - 1));
 }
 
-export function Tile({ code, s, frame, x, y, floor }) {
-  const ground = floor || TILE_SPRITES['.'];
-  // '.' and ',' are "whatever this map's ground is". Everything else names a
-  // specific sprite, and an unknown code falls back to ground rather than to
-  // grass, so an interior never grows a lawn.
-  // Inside a room, '#' is floor you walk on, not the dirt path it means
-  // outdoors — but only where the map declares an interior floor, so Maple
-  // Lane's actual path is untouched.
+// The full stack for one cell: ground, material, diagonal notches, shading.
+function layersFor(map, code, x, y, frame, floor) {
+  const ground = floor || ['tile_grass', 'tile_grass_b', 'tile_grass_c', 'tile_grass_d'];
   const isFloorCode = code === '.' || code === ',' || (floor && code === '#');
-  const keys = isFloorCode ? ground : TILE_SPRITES[code] || ground;
-  const key = keys.length > 1 && code === '~' ? keys[frame % keys.length] : keys[variantFor(x, y, keys.length)];
-  const sprite = SPRITES[key];
-  if (!sprite) return <View style={{ width: s, height: s, backgroundColor: palette.grass }} />;
-  // Fractional, not rounded: at a 24px tile a 16px sprite needs 1.5px cells.
-  // Rounding to 2 rendered a 32px tile and clipped a quarter of it away, which
-  // chopped the right-hand and bottom edges off every tile on the map.
-  const px = s / sprite.grid[0].length;
+
+  let layers;
+  if (!floor && PATH_CODES.has(code) && code === '#') {
+    const mask = maskAt(map, x, y, PATH_CODES);
+    layers = [{ key: `tile_path_m${mask}` }, ...innerCorners(map, x, y, PATH_CODES, 'tile_path')];
+  } else if (!floor && WATER_CODES.has(code)) {
+    const mask = maskAt(map, x, y, WATER_CODES);
+    const suffix = frame % 2 ? '_b' : '';
+    layers = [
+      { key: `tile_water_m${mask}${suffix}` },
+      ...innerCorners(map, x, y, WATER_CODES, 'tile_water'),
+    ];
+  } else if (isFloorCode) {
+    layers = [{ key: ground[variantFor(x, y, ground.length)] }];
+  } else {
+    const keys = TILE_SPRITES[code] || ground;
+    layers = [{ key: keys[variantFor(x, y, keys.length)] }];
+  }
+
+  // Contact shading, only onto ground the player can see past — a wall does not
+  // need shade painted over its own face.
+  const shadable = isFloorCode || PATH_CODES.has(code) || WATER_CODES.has(code) || code === '^';
+  if (shadable) {
+    const north = SHADOW_CASTERS.has(codeAt(map, x, y - 1));
+    const west = SHADOW_CASTERS.has(codeAt(map, x - 1, y));
+    const sides = `${north ? 'n' : ''}${west ? 'w' : ''}`;
+    if (sides) layers.push({ key: `tile_ao_${sides}`, opacity: 0.34 });
+  }
+  return layers;
+}
+
+export function Tile({ code, s, frame, x, y, floor, map }) {
+  const layers = map
+    ? layersFor(map, code, x, y, frame, floor)
+    : [{ key: (floor || ['tile_grass'])[0] }];
+  const base = SPRITES[layers[0] && layers[0].key];
+  if (!base) return <View style={{ width: s, height: s, backgroundColor: palette.grass }} />;
+  const cell = s / base.grid[0].length;
   return (
     <View style={{ width: s, height: s, overflow: 'hidden' }}>
-      <PixelArt grid={sprite.grid} palette={sprite.palette} pixelSize={px} />
+      {layers.map((layer, i) => {
+        const sprite = SPRITES[layer.key];
+        if (!sprite) return null;
+        return (
+          <View
+            key={layer.key + i}
+            style={i === 0 ? null : { position: 'absolute', left: 0, top: 0, opacity: layer.opacity }}
+          >
+            <PixelArt grid={sprite.grid} palette={sprite.palette} pixelSize={cell} />
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -130,13 +244,13 @@ export default function TileMap({ map, player, tileSize, style }) {
           {row.split('').map((code, x) => (
             code === 'C' ? (
               <View key={x} style={{ width: s, height: s }}>
-                <Tile code="." s={s} frame={frame} x={x} y={y} floor={floor} />
+                <Tile code="." s={s} frame={frame} x={x} y={y} floor={floor} map={map} />
                 <View style={{ position: 'absolute', left: 0, top: 0 }}>
                   <StandingSprite spriteKey={COACH_SPRITE} s={s} />
                 </View>
               </View>
             ) : (
-              <Tile key={x} code={code} s={s} frame={frame} x={x} y={y} floor={floor} />
+              <Tile key={x} code={code} s={s} frame={frame} x={x} y={y} floor={floor} map={map} />
             )
           ))}
         </View>

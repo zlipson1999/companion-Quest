@@ -51,6 +51,34 @@ which is how four character cards sat in `assets/characters/` for a release
 while the overworld kept drawing the old placeholder people — and every
 regeneration reported success. Art nothing consumes is now an error.
 
+## Autotiling
+
+A path drawn as one sprite per square butts a hard edge against the grass, and
+a pond is a rectangle. That straight seam is what made the overworld read as a
+spreadsheet — the eye follows the joins and sees the grid rather than the ground.
+
+Each material is generated once per **cardinal-neighbour mask** instead
+(`tile_path_m0`..`m15`, `tile_water_m0`..`m15`). Any side without a same-material
+neighbour has the material pulled back along a noisy boundary, with the ground
+showing through, a rim just inside it, and a thin scatter of material dithered
+out into the ground. Two open sides meet at a corner and round it for free.
+Diagonals are four small overlay sprites (`tile_path_ic_ne` and friends) rather
+than widening the mask to eight bits, which would be 256 tiles per material.
+
+`TileMap` computes the mask, stacks the layers, and adds contact shading
+(`tile_ao_n` / `_w` / `_nw`, composited at 34% opacity) onto ground that sits
+south or east of anything solid, since world light is upper-left.
+
+**Blends are built from the painted tiles, not drawn again.** `blended_tile()`
+composites the committed atlas art per mask. The first attempt generated the
+masks procedurally, which laid hand-drawn tiles next to atlas tiles and turned
+the field patchy — the same grid problem in a different colour. For the same
+reason the extra ground variants are **flips** of the painted originals
+(`flipped_traced`): identical palette, identical average value, different
+pattern. Four evenly-shuffled ground variants also read as a patchwork, so
+`variantFor` keeps roughly two thirds of cells on the plain tile and scatters
+the rest.
+
 ## Why tracing at all
 
 The procedural pipeline (`Body`, `Drawn` in `tools/make_sprites.py`) can build a

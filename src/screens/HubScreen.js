@@ -100,7 +100,7 @@ export default function HubScreen() {
           options={[
             { label: 'Route 1', value: 'route', sublabel: 'real miles' },
             { label: 'Train', value: 'workout', sublabel: 'quick sets' },
-            { label: 'Training Hall', value: 'gym', sublabel: 'the gym floor' },
+            { label: 'The Hall', value: 'gym', sublabel: 'gym floor' },
             { label: 'Forge', value: 'forge', sublabel: 'your plans' },
             { label: 'Go Home', value: 'rest', sublabel: 'sleep upstairs' },
             { label: 'Team', value: 'party', sublabel: 'companions' },

@@ -146,6 +146,9 @@ PALETTE_SPECS = {
     'air':     {'body': ('#3f5f7a', '#e8f8ff'), 'leaf': ('#5c7f9c', '#ffffff'), 'belly': ('#4d6e8a', '#f4fcff')},
     'spore':   {'body': ('#6b1a2a', '#ff9c9c'), 'leaf': ('#8a2f24', '#ffd0b0'), 'belly': ('#8a5c48', '#ffe0c8')},
     'terra':   {'body': ('#2a4a1c', '#9fd96a'), 'leaf': ('#7a5a1e', '#e8c46a'), 'belly': ('#4a6b2a', '#c8e88a')},
+    # Water meeting grass has to live in ONE tile, so the shore palette carries
+    # both banks: body is the water, leaf is the turf, belly is the wet margin.
+    'shore':   {'body': ('#0b3350', '#63c9e8'), 'leaf': ('#2a4a1c', '#9fd96a'), 'belly': ('#6b5a34', '#f2e4ba')},
     'bloom':   {'body': ('#1a5c44', '#8ce8b0'), 'leaf': ('#a8285e', '#ffb8d8'), 'belly': ('#c49a1e', '#fff0a8')},
     'pyre':    {'body': ('#6b1408', '#ff9440'), 'leaf': ('#c47a0a', '#ffe066'), 'belly': ('#8c2a0e', '#ffb870')},
     'tide':    {'body': ('#0a2f52', '#7fd4ff'), 'leaf': ('#1a7a8c', '#a8f4ff'), 'belly': ('#14507a', '#c8f0ff')},
@@ -295,6 +298,13 @@ class Canvas:
             # read as woven fabric rather than ground and shingles.
             self.px[y][x] = (ramp_name, max(0.0, min(1.0, shade)), cov, lit)
             self.lay[y][x] = self.layer
+
+    def clear(self):
+        """Empty the surface. Overlay sprites start from nothing and draw only
+        the few pixels they contribute, so they can stack over a base tile."""
+        self.px = [[None] * self.w for _ in range(self.h)]
+        self.lay = [[0] * self.w for _ in range(self.h)]
+        return self
 
     def put(self, x, y, ramp_name, shade):
         """Author-space pixel — fills a scale x scale block."""
@@ -1948,30 +1958,293 @@ def mottle(c, ramp_name, base, spread, seed, cell=2):
                     c.put(x + dx, y + dy, ramp_name, v)
 
 
+def draw_grass(c, variant=0, turf='body', detail='leaf'):
+    """Lay turf onto an existing canvas using the ramps it names.
+
+    Water and grass have to share a tile to have a shoreline at all, and a tile
+    carries one palette — so the turf ramp cannot be hard-coded to 'body'.
+    """
+    seed = 11 + variant * 7
+    mottle(c, turf, 0.58, 0.042, seed)
+    BLADES = (
+        ((3, 5), (10, 3), (6, 11), (13, 9)),
+        ((8, 4), (2, 10), (12, 12), (5, 7)),
+        ((5, 2), (12, 6), (2, 8), (9, 13)),
+        ((11, 4), (4, 6), (14, 11), (7, 9)),
+    )
+    for bx, by in BLADES[variant % len(BLADES)]:
+        c.put(bx, by - 2, turf, 0.92)
+        c.put(bx, by - 1, turf, 0.88)
+        c.put(bx, by, turf, 0.78)
+        c.put(bx + 1, by - 1, turf, 0.30)    # the blade's own shadow
+        c.put(bx + 1, by, turf, 0.34)
+        c.put(bx - 1, by, turf, 0.70)        # a second, shorter leaf
+    if variant == 1:
+        for px_, py_ in ((14, 4), (4, 13)):
+            c.put(px_, py_, detail, 0.62)
+            c.put(px_, py_ + 1, detail, 0.3)
+    elif variant == 2:
+        for px_, py_ in ((7, 6), (13, 13)):
+            c.put(px_, py_, turf, 0.82)
+            c.put(px_ - 1, py_, turf, 0.74)
+            c.put(px_, py_ - 1, turf, 0.78)
+            c.put(px_ + 1, py_ + 1, turf, 0.36)
+    elif variant == 3:
+        for k in range(4):
+            c.put(3 + k, 12 - (k // 2), detail, 0.44)
+            c.put(3 + k, 13 - (k // 2), detail, 0.22)
+    return c
+
+
 def tile_grass(variant=0):
     """Grass is 90% of what the player looks at, so it has to hold up flat.
 
     A base value, clustered mottle for depth, and a handful of blades with a
     dark pixel behind each so the tuft reads as standing up off the ground.
     """
-    c = tile('terra')
-    seed = 11 + variant * 7
-    # Spread is deliberately small: at seven ramp steps most cells land on the
-    # same colour and only a few break away, which is depth. Widen it and the
-    # tile turns into visible 2x2 squares.
-    mottle(c, 'body', 0.58, 0.042, seed)
-    blades = ((3, 5), (10, 3), (6, 11), (13, 9)) if variant == 0 else ((8, 4), (2, 10), (12, 12), (5, 7))
-    for bx, by in blades:
-        c.put(bx, by - 2, 'body', 0.92)
-        c.put(bx, by - 1, 'body', 0.88)
-        c.put(bx, by, 'body', 0.78)
-        c.put(bx + 1, by - 1, 'body', 0.30)  # the blade's own shadow
-        c.put(bx + 1, by, 'body', 0.34)
-        c.put(bx - 1, by, 'body', 0.70)      # a second, shorter leaf
-    if variant == 1:                          # a couple of pebbles, sparingly
-        for px_, py_ in ((14, 4), (4, 13)):
-            c.put(px_, py_, 'leaf', 0.62)
-            c.put(px_, py_ + 1, 'leaf', 0.3)
+    return draw_grass(tile('terra'), variant)
+
+
+# =========================================================================
+# AUTOTILING
+#
+# A path used to be one square of dirt butted against one square of grass, and
+# a pond was a rectangle. That hard join is what made the overworld read as a
+# spreadsheet: the eye follows the straight seams and sees the grid, not the
+# ground.
+#
+# Each material is generated once per neighbour mask instead. Bits are set for
+# the cardinal neighbours that are the SAME material; any side without one has
+# the material pulled back from that edge along a noisy boundary, with the
+# ground showing through, a contact shadow just inside it and a scatter of the
+# material dithered out into the ground. Two open sides meet at a corner and
+# round it for free.
+#
+# Diagonals are handled by four small overlay sprites rather than by widening
+# the mask to eight bits, which would be 256 tiles per material.
+# =========================================================================
+NBR_N, NBR_E, NBR_S, NBR_W = 1, 2, 4, 8
+EDGE_INSET = 2.2
+
+
+def _open_distance(x, y, mask):
+    """How far this pixel sits from the nearest edge that has no same-material
+    neighbour. Large when the material continues in every open direction."""
+    far = 99.0
+    return min(
+        far if mask & NBR_N else float(y),
+        far if mask & NBR_S else float(15 - y),
+        far if mask & NBR_W else float(x),
+        far if mask & NBR_E else float(15 - x),
+    )
+
+
+def _edge_shape(mask, seed):
+    """(inside, rim, scatter) pixel sets for one mask.
+
+    `inside` is solid material, `rim` is the darker contact line just within the
+    boundary, and `scatter` are lone material pixels thrown out into the ground
+    so the transition feathers instead of stopping dead.
+    """
+    inside, rim, scatter = set(), set(), set()
+    for y in range(16):
+        for x in range(16):
+            d = _open_distance(x, y, mask)
+            # A wobbling threshold is what keeps the boundary from being a
+            # straight inset rectangle with rounded corners.
+            edge = EDGE_INSET + (hsh(x, y, seed) - 0.5) * 2.2
+            if d >= edge + 1.0:
+                inside.add((x, y))
+            elif d >= edge:
+                inside.add((x, y))
+                rim.add((x, y))
+            elif d >= edge - 1.1 and hsh(x, y, seed + 91) > 0.72:
+                scatter.add((x, y))
+    return inside, rim, scatter
+
+
+# --- blending the PAINTED materials --------------------------------------
+#
+# The procedural grass and the atlas grass are different art. Generating the
+# autotiles procedurally therefore laid hand-drawn tiles next to painted ones
+# and the field went patchy — the grid problem again, in a different colour.
+#
+# These build each mask by compositing the committed painted tiles instead:
+# ground where the material has been pulled back, material where it has not, a
+# shaded or wetted rim along the boundary, and a scatter of material dithered
+# out into the ground so the join feathers.
+def _raw_traced(name):
+    path = os.path.join(TRACED_DIR, 'traced_%s.json' % name)
+    if not os.path.exists(path):
+        return None
+    with open(path) as f:
+        return json.load(f)
+
+
+def _shift(hex_color, mul):
+    r, g, b = hex_to_rgb(hex_color)
+    return rgb_to_hex((
+        max(0, min(255, int(r * mul))),
+        max(0, min(255, int(g * mul))),
+        max(0, min(255, int(b * mul))),
+    ))
+
+
+def blended_tile(ground, over, mask, seed, rim_mul=0.72):
+    """One painted material laid over another along a soft, noisy boundary."""
+    g = _raw_traced(ground)
+    o = _raw_traced(over)
+    if not g or not o:
+        return None
+
+    colors = ['transparent'] + list(g['palette']) + list(o['palette'])
+    rim_base = len(colors)
+    colors += [_shift(c, rim_mul) for c in o['palette']]
+    g_off, o_off = 1, 1 + len(g['palette'])
+
+    inside, rim, scatter = _edge_shape(mask, seed)
+    rows = []
+    for y in range(16):
+        row = ''
+        for x in range(16):
+            gi = TRACE_INDEX[g['rows'][y][x]] - 1
+            oi = TRACE_INDEX[o['rows'][y][x]] - 1
+            if (x, y) in rim:
+                row += DIGITS[rim_base + oi]
+            elif (x, y) in inside or (x, y) in scatter:
+                row += DIGITS[o_off + oi]
+            else:
+                row += DIGITS[g_off + gi]
+        rows.append(row)
+    return colors, rows
+
+
+def flipped_traced(name, horizontal=False, vertical=False):
+    """A painted tile turned around.
+
+    Extra ground variants have to be the SAME artwork as the ones beside them.
+    Drawing new ones procedurally put hand-made tiles next to atlas tiles and
+    the field went patchy; a flip is free, keeps the palette and the average
+    value identical, and still breaks the repeat.
+    """
+    t = _raw_traced(name)
+    if not t:
+        return None
+    rows = [list(r) for r in t['rows']]
+    if horizontal:
+        rows = [list(reversed(r)) for r in rows]
+    if vertical:
+        rows = list(reversed(rows))
+    colors = ['transparent'] + list(t['palette'])
+    out = [''.join(DIGITS[TRACE_INDEX[ch]] for ch in r) for r in rows]
+    return colors, out
+
+
+def blended_corner(ground, corner):
+    """Ground showing through at a diagonal where a material wraps a corner."""
+    g = _raw_traced(ground)
+    if not g:
+        return None
+    colors = ['transparent'] + list(g['palette'])
+    cx = 0 if corner in ('nw', 'sw') else 15
+    cy = 0 if corner in ('nw', 'ne') else 15
+    rows = []
+    for y in range(16):
+        row = ''
+        for x in range(16):
+            d = max(abs(x - cx), abs(y - cy))
+            if d <= 2 + (hsh(x, y, 77) - 0.5) * 1.4:
+                row += DIGITS[1 + TRACE_INDEX[g['rows'][y][x]] - 1]
+            else:
+                row += TRANSPARENT
+        rows.append(row)
+    return colors, rows
+
+
+def path_tile(mask, variant=0):
+    """Trail over grass, its edges dissolving into the turf."""
+    c = tile_grass(variant)
+    seed = 5 + variant * 17
+    inside, rim, scatter = _edge_shape(mask, seed + 3)
+
+    for x, y in inside:
+        c.put(x, y, 'leaf', 0.62 + (hsh(x // 2, y // 2, seed) - 0.5) * 0.12)
+    for x, y in scatter:
+        # trodden dirt showing through the grass at the margin
+        c.put(x, y, 'leaf', 0.50 + (hsh(x, y, seed + 7) - 0.5) * 0.16)
+    for x, y in rim:
+        # the trail sits slightly below the turf, so its lip is in shadow
+        c.put(x, y, 'leaf', 0.30)
+
+    stones = ((2, 4), (9, 2), (12, 11), (7, 14)) if variant == 0 else ((5, 3), (13, 6), (3, 12), (10, 9))
+    for gx, gy in stones:
+        if (gx, gy) not in inside or (gx, gy) in rim:
+            continue
+        c.put(gx, gy, 'leaf', 0.86)
+        c.put(gx + 1, gy, 'leaf', 0.74)
+        c.put(gx, gy + 1, 'leaf', 0.34)
+        c.put(gx + 1, gy + 1, 'leaf', 0.40)
+    # A lit lip only where the trail actually ends, not on every square.
+    if not mask & NBR_N:
+        for x in range(16):
+            for y in range(16):
+                if (x, y) in inside and (x, y - 1) not in inside:
+                    c.put(x, y, 'leaf', 0.88)
+                    break
+    return c
+
+
+def water_tile(mask, frame=0):
+    """Pond over grass, with a wet shoreline rather than a cut edge."""
+    c = draw_grass(tile('shore'), 2 if frame else 0, turf='leaf', detail='belly')
+    seed = 31 + frame * 13
+    inside, rim, scatter = _edge_shape(mask, seed)
+
+    for x, y in inside:
+        c.put(x, y, 'body', 0.42 + (hsh(x // 2, (y + frame) // 2, seed) - 0.5) * 0.14)
+    for x, y in scatter:
+        c.put(x, y, 'belly', 0.44)                    # damp ground at the margin
+    for x, y in rim:
+        c.put(x, y, 'belly', 0.88)                    # bright wet shoreline
+
+    for y in range(3 + frame, 16, 5):                 # ripples, drifting per frame
+        for x in range(2, 14):
+            if (x, y) in inside and (x, y) not in rim and hsh(x, y, seed + 5) > 0.45:
+                c.put(x, y, 'body', 0.70)
+    return c
+
+
+def inner_corner(corner, ramp, shade):
+    """A notch of ground at a diagonal where the material wraps around an
+    outside corner. Transparent everywhere else — this stacks over the base."""
+    c = tile('terra').clear()
+    cx = 0 if corner in ('nw', 'sw') else 15
+    cy = 0 if corner in ('nw', 'ne') else 15
+    for y in range(16):
+        for x in range(16):
+            d = max(abs(x - cx), abs(y - cy))
+            if d <= 2 + (hsh(x, y, 77) - 0.5) * 1.4:
+                c.put(x, y, ramp, shade)
+    return c
+
+
+def ao_overlay(sides):
+    """Contact shading cast onto the ground by whatever blocks it.
+
+    World light is upper-left, so a wall or a tree darkens the ground on its
+    lower-right. Drawn opaque here and composited at low opacity by TileMap, so
+    it reads as shade over any ground rather than as a painted stripe.
+    """
+    c = tile('terra').clear()
+    for y in range(16):
+        for x in range(16):
+            depth = 99
+            if 'n' in sides:
+                depth = min(depth, y)
+            if 'w' in sides:
+                depth = min(depth, x)
+            if depth <= 3 - (hsh(x, y, 55) * 1.2):
+                c.put(x, y, 'ink', 0)
     return c
 
 
@@ -2450,7 +2723,55 @@ def build_all():
     add('tile_grass', tile_grass(0)); add('tile_grass_b', tile_grass(1))
     add('tile_tallgrass', tile_tallgrass())
     add('tile_path', tile_path(0)); add('tile_path_b', tile_path(1))
+
+    # Autotiles: one per cardinal-neighbour mask, plus the diagonal notches and
+    # the contact shading. See the AUTOTILING block above.
+    #
+    # Built by compositing the committed painted tiles wherever those exist, so
+    # a blended edge is the same artwork as the tile beside it. The procedural
+    # path_tile/water_tile are the fallback for a build with no atlas.
+    def add_blended(key, colors_rows, fallback):
+        """Register composited art, or fall back to the procedural drawing."""
+        if not colors_rows:
+            add(key, fallback())
+            return
+        colors, rows = colors_rows
+        pal_key = 'art_' + key
+        traced_palettes[pal_key] = colors
+        s[key] = {'palette': pal_key, 'grid': rows}
+
+    # Two more ground variants, as flips of the painted originals.
+    add_blended('tile_grass_c', flipped_traced('tile_grass', horizontal=True),
+                lambda: tile_grass(2))
+    add_blended('tile_grass_d', flipped_traced('tile_grass_b', vertical=True),
+                lambda: tile_grass(3))
+
+    for _mask in range(16):
+        add_blended(
+            'tile_path_m%d' % _mask,
+            blended_tile('tile_grass', 'tile_path' if _mask % 2 == 0 else 'tile_path_b', _mask, 5 + _mask, 0.80),
+            lambda m=_mask: path_tile(m, m % 2),
+        )
+        # A wet margin is brighter than the water, not darker.
+        add_blended(
+            'tile_water_m%d' % _mask,
+            blended_tile('tile_grass', 'tile_water', _mask, 31 + _mask, 1.18),
+            lambda m=_mask: water_tile(m, 0),
+        )
+        add_blended(
+            'tile_water_m%d_b' % _mask,
+            blended_tile('tile_grass_b', 'tile_water_b', _mask, 31 + _mask, 1.18),
+            lambda m=_mask: water_tile(m, 1),
+        )
+    for _corner in ('nw', 'ne', 'sw', 'se'):
+        add_blended('tile_path_ic_%s' % _corner, blended_corner('tile_grass', _corner),
+                    lambda c=_corner: inner_corner(c, 'body', 0.58))
+        add_blended('tile_water_ic_%s' % _corner, blended_corner('tile_grass', _corner),
+                    lambda c=_corner: inner_corner(c, 'body', 0.58))
+    for _sides in ('n', 'w', 'nw'):
+        add('tile_ao_%s' % _sides, ao_overlay(_sides))
     add('tile_tree', tile_tree())
+    add_blended('tile_tree_b', flipped_traced('tile_tree', horizontal=True), tile_tree)
     add('tile_water', tile_water(0)); add('tile_water_b', tile_water(1))
     add('tile_flowers', tile_flowers())
     add('tile_roof_rest', tile_roof('ache')); add('tile_roof_gym', tile_roof('hero'))

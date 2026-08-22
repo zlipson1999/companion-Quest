@@ -312,6 +312,14 @@ equipment *is* the menu, so the room demonstrates the systems the tutorial used
 to explain in a wall of text. Interiors also stopped being carpeted in lawn:
 maps declare an `id` and `FLOOR_BY_MAP` gives them floorboards or rubber matting.
 
+**Autotiling.** Paths and water pick a sprite from which cardinal neighbours
+share their material, so edges pull back and feather only where the material
+actually ends, with diagonal notch overlays and contact shading south/east of
+anything solid. The blends composite the painted atlas tiles — generating them
+procedurally put hand-drawn tiles beside atlas ones and the field went patchy.
+Extra ground and tree variants are flips of the painted originals. See
+`docs/ART_KIT.md`.
+
 **UI system.** `src/theme/tokens.js` holds the Trailkeeper ramps (ink, paper,
 grove, trail, sky, ember), a 4px spacing scale with a 44px touch minimum, and
 three motion speeds. `FieldCard`, `TrailAction` and `ObjectiveRibbon` are the
