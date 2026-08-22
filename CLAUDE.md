@@ -856,6 +856,39 @@ Provenance is this file's first non-negotiable, so for those three the
 committed chain starts at the indexed output rather than a source image. It is
 stated as a gap to close, and `check_docs.py` counts the masters.
 
+### Phase 14b — the second pass: config, server, tooling
+
+The first pass covered `src/` and the docs. Everything else turned out to have
+its own drift, and two of them were in the coach proxy:
+
+- **The server's jailbreak regex had drifted one character from the client's.**
+  `guardrail.js` ends an alternative `act as\b`; the server's ended `act as`, so
+  it refused "exact assessment" where the client did not. The refusal line had
+  drifted too. Both copies exist for a real reason — the server is CommonJS and
+  outside the Metro graph, so it cannot import from `src/` — but nothing noticed
+  divergence. `check_docs.py` compares both pairs now and prints both sides.
+- **`MAX_TOKENS` was 1024 with a model that thinks by default.** Thinking comes
+  out of the same cap, so a long think returned no completed text, which the
+  server handed back as its generic fallback with a 200 — the coach appearing to
+  answer everything with one sentence, silently. Raised, and an empty reply now
+  branches on `stop_reason`.
+- **`python3 tools/make_sprites.py` failed on a clean machine.** Pillow was named
+  in no manifest and no doc. `tools/requirements.txt`.
+- **`expo-constants` was imported by `useDistance` and declared nowhere.** It
+  resolved transitively via `expo` and `expo-asset`, so it worked — until one of
+  them moved, at which point the step counter is what breaks. Declared, with the
+  lockfile, because the Pages workflow runs `npm ci` and that refuses to install
+  at all when the two disagree.
+- **app.json** over-declared `HIGH_SAMPLING_RATE_SENSORS` (needed above 200 Hz;
+  the app samples at 50) and had no `android.package` / `ios.bundleIdentifier`,
+  without which the `eas build` STEP_COUNTING.md tells you to run fails in CI.
+- **`convert_character.py`'s real arguments existed only in the committed JSON.**
+  Its CLI defaults match none of the outputs. Now in the docstring, verified to
+  reproduce `traced_walk_woman` exactly.
+
+`check_docs.py` covers four docs and both sides of the coach guardrail: 25
+figures plus 2 paired-source checks.
+
 ## Phase 6 — ideas, not committed
 
 Reading / chores / social check-in modules; per-movement progression charts off
