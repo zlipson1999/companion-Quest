@@ -285,10 +285,30 @@ function StandingSprite({ spriteKey, s }) {
   );
 }
 
-export default function TileMap({ map, player, tileSize, style }) {
+export default function TileMap({ map, player, tileSize, style, viewport }) {
   const { state } = useGame();
   const s = tileSize;
   const pos = useRef(new Animated.ValueXY({ x: player.x * s, y: player.y * s })).current;
+  const worldW = map.cols * s;
+  const worldH = map.rows * s;
+
+  // Camera. Without one the map has to shrink until it fits, which is what put
+  // the world in a box at the top of the phone. With one the tiles can be as
+  // big as they like and the world scrolls under the player instead.
+  //
+  // A map smaller than the viewport in an axis is centred rather than pinned,
+  // so a small room sits in the middle of the screen instead of in a corner.
+  const cameraFor = (px, py) => {
+    if (!viewport) return { x: 0, y: 0 };
+    const cx = worldW <= viewport.width
+      ? (viewport.width - worldW) / 2
+      : Math.max(viewport.width - worldW, Math.min(0, viewport.width / 2 - (px + 0.5) * s));
+    const cy = worldH <= viewport.height
+      ? (viewport.height - worldH) / 2
+      : Math.max(viewport.height - worldH, Math.min(0, viewport.height / 2 - (py + 0.5) * s));
+    return { x: cx, y: cy };
+  };
+  const cam = useRef(new Animated.ValueXY(cameraFor(player.x, player.y))).current;
   const [frame, setFrame] = useState(0);
   const [stepFrame, setStepFrame] = useState(0);
   const lastPos = useRef(`${player.x},${player.y}`);
@@ -308,6 +328,14 @@ export default function TileMap({ map, player, tileSize, style }) {
       setStepFrame((f) => (f + 1) % 2);
     }
   }, [player.x, player.y, s, pos]);
+
+  useEffect(() => {
+    if (!viewport) return;
+    // Same duration as the step, so the world slides with the character rather
+    // than chasing them.
+    Animated.timing(cam, { toValue: cameraFor(player.x, player.y), duration: 120, useNativeDriver: true }).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player.x, player.y, s, viewport && viewport.width, viewport && viewport.height]);
 
   // Rows are static once the map is set; only the player and water move.
   const floor = FIELD_BY_MAP[map.id];
@@ -336,8 +364,14 @@ export default function TileMap({ map, player, tileSize, style }) {
   const facing = player.facing || 'down';
   const spriteKey = playerSprite(state.playerGender, facing, stepFrame === 0 ? 1 : 2);
 
-  return (
-    <View style={[{ width: map.cols * s, height: map.rows * s, backgroundColor: palette.grassDark, overflow: 'hidden' }, style]}>
+  const world = (
+    <Animated.View
+      style={[
+        { width: worldW, height: worldH, backgroundColor: palette.grassDark, overflow: 'hidden' },
+        viewport ? { position: 'absolute', transform: [{ translateX: cam.x }, { translateY: cam.y }] } : null,
+        viewport ? null : style,
+      ]}
+    >
       {rows}
       {/* Room lighting. Every other shading cue is baked per tile and so
           repeats with the field; this one image describes the whole space —
@@ -366,6 +400,13 @@ export default function TileMap({ map, player, tileSize, style }) {
           size={widthForHeight(spriteKey, s * 1.85)}
         />
       </Animated.View>
+    </Animated.View>
+  );
+
+  if (!viewport) return world;
+  return (
+    <View style={[{ width: viewport.width, height: viewport.height, overflow: 'hidden' }, style]}>
+      {world}
     </View>
   );
 }

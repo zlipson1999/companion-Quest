@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { View } from 'react-native';
-import { Screen, DualPane, TileMap, MoveControl, Window, PixelText } from '../components';
+import { WorldScreen } from '../components';
 import { palette, screen, space } from '../theme';
 import { useNav } from './navContext';
 import { isWalkable } from '../data/maps';
@@ -14,32 +14,38 @@ const AREAS = {
   //   e/E bed   v TV   k desk   r rug   o shelf   p plant   s stairs
   //   f sofa    a table   c counter   F fridge
   bedroom: {
-    name: 'Your Room — Upstairs', id: 'home', cols: 9, rows: 8,
-    spawn: { x: 4, y: 5 }, exit: { x: 7, y: 6 },
+    name: 'Your Room — Upstairs', id: 'home', cols: 11, rows: 11,
+    spawn: { x: 5, y: 7 }, exit: { x: 9, y: 9 },
     grid: [
-      'WWWWWWWWW',
-      'WHHHHHHHW',
-      'We..v..oW',
-      'WE.....pW',
-      'W..rr...W',
-      'W..rr...W',
-      'Wk.....sW',
-      'WWWWWWWWW',
+      'WWWWWWWWWWW',
+      'WHHHHHHHHHW',
+      'We...v...oW',
+      'WE.......pW',
+      'W.........W',
+      'W...rrr...W',
+      'W...rrr...W',
+      'W.........W',
+      'Wk........W',
+      'W........sW',
+      'WWWWWWWWWWW',
     ],
     hint: 'Your room. The stairs are in the far corner.', next: 'downstairs',
   },
   downstairs: {
-    name: 'Your Home — Downstairs', id: 'home', cols: 9, rows: 8,
-    spawn: { x: 7, y: 2 }, exit: { x: 4, y: 6 },
+    name: 'Your Home — Downstairs', id: 'home', cols: 11, rows: 11,
+    spawn: { x: 9, y: 2 }, exit: { x: 5, y: 9 },
     grid: [
-      'WWWWWWWWW',
-      'WcccF..sW',
-      'W.......W',
-      'W.a....pW',
-      'W...rr..W',
-      'Wf..rr..W',
-      'W...D...W',
-      'WWWWWWWWW',
+      'WWWWWWWWWWW',
+      'WccccF...sW',
+      'W.........W',
+      'W..a.....pW',
+      'W.........W',
+      'W...rrr...W',
+      'Wf..rrr..oW',
+      'W.........W',
+      'W........pW',
+      'W....D....W',
+      'WWWWWWWWWWW',
     ],
     hint: 'Head through your front door.', next: 'outside',
   },
@@ -76,13 +82,13 @@ export default function HomeIntroScreen() {
     if (next.x === area.exit.x && next.y === area.exit.y) setTimeout(() => enter(area.next), 120);
   };
 
-  const tileSize = Math.floor(Math.min(screen.width - 20, screen.height * 0.45) / area.cols);
   return (
-    <Screen padTop={false}>
-      <DualPane
-        top={<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.grassDark }}><TileMap map={area} player={player} tileSize={tileSize} /></View>}
-        bottom={<View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: space.md }}><MoveControl onMove={move} /><Window tone="dark" pad={12} style={{ flex: 1, marginLeft: space.md }}><PixelText size="small" color={palette.secondary}>{area.name}</PixelText><PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 10, lineHeight: 15 }}>{area.hint}</PixelText></Window></View>}
-      />
-    </Screen>
+    <WorldScreen
+      map={area}
+      player={player}
+      onMove={move}
+      place={area.name}
+      objective={area.hint}
+    />
   );
 }

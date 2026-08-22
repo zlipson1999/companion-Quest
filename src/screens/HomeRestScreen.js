@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
-import { Screen, DualPane, TileMap, MoveControl, Window, PixelText, DialogueBox } from '../components';
+import { Screen, WorldScreen, DialogueBox } from '../components';
 import { palette, screen, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
@@ -9,32 +9,38 @@ import { playSfx } from '../audio';
 
 const FLOORS = {
   downstairs: {
-    name: 'Home — Downstairs', id: 'home', cols: 9, rows: 8,
-    spawn: { x: 4, y: 6 }, stairs: { x: 7, y: 1 },
+    name: 'Home — Downstairs', id: 'home', cols: 11, rows: 11,
+    spawn: { x: 5, y: 9 }, stairs: { x: 9, y: 1 },
     grid: [
-      'WWWWWWWWW',
-      'WcccF..sW',
-      'W.......W',
-      'W.a....pW',
-      'W...rr..W',
-      'Wf..rr.oW',
-      'W.......W',
-      'WWWWWWWWW',
+      'WWWWWWWWWWW',
+      'WccccF...sW',
+      'W.........W',
+      'W..a.....pW',
+      'W.........W',
+      'W...rrr...W',
+      'Wf..rrr..oW',
+      'W.........W',
+      'W........pW',
+      'W.........W',
+      'WWWWWWWWWWW',
     ],
     hint: 'Sleep is upstairs. Walk to the stairs.',
   },
   upstairs: {
-    name: 'Home — Bedroom', id: 'home', cols: 9, rows: 8,
-    spawn: { x: 7, y: 6 }, bed: { x: 1, y: 2 },
+    name: 'Home — Bedroom', id: 'home', cols: 11, rows: 11,
+    spawn: { x: 9, y: 9 }, bed: { x: 1, y: 2 },
     grid: [
-      'WWWWWWWWW',
-      'WHHHHHHHW',
-      'We..v..oW',
-      'WE.....pW',
-      'W..rr...W',
-      'W..rr...W',
-      'Wk.....sW',
-      'WWWWWWWWW',
+      'WWWWWWWWWWW',
+      'WHHHHHHHHHW',
+      'We...v...oW',
+      'WE.......pW',
+      'W.........W',
+      'W...rrr...W',
+      'W...rrr...W',
+      'W.........W',
+      'Wk........W',
+      'W........sW',
+      'WWWWWWWWWWW',
     ],
     hint: 'Walk to your bed and sleep.',
   },
@@ -78,13 +84,23 @@ export default function HomeRestScreen() {
     // is what puts you to sleep. Test the attempted square, not the one landed on.
     if (floorId === 'upstairs' && nx === floor.bed.x && ny === floor.bed.y) setTimeout(sleep, 120);
   };
-  const tileSize = Math.floor(Math.min(screen.width - 20, screen.height * 0.45) / floor.cols);
+  // Sleeping takes the screen over entirely — the dialogue is the scene at
+  // that point, so the world and its controls step out of the way.
+  if (sleeping) {
+    return (
+      <Screen style={{ padding: space.md, justifyContent: 'flex-end' }}>
+        <DialogueBox lines={lines} onComplete={() => navigate('hub')} />
+      </Screen>
+    );
+  }
+
   return (
-    <Screen padTop={false}>
-      <DualPane
-        top={<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#302841' }}><TileMap map={floor} player={player} tileSize={tileSize} /></View>}
-        bottom={sleeping ? <View style={{ flex: 1, justifyContent: 'flex-end', padding: space.md }}><DialogueBox lines={lines} onComplete={() => navigate('hub')} /></View> : <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: space.md }}><MoveControl onMove={move} /><Window tone="dark" pad={12} style={{ flex: 1, marginLeft: space.md }}><PixelText size="small" color={palette.secondary}>{floor.name}</PixelText><PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 10, lineHeight: 15 }}>{floor.hint}</PixelText></Window></View>}
-      />
-    </Screen>
+    <WorldScreen
+      map={floor}
+      player={player}
+      onMove={move}
+      place={floor.name}
+      objective={floor.hint}
+    />
   );
 }

@@ -7,13 +7,18 @@
 // explaining the systems with a room that demonstrates them.
 
 import React, { useRef, useState } from 'react';
-import { View } from 'react-native';
-import { Screen, DualPane, TileMap, MoveControl, PixelText, FieldCard, TrailAction, ObjectiveRibbon } from '../components';
-import { palette, space, screen, tokens } from '../theme';
+import { WorldScreen } from '../components';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { GYM, isWalkable, tileAt, triggerForCode, interactionForCode } from '../data/maps';
+
+const MENU = [
+  { label: 'Back to Maple Lane', value: 'hub', sublabel: 'the lane outside' },
+  { label: 'Route 1', value: 'route', sublabel: 'real miles, encounters' },
+  { label: 'Team', value: 'party', sublabel: 'companions' },
+  { label: 'Options', value: 'options', sublabel: 'settings' },
+];
 
 export default function GymScreen() {
   const { state } = useGame();
@@ -61,47 +66,15 @@ export default function GymScreen() {
     }
   };
 
-  const tileSize = Math.floor(Math.min(screen.width - 16, screen.height * 0.44) / GYM.cols);
-
-  const top = (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.bgAlt }}>
-      {/* Objective ribbon: one line naming where you are and what to do next,
-          instead of leaving the immediate goal to hint text. */}
-      <View style={{ position: 'absolute', top: space.sm, left: space.sm, right: space.sm, zIndex: 5 }}>
-        <ObjectiveRibbon
-          place="Maple Training Hall"
-          objective={facingStation ? facingStation.label : 'Walk into any equipment to use it'}
-        />
-      </View>
-
-      <TileMap map={GYM} player={player} tileSize={tileSize} style={{ marginTop: space.xl }} />
-    </View>
-  );
-
-  const bottom = (
-    <View style={{ flex: 1, flexDirection: 'row', padding: space.sm }}>
-      <View style={{ justifyContent: 'center', paddingRight: space.sm }}>
-        <MoveControl onMove={move} hint="walk into a station" />
-      </View>
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        <FieldCard
-          title="In this room"
-          accent={tokens.growth}
-          caption="Racks and kettlebells pick a session or build one. Dumbbells and the cable machine go straight to the Forge. Treadmill and rower are cardio with nothing to interrupt you — Route 1 outside is where encounters happen. Coach Maple talks goals, the bench is recovery, the cooler is habits, lockers are your bag, reception is your record, and the mirror is form check."
-        />
-        <TrailAction
-          label="Back to Maple Lane"
-          tone="quiet"
-          onPress={() => navigate('hub')}
-          style={{ marginTop: space.sm }}
-        />
-      </View>
-    </View>
-  );
-
   return (
-    <Screen padTop={false}>
-      <DualPane top={top} bottom={bottom} topFlex={1.15} bottomFlex={1} />
-    </Screen>
+    <WorldScreen
+      map={GYM}
+      player={player}
+      onMove={move}
+      place="Maple Training Hall"
+      objective={facingStation ? facingStation.label : 'Walk into any equipment to use it'}
+      menu={MENU}
+      onSelect={(item) => navigate(item.value)}
+    />
   );
 }
