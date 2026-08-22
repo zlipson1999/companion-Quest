@@ -12,6 +12,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import PixelText from './PixelText';
+import PixelButton from './PixelButton';
 import TrailAction from './TrailAction';
 import { palette, tokens, scale, space } from '../theme';
 import { formatClock, formatPace, kcalFor, lapsFor, paceFor } from '../state/cardioMaths';
@@ -48,6 +49,10 @@ export default function CardioConsole({
   moving = false,
   note,
   onStop,
+  // Only passed when nothing on the device can count a step. The trail already
+  // offers these; without them here the deck is a console that can never move,
+  // which is worse than no console.
+  onInject,
   style,
 }) {
   const pace = paceFor(miles, seconds);
@@ -92,6 +97,27 @@ export default function CardioConsole({
       <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: space.sm, lineHeight: 13 }}>
         {'Laps are quarter miles. Kcal is an estimate from your distance, pace and body weight — set it in Options.'}
       </PixelText>
+
+      {onInject ? (
+        <View style={{ marginTop: space.sm }}>
+          <PixelText size="tiny" color={palette.danger}>
+            No step counter on this device
+          </PixelText>
+          <View style={{ flexDirection: 'row', marginTop: 6 }}>
+            {[[100, '+0.05mi'], [500, '+0.25mi'], [2000, '+1mi']].map(([n, label], i) => (
+              <PixelButton
+                key={n}
+                label={label}
+                tone="dark"
+                size="small"
+                sound="cursor"
+                style={{ flex: 1, marginRight: i < 2 ? 6 : 0, paddingVertical: 8 }}
+                onPress={() => onInject(n)}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
 
       {note ? (
         <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6, lineHeight: 13 }}>

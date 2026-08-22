@@ -154,13 +154,14 @@ export default function GymScreen() {
           <>
             <KeepAwakeOnDeck />
             <CardioConsole
-            station={cardio.station}
-            seconds={seconds}
-            miles={sessionMiles}
-            steps={sessionSteps}
-            bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}
-            moving={moving}
-            note={note}
+              station={cardio.station}
+              seconds={seconds}
+              miles={sessionMiles}
+              steps={sessionSteps}
+              bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}
+              moving={moving}
+              note={note}
+              onInject={dist.showInjector ? dist.injectSteps : null}
               onStop={stepOff}
             />
           </>
