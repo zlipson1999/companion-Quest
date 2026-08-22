@@ -75,21 +75,57 @@ export const CREATURES = {
 
   // --- Wild catchable companions (found in tall grass) ---
   pebblepup: {
-    id: 'pebblepup', name: 'Pebblepup', sprite: 'pebblepup', palette: 'rock',
+    id: 'pebblepup', stage: 1, name: 'Pebblepup', sprite: 'pebblepup', palette: 'rock',
     species: 'Stonehound Companion', kind: 'wild', baseHp: 66, catchable: true, catchRate: 0.45,
     flavor: 'A sturdy little stone pup. Steady and dependable — it never skips a day.',
+    evolvesTo: 'cairnhound', evolveLevel: 5, evolvePoints: 30,
+  },
+  cairnhound: {
+    id: 'cairnhound', stage: 2, name: 'Cairnhound', sprite: 'cairnhound', palette: 'rock',
+    species: 'Cairn Hound Companion', kind: 'evolution', baseHp: 112, scale: 1.18, catchable: false,
+    flavor: 'Steady days have lengthened its stride and settled every stone into place.',
+    evolvesTo: 'monolithound', evolveLevel: 14, evolvePoints: 110,
+  },
+  monolithound: {
+    id: 'monolithound', stage: 3, name: 'Monolithound', sprite: 'monolithound', palette: 'rock',
+    species: 'Monolith Guardian Companion', kind: 'evolution', baseHp: 170, scale: 1.32, catchable: false,
+    flavor: 'A patient guardian built one dependable day at a time.',
     evolvesTo: null,
   },
   wispurr: {
-    id: 'wispurr', name: 'Wispurr', sprite: 'wispurr', palette: 'air',
+    id: 'wispurr', stage: 1, name: 'Wispurr', sprite: 'wispurr', palette: 'air',
     species: 'Cloudkit Companion', kind: 'wild', baseHp: 54, catchable: true, catchRate: 0.6,
     flavor: 'A breezy cloud-kit. Light on its feet and always ready for a long walk.',
+    evolvesTo: 'galegait', evolveLevel: 5, evolvePoints: 30,
+  },
+  galegait: {
+    id: 'galegait', stage: 2, name: 'Galegait', sprite: 'galegait', palette: 'air',
+    species: 'Gale Cat Companion', kind: 'evolution', baseHp: 94, scale: 1.18, catchable: false,
+    flavor: 'Its stride carries the clean momentum of a morning breeze.',
+    evolvesTo: 'skywhorl', evolveLevel: 14, evolvePoints: 110,
+  },
+  skywhorl: {
+    id: 'skywhorl', stage: 3, name: 'Skywhorl', sprite: 'skywhorl', palette: 'air',
+    species: 'Dawnwind Guardian Companion', kind: 'evolution', baseHp: 148, scale: 1.32, catchable: false,
+    flavor: 'Every mile circles its bright heart like wind around a sunrise.',
     evolvesTo: null,
   },
   sporelet: {
-    id: 'sporelet', name: 'Sporelet', sprite: 'sporelet', palette: 'spore',
+    id: 'sporelet', stage: 1, name: 'Sporelet', sprite: 'sporelet', palette: 'spore',
     species: 'Sporeling Companion', kind: 'wild', baseHp: 62, catchable: true, catchRate: 0.5,
     flavor: 'A cheerful little mushroom sprite that thrives on rest and good routines.',
+    evolvesTo: 'mycobloom', evolveLevel: 5, evolvePoints: 30,
+  },
+  mycobloom: {
+    id: 'mycobloom', stage: 2, name: 'Mycobloom', sprite: 'mycobloom', palette: 'spore',
+    species: 'Restorative Scout Companion', kind: 'evolution', baseHp: 104, scale: 1.18, catchable: false,
+    flavor: 'Good rest gathers beneath its cap as warm, guiding spores.',
+    evolvesTo: 'canopore', evolveLevel: 14, evolvePoints: 110,
+  },
+  canopore: {
+    id: 'canopore', stage: 3, name: 'Canopore', sprite: 'canopore', palette: 'spore',
+    species: 'Living Canopy Companion', kind: 'evolution', baseHp: 158, scale: 1.32, catchable: false,
+    flavor: 'A sheltering grove grown from recovery practiced without guilt.',
     evolvesTo: null,
   },
 

@@ -1,8 +1,14 @@
 # The art kit
 
-Sproutle is traced from reference artwork. It is the reference every other
-companion is built against, so the roster reads as one family instead of two
-art styles sharing a screen.
+All 18 members of the six companion families are traced from reference
+artwork. Their transparent masters are committed in `tools/reference_art/`;
+their indexed outputs live as
+`tools/traced_<name>.json`. This keeps the roster reproducible and prevents the
+evolutions from silently falling back to procedural stand-ins.
+
+The authored world-material atlas lives in `assets/textures/masters/`.
+`tools/convert_texture_atlas.py` turns its cells into indexed runtime tiles;
+`make_sprites.py` still provides procedural fallbacks if a traced asset is absent.
 
 ## Why tracing at all
 

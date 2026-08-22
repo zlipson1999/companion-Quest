@@ -59,7 +59,7 @@ export default function TitleScreen() {
           </View>
         ) : (
           <Animated.View style={{ opacity: blink }}>
-            <PixelButton label="Enter the Trail" tone="primary" onPress={() => navigate('homeIntro')} />
+            <PixelButton label="Enter the World" tone="primary" onPress={() => navigate('intro')} />
           </Animated.View>
         )}
       </View>

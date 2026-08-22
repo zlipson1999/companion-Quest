@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Author + validate + preview Companion Quest pixel art.
 
-Source of truth for every original sprite and tile in the game. There are no
-image files anywhere in the app: this script draws the art and emits
-src/data/sprites.js, which the renderer reads directly.
+Source of truth for every original sprite and tile in the game. Procedural art
+is drawn here; approved reference cutouts in tools/reference_art are converted
+to traced JSON. This script emits src/data/sprites.js for the renderer.
 
 WHY IT DRAWS RATHER THAN STORES GRIDS
 -------------------------------------
@@ -2094,6 +2094,9 @@ def build_all():
     add('groveheart', groveheart()); add('cindermane', cindermane())
     add('maelstride', maelstride())
     add('pebblepup', pebblepup()); add('wispurr', wispurr()); add('sporelet', sporelet())
+    add('cairnhound', pebblepup()); add('monolithound', pebblepup())
+    add('galegait', wispurr()); add('skywhorl', wispurr())
+    add('mycobloom', sporelet()); add('canopore', sporelet())
     add('sludgewad', sludgewad()); add('snoozeghoul', snoozeghoul())
     add('couchlurk', couchlurk()); add('achefang', achefang())
 

@@ -9,12 +9,12 @@ import { playSfx } from '../audio';
 const AREAS = {
   bedroom: {
     name: 'Your Room — Upstairs', cols: 7, rows: 7, spawn: { x: 2, y: 4 }, exit: { x: 5, y: 5 },
-    grid: ['TTTTTTT', 'THHHHHT', 'TH...HT', 'TH...HT', 'TH...HT', 'TH###DT', 'TTTTTTT'],
+    grid: ['WWWWWWW', 'WHHHHHW', 'WH...HW', 'WH...HW', 'WH...HW', 'WH###DW', 'WWWWWWW'],
     hint: 'Walk to the stairs by the door.', next: 'downstairs',
   },
   downstairs: {
     name: 'Your Home — Downstairs', cols: 7, rows: 7, spawn: { x: 5, y: 4 }, exit: { x: 3, y: 5 },
-    grid: ['TTTTTTT', 'THHHHHT', 'TH...HT', 'TH...HT', 'TH...HT', 'TH#D#HT', 'TTTTTTT'],
+    grid: ['WWWWWWW', 'WHHHHHW', 'WH...HW', 'WH...HW', 'WH...HW', 'WH#D#HW', 'WWWWWWW'],
     hint: 'Head through your front door.', next: 'outside',
   },
   outside: {
@@ -60,4 +60,3 @@ export default function HomeIntroScreen() {
     </Screen>
   );
 }
-

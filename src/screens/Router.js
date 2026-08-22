@@ -11,6 +11,7 @@ import BattleTransition from '../components/BattleTransition';
 
 import TitleScreen from './TitleScreen';
 import IntroScreen from './IntroScreen';
+import OutfitSelectScreen from './OutfitSelectScreen';
 import HomeIntroScreen from './HomeIntroScreen';
 import CoachTutorialScreen from './CoachTutorialScreen';
 import GoalSelectScreen from './GoalSelectScreen';
@@ -37,6 +38,7 @@ import LoadingScreen from './LoadingScreen';
 const SCREENS = {
   title: TitleScreen,
   intro: IntroScreen,
+  outfit: OutfitSelectScreen,
   homeIntro: HomeIntroScreen,
   coachTutorial: CoachTutorialScreen,
   goal: GoalSelectScreen,
@@ -64,7 +66,7 @@ const SCREENS = {
 // fleeing a battle returns there, and without an entry here the battle music
 // just kept playing over the walk.
 const TOWN_BGM = new Set([
-  'title', 'intro', 'homeIntro', 'coachTutorial', 'goal', 'pairing', 'hub', 'route', 'rest', 'workout', 'summary', 'index', 'bag',
+  'title', 'intro', 'outfit', 'homeIntro', 'coachTutorial', 'goal', 'pairing', 'hub', 'route', 'rest', 'workout', 'summary', 'index', 'bag',
   'party', 'coach', 'options', 'habits', 'habit', 'forge', 'forgeEdit', 'formcheck', 'week',
 ]);
 

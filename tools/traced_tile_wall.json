@@ -1,0 +1,40 @@
+{
+  "palette": [
+    "#985b25",
+    "#bb8a4d",
+    "#e8c583",
+    "#ebcb8b",
+    "#edce8f",
+    "#e1ba76",
+    "#aa7338",
+    "#9e5d23",
+    "#c59757",
+    "#d2a462",
+    "#a16a32",
+    "#a16127",
+    "#854e1f",
+    "#935520",
+    "#9e5a1e",
+    "#efd193",
+    "#f0d396",
+    "#f2d598"
+  ],
+  "rows": [
+    "ABCCCDEECCDDCFGA",
+    "HGIIIIJJIIIIIBKH",
+    "LMNNOOHLOOOONMNH",
+    "HGIIIIIIIIIIBBKH",
+    "HIPQQQPPPQRRPDBH",
+    "HIQPPPQEDQPPEDBH",
+    "HIRPQQRRRPEPPEBH",
+    "OIPDQRRRRQEDEDBO",
+    "OBDDEPQRQPEDDCGA",
+    "HKFEDDQQECDDCILH",
+    "AMHBJFCCFFFIGNNA",
+    "NGGNLKGGGGLHAGKN",
+    "NLLAHLHLLHHAAKAA",
+    "MNKKGKKMMKGGKKMM",
+    "MBFFCFFKNJCFFFGM",
+    "MGFFFJJKNJFFFFGM"
+  ]
+}

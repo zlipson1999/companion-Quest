@@ -15,6 +15,7 @@ import { pacingForGoal, formatMiles } from '../data/route';
 import { PICKUP_POOL, getItem } from '../data/items';
 import { rollWildEncounter } from '../data/wild';
 import { getCreature } from '../data/creatures';
+import { outfitPalette } from '../data/outfits';
 import { routeCheer, pickupLine } from '../coach';
 
 // The trail itself.
@@ -188,7 +189,7 @@ export default function RouteScreen() {
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: space.xl }}>
         {companion ? (
           <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-            <PixelSprite spriteKey="hero_down" size={56} bob={moving || dist.running} />
+            <PixelSprite spriteKey="hero_down" palette={outfitPalette(state.playerOutfit)} size={56} bob={moving || dist.running} />
             <View style={{ width: 8 }} />
             <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={52} bob={moving || dist.running} />
           </View>
