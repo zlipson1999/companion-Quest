@@ -37,9 +37,11 @@ Hard rules, never traded away:
 ## 2. Tech stack and repo map
 
 Expo SDK 52 / React Native 0.76, runs in Expo Go, as a web SPA, and (pending)
-as an EAS dev build. State is one reducer + AsyncStorage. No navigation
-library, no state library, no image or audio asset files — **everything is
-generated or drawn in code** except the traced reference sprites (§8.4).
+as an EAS dev build. State is one reducer + AsyncStorage. There is no
+navigation or state library. There are **no raster image assets**: pixel art is
+stored as generated grid/palette data, including converted traced references
+(§8.4). Audio is different: the 16 generated WAV files are committed under
+`assets/sfx/` and loaded by the app.
 
 ```
 src/
@@ -58,7 +60,8 @@ src/
   audio/       sfx.js (expo-av wrapper, degrades silently)
 server/        Express proxy for the LLM coach (optional; key stays here)
 tools/         make_sprites.py (art engine), make_audio.py (SFX synth),
-               traced_*.json (converted reference art), sprite_preview.png
+               traced_*.json (converted reference art)
+               [sprite_preview.png is generated locally, not tracked]
 assets/sfx/    16 WAVs, ALL synthesized by make_audio.py
 docs/          ART_KIT.md, STEP_COUNTING.md, PHONE_TEST.md, this file
 .github/workflows/web.yml   web export → GitHub Pages on every push to main
@@ -409,30 +412,233 @@ buckets; v3→4 history starts recording (never invents past days); v4→5 `evo:
 on members; goal ids translated; UTC day-keys → local; `rollAllModules` day
 roll on load + `MODULE_RESET_DAY` self-heal from the Habits screens.
 
-## 13. Known gaps & debt (the honest list)
+## 13. Developer handoff: decisions, questions and missing specifications
 
-1. **Six evolutions + 7 wild/obstacle creatures are procedural** — visibly a
+The sections above describe what the current code does. They do **not** by
+themselves define a shippable product. A developer taking over the project
+would still need the questions below answered. Never infer an answer from an
+empty field or from a platform happening to work in Expo Go.
+
+Status labels:
+
+- **CURRENT** — observable in the repository now.
+- **DECIDED** — a product rule that implementation must preserve.
+- **OPEN** — the owner must choose; this document must be updated when they do.
+- **GATE** — must be proven before the affected release can be called ready.
+
+### 13.1 Product and release contract
+
+| developer question | status / present answer |
+|---|---|
+| Who is the intended player and minimum age? | **OPEN.** The copy speaks to adults, but no age floor, child-safety position or account policy is defined. |
+| What is the primary product: Android app, iOS app or web demo? | **OPEN.** Web deploys automatically; Android/iOS are configured but no native production build has been accepted. Sensor-dependent claims must not be based on web. |
+| What exactly is the MVP? | **OPEN.** The repository contains a broad playable vertical slice, but there is no signed-off feature boundary or release acceptance checklist. |
+| What devices and OS versions are supported? | **OPEN.** Portrait is forced and tablets are allowed; minimum Android/iOS versions, screen sizes, low-end device floor and tablet UX are unspecified. |
+| Is the game free, paid, ad-supported or subscription-based? | **OPEN.** No monetization or entitlement code exists. |
+| Is an account required? Is there cloud sync or multi-device play? | **CURRENT: no.** One local save, no auth, no cloud backup, no export/import. Whether this is permanent is **OPEN**. |
+| What is the content target at launch? | **OPEN.** Current roster is 12 companions plus 4 obstacles; roadmap expansion is aspiration, not a launch commitment. |
+| What is the expected play cadence and session length? | **OPEN.** Daily modules and route pacing imply daily play, but retention, encounter-rate and time-to-evolution targets are not specified or validated. |
+| Are notifications/reminders part of the product? | **CURRENT: no.** Desired reminders, quiet hours, consent and notification copy are **OPEN**. |
+| What does “done” mean for a feature? | **DECIDED below in §13.7.** Code that merely renders in web is not sufficient for sensor, persistence, camera, GL or audio work. |
+
+Until those choices are made, describe the project as a **development build
+with a public web demo**, not as a production fitness app.
+
+### 13.2 Platform, lifecycle and failure behavior
+
+| developer question | status / present answer |
+|---|---|
+| Must steps count while the screen is locked and the app is backgrounded? | **DECIDED by the vision: yes for the production mobile experience. GATE:** prove it in an EAS build on physical Android and iOS devices. The accelerometer fallback is foreground-only and is not a release substitute. |
+| What happens after permission denial? | **CURRENT:** GPS returns an inline error; pedometer diagnostics expose status; camera behavior is screen-owned. **OPEN:** retry/settings affordance and standardized denial copy. |
+| What happens if a GPS run is interrupted, the app backgrounds or the OS kills it? | **OPEN.** No resume/reconciliation contract or partial-run record is specified. |
+| What happens if the app closes during a battle or Forge session? | **OPEN.** Navigation/session state is in memory; only reducer state persists. Define checkpoint, abandon or resume behavior. |
+| What happens when storage is full or a save is corrupt? | **CURRENT:** storage errors are swallowed; corrupt JSON loads as no save. **GATE:** preserve the bad payload for diagnosis, show recovery choices and never silently look like a new game. |
+| Can time-zone or device-clock changes mint rewards or break streaks? | **PARTIAL.** Local date keys and migrations exist. Clock rollback, large timezone jumps and deliberate clock changes need tests and an explicit policy. |
+| Does core play work offline? | **CURRENT: mostly yes.** Game systems and factual coach answers are local; live coach replies require the proxy. **OPEN:** offline status UI and reconnect/retry behavior. |
+| What is the battery/data budget? | **OPEN.** Accelerometer requests 50 Hz and GPS high accuracy. No measured drain, thermal or network budget exists. |
+| What are acceptable load time, frame rate and memory targets? | **OPEN.** Define budgets for low-end mobile, 3D fallback, large saves and generated sprite rendering. |
+
+### 13.3 Data, privacy, safety and service operations
+
+The app handles activity, workouts, sleep, diet, hydration, location during
+runs, camera access for a local mirror, and optional coach messages. Even
+without accounts, that is sensitive wellness data.
+
+| developer question | status / present answer |
+|---|---|
+| What leaves the device? | **CURRENT:** GPS coordinates are used transiently and not saved; camera frames are not recorded or uploaded; the configured coach proxy receives chat history plus a capped activity brief. |
+| Where is data stored and for how long? | **CURRENT:** one AsyncStorage JSON blob; history keeps 60 days; Forge keeps 120 sessions. **OPEN:** coach-server logs/retention and hosting-provider retention. |
+| How does a player delete or export data? | **CURRENT:** Options can erase the local save. **MISSING:** export, backup, server-side deletion path, privacy notice and confirmation of what erase does not delete. |
+| Is analytics or crash reporting collected? | **CURRENT: none.** If added, define events, consent, retention, redaction and a “never collect raw wellness/chat/location data” rule first. |
+| What fitness and medical safety language is required? | **OPEN.** The coach refers injuries out and recovery only advises, but onboarding has no documented readiness warning, emergency disclaimer or age-specific policy. |
+| Is exercise completion verified? | **DECIDED:** honour system; Form Check is a mirror, not pose analysis. **OPEN:** abuse/anti-cheat expectations for leaderboards or monetized rewards if either is ever added. |
+| How is the coach service protected? | **MISSING:** production deployment, authentication/app attestation, rate limits, request-size limits, abuse controls, cost ceiling, observability, incident response and model deprecation policy. |
+| What is the AI fallback contract? | **CURRENT:** local factual brain runs first; remote failure returns friendly copy. **OPEN:** whether generative chat is launch-critical and which responses must remain fully local. |
+| Can external/generated art be shipped commercially? | **OPEN/GATE:** keep source and rights/provenance records for every reference image. “Original-looking” is not a licensing record. |
+
+Before any public native release, add a plain-language privacy policy that
+matches the code and app-store privacy disclosures. A developer must not add
+telemetry, uploads or new permissions without updating this section.
+
+### 13.4 Accessibility and presentation requirements
+
+The DS-era look is a style goal, not permission to exclude players.
+
+**Missing acceptance criteria:**
+
+- Screen-reader labels, reading order and focus behavior for every actionable
+  control.
+- Minimum touch targets and non-D-pad alternatives for all navigation.
+- Contrast checks for text, status bars and silhouettes; never encode state by
+  color alone.
+- A readable-text option: the pixel font at tiny sizes is not an accessibility
+  strategy.
+- Reduced-motion behavior for bobbing, wipes, screen shake, flashes and the
+  evolution strobe. Photosensitive users need a non-flashing path.
+- Captions/text equivalents for audio cues and independent SFX/BGM control
+  (the two mute toggles already exist).
+- Dynamic layout checks for small phones, tall phones, tablets and browser
+  zoom. Portrait-only is current policy, not proof that every portrait viewport
+  works.
+- Localization policy. All copy is currently English and many layouts assume
+  short strings.
+
+**GATE:** keyboard/web, touch/mobile and screen-reader smoke passes must join
+the release checklist before “accessible” appears in product copy.
+
+### 13.5 Engineering quality, CI and observability
+
+**CURRENT:** `package.json` has start scripts only. There is no test runner,
+lint script, type checker, unit/integration/E2E suite, coverage target or PR
+build. The only GitHub Action exports and deploys web after a push to `main`.
+Storage and audio intentionally swallow errors, so field failures can be
+invisible.
+
+A production handoff needs:
+
+1. A required CI workflow that runs a clean install, static checks, tests,
+   Android export and web export before merge. Deployment must depend on those
+   checks rather than being the first place a broken build is discovered.
+2. Unit tests for leveling, evolution, rewards, daily rollover, streaks,
+   recovery, catch probability, Forge analysis/records and every save
+   migration. These are deterministic and should be the first test layer.
+3. Reducer integration tests proving displayed rewards equal granted rewards,
+   caps cannot be replayed, active-companion attribution is correct and old
+   saves hydrate without data loss.
+4. Device tests for permissions, pedometer/accelerometer priority, background
+   counting, GPS double-count prevention, camera, audio interruption, GL
+   fallback, app kill/resume and low-storage failures.
+5. A deterministic content validator: permanent IDs unique, references resolve,
+   every creature has a sprite/palette, every movement has valid muscles, every
+   route/item/module key exists and generated outputs are up to date.
+6. Error reporting that distinguishes expected capability fallback from actual
+   failure. Never include chat text, coordinates, exercise transcripts or
+   wellness values in logs by default.
+7. A supported Node/npm/Python toolchain file and reproducible generator
+   dependencies. “It ran on one machine” is not an asset pipeline contract.
+
+### 13.6 Balance and content-authoring questions
+
+The formulas are documented, but the intended player experience is not yet
+measured. Before large content expansion, define and simulate:
+
+- Time/effort to first encounter, first catch, level 5 evolution and level 14
+  evolution for each goal and for low/median/high-activity players.
+- Expected Bond Token income versus catch attempts, including full-party
+  behavior.
+- Battle length and exercise volume by level, fitness ability and move type;
+  accessible substitutions for players who cannot perform a prescribed move.
+- Recovery warning frequency and whether battle/workout load values map to
+  plausible real sessions.
+- Daily reward ceilings across walking, presets, Forge, PRs and habits, plus
+  clock-change/replay abuse cases.
+- Content authoring rules: permanent IDs, migration requirements for renamed or
+  removed content, text limits, palette/sprite validation and rights metadata.
+- A save-safe deprecation policy. Once an ID ships in a save, deleting or
+  reusing it without a migration is forbidden.
+
+### 13.7 Definition of done
+
+A change is done only when all applicable items are true:
+
+1. Behavior, visible reward numbers and this bible agree in the same commit.
+2. Deterministic logic has tests; a bug fix includes a regression test when the
+   test harness can express it.
+3. Save-shape or permanent-ID changes include a versioned migration tested from
+   every supported prior version.
+4. Sensor/camera/audio/GL/lifecycle changes are verified on an affected physical
+   device, not only web or a simulator.
+5. Generated assets are regenerated from their source; generated files are
+   never hand-edited and the validator passes.
+6. Permission, offline, denial, timeout and recovery states have player-facing
+   behavior.
+7. Accessibility is checked for changed controls and motion.
+8. The handoff states what was tested, on which platform/device, and any
+   remaining risk. No silent “works on my machine” release.
+
+## 14. Known gaps & debt (the honest list)
+
+### Release blockers / decisions
+
+1. **No agreed product/release contract** — audience, primary platform, MVP
+   boundary, supported devices, business model and launch content are open
+   (§13.1).
+2. **No automated quality gate** — no tests, lint/typecheck, PR CI, content
+   validation or migration suite (§13.5).
+3. **Background step counting is unproven in a standalone app** — accelerometer
+   fallback works only in the foreground. EAS physical-device proof is a gate.
+4. **Save failure is silent and local-only** — no corrupt-save recovery,
+   backup/export or cloud decision.
+5. **Accessibility is unspecified** — especially tiny pixel text, focus/labels,
+   touch targets and reduced-motion alternatives for flashes/strobes.
+6. **Privacy/safety/service operations are undocumented** — no privacy policy,
+   coach retention/deletion contract, production rate limits or release safety
+   language.
+7. **Lifecycle behavior is undefined** for interrupted GPS runs, battles and
+   Forge sessions.
+8. **No performance/battery/device budgets or compatibility matrix.**
+
+### Product/content debt
+
+9. **Six evolutions + 7 wild/obstacle creatures are procedural** — visibly a
    different art tier next to the traced starters. Blocked on reference images.
-2. **Expo Go can't reach the OS pedometer** — accelerometer fallback works but
-   is foreground-only. Real fix: EAS dev build (eas.json ready, ~15 min).
-3. `state/usePedometer.js` is dead code (still exported).
-4. Evolution ceremony is a strobe + swap; deserves a real scene.
-5. No per-movement progression charts yet, despite weight-aware PR data.
-6. Train (presets) vs Forge (builder) naming still confuses (user-reported).
-7. `dusk` battle tone defined, never used.
-8. Scratchpad walkthrough artifact drifts from the app (preview-only).
-9. server/ never deployed; Coach is local-brain-only in production (fine).
-10. `catch still consumes a token when the team is full` — feels bad; revisit.
+10. `state/usePedometer.js` is dead code (still exported).
+11. Evolution ceremony is a strobe + swap; it needs both a stronger scene and a
+    reduced-motion alternative.
+12. No per-movement progression charts despite weight-aware PR data.
+13. Train (presets) vs Forge (builder) naming still confuses (user-reported).
+14. `dusk` battle tone is defined but unused.
+15. Scratchpad walkthrough artifact drifts from the app (preview-only).
+16. The Coach proxy is undeployed; generative chat is unavailable in production.
+17. Catching with a full team still consumes a token and only marks the
+    creature owned; decide storage/replacement behavior.
+18. Balance targets and simulations in §13.6 do not exist.
+19. Art-reference provenance is not tracked as release metadata.
 
-## 14. Roadmap (agreed order)
+## 15. Roadmap (risk-first recommendation; owner approval pending)
 
-1. Trace the 6 evolutions as images arrive; evolution ceremony polish.
-2. Trace wild + obstacle creatures.
-3. EAS dev build → pocket step counting proven on-device (PHONE_TEST.md).
-4. Progression charts from PR/weight history.
-5. 20 new companion families × 3 stages through the trace kit.
-6. Then: battle move animations per-exercise, richer obstacle roster, town
-   growth.
+1. Lock §13.1: audience, primary platform, MVP boundary, supported devices and
+   launch content. Turn the answers into a release checklist.
+2. Add deterministic tests, save-migration fixtures, content validation and
+   required CI before expanding systems.
+3. Produce EAS development builds and prove permissions, pocket/background step
+   counting, GPS non-duplication, kill/resume and save survival on physical
+   Android and iOS devices (PHONE_TEST.md).
+4. Define corrupt-save recovery, interruption behavior and the local-only versus
+   cloud-sync decision.
+5. Complete accessibility, privacy/safety and performance gates; deploy and
+   harden the Coach only if generative chat is in the MVP.
+6. Run balance simulations and a small real-player test; tune time-to-encounter,
+   catch economy, exercise volume and evolution pacing.
+7. Trace the 6 evolutions, then wild/obstacle creatures; add a reduced-motion
+   evolution ceremony.
+8. Add progression charts from PR/weight history.
+9. Expand toward 20 companion families only after the content validator,
+   rights/provenance record and balance targets exist.
+10. Then consider per-exercise battle animation, a richer obstacle roster and
+    town growth.
 
 ---
-*Audited against the codebase at the commit that introduced this file.*
+*Audited against the current codebase. Sections marked OPEN are deliberately
+unresolved; update them when the owner decides rather than letting code make the
+decision accidentally.*
