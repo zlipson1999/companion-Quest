@@ -581,9 +581,22 @@ faint.
 
 ### 8.3 Sprite inventory (101 runtime sprites + 415 atlas cells)
 
-- Creatures 48×48 authored @2× = 96 px: all 9 members of the three first-bond
-  families (TRACED), 3 wild (pebblepup, wispurr, sporelet), 4
-  obstacles (sludgewad, snoozeghoul, achefang, couchlurk) — procedural.
+- Creatures 48×48 authored @2× = 96 px: **18 companions — 6 families of 3
+  stages, every one of them TRACED** (sproutle→bloomtail→groveheart,
+  emberkit→pyrelynx→cindermane, dewbble→tidewade→maelstride,
+  pebblepup→cairnhound→monolithound, wispurr→galegait→skywhorl,
+  sporelet→mycobloom→canopore) — plus 4 obstacles (sludgewad, snoozeghoul,
+  achefang, couchlurk), which are procedural. An evolution is its OWN drawn
+  sprite, never a tinted copy of the base.
+  The first three families are the ones offered at first bond
+  (`STARTER_IDS`); all six are met on the trail (`WILD_COMPANION_IDS`), always
+  as their base form. `INDEX_ORDER` in `creatures.js` is the roster order the
+  Creature Index reads, built by walking each family whole with
+  `familyChain()`, and the module **throws at import** if any creature reaches
+  no Index entry. That guard exists because the Index used to build the order
+  itself and followed `evolvesTo` exactly once: it listed 13 of the 22 and not
+  one final evolution among them, while `EVOLVE` was stamping
+  `dex[groveheart] = 'owned'` for a row the page could never print.
 - Hero 24×32: 4 facings × 3 frames, distinct silhouettes per facing.
 - Items/module icons 24×24: apple, water, energybar, charm, **knot**, three
   smoothie blends (green/berry/gold, one drawing and three palettes), droplet,

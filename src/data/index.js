@@ -1,5 +1,6 @@
 export { SPRITES } from './sprites';
-export { CREATURES, STARTER_IDS, WILD_COMPANION_IDS, OBSTACLE_IDS, ALL_CREATURE_IDS, getCreature } from './creatures';
+export { CREATURES, STARTER_IDS, WILD_COMPANION_IDS, OBSTACLE_IDS, ALL_CREATURE_IDS,
+  INDEX_ORDER, familyChain, getCreature } from './creatures';
 export { GOALS, getGoal } from './goals';
 export { ITEMS, PICKUP_POOL, getItem } from './items';
 export { EXERCISES, BATTLE_MOVES, getExercise } from './exercises';

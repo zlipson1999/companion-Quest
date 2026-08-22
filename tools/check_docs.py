@@ -48,6 +48,11 @@ def build_checks():
     maps = read('src/data/maps.js')
     router = read('src/screens/Router.js')
 
+    creatures = read('src/data/creatures.js')
+    obstacles = len(re.findall(r"'\w+'", first(r'OBSTACLE_IDS = \[([^\]]+)\]',
+                                               creatures, 'OBSTACLE_IDS')))
+    companions = len(re.findall(r'^  \w+: \{$', creatures, re.M)) - obstacles
+
     def map_dims(name):
         blk = maps[maps.index(f'export const {name} = {{'):]
         d = re.search(r'cols: (\d+),\n  rows: (\d+)', blk)
@@ -70,6 +75,10 @@ def build_checks():
          first(r'KCAL_PER_LB_MILE_RUN = ([\d.]+)', cardio, 'run rate')),
         ('run/walk pace threshold', r'`RUN_PACE_MIN_PER_MILE = (\d+)`',
          first(r'RUN_PACE_MIN_PER_MILE = (\d+)', cardio, 'pace threshold')),
+        # The roster claim went stale for a release and took a real bug with
+        # it: an Index that listed 13 of the 22 and no final evolution at all.
+        ('companion creatures', r'\*\*(\d+) companions', str(companions)),
+        ('obstacle creatures', r'plus (\d+) obstacles', str(obstacles)),
         ('recipes', r'(\d+) recipes, 18 categories',
          str(len(re.findall(r'^  R\(', read('src/data/recipes.js'), re.M)))),
         ('Kinship Knot price (miles)', r'\*\*Kinship Knot\*\* \| ([\d.]+) mi',
