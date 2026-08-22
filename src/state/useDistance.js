@@ -266,10 +266,15 @@ export function useDistance() {
     startRun,
     stopRun,
     injectSteps,
-    // Only when nothing at all can count steps. The accelerometer fallback is
-    // a real step source, not a stand-in, so it must not put the manual
-    // buttons on screen beside it.
-    showInjector: source === 'none' && !running,
+    // DEVELOPMENT ONLY. Buttons that add distance you did not walk are the
+    // exact thing this game is built not to have — "real life is the game, no
+    // walk buttons" — so they exist to test on a desktop and must never reach
+    // anybody's phone. __DEV__ is false in every release build, web included.
+    //
+    // Beyond that: only when nothing at all can count steps. The accelerometer
+    // fallback is a real step source, not a stand-in, so it must not put the
+    // manual buttons on screen beside it.
+    showInjector: __DEV__ && source === 'none' && !running,
   };
 }
 

@@ -21,6 +21,8 @@ import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { pacingForGoal, formatMiles } from '../data/route';
 import { rollWildEncounter } from '../data/wild';
+import { breakdownSince, formatBreakdown } from '../data/exercises';
+import { getWorkout } from '../data/workouts';
 import { getCreature } from '../data/creatures';
 import { outfitPalette } from '../data/outfits';
 import { playerSprite } from '../data/characters';
@@ -140,6 +142,8 @@ export default function RouteScreen({ params = {} }) {
     recallSpot('route:session', null) || {
       miles: state.stats.distanceMi,
       steps: state.stats.totalSteps,
+      sets: state.stats.sets,
+      exercises: state.stats.exercises,
       reps: state.stats.reps,
       holdSec: state.stats.holdSec,
       startedAt: Date.now(),
@@ -187,6 +191,14 @@ export default function RouteScreen({ params = {} }) {
   const running = moving || dist.running;
   const sessionMiles = Math.max(0, state.stats.distanceMi - session.current.miles);
   const sessionSteps = Math.max(0, state.stats.totalSteps - session.current.steps);
+  const breakdown = useMemo(
+    () => formatBreakdown(breakdownSince(state.stats.exercises, session.current.exercises, (id) => {
+      const w = getWorkout(id);
+      return w ? w.name : id;
+    })),
+    [state.stats.exercises]
+  );
+  const sessionSets = Math.max(0, state.stats.sets - session.current.sets);
   const sessionReps = Math.max(0, state.stats.reps - session.current.reps);
   const sessionHold = Math.max(0, state.stats.holdSec - session.current.holdSec);
 
@@ -228,6 +240,8 @@ export default function RouteScreen({ params = {} }) {
       seconds={seconds}
       miles={sessionMiles}
       steps={sessionSteps}
+      sets={sessionSets}
+      breakdown={breakdown}
       reps={sessionReps}
       holdSec={sessionHold}
       bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}

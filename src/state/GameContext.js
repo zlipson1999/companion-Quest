@@ -67,9 +67,13 @@ const FRESH = {
     itemsCollected: 0,
     habitLogs: 0,
     habitGoalsHit: 0,
-    // Real exercise done in challenges: repetitions, and seconds held.
+    // Real exercise done: sets completed, repetitions, and seconds held.
+    sets: 0,
     reps: 0,
     holdSec: 0,
+    // Per exercise, so a session can say what it consisted of rather than
+    // only how much of it there was. Routines tally under 'workout:<id>'.
+    exercises: {},
     daysActive: 1,
     streak: 1,
   },
@@ -186,7 +190,7 @@ function reducer(state, action) {
         // Saves written before the Forge Might / Travel Light / Take Root goal
         // set carry the old ids; translate once so nothing downstream has to.
         goalId: migrateGoalId(saved.goalId) || null,
-        stats: { ...FRESH.stats, ...(saved.stats || {}) },
+        stats: { ...FRESH.stats, ...(saved.stats || {}), exercises: { ...((saved.stats || {}).exercises || {}) } },
         bag: { ...(saved.bag || {}) },
         dex: { ...(saved.dex || {}) },
         settings: { ...FRESH.settings, ...(saved.settings || {}) },
@@ -470,17 +474,23 @@ function reducer(state, action) {
     // and then vanished, so nothing in the app could ever tell you how many
     // push-ups you had done — the one number a fitness game should never lose.
     case 'LOG_EXERCISE': {
-      const { kind, target = 0 } = action.payload || {};
+      const { id, kind, target = 0 } = action.payload || {};
       if (target <= 0) return state;
       const reps = kind === 'hold' ? 0 : target;
       const holdSec = kind === 'hold' ? target : 0;
       return {
         ...state,
-        history: remember(state, { reps, holdSec }),
+        history: remember(state, { sets: 1, reps, holdSec }),
         stats: {
           ...state.stats,
+          // One confirmed move is one set, whether it was counted in reps or
+          // held for time.
+          sets: state.stats.sets + 1,
           reps: state.stats.reps + reps,
           holdSec: state.stats.holdSec + holdSec,
+          exercises: id
+            ? { ...state.stats.exercises, [id]: (state.stats.exercises[id] || 0) + target }
+            : state.stats.exercises,
         },
       };
     }
@@ -504,7 +514,15 @@ function reducer(state, action) {
         stats: {
           ...state.stats,
           creditCarry: paid.creditCarry,
+          sets: state.stats.sets + (action.payload.sets || 1),
           workoutsDone: state.stats.workoutsDone + 1,
+          exercises: action.payload.workoutId
+            ? {
+              ...state.stats.exercises,
+              [`workout:${action.payload.workoutId}`]:
+                (state.stats.exercises[`workout:${action.payload.workoutId}`] || 0) + 1,
+            }
+            : state.stats.exercises,
         },
       };
     }

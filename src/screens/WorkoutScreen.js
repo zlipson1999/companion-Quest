@@ -36,7 +36,12 @@ export default function WorkoutScreen({ params = {} }) {
     const gainedXp = Math.round((workout.reward.xp || 0) * mult);
     const beforeLevel = companion.level;
     const afterLevel = levelFromXp(companion.xp + gainedXp);
-    dispatch({ type: 'COMPLETE_WORKOUT', payload: { workoutId: workout.id, reward: workout.reward } });
+    dispatch({
+      type: 'COMPLETE_WORKOUT',
+      // Each line of the routine is a set you did, so a six-part circuit
+      // counts as six rather than as one.
+      payload: { workoutId: workout.id, reward: workout.reward, sets: workout.steps.length },
+    });
     playSfx('heal');
     const lines = [
       { speaker: companion.creature.name, text: workoutComplete() },

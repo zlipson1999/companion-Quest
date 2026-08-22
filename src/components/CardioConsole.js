@@ -48,7 +48,11 @@ export default function CardioConsole({
   miles = 0,
   steps = 0,
   reps = 0,
+  sets = 0,
   holdSec = 0,
+  // A short line of what the session actually consisted of. "42 reps" is a
+  // number; "10 push-ups · 15 squats · 20s plank" is what you did.
+  breakdown,
   bodyWeightLb,
   moving = false,
   note,
@@ -93,16 +97,40 @@ export default function CardioConsole({
         <Readout label="DISTANCE" value={miles.toFixed(2)} unit="mi" big live={moving} />
       </View>
 
+      {/* Three to a row. Five across a phone put four characters under a
+          five-character label and the whole band stopped being readable. */}
       <View style={{ flexDirection: 'row', marginTop: space.sm }}>
         <Readout label="LAPS" value={lapsFor(miles).toFixed(1)} />
         <Readout label="PACE" value={formatPace(pace)} unit="/mi" />
         <Readout label="KCAL" value={String(Math.round(kcal))} />
+      </View>
+
+      {/* The work, as opposed to the walking. Challenges and routines are real
+          sets of real exercises; they used to pay their damage and then vanish
+          without being counted anywhere. */}
+      <View style={{ flexDirection: 'row', marginTop: space.sm }}>
         <Readout label="STEPS" value={steps.toLocaleString()} />
-        {/* What you did that was not walking. Challenges on the trail are real
-            sets of real exercises, and they used to pay their damage and then
-            disappear without being counted anywhere. */}
+        <Readout label="SETS" value={String(sets)} />
         <Readout label="REPS" value={holdSec > 0 && reps === 0 ? `${holdSec}s` : String(reps)} />
       </View>
+
+      {breakdown ? (
+        <View
+          style={{
+            marginTop: space.sm,
+            borderTopColor: tokens.line,
+            borderTopWidth: 2,
+            paddingTop: space.sm,
+          }}
+        >
+          <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ letterSpacing: 1 }}>
+            THIS SESSION
+          </PixelText>
+          <PixelText size="tiny" color={palette.secondary} style={{ marginTop: 5, lineHeight: 14 }}>
+            {breakdown}
+          </PixelText>
+        </View>
+      ) : null}
 
       {/* Which of these the machine actually knows. */}
       <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: space.sm, lineHeight: 13 }}>

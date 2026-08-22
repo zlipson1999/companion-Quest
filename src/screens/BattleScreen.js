@@ -225,7 +225,7 @@ export default function BattleScreen({ params }) {
   const confirmMove = () => {
     const move = getMove(selectedMove);
     // You just did the exercise. Record it before anything else happens to it.
-    dispatch({ type: 'LOG_EXERCISE', payload: { kind: move.kind, target: move.target } });
+    dispatch({ type: 'LOG_EXERCISE', payload: { id: move.id, kind: move.kind, target: move.target } });
     const dmg = move.power + Math.floor((companion.level - 1) * 2);
     const newWildHp = Math.max(0, wildHp - dmg);
     // Choreography: the companion steps INTO the strike, and only then does the

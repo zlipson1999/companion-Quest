@@ -6,7 +6,7 @@
 // the system that piece stands for. That replaces a screen of buttons
 // explaining the systems with a room that demonstrates them.
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { WorldScreen, CompanionStatus, CardioConsole } from '../components';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
@@ -16,6 +16,8 @@ import { recallSpot, rememberSpot } from './placeMemory';
 import { useKeepAwake } from 'expo-keep-awake';
 import useCardio from './useCardio';
 import { DEFAULT_BODY_WEIGHT_LB } from '../state/cardioMaths';
+import { breakdownSince, formatBreakdown } from '../data/exercises';
+import { getWorkout } from '../data/workouts';
 
 // Scoped to the session by being a component: expo's hook cannot be called
 // conditionally, and a phone that sleeps halfway through a run on the deck is
@@ -82,6 +84,8 @@ export default function GymScreen() {
       base: {
         miles: state.stats.distanceMi,
         steps: state.stats.totalSteps,
+        sets: state.stats.sets,
+        exercises: state.stats.exercises,
         reps: state.stats.reps,
         holdSec: state.stats.holdSec,
       },
@@ -140,6 +144,14 @@ export default function GymScreen() {
 
   const sessionMiles = cardio ? Math.max(0, state.stats.distanceMi - cardio.base.miles) : 0;
   const sessionSteps = cardio ? Math.max(0, state.stats.totalSteps - cardio.base.steps) : 0;
+  const breakdown = useMemo(
+    () => formatBreakdown(breakdownSince(state.stats.exercises, (cardio ? cardio.base.exercises : state.stats.exercises), (id) => {
+      const w = getWorkout(id);
+      return w ? w.name : id;
+    })),
+    [state.stats.exercises, cardio]
+  );
+  const sessionSets = cardio ? Math.max(0, state.stats.sets - cardio.base.sets) : 0;
   const sessionReps = cardio ? Math.max(0, state.stats.reps - cardio.base.reps) : 0;
   const sessionHold = cardio ? Math.max(0, state.stats.holdSec - cardio.base.holdSec) : 0;
 
@@ -168,6 +180,8 @@ export default function GymScreen() {
               seconds={seconds}
               miles={sessionMiles}
               steps={sessionSteps}
+              sets={sessionSets}
+              breakdown={breakdown}
               reps={sessionReps}
               holdSec={sessionHold}
               bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}

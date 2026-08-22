@@ -745,12 +745,29 @@ report it in a smaller, different vocabulary. `CardioConsole` takes a `title`
 trail-sign meters underneath), and the stop button is optional because outdoors
 there is no getting off a trail.
 
+**The stand-in step buttons are DEVELOPMENT ONLY.** `showInjector` is gated on
+`__DEV__`. Buttons that add distance you did not walk are the exact thing this
+game is built not to have — real life is the game, there are no walk buttons —
+so they exist to test on a desktop and never reach anybody's phone or the
+published web build. Note the consequence for testing: a release build cannot
+be driven, so an end-to-end check of anything downstream of distance needs a
+throwaway build with the gate lifted, and the gate put back afterwards.
+
 **Exercises are counted.** A challenge move is a real set of a real exercise —
 ten push-ups, a twenty-second plank — and it used to pay its damage and then
 vanish, so nothing in the app could tell you how many push-ups you had ever
 done. That is the one number a fitness game should not lose. `LOG_EXERCISE`
-banks reps and held seconds into `stats` and into the daily history, and the
-console shows the session's REPS beside its distance.
+banks reps, held seconds and SETS into `stats` and into the daily history, and
+tallies each exercise by id in `stats.exercises` (routines under a
+`workout:` prefix, counting times done rather than repetitions of anything).
+
+**The console breaks the session down.** "42 reps" is a number; "20 Push-ups ·
+20s Plank · 15 Squats" is what you did. `breakdownSince` diffs the tally map
+against the session baseline exactly the way distance and reps are diffed, so
+the breakdown costs no extra bookkeeping while you play, and `formatBreakdown`
+knows that a hold is seconds and a routine is a count. Readouts are three to a
+row: five across a phone put four characters under a five-character label and
+the band stopped being readable.
 
 **A session survives a challenge**, which is what made the above worth doing. A
 battle unmounts the trail and `useDistance` restarts from zero with it, so the
