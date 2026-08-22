@@ -1666,6 +1666,30 @@ def hero(facing='down', step=0):
     return c
 
 
+def coach_maple():
+    """Original trail mentor: field jacket, satchel, silver curls, leaf badge."""
+    c = Canvas(48, 64, 'hero')
+    c.shadow(24, 61, 16, 3)
+    c.rect(13, 47, 21, 58, 'body', 0.12); c.rect(27, 47, 35, 58, 'body', 0.12)
+    c.rect(11, 57, 21, 60, 'ink', 0); c.rect(27, 57, 37, 60, 'ink', 0)
+    c.sphere(24, 39, 15, 17, 'leaf', ambient=0.48)
+    c.rect(21, 28, 27, 50, 'belly', 0.74)
+    c.rect(9, 33, 13, 51, 'leaf', 0.28); c.rect(35, 33, 39, 51, 'leaf', 0.28)
+    c.blob(11, 53, 3, 3, 'belly', 0.8); c.blob(37, 53, 3, 3, 'belly', 0.8)
+    c.rect(31, 40, 43, 52, 'body', 0.5)
+    for i in range(15):
+        c.rect(30 + i // 2, 25 + i, 32 + i // 2, 27 + i, 'body', 0.62)
+    c.rect(21, 20, 27, 25, 'belly', 0.5)
+    c.sphere(24, 15, 12, 13, 'belly')
+    c.sphere(24, 8, 13, 8, 'body', ambient=0.58)
+    c.sphere(12, 15, 5, 8, 'body', ambient=0.5); c.sphere(36, 15, 5, 8, 'body', ambient=0.5)
+    c.eye(19, 16, 2.5); c.eye(29, 16, 2.5)
+    c.rect(19, 11, 22, 12, 'body', 0.15); c.rect(27, 11, 30, 12, 'body', 0.15)
+    c.blob(24, 22, 3, 1.2, 'eye', 0.0)
+    c.blob(15, 34, 3, 5, 'body', 0.86); c.rect(15, 36, 16, 41, 'body', 0.28)
+    c.rim('leaf'); c.outline(); return c
+
+
 # =========================================================================
 # ITEMS — 24x24, lit like little objects rather than flat icons.
 # =========================================================================
@@ -2078,6 +2102,7 @@ def build_all():
         add('hero_%s' % facing, hero(facing, 0))
         add('hero_%s_a' % facing, hero(facing, 1))
         add('hero_%s_b' % facing, hero(facing, 3))
+    add('coach_maple', coach_maple())
 
     # items + module icons
     add('item_apple', item_apple()); add('item_water', item_water())
@@ -2193,3 +2218,4 @@ if __name__ == '__main__':
     render_contact_sheet()
     emit_js()
     print('Done.')
+

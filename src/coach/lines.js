@@ -6,7 +6,7 @@ export const COACH = 'Coach';
 
 export const introLines = [
   { speaker: COACH, text: 'Oh! Hello there. I was hoping you\'d come.' },
-  { speaker: COACH, text: 'Welcome to Companion Quest! My name\'s Coach.' },
+  { speaker: COACH, text: 'Welcome, trailkeeper. You can call me Coach.' },
   { speaker: COACH, text: 'This is a world where your real life is the adventure. Every step you take outside... moves you here too.' },
   { speaker: COACH, text: 'There are no fake shortcuts. No "walk" buttons. Your effort is the only magic that works here.' },
   { speaker: COACH, text: 'And you won\'t go alone. A companion is waiting to grow alongside you — cheering every healthy choice you make.' },
@@ -56,12 +56,12 @@ export function pickupLine(itemName) {
 }
 
 export function encounterLine(obstacleName) {
-  return `Look out — a wild ${obstacleName} blocks the path!`;
+  return `The trail shifts — ${obstacleName} is holding the way ahead.`;
 }
 
 export function battleIntro(companionName, obstacleName) {
   return [
-    { speaker: 'Narration', text: `A wild ${obstacleName} appeared!` },
+    { speaker: 'Trail', text: `${obstacleName} gathers across the path.` },
     { speaker: companionName, text: 'Don\'t worry — we beat this kind of thing with real effort. Let\'s move!' },
   ];
 }
@@ -104,18 +104,18 @@ export function levelUpLine(companionName, level) {
 
 export function evolveLines(oldName, newName) {
   return [
-    { speaker: 'Narration', text: 'What\'s this? Something is happening...' },
-    { speaker: 'Narration', text: `${oldName} is evolving!` },
-    { speaker: 'Narration', text: `Congratulations! ${oldName} evolved into ${newName}!` },
+    { speaker: 'Trail', text: `${oldName}'s bond is shining brighter...` },
+    { speaker: 'Trail', text: 'Your shared work is taking a new shape.' },
+    { speaker: 'Trail', text: `${oldName} has grown into ${newName}!` },
     { speaker: newName, text: 'Look how far we\'ve come. And we\'re just getting started!' },
   ];
 }
 
 export function restLines(companionName) {
   return [
-    { speaker: 'Nurse', text: 'Welcome to the Rest Stop! Let\'s get your companion comfortable.' },
-    { speaker: 'Nurse', text: '...' },
-    { speaker: 'Nurse', text: `${companionName} is fully rested! Come back any time.` },
+    { speaker: 'Caretaker', text: 'Welcome to the Hearth. Let\'s make room to recover.' },
+    { speaker: 'Caretaker', text: 'Breathe in. Settle down. Let the trail wait.' },
+    { speaker: 'Caretaker', text: `${companionName}'s resolve is restored. Return whenever you need.` },
   ];
 }
 
@@ -135,12 +135,12 @@ export function workoutComplete() {
 export function wildIntro(activeName, wildName, isCompanion) {
   if (isCompanion) {
     return [
-      { speaker: 'Narration', text: `A wild ${wildName} appeared in the tall grass!` },
-      { speaker: activeName, text: 'Ooh, a possible new friend! Wear it down with real reps, then offer a Bond Token.' },
+      { speaker: 'Trail', text: `${wildName} steps out to meet you.` },
+      { speaker: activeName, text: 'A possible new friend! Build trust through real effort, then offer a Bond Token.' },
     ];
   }
   return [
-    { speaker: 'Narration', text: `A wild ${wildName} blocks the path!` },
+    { speaker: 'Trail', text: `${wildName} gathers across the path.` },
     { speaker: activeName, text: 'A bad-habit type — we clear these with real effort. Let\'s move!' },
   ];
 }
@@ -148,7 +148,7 @@ export function wildIntro(activeName, wildName, isCompanion) {
 export function catchSuccessLines(wildName) {
   return [
     { speaker: 'Narration', text: 'You hold out a Bond Token...' },
-    { speaker: 'Narration', text: `${wildName} decided to join your team!` },
+    { speaker: 'Trail', text: `${wildName} accepts and joins your Circle!` },
     { speaker: wildName, text: 'I\'ll give it my all alongside you!' },
   ];
 }
@@ -158,7 +158,7 @@ export function catchFailLine(wildName) {
 }
 
 export function catchFullLine(wildName) {
-  return `Your team is full, so ${wildName} couldn't join — but it's logged in your Index.`;
+  return `Your Circle has no open place, so ${wildName} can't join yet — the meeting is recorded in your Journal.`;
 }
 
 export function noTokenLine() {
@@ -166,11 +166,11 @@ export function noTokenLine() {
 }
 
 export function companionFledLines(wildName) {
-  return [{ speaker: 'Narration', text: `The wild ${wildName} slipped back into the grass.` }];
+  return [{ speaker: 'Trail', text: `${wildName} turns and disappears down a side path.` }];
 }
 
 export function swapLine(name) {
-  return `Come back! Go, ${name}!`;
+  return `${name}, take the lead with me.`;
 }
 
 // --- Phase 3: life modules (habits) ---
@@ -198,3 +198,4 @@ export function habitStreakLine(days) {
 export function habitsIntro() {
   return 'Your everyday choices count here too. Log them honestly — I only grow from what really happened.';
 }
+

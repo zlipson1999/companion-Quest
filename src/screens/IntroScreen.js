@@ -1,5 +1,5 @@
 // Coach's opening — typed dialogue in the lower pane, a warm welcome scene up
-// top with the original starters waiting to meet you.
+// top with three possible first-bond companions waiting to meet you.
 
 import React from 'react';
 import { View } from 'react-native';
@@ -15,7 +15,7 @@ export default function IntroScreen() {
   const top = (
     <View style={{ flex: 1, backgroundColor: palette.bgAlt, alignItems: 'center', justifyContent: 'center' }}>
       <PixelText size="small" color={palette.secondary}>
-        ~ Welcome ~
+        ~ Trailhead ~
       </PixelText>
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: space.xl }}>
         {STARTER_IDS.map((id) => {
@@ -43,3 +43,4 @@ export default function IntroScreen() {
     </Screen>
   );
 }
+

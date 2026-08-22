@@ -1,4 +1,4 @@
-// The "meet your companion" beat. Reveals the original starter with a little
+// The first-bond ceremony. Reveals the companion whose temperament fits the
 // flourish while Coach introduces them, then heads to the hub.
 
 import React, { useMemo } from 'react';
@@ -20,7 +20,7 @@ export default function PairingScreen({ params }) {
   const top = (
     <View style={{ flex: 1, backgroundColor: palette.bgAlt, alignItems: 'center', justifyContent: 'center' }}>
       <PixelText size="small" color={palette.secondary}>
-        A new friend!
+        First Bond
       </PixelText>
       <View style={{ marginTop: space.lg, alignItems: 'center' }}>
         <PixelSprite spriteKey={companion.sprite} palette={companion.palette} size={120} bob />
@@ -47,3 +47,4 @@ export default function PairingScreen({ params }) {
     </Screen>
   );
 }
+

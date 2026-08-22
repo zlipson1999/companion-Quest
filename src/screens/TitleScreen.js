@@ -1,5 +1,5 @@
-// Title card. Shows the logo, a row of original starters bobbing along the
-// bottom, and either Start (new player) or Continue / New Adventure (returning).
+// Title card. Coach Maple gives the first invitation before the player begins
+// at home; returning players can continue or erase their save.
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
@@ -7,7 +7,6 @@ import { Screen, PixelText, PixelSprite, PixelButton, Window } from '../componen
 import { palette, space } from '../theme';
 import { useGame } from '../state';
 import { useNav } from './navContext';
-import { STARTER_IDS, getCreature } from '../data/creatures';
 
 export default function TitleScreen() {
   const { state, dispatch } = useGame();
@@ -38,7 +37,7 @@ export default function TitleScreen() {
           QUEST
         </PixelText>
         <PixelText size="small" color={palette.windowFill} align="center" style={{ marginTop: space.lg }}>
-          your real life is the adventure
+          real effort shapes a shared journey
         </PixelText>
       </View>
 
@@ -50,31 +49,30 @@ export default function TitleScreen() {
             </PixelText>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.lg }}>
               <PixelButton label="Cancel" tone="plain" sound="cancel" style={{ flex: 1, marginRight: 6 }} onPress={() => setConfirmReset(false)} />
-              <PixelButton label="Erase" tone="danger" style={{ flex: 1, marginLeft: 6 }} onPress={() => { dispatch({ type: 'RESET' }); navigate('intro'); }} />
+              <PixelButton label="Erase" tone="danger" style={{ flex: 1, marginLeft: 6 }} onPress={() => { dispatch({ type: 'RESET' }); navigate('homeIntro'); }} />
             </View>
           </Window>
         ) : hasSave ? (
           <View>
             <PixelButton label="Continue" tone="gold" onPress={() => navigate('hub')} />
-            <PixelButton label="New Adventure" tone="dark" sound="cancel" style={{ marginTop: space.md }} onPress={() => setConfirmReset(true)} />
+            <PixelButton label="Begin Again" tone="dark" sound="cancel" style={{ marginTop: space.md }} onPress={() => setConfirmReset(true)} />
           </View>
         ) : (
           <Animated.View style={{ opacity: blink }}>
-            <PixelButton label="Press Start" tone="primary" onPress={() => navigate('intro')} />
+            <PixelButton label="Enter the Trail" tone="primary" onPress={() => navigate('homeIntro')} />
           </Animated.View>
         )}
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginBottom: space.md }}>
-        {STARTER_IDS.map((id) => {
-          const c = getCreature(id);
-          return (
-            <View key={id} style={{ marginHorizontal: space.md }}>
-              <PixelSprite spriteKey={c.sprite} palette={c.palette} size={64} bob />
-            </View>
-          );
-        })}
+      <View style={{ alignItems: 'center', marginBottom: space.md }}>
+        <PixelSprite spriteKey="coach_maple" size={104} bob />
+        <Window tone="dark" pad={9} style={{ marginTop: 4, maxWidth: 320 }}>
+          <PixelText size="tiny" color={palette.windowFill} align="center" style={{ lineHeight: 14 }}>
+            "Your first lesson begins at your own front door." — Coach Maple
+          </PixelText>
+        </Window>
       </View>
     </Screen>
   );
 }
+

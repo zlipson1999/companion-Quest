@@ -1,10 +1,10 @@
-// Wild encounters found in the Route's tall grass. Two kinds: befriendable
-// companions (catchable) and bad-habit obstacles (cleared only).
+// Trail meetings revealed by movement. Two kinds: companions who may accept a
+// bond invitation and bad-habit obstacles that must be cleared.
 
 import { WILD_COMPANION_IDS, getCreature } from './creatures';
 import { ENCOUNTERS } from './obstacles';
 
-// Encounter stats for wild companions (weaker than your team so catching is
+// Encounter stats for trail companions (tuned so bonding is
 // realistic). xp/bond are the rewards for befriending (or defeating).
 export const WILD_COMPANIONS = {
   sproutle: { hp: 42, xp: 26, bond: 6 },
@@ -32,3 +32,4 @@ export function rollWildEncounter(milestone = 1) {
 }
 
 export default rollWildEncounter;
+

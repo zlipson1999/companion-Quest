@@ -1,6 +1,6 @@
-// DS-style battle. Your ACTIVE companion fights; your real exercises are its
-// attacks. Wild companions can be befriended with a Bond Token once weakened;
-// bad-habit obstacles are cleared. Swap brings in another team member.
+// Exercise challenge. Your active companion channels real exercises into
+// Resolve. Trail companions may accept a Bond Token after trust is built;
+// bad-habit obstacles are cleared. Rotate changes the Circle's lead.
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, View } from 'react-native';
@@ -111,8 +111,8 @@ export default function BattleScreen({ params }) {
   const later = (ms, fn) => timersRef.current.push(setTimeout(fn, ms));
   useEffect(() => () => timersRef.current.forEach(clearTimeout), []);
 
-  // The two sides walk on rather than starting planted: wild from the right,
-  // companion from the left, staggered like the genre expects.
+  // The two sides enter from opposite trail edges, establishing a meeting
+  // rather than reproducing a franchise-signature battle reveal.
   const wildEnter = useRef(new Animated.Value(90)).current;
   const compEnter = useRef(new Animated.Value(-110)).current;
   useEffect(() => {
@@ -336,11 +336,9 @@ export default function BattleScreen({ params }) {
   const holdReady = move && move.kind === 'hold' ? hold <= 0 : true;
   const companionMax = companion.maxHp;
 
-  // Classic battle framing: their plate top-left with the creature opposite it,
-  // your plate bottom-right with your companion opposite that, both standing on
-  // lit discs. The horizon sits high (0.16) so BOTH combatants stand on the
-  // ground plane — lower, and the enemy floats in the sky with a platform
-  // under it.
+  // A balanced field-console composition: both participants receive matched
+  // instruments and share one trail plane. Do not tune this against another
+  // title's diagonal cards or platform layout.
   const stageTone = params.from === 'route' ? 'grass' : 'trail';
 
   const top = (
@@ -426,10 +424,10 @@ export default function BattleScreen({ params }) {
         <View style={{ flexDirection: 'row', marginTop: space.sm }}>
           <PixelButton label="Flee" tone="plain" sound="cancel" style={{ flex: 1, marginRight: 5 }} onPress={flee} />
           {party.members.length > 1 ? (
-            <PixelButton label="Swap" tone="dark" sound="cursor" style={{ flex: 1, marginRight: 5 }} onPress={() => setPhase('swap')} />
+            <PixelButton label="Rotate" tone="dark" sound="cursor" style={{ flex: 1, marginRight: 5 }} onPress={() => setPhase('swap')} />
           ) : null}
           {target.isCompanion ? (
-            <PixelButton label={`Catch (${tokens})`} tone="gold" disabled={catchDisabled} style={{ flex: 1 }} onPress={attemptCatch} />
+            <PixelButton label={`Offer Bond (${tokens})`} tone="gold" disabled={catchDisabled} style={{ flex: 1 }} onPress={attemptCatch} />
           ) : null}
         </View>
       </View>
@@ -438,7 +436,7 @@ export default function BattleScreen({ params }) {
     bottom = (
       <View style={{ flex: 1, padding: space.md }}>
         <PixelText size="tiny" color={palette.windowTextDim} style={{ marginBottom: 6 }}>
-          Send in which companion?
+          Who takes the lead?
         </PixelText>
         <Menu
           tone="cream"
@@ -494,3 +492,4 @@ export default function BattleScreen({ params }) {
     </Screen>
   );
 }
+
