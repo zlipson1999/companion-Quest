@@ -1,12 +1,12 @@
 # Companion Quest
 
-A DS-era creature-companion RPG that turns **real-life healthy behavior** into the
+A wellness adventure that turns **real-life healthy behavior** into the
 game. Walk in real life and your companion moves with you; do real push-ups, squats,
 and planks to overcome obstacles; grow and evolve a friend who believes in you.
 
-It recreates the *look, feel, and soul* of a late-2000s handheld monster-taming RPG —
-dual-pane handheld layout, tile overworld, typewriter dialogue, bordered menus,
-DS-style battles, chiptune audio — using **100% original** creatures, art, and audio.
+Its identity comes from an original trail-and-care world, tactile pixel art,
+typewriter dialogue, bordered field-kit menus, exercise encounters, and original
+chiptune audio — using **100% original** creatures, art, and audio.
 
 > **Core rule:** there are no "walk" buttons. Movement comes only from your phone's real
 > pedometer. Battles are real exercise. The companion grows from real behavior.
@@ -64,13 +64,13 @@ python3 tools/make_audio.py
 - **Real movement = in-game movement.** Your steps become miles (~2000/mi), or tap
   **Start Run** for GPS-tracked outdoor miles (`expo-location`). Distance auto-advances
   you along the trail. No pedometer (desktop/sim)? A dev injector simulates distance.
-- **Tall-grass encounters.** As you move, the grass rolls wild encounters — either a
+- **Trail discoveries.** As you move, the route reveals encounters — either a
   **befriendable companion** or a **bad-habit obstacle** (Sludgewad, the Snooze, ...).
-- **Battle = real exercise.** Your active companion fights; your real push-ups/squats/
-  plank are its attacks. **Catch** a weakened wild companion with a **Bond Token**;
-  **Swap** in another team member; clear obstacles for XP + bond.
-- **Build a team.** Keep your bonded starter and catch up to 6 companions (Pebblepup,
-  Wispurr, Sporelet, wild starters...). Set your active buddy in the **Team** screen.
+- **Challenge = real exercise.** Your active companion helps; your real push-ups,
+  squats, and planks build resolve. **Offer Bond** to a receptive companion;
+  **Rotate** your Circle; clear obstacles for growth + bond.
+- **Build a Circle.** Keep your first bonded companion and befriend companions
+  encountered on the trail. Set your active buddy from the **Circle** screen.
 - **Goal-tuned pacing.** Your chosen goal tunes milestone spacing, encounter cadence,
   and workout XP over the same shared mechanics.
 - Plus: Rest Stop (heals the whole team), Workouts, Status readout, Creature Index,
@@ -101,3 +101,4 @@ runs (guardrail + persona) but won't produce live replies.
 
 Expo (React Native) · expo-sensors (Pedometer) · expo-location (GPS, Phase 1.5) ·
 AsyncStorage · expo-av · @expo-google-fonts/press-start-2p · expo-keep-awake.
+
