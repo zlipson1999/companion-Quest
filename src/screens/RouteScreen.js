@@ -198,9 +198,10 @@ export default function RouteScreen({ params = {} }) {
     })),
     [state.stats.exercises]
   );
-  const sessionSets = Math.max(0, state.stats.sets - session.current.sets);
-  const sessionReps = Math.max(0, state.stats.reps - session.current.reps);
-  const sessionHold = Math.max(0, state.stats.holdSec - session.current.holdSec);
+  // How much bodyweight work this walk contained, as one number. Each challenge
+  // move you confirm is one bout; a routine counts its own. The breakdown below
+  // the console names what they actually were, so the count does not have to.
+  const sessionWorkouts = Math.max(0, state.stats.sets - session.current.sets);
 
   useEffect(() => {
     if (!running) {
@@ -240,10 +241,8 @@ export default function RouteScreen({ params = {} }) {
       seconds={seconds}
       miles={sessionMiles}
       steps={sessionSteps}
-      sets={sessionSets}
+      workouts={sessionWorkouts}
       breakdown={breakdown}
-      reps={sessionReps}
-      holdSec={sessionHold}
       bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}
       moving={running}
       onInject={dist.showInjector ? dist.injectSteps : null}

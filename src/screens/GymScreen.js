@@ -151,9 +151,6 @@ export default function GymScreen() {
     })),
     [state.stats.exercises, cardio]
   );
-  const sessionSets = cardio ? Math.max(0, state.stats.sets - cardio.base.sets) : 0;
-  const sessionReps = cardio ? Math.max(0, state.stats.reps - cardio.base.reps) : 0;
-  const sessionHold = cardio ? Math.max(0, state.stats.holdSec - cardio.base.holdSec) : 0;
 
   return (
     <WorldScreen
@@ -180,10 +177,7 @@ export default function GymScreen() {
               seconds={seconds}
               miles={sessionMiles}
               steps={sessionSteps}
-              sets={sessionSets}
               breakdown={breakdown}
-              reps={sessionReps}
-              holdSec={sessionHold}
               bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}
               moving={moving}
               note={note}
