@@ -88,8 +88,29 @@ const JAILBREAK =
   /\b(ignore|disregard|forget)\b.{0,20}\b(previous|prior|above|earlier|all|the|your)\b|system prompt|your instructions|reveal (your|the)|developer mode|jail\s?break|\bDAN\b|you are now|pretend (to|you|that|we)|role\s?-?play|act as\b|override|bypass/i;
 
 const app = express();
-app.use(cors());
+
+// CORS used to be wide open, which was survivable while the only endpoint was a
+// stateless chat proxy. It now holds people's training logs behind a bearer
+// token, so an allow-list is the default and `*` has to be asked for by name.
+// A native app sends no Origin at all, so no origin is allowed through.
+const ALLOWED = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
+app.use(cors({
+  origin(origin, cb) {
+    if (!origin) return cb(null, true);
+    if (ALLOWED.includes('*') || ALLOWED.includes(origin)) return cb(null, true);
+    return cb(null, false);
+  },
+}));
 app.use(express.json({ limit: '256kb' }));
+
+// Behind a reverse proxy the rate limiter has to be told to trust it, or every
+// request looks like it came from the proxy's own address and one busy player
+// locks out everyone else.
+if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PROXY) || 1);
+
+// The friends API. Kept in its own router because it has nothing to do with the
+// Coach beyond sharing a process — see server/routes.js.
+app.use('/', require('./routes'));
 
 app.get('/health', (_req, res) => res.json({ ok: true, model: MODEL }));
 
