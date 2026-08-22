@@ -1,4 +1,4 @@
-// Title card. Shows the logo, a row of original starters bobbing along the
+// Title card. Shows the logo and the three first-bond companions along the
 // bottom, and either Start (new player) or Continue / New Adventure (returning).
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -38,7 +38,7 @@ export default function TitleScreen() {
           QUEST
         </PixelText>
         <PixelText size="small" color={palette.windowFill} align="center" style={{ marginTop: space.lg }}>
-          your real life is the adventure
+          real effort shapes a shared journey
         </PixelText>
       </View>
 
@@ -56,11 +56,11 @@ export default function TitleScreen() {
         ) : hasSave ? (
           <View>
             <PixelButton label="Continue" tone="gold" onPress={() => navigate('hub')} />
-            <PixelButton label="New Adventure" tone="dark" sound="cancel" style={{ marginTop: space.md }} onPress={() => setConfirmReset(true)} />
+            <PixelButton label="Begin Again" tone="dark" sound="cancel" style={{ marginTop: space.md }} onPress={() => setConfirmReset(true)} />
           </View>
         ) : (
           <Animated.View style={{ opacity: blink }}>
-            <PixelButton label="Press Start" tone="primary" onPress={() => navigate('intro')} />
+            <PixelButton label="Enter the Trail" tone="primary" onPress={() => navigate('intro')} />
           </Animated.View>
         )}
       </View>
@@ -78,3 +78,4 @@ export default function TitleScreen() {
     </Screen>
   );
 }
+
