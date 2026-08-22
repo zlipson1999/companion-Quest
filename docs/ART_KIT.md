@@ -10,6 +10,47 @@ The authored world-material atlas lives in `assets/textures/masters/`.
 `tools/convert_texture_atlas.py` turns its cells into indexed runtime tiles;
 `make_sprites.py` still provides procedural fallbacks if a traced asset is absent.
 
+## People
+
+Characters go through `tools/convert_character.py`, not the creature tracer. The
+creature tool targets a 96x96 box at 24 colours, which is right for a compact
+animal and wrong for a person: a standing figure wastes most of a square canvas
+on air, and 24 colours cannot hold a face, hair and layered clothing at once.
+The character tool takes an explicit `--box WxH`, a wider palette, `--figure N`
+to cut one person out of a lineup card, and closes interior holes left by
+downsampling soft-edged paint.
+
+Two tiers, because one card cannot be both:
+
+- **Portraits** — `traced_portrait_{maple,woman,man,nonbinary}.json`, traced
+  straight off the committed cards at 64x128 (88x128 for Maple, whose gesturing
+  arm widens her crop). These carry the face and are used anywhere the player is
+  shown large and at rest: intro, character creation, the Hall welcome.
+- **Overworld** — authored in `hero()` at 24x32, four facings x three frames,
+  per character. These are *not* downscaled portraits. A realistic 1:3 standing
+  figure downsamples to roughly fifteen pixels of width, which cannot hold a
+  readable face or a walk cycle; what makes the overworld sprite the same person
+  is the palette and the hair silhouette, not a resample.
+
+Each character has a palette spec whose ramps carry fixed roles — `body` is
+clothing, `leaf` is hair, `belly` is skin, `accent` is trim and shoes. Only
+`body` is ever recoloured, by `outfitPalette()`, using the spans exported as
+`SPRITE_RAMPS`. Coach Maple had these crossed (hair drawn on `body`, jacket on
+`leaf`, all on the player's navy palette), which is why she rendered as a
+blue-haired stranger.
+
+Palettes carrying an `accent` ramp run at `CHARACTER_RAMP_STEPS` rather than
+`RAMP_STEPS`, because four ramps do not fit inside the 90-entry sprite alphabet
+at the creature ramp length.
+
+### The guard
+
+`build_all()` fails the build if any `tools/traced_*.json` reaches no sprite.
+`add()` prefers traced art and falls back to the procedural drawing in silence,
+which is how four character cards sat in `assets/characters/` for a release
+while the overworld kept drawing the old placeholder people — and every
+regeneration reported success. Art nothing consumes is now an error.
+
 ## Why tracing at all
 
 The procedural pipeline (`Body`, `Drawn` in `tools/make_sprites.py`) can build a

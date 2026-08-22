@@ -8,12 +8,12 @@ import { playSfx } from '../audio';
 
 const AREAS = {
   bedroom: {
-    name: 'Your Room — Upstairs', cols: 7, rows: 7, spawn: { x: 2, y: 4 }, exit: { x: 5, y: 5 },
+    name: 'Your Room — Upstairs', id: 'home', cols: 7, rows: 7, spawn: { x: 2, y: 4 }, exit: { x: 5, y: 5 },
     grid: ['WWWWWWW', 'WHHHHHW', 'WH...HW', 'WH...HW', 'WH...HW', 'WH###DW', 'WWWWWWW'],
     hint: 'Walk to the stairs by the door.', next: 'downstairs',
   },
   downstairs: {
-    name: 'Your Home — Downstairs', cols: 7, rows: 7, spawn: { x: 5, y: 4 }, exit: { x: 3, y: 5 },
+    name: 'Your Home — Downstairs', id: 'home', cols: 7, rows: 7, spawn: { x: 5, y: 4 }, exit: { x: 3, y: 5 },
     grid: ['WWWWWWW', 'WHHHHHW', 'WH...HW', 'WH...HW', 'WH...HW', 'WH#D#HW', 'WWWWWWW'],
     hint: 'Head through your front door.', next: 'outside',
   },

@@ -20,6 +20,7 @@ export default function PixelSprite({
   lungeDir = { x: 1, y: 0 },
   fainting = false,
   flip = false,
+  accessibilityLabel,
   style,
 }) {
   const sprite = SPRITES[spriteKey];
@@ -107,6 +108,9 @@ export default function PixelSprite({
 
   return (
     <Animated.View
+      accessible={accessibilityLabel ? true : undefined}
+      accessibilityRole={accessibilityLabel ? 'image' : undefined}
+      accessibilityLabel={accessibilityLabel}
       style={[
         {
           width: w,

@@ -23,7 +23,7 @@ instead of guessed at.
 100% original art. Nothing here is traced, copied or derived from anyone else's
 work; the shapes are all built from primitives in this file.
 """
-import os, struct, zlib, json, math
+import os, struct, zlib, json, math, glob
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -105,7 +105,19 @@ def ramp(dark, light, steps=6, gamma=0.82):
         # value and saturation interpolate; hue swings through the base
         v = vd + (vl - vd) * t
         s_ = (sd * SHADOW_SAT) + ((sl * LIGHT_SAT) - (sd * SHADOW_SAT)) * t
-        h = (hd + SHADOW_HUE) + (((hl + LIGHT_HUE) - (hd + SHADOW_HUE)) * t)
+        # Hue is a circle, so it has to travel the short way round. Interpolated
+        # as a plain number, a ramp whose ends straddle red (hue ~350 deg to
+        # ~10 deg) takes the 340-degree detour through cyan rather than the
+        # 20-degree hop
+        # across the wrap — which is why a red-to-coral character ramp came out
+        # purple in the midtones and blue at the top. Greens and blues never
+        # straddle the seam, which is why no creature ever showed it.
+        h0 = hd + SHADOW_HUE
+        h1 = hl + LIGHT_HUE
+        delta = (h1 - h0) % 360.0
+        if delta > 180.0:
+            delta -= 360.0
+        h = h0 + delta * t
         out.append(rgb_to_hex(hsv_to_rgb(h, max(0.0, min(1.0, s_)), max(0.0, min(1.0, v)))))
     return out
 
@@ -129,7 +141,6 @@ PALETTE_SPECS = {
     'snooze':  {'body': ('#2a2650', '#b9b6ee'), 'leaf': ('#413a72', '#d5d2ff'), 'belly': ('#38346a', '#c9c6f7')},
     'ache':    {'body': ('#6b1730', '#ffb0c4'), 'leaf': ('#93253f', '#ffd0dc'), 'belly': ('#7d2038', '#ffc2d2')},
     'couch':   {'body': ('#3f2a17', '#d4a374'), 'leaf': ('#5a3d22', '#e8c49a'), 'belly': ('#4d3520', '#dcb387')},
-    'hero':    {'body': ('#1b2f6b', '#8fb4ff'), 'leaf': ('#8a5a1e', '#ffd98a'), 'belly': ('#8a5636', '#ffd2ad')},
     'item':    {'body': ('#7a1440', '#ff9dc0'), 'leaf': ('#a8801a', '#ffe486'), 'belly': ('#1d6b3a', '#8ef0a8')},
     'rock':    {'body': ('#2f3040', '#c8ccdc'), 'leaf': ('#4a4d63', '#e2e6f2'), 'belly': ('#3a3c4f', '#d4d8e8')},
     'air':     {'body': ('#3f5f7a', '#e8f8ff'), 'leaf': ('#5c7f9c', '#ffffff'), 'belly': ('#4d6e8a', '#f4fcff')},
@@ -145,18 +156,62 @@ PALETTE_SPECS = {
     # through the face rather than a lighter patch of fur.
     'cinder':  {'body': ('#5c1005', '#ff8a3d'), 'leaf': ('#8a1f06', '#ffd45e'), 'belly': ('#7a3418', '#ffc48a')},
     'maels':   {'body': ('#04203f', '#6cc4ff'), 'leaf': ('#0d5c7a', '#9fe8ff'), 'belly': ('#123a5e', '#d0f2ff')},
+
+    # People. One palette per character card, sampled from the committed art in
+    # assets/characters/ rather than invented, so the overworld sprite and the
+    # traced portrait are the same person. The roles are fixed across all four:
+    #   body   = clothing (the only ramp outfitPalette() is allowed to touch)
+    #   leaf   = hair
+    #   belly  = skin
+    #   accent = trim, shoes, and Maple's scarf
+    # 'hero' is kept as the unstyled fallback for any sprite that predates the
+    # per-character split.
+    'hero':    {'body': ('#1b2f6b', '#8fb4ff'), 'leaf': ('#8a5a1e', '#ffd98a'), 'belly': ('#8a5636', '#ffd2ad')},
+    'pc_woman': {
+        'body': ('#1b2138', '#3f7fd6'), 'leaf': ('#2e1a0f', '#a56b45'),
+        'belly': ('#7d4526', '#f7c79a'), 'accent': ('#4a4757', '#f2e1da'),
+    },
+    'pc_man': {
+        'body': ('#1c2c1f', '#6f9a63'), 'leaf': ('#14120a', '#6b4526'),
+        'belly': ('#6d4423', '#f7ddb6'), 'accent': ('#43401f', '#cbb488'),
+    },
+    'pc_nonbinary': {
+        'body': ('#4a1d1e', '#f2836a'), 'leaf': ('#3d2540', '#c79cbd'),
+        'belly': ('#7a3a22', '#f4bd91'), 'accent': ('#5a2728', '#f9ebdd'),
+    },
+    # The Training Hall. Steel for the equipment, warm wood for benches and
+    # trim, rubber for the floor — one indoor material set so the room reads as
+    # a place rather than as a pile of props.
+    'gym': {
+        'body': ('#232833', '#c2cad6'), 'leaf': ('#4a2f18', '#e0b878'),
+        'belly': ('#1e2427', '#7f8d88'), 'accent': ('#123c44', '#5fbfae'),
+    },
+    'coach': {
+        'body': ('#12301f', '#5b9a68'), 'leaf': ('#42423a', '#e2e0d2'),
+        'belly': ('#6b3d20', '#e8b184'), 'accent': ('#8a3b12', '#f2a35c'),
+    },
 }
 
 RAMP_STEPS = 26
 
 
-def build_palette(spec):
-    """Flatten a palette spec into (index list, {(ramp, step): index})."""
+def build_palette(spec, steps=RAMP_STEPS):
+    """Flatten a palette spec into (index list, {(ramp, step): index}).
+
+    `steps` is per-palette because the sprite alphabet holds 90 entries and a
+    four-ramp character palette does not fit at the creature ramp length. People
+    are small on screen and made of flat garment panels, so they lose nothing to
+    a shorter ramp; a creature turning a lit surface needs every step it has.
+    """
     colors = [None]          # 0 is always transparent
     index = {}
-    for name in ('body', 'leaf', 'belly'):
-        steps = ramp(*spec[name], steps=RAMP_STEPS)
-        for i, c in enumerate(steps):
+    # 'accent' is optional and comes last, so a spec without one keeps exactly
+    # the index layout everything else was built against. body stays first
+    # because outfitPalette() recolours that range and nothing else.
+    ramps = ['body', 'leaf', 'belly'] + (['accent'] if 'accent' in spec else [])
+    for name in ramps:
+        band = ramp(*spec[name], steps=steps)
+        for i, c in enumerate(band):
             index[(name, i)] = len(colors)
             colors.append(c)
         # A keyline that is merely the ramp's darkest step reads as a coloured
@@ -165,17 +220,23 @@ def build_palette(spec):
         # surface, not enough to glow. At 0.62 a warm creature still came out
         # ringed in bright red-brown and read as a sticker; 0.80 sits down.
         index[(name, 'line')] = len(colors)
-        colors.append(mix(steps[0], INK, 0.80))
+        colors.append(mix(band[0], INK, 0.80))
     for name, c in (('ink', INK), ('white', WHITE), ('eye', EYE_DARK)):
         index[(name, 0)] = len(colors)
         colors.append(c)
     return colors, index
 
 
+# A palette carrying an 'accent' ramp spends four ramps inside the same 90-entry
+# alphabet, so it runs at a shorter ramp length.
+CHARACTER_RAMP_STEPS = 18
+
 PALETTES = {}
 RAMP_INDEX = {}
+RAMP_LEN = {}
 for _k, _spec in PALETTE_SPECS.items():
-    PALETTES[_k], RAMP_INDEX[_k] = build_palette(_spec)
+    RAMP_LEN[_k] = CHARACTER_RAMP_STEPS if 'accent' in _spec else RAMP_STEPS
+    PALETTES[_k], RAMP_INDEX[_k] = build_palette(_spec, RAMP_LEN[_k])
 
 
 # ----------------------------------------------------------------- canvas ---
@@ -524,6 +585,7 @@ class Canvas:
     # -- output -------------------------------------------------------------
     def resolve(self):
         idx = RAMP_INDEX[self.palette]
+        nsteps = RAMP_LEN[self.palette]
         rows = []
         for y in range(self.h):
             row = ''
@@ -546,7 +608,7 @@ class Canvas:
                     # A flat fill is authored intent — the shade IS the colour
                     # choice. Band it and a tile artist loses half the values
                     # they were picking between, so take the ramp step directly.
-                    step = int(round(sh * (RAMP_STEPS - 1)))
+                    step = int(round(sh * (nsteps - 1)))
                 else:
                     nb = self.bands
                     pos = sh * (nb - 1)
@@ -562,8 +624,8 @@ class Canvas:
                         elif frac >= hi:
                             band += 1
                     band = max(0, min(nb - 1, band))
-                    step = int(round(band * (RAMP_STEPS - 1) / float(nb - 1)))
-                step = max(0, min(RAMP_STEPS - 1, step))
+                    step = int(round(band * (nsteps - 1) / float(nb - 1)))
+                step = max(0, min(nsteps - 1, step))
                 row += DIGITS[idx[(name, step)]]
             rows.append(row)
         return rows
@@ -1595,15 +1657,22 @@ def achefang(pal='ache'):
 HERO_W, HERO_H = 24, 32
 
 
-def hero(facing='down', step=0):
-    """One sprite per facing, and the facings must actually differ.
+def hero(facing='down', step=0, pal='hero', hair='short'):
+    """One overworld sprite per facing, per character.
 
-    The first pass drew the same front-facing figure four times with only the
-    eyes moved, so turning around changed nothing on screen. Up shows the back
-    of the head and no face at all; the profiles narrow the body, show one eye,
-    and put the near arm in front.
+    Two things had to be true at once. The facings must actually differ — the
+    first pass drew the same front-facing figure four times with only the eyes
+    moved, so turning around changed nothing on screen. And the figure has to be
+    the person on the character card, which is what `pal` and `hair` carry: the
+    palette supplies that character's clothing, hair and skin, the hair style
+    supplies their silhouette. A faithful downscale of the card itself is not an
+    option here — a realistic 1:3 standing figure lands on about fifteen pixels
+    of width, which cannot hold a readable face or a walk cycle. The card is
+    traced at portrait size instead; this is its overworld counterpart.
     """
-    c = Canvas(HERO_W, HERO_H, 'hero')
+    c = Canvas(HERO_W, HERO_H, pal)
+    has_accent = 'accent' in PALETTE_SPECS[pal]
+    trim = 'accent' if has_accent else 'belly'
     swing = (0, 2, 0, -2)[step % 4]
     side = facing in ('left', 'right')
     c.shadow(12, 30, 7, 2)
@@ -1614,8 +1683,8 @@ def hero(facing='down', step=0):
         top, sole = 23, 29 + lift
         c.rect(x0, top, x1, sole - 1, 'body', 0.24)
         c.rect(x0, top, x0, sole - 1, 'body', 0.34)          # inner highlight
-        c.rect(x0 - 1, sole, x1 + 1, sole + 1, 'ink', 0)     # shoe
-        c.rect(x0 - 1, sole, x1, sole, 'body', 0.16)         # laces catch light
+        c.rect(x0 - 1, sole, x1 + 1, sole + 1, trim, 0.18)   # shoe
+        c.rect(x0 - 1, sole, x1, sole, trim, 0.72)           # laces catch light
 
     leg(7, 10, max(0, swing))
     leg(13, 16, max(0, -swing))
@@ -1623,6 +1692,13 @@ def hero(facing='down', step=0):
     # body: narrower in profile so the turn reads on silhouette alone
     c.sphere(12, 19, 5.5 if side else 7, 6, 'body')
     c.rect(5 if not side else 7, 24, 19 if not side else 17, 24, 'body', 0.30)   # shirt hem
+    # Jacket trim. Every card has a contrast placket or shoulder stripe, and it
+    # is most of what tells the three characters apart at a glance in the field.
+    if not side:
+        c.rect(11, 15, 13, 24, trim, 0.66)
+    else:
+        c.rect(9 if facing == 'left' else 14, 16, 10 if facing == 'left' else 15, 23, trim, 0.58)
+
     if side:
         # only the near arm is visible, and it swings
         ax = 8 if facing == 'left' else 16
@@ -1641,23 +1717,40 @@ def hero(facing='down', step=0):
     # head
     c.sphere(12, 10, 7.5 if side else 8, 8, 'belly')
 
+    def crown(back):
+        """The hair mass, shaped per character so they differ in silhouette."""
+        if back:
+            c.sphere(12, 10, 8.2, 8, 'leaf', ambient=0.5)
+            c.sphere(12, 13, 5, 3, 'leaf', ambient=0.35)
+        else:
+            c.sphere(12, 5.6, 8.2, 4.8, 'leaf', ambient=0.5)
+            c.rect(4, 5, 20, 6, 'leaf', 0.8)
+        if hair == 'bun':
+            # gathered high and tied off — reads at 24px where loose hair does not
+            c.sphere(12, 2.6, 3.4, 2.6, 'leaf', ambient=0.62)
+            c.rect(10, 4, 14, 4, 'leaf', 0.30)
+        elif hair == 'crop':
+            c.rect(5, 4, 19, 5, 'leaf', 0.42)
+        elif hair == 'swept':
+            c.sphere(14.5, 4.6, 5.6, 2.8, 'leaf', ambient=0.72)
+            c.rect(5, 7, 8, 9, 'leaf', 0.34)                 # shaved-in side
+        elif hair == 'curls':
+            for cx, cy in ((6.5, 6), (10, 4.2), (14, 4.2), (17.5, 6), (8, 8.5), (16, 8.5)):
+                c.sphere(cx, cy, 2.6, 2.4, 'leaf', ambient=0.66)
+
     if facing == 'up':
-        # back of the head: hair covers everything, no face
-        c.sphere(12, 10, 8.2, 8, 'leaf', ambient=0.5)
-        c.sphere(12, 13, 5, 3, 'leaf', ambient=0.35)
+        crown(True)
     else:
-        c.sphere(12, 6.5, 8.2, 5.5, 'leaf', ambient=0.5)
-        c.rect(4, 6, 20, 7, 'leaf', 0.8)
+        crown(False)
         if facing == 'down':
-            c.eye(9, 11, 2)
-            c.eye(15, 11, 2)
-            c.blob(12, 14.5, 1.4, 0.8, 'eye', 0.0)
+            c.eye(9.5, 11, 1.4)
+            c.eye(14.5, 11, 1.4)
         elif facing == 'left':
-            c.eye(8, 11, 2)
+            c.eye(8.5, 11, 1.4)
             c.blob(5.5, 12, 1.6, 2.2, 'belly', 0.9)      # nose in profile
             c.sphere(16, 8, 4, 5, 'leaf', ambient=0.4)   # hair sweeps back
         else:
-            c.eye(16, 11, 2)
+            c.eye(15.5, 11, 1.4)
             c.blob(18.5, 12, 1.6, 2.2, 'belly', 0.9)
             c.sphere(8, 8, 4, 5, 'leaf', ambient=0.4)
 
@@ -1667,26 +1760,45 @@ def hero(facing='down', step=0):
 
 
 def coach_maple():
-    """Original trail mentor: field jacket, satchel, silver curls, leaf badge."""
-    c = Canvas(48, 64, 'hero')
-    c.shadow(24, 61, 16, 3)
-    c.rect(13, 47, 21, 58, 'body', 0.12); c.rect(27, 47, 35, 58, 'body', 0.12)
-    c.rect(11, 57, 21, 60, 'ink', 0); c.rect(27, 57, 37, 60, 'ink', 0)
-    c.sphere(24, 39, 15, 17, 'leaf', ambient=0.48)
-    c.rect(21, 28, 27, 50, 'belly', 0.74)
-    c.rect(9, 33, 13, 51, 'leaf', 0.28); c.rect(35, 33, 39, 51, 'leaf', 0.28)
-    c.blob(11, 53, 3, 3, 'belly', 0.8); c.blob(37, 53, 3, 3, 'belly', 0.8)
-    c.rect(31, 40, 43, 52, 'body', 0.5)
-    for i in range(15):
-        c.rect(30 + i // 2, 25 + i, 32 + i // 2, 27 + i, 'body', 0.62)
-    c.rect(21, 20, 27, 25, 'belly', 0.5)
-    c.sphere(24, 15, 12, 13, 'belly')
-    c.sphere(24, 8, 13, 8, 'body', ambient=0.58)
-    c.sphere(12, 15, 5, 8, 'body', ambient=0.5); c.sphere(36, 15, 5, 8, 'body', ambient=0.5)
-    c.eye(19, 16, 2.5); c.eye(29, 16, 2.5)
-    c.rect(19, 11, 22, 12, 'body', 0.15); c.rect(27, 11, 30, 12, 'body', 0.15)
-    c.blob(24, 22, 3, 1.2, 'eye', 0.0)
-    c.blob(15, 34, 3, 5, 'body', 0.86); c.rect(15, 36, 16, 41, 'body', 0.28)
+    """Trail mentor: silver curls, green field jacket, orange scarf, satchel.
+
+    The ramps used to be crossed here — hair was drawn on 'body' and the jacket
+    on 'leaf', and since this ran on the player's navy 'hero' palette it put a
+    blue-haired stranger on the title screen. On the 'coach' palette the roles
+    are the same as every other person: body is the jacket, leaf is the hair,
+    belly is skin, accent is the scarf.
+
+    Draw order matters as much as colour. The head is laid down before the
+    scarf, because a face sphere wide enough to hold two eyes also covers the
+    collar, and painting it last wiped the scarf off her neck entirely.
+    """
+    c = Canvas(48, 64, 'coach')
+    c.shadow(24, 61, 15, 3)
+
+    # legs and shoes
+    c.rect(15, 44, 22, 57, 'body', 0.10); c.rect(26, 44, 33, 57, 'body', 0.10)
+    c.rect(13, 57, 22, 60, 'accent', 0.08); c.rect(26, 57, 35, 60, 'accent', 0.08)
+
+    # jacket. Head is roughly a quarter of the figure, not a third — at the old
+    # radius she read as a bobblehead next to her own portrait.
+    c.sphere(24, 36, 12, 13, 'body', ambient=0.48)
+    c.rect(11, 28, 15, 46, 'body', 0.26); c.rect(33, 28, 37, 46, 'body', 0.26)   # sleeves
+    c.blob(12, 47, 2.6, 2.8, 'belly', 0.80); c.blob(36, 47, 2.6, 2.8, 'belly', 0.80)
+    c.rect(31, 34, 41, 45, 'body', 0.44)                                          # satchel
+    for i in range(12):
+        c.rect(29 + i // 2, 24 + i, 31 + i // 2, 26 + i, 'body', 0.58)            # strap
+    c.rect(22, 26, 26, 42, 'accent', 0.58)                                        # open placket
+    c.blob(17, 33, 2.4, 3.4, 'accent', 0.86)                                      # leaf badge
+
+    # head, then the collar that sits on top of it
+    c.sphere(24, 14, 9, 9.5, 'belly')
+    for cx, cy in ((15, 9), (19, 5.4), (24, 4.4), (29, 5.4), (33, 9), (14, 15), (34, 15)):
+        c.sphere(cx, cy, 4.4, 3.8, 'leaf', ambient=0.62)
+    c.eye(20, 14, 1.9); c.eye(28, 14, 1.9)
+    c.blob(24, 18.5, 1.7, 0.7, 'eye', 0.0)                                        # smile
+    c.rect(20, 22, 28, 26, 'accent', 0.80)                                        # scarf
+    c.rect(17, 23, 31, 25, 'accent', 0.70)
+
     c.rim('leaf'); c.outline(); return c
 
 
@@ -2020,6 +2132,194 @@ def tile_door(pal):
     return c
 
 
+# -------------------------------------------------------------------------
+# Training Hall interior. Equipment is drawn from the same lit primitives as
+# everything else so the room does not read as icons pasted onto a floor: each
+# piece gets a contact shadow, a lit top-left face and a darker right face.
+# -------------------------------------------------------------------------
+def _gym_floor(variant=0):
+    """Rubber matting. Seamed into panels so the floor shows its own grid
+    instead of borrowing the tile grid."""
+    c = tile('gym')
+    mottle(c, 'belly', 0.52, 0.05, 41 + variant, cell=2)
+    c.rect(0, 0, 15, 0, 'belly', 0.40)                       # panel seam
+    c.rect(0, 0, 0, 15, 'belly', 0.40)
+    c.rect(1, 1, 15, 1, 'belly', 0.60)                       # light catching the lip
+    if variant:
+        for k in range(3, 14, 4):
+            c.put(k, 8, 'belly', 0.44)
+    return c
+
+
+def tile_gym_floor(variant=0):
+    return _gym_floor(variant)
+
+
+def tile_gym_mat():
+    """A bordered training mat — where Resolve work happens."""
+    c = _gym_floor(0)
+    c.rect(1, 1, 14, 14, 'accent', 0.26)                     # mat body
+    c.rect(2, 2, 13, 13, 'accent', 0.44)
+    c.rect(2, 2, 13, 2, 'accent', 0.60)                      # lit top edge
+    c.rect(2, 2, 2, 13, 'accent', 0.54)
+    c.rect(13, 3, 13, 13, 'accent', 0.20)                    # shaded right edge
+    c.rect(3, 13, 13, 13, 'accent', 0.20)
+    return c
+
+
+def tile_gym_wall():
+    c = tile('gym')
+    mottle(c, 'body', 0.30, 0.03, 47, cell=4)
+    c.rect(0, 12, 15, 13, 'leaf', 0.34)                      # dado rail
+    c.rect(0, 12, 15, 12, 'leaf', 0.52)
+    c.rect(0, 14, 15, 15, 'body', 0.20)                      # skirting in shadow
+    return c
+
+
+def tile_home_floor(variant=0):
+    """Interior floorboards. Rooms used to fall back to the grass tile, so the
+    bedroom and the front room were carpeted in lawn."""
+    c = tile('couch')
+    mottle(c, 'body', 0.56, 0.05, 61 + variant, cell=2)
+    run = 5 if variant else 4
+    for by in range(0, 16, run):
+        c.rect(0, by, 15, by, 'body', 0.36)                  # board seam
+        c.rect(0, by + 1, 15, by + 1, 'body', 0.70)          # lit lip below it
+    stagger = 0 if variant == 0 else 6
+    for bx in range((stagger + 7) % 16, 16, 11):             # butt joints
+        c.rect(bx, 0, bx, 15, 'body', 0.40)
+    return c
+
+
+def tile_gym_wall_side():
+    """Left/right wall. The dado rail is horizontal, so tiling the front wall
+    down a column stacked it into a ladder; the side run gets a pilaster
+    instead, which repeats without reading as a repeat."""
+    c = tile('gym')
+    mottle(c, 'body', 0.30, 0.03, 47, cell=4)
+    c.rect(5, 0, 7, 15, 'body', 0.40)                        # pilaster
+    c.rect(5, 0, 5, 15, 'body', 0.56)                        # lit edge
+    c.rect(7, 0, 7, 15, 'body', 0.20)                        # shaded edge
+    return c
+
+
+def tile_gym_mirror():
+    c = tile_gym_wall()
+    c.rect(1, 1, 14, 11, 'body', 0.18)                       # frame
+    c.rect(2, 2, 13, 10, 'body', 0.66)                       # glass
+    for k in range(6):                                        # diagonal glint
+        c.put(3 + k, 9 - k, 'body', 0.90)
+        c.put(4 + k, 9 - k, 'body', 0.78)
+    c.rect(2, 2, 13, 2, 'body', 0.80)
+    return c
+
+
+def tile_rack_barbell():
+    """Loaded bar on an upright rack — the silhouette people recognise first."""
+    c = _gym_floor(0)
+    c.rect(1, 4, 3, 15, 'body', 0.26); c.rect(12, 4, 14, 15, 'body', 0.26)   # uprights
+    c.rect(1, 4, 1, 15, 'body', 0.44); c.rect(12, 4, 12, 15, 'body', 0.44)   # lit faces
+    c.rect(2, 6, 13, 7, 'body', 0.62)                                        # the bar
+    c.rect(2, 6, 13, 6, 'body', 0.82)
+    for cx in (4, 11):                                                       # plates
+        c.rect(cx - 1, 3, cx + 1, 10, 'body', 0.20)
+        c.rect(cx - 1, 3, cx - 1, 10, 'body', 0.38)
+        c.rect(cx, 4, cx, 9, 'leaf', 0.44)
+    c.rect(0, 15, 15, 15, 'ink', 0)                                          # contact shadow
+    return c
+
+
+def tile_rack_dumbbell():
+    """Two-tier rack. Pairs get smaller left to right so it reads as a set."""
+    c = _gym_floor(0)
+    c.rect(0, 6, 15, 7, 'body', 0.30)                                        # shelves
+    c.rect(0, 11, 15, 12, 'body', 0.30)
+    c.rect(0, 6, 15, 6, 'body', 0.48); c.rect(0, 11, 15, 11, 'body', 0.48)
+    c.rect(0, 13, 1, 15, 'body', 0.24); c.rect(14, 13, 15, 15, 'body', 0.24)  # legs
+    for row, top in ((0, 3), (1, 8)):
+        for i, cx in enumerate((3, 7, 11)):
+            r = 2 - i * 0 + (1 if row == 0 else 0)
+            c.rect(cx - 1, top, cx + 1, top + 2, 'body', 0.20)               # bells
+            c.rect(cx, top + 1, cx, top + 1, 'body', 0.56)                   # handle
+            c.put(cx - 1, top, 'body', 0.40)
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def tile_machine():
+    """Cable/selectorised stack: column, pulley, weight stack, seat pad."""
+    c = _gym_floor(0)
+    c.rect(2, 1, 6, 15, 'body', 0.24)                                        # stack housing
+    c.rect(2, 1, 2, 15, 'body', 0.42)                                        # lit edge
+    for k in range(3, 14, 2):                                                # the plates
+        c.rect(3, k, 5, k, 'body', 0.56)
+        c.rect(3, k + 1, 5, k + 1, 'body', 0.30)
+    c.rect(8, 1, 9, 12, 'body', 0.36)                                        # upright
+    c.rect(8, 1, 8, 12, 'body', 0.54)
+    c.rect(6, 2, 12, 3, 'body', 0.46)                                        # top arm
+    c.put(12, 4, 'body', 0.70); c.put(12, 5, 'body', 0.70)                   # cable
+    c.rect(10, 9, 15, 11, 'leaf', 0.40)                                      # seat pad
+    c.rect(10, 9, 15, 9, 'leaf', 0.58)
+    c.rect(11, 12, 12, 15, 'body', 0.26)                                     # seat post
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def tile_treadmill():
+    """Deck, belt and console — the cardio corner."""
+    c = _gym_floor(0)
+    c.rect(2, 6, 13, 14, 'body', 0.26)                                       # deck
+    c.rect(3, 7, 12, 13, 'belly', 0.30)                                      # belt
+    for k in range(8, 13, 2):
+        c.rect(3, k, 12, k, 'belly', 0.44)                                   # belt slats
+    c.rect(2, 6, 13, 6, 'body', 0.48)                                        # lit deck lip
+    c.rect(3, 1, 12, 2, 'body', 0.40)                                        # console
+    c.rect(3, 1, 12, 1, 'body', 0.62)
+    c.rect(5, 2, 10, 2, 'leaf', 0.72)                                        # readout
+    c.rect(3, 3, 3, 5, 'body', 0.34); c.rect(12, 3, 12, 5, 'body', 0.34)     # uprights
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def tile_bench():
+    """Flat bench, seen from above-front: pad, gap, and two feet."""
+    c = _gym_floor(0)
+    c.rect(3, 4, 12, 10, 'leaf', 0.32)                                       # pad
+    c.rect(3, 4, 12, 4, 'leaf', 0.54)                                        # lit top
+    c.rect(3, 4, 3, 10, 'leaf', 0.46)
+    c.rect(12, 5, 12, 10, 'leaf', 0.20)                                      # shaded side
+    c.rect(4, 11, 11, 11, 'body', 0.22)                                      # frame
+    c.rect(4, 12, 5, 14, 'body', 0.30); c.rect(10, 12, 11, 14, 'body', 0.30) # feet
+    c.rect(2, 15, 13, 15, 'ink', 0)
+    return c
+
+
+def tile_water_station():
+    """Cooler and cups. Hydration is a module, so it gets a landmark."""
+    c = _gym_floor(0)
+    c.rect(4, 2, 11, 6, 'body', 0.60)                                        # bottle
+    c.rect(4, 2, 11, 2, 'body', 0.82)
+    c.rect(5, 3, 10, 5, 'belly', 0.72)                                       # water
+    c.rect(3, 7, 12, 14, 'body', 0.28)                                       # cabinet
+    c.rect(3, 7, 3, 14, 'body', 0.44)
+    c.rect(6, 9, 9, 10, 'body', 0.16)                                        # spout recess
+    c.put(7, 11, 'leaf', 0.66); c.put(8, 11, 'leaf', 0.66)                   # taps
+    c.rect(2, 15, 13, 15, 'ink', 0)
+    return c
+
+
+def tile_gym_exit():
+    """The way back out to Maple Lane."""
+    c = tile_gym_wall()
+    c.rect(3, 2, 12, 15, 'leaf', 0.22)                       # frame
+    c.rect(4, 3, 11, 15, 'leaf', 0.44)                       # door face
+    c.rect(4, 3, 4, 15, 'leaf', 0.60)                        # lit edge
+    c.rect(5, 5, 10, 9, 'leaf', 0.30)                        # window panel
+    c.rect(6, 6, 9, 8, 'body', 0.72)
+    c.put(10, 11, 'body', 0.86)                              # handle
+    return c
+
+
 def tile_gate():
     """The way out of town. Two stone posts either side of the path, so it reads
     as a gap you walk through rather than a decoration."""
@@ -2051,6 +2351,16 @@ def tile_gate():
 # =========================================================================
 TRACED_DIR = HERE
 
+# Must match TRACE_ALPHABET in tools/convert_character.py. A..Z occupy the same
+# first 26 positions the creature tracer has always used, so every traced_*.json
+# written before the lowercase/digit tail existed still decodes identically.
+TRACE_ALPHABET = (
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    'abcdefghijklmnopqrstuvwxyz'
+    '0123456789'
+)
+TRACE_INDEX = {ch: i + 1 for i, ch in enumerate(TRACE_ALPHABET)}
+
 
 def load_traced(name):
     path = os.path.join(TRACED_DIR, 'traced_%s.json' % name)
@@ -2059,13 +2369,14 @@ def load_traced(name):
     with open(path) as f:
         blob = json.load(f)
     pal = ['transparent'] + list(blob['palette'])
-    # Re-index from the converter's A.. alphabet into the sprite alphabet, with
-    # 0 reserved for transparent as everywhere else.
+    # Re-index from the converter's alphabet into the sprite alphabet, with 0
+    # reserved for transparent as everywhere else. A character card needs more
+    # than the 26 colours a positional ord() could reach, hence the table.
     grid = []
     for row in blob['rows']:
         out = ''
         for ch in row:
-            out += TRANSPARENT if ch == '.' else DIGITS[ord(ch) - 64]
+            out += TRANSPARENT if ch == '.' else DIGITS[TRACE_INDEX[ch]]
         grid.append(out)
     return {'palette': pal, 'grid': grid}
 
@@ -2100,12 +2411,32 @@ def build_all():
     add('sludgewad', sludgewad()); add('snoozeghoul', snoozeghoul())
     add('couchlurk', couchlurk()); add('achefang', achefang())
 
-    # hero: four facings, idle + two step frames
-    for facing in ('down', 'up', 'left', 'right'):
-        add('hero_%s' % facing, hero(facing, 0))
-        add('hero_%s_a' % facing, hero(facing, 1))
-        add('hero_%s_b' % facing, hero(facing, 3))
+    # People. Each player character gets its own four facings x three frames on
+    # its own palette, so picking a character changes who walks around rather
+    # than just which colour the same body is painted. hero_* stays as the
+    # unstyled fallback for any save or screen that has no character yet.
+    for who, pal, hair in (
+        (None, 'hero', 'short'),
+        ('woman', 'pc_woman', 'bun'),
+        ('man', 'pc_man', 'crop'),
+        ('nonbinary', 'pc_nonbinary', 'swept'),
+    ):
+        prefix = 'hero' if who is None else 'hero_%s' % who
+        for facing in ('down', 'up', 'left', 'right'):
+            add('%s_%s' % (prefix, facing), hero(facing, 0, pal, hair))
+            add('%s_%s_a' % (prefix, facing), hero(facing, 1, pal, hair))
+            add('%s_%s_b' % (prefix, facing), hero(facing, 3, pal, hair))
     add('coach_maple', coach_maple())
+
+    # Portraits traced straight off the character cards, for the screens that
+    # show a face big enough to read one.
+    for name in ('portrait_maple', 'portrait_woman', 'portrait_man', 'portrait_nonbinary'):
+        traced = load_traced(name)
+        if not traced:
+            raise SystemExit('missing tools/traced_%s.json — run tools/convert_character.py' % name)
+        key = 'art_' + name
+        traced_palettes[key] = traced['palette']
+        s[name] = {'palette': key, 'grid': traced['grid']}
 
     # items + module icons
     add('item_apple', item_apple()); add('item_water', item_water())
@@ -2125,6 +2456,35 @@ def build_all():
     add('tile_roof_rest', tile_roof('ache')); add('tile_roof_gym', tile_roof('hero'))
     add('tile_wall', tile_wall('couch')); add('tile_window', tile_window('couch'))
     add('tile_door', tile_door('couch')); add('tile_gate', tile_gate())
+
+    # Training Hall interior
+    add('tile_gym_floor', tile_gym_floor(0)); add('tile_gym_floor_b', tile_gym_floor(1))
+    add('tile_gym_mat', tile_gym_mat()); add('tile_gym_wall', tile_gym_wall())
+    add('tile_gym_wall_side', tile_gym_wall_side())
+    add('tile_home_floor', tile_home_floor(0)); add('tile_home_floor_b', tile_home_floor(1))
+    add('tile_gym_mirror', tile_gym_mirror()); add('tile_gym_exit', tile_gym_exit())
+    add('tile_rack_barbell', tile_rack_barbell()); add('tile_rack_dumbbell', tile_rack_dumbbell())
+    add('tile_machine', tile_machine()); add('tile_treadmill', tile_treadmill())
+    add('tile_bench', tile_bench()); add('tile_water_station', tile_water_station())
+    # Every committed piece of traced art must actually reach a sprite.
+    #
+    # add() prefers traced_<name>.json and silently falls back to the procedural
+    # drawing when there isn't one. That silence is how four character cards sat
+    # in assets/characters/ for a release while the overworld kept rendering the
+    # old placeholder people, and every regeneration reported success. Art that
+    # nothing consumes is now a build failure rather than a surprise on a phone.
+    consumed = {p for p in traced_palettes}
+    orphans = sorted(
+        os.path.basename(path)
+        for path in glob.glob(os.path.join(TRACED_DIR, 'traced_*.json'))
+        if 'art_' + os.path.basename(path)[len('traced_'):-len('.json')] not in consumed
+    )
+    if orphans:
+        raise SystemExit(
+            'traced art that no sprite uses: %s\n'
+            'Register it in build_all() or delete it.' % ', '.join(orphans)
+        )
+
     PALETTES.update(traced_palettes)
     return s
 
@@ -2207,6 +2567,20 @@ def emit_js():
             '// Palettes live here too, so nothing has to be mirrored by hand.\n\n')
     body += 'export const SPRITE_PALETTES = ' + json.dumps(
         {k: ['transparent' if c is None else c for c in v] for k, v in PALETTES.items()}, indent=2) + ';\n\n'
+    # Where each ramp starts and ends inside the flat palette. The client needs
+    # this to recolour one ramp and leave the rest alone — an outfit swap that
+    # assumed "indices 1..26 are clothing" was only ever right for the 26-step
+    # palettes, and silently repainted hair and skin on any other length.
+    ramp_spans = {}
+    for key, spec in PALETTE_SPECS.items():
+        spans = {}
+        for name in ('body', 'leaf', 'belly', 'accent'):
+            if name not in spec:
+                continue
+            first = RAMP_INDEX[key][(name, 0)]
+            spans[name] = [first, first + RAMP_LEN[key] - 1]
+        ramp_spans[key] = spans
+    body += 'export const SPRITE_RAMPS = ' + json.dumps(ramp_spans, indent=2) + ';\n\n'
     body += 'export const SPRITES = ' + json.dumps(SPRITES, indent=2) + ';\n\nexport default SPRITES;\n'
     out = os.path.join(ROOT, 'src', 'data', 'sprites.js')
     with open(out, 'w') as f:

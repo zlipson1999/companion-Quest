@@ -2,12 +2,13 @@
 // Companion discovery belongs to Coach Maple's in-world lesson at the Hall.
 
 import React from 'react';
-import { Image, View } from 'react-native';
-import { DualPane, DialogueBox, PixelText, Screen } from '../components';
+import { View } from 'react-native';
+import { DualPane, DialogueBox, PixelText, PixelSprite, Screen } from '../components';
 import { palette, space } from '../theme';
 import { useNav } from './navContext';
 import { introLines } from '../coach';
 import { useGame } from '../state';
+import { COACH_PORTRAIT } from '../data/characters';
 
 export default function IntroScreen() {
   const { navigate } = useNav();
@@ -16,11 +17,11 @@ export default function IntroScreen() {
   const top = (
     <View style={{ flex: 1, backgroundColor: palette.bgAlt, alignItems: 'center', justifyContent: 'center' }}>
       <PixelText size="small" color={palette.secondary}>WELCOME</PixelText>
-      <Image
-        source={require('../../assets/characters/coach-maple-dialogue-v1.png')}
-        resizeMode="contain"
+      <PixelSprite
+        spriteKey={COACH_PORTRAIT}
+        size={144}
         accessibilityLabel="Coach Maple, your trail mentor"
-        style={{ width: '88%', height: 230, marginVertical: space.xs }}
+        style={{ marginVertical: space.xs }}
       />
       <PixelText size="tiny" color={palette.windowFill} align="center" style={{ marginTop: space.md, lineHeight: 15 }}>
         Your real effort shapes this world.

@@ -4,8 +4,8 @@
 
 import React, { useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Screen, DualPane, TileMap, Dpad, Window, Menu, PixelText, PixelSprite } from '../components';
-import { palette, space, screen } from '../theme';
+import { Screen, DualPane, TileMap, Dpad, Window, Menu, PixelText, PixelSprite, ObjectiveRibbon } from '../components';
+import { palette, space, screen, tokens } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
@@ -39,11 +39,22 @@ export default function HubScreen() {
     }
   };
 
+  const objective = !companion
+    ? 'Meet Coach Maple inside the Training Hall'
+    : state.stats.distanceMi < 0.1
+      ? 'Head out through the north gate and walk Route 1'
+      : 'Train at the Hall, or walk Route 1 for more distance';
+
   const tileSize = Math.floor(Math.min(screen.width - 16, screen.height * 0.44) / HUB.cols);
 
   const top = (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.grassDark }}>
       <View style={{ position: 'absolute', top: space.sm, left: space.sm, right: space.sm, zIndex: 5 }}>
+        <ObjectiveRibbon
+          place="Maple Lane"
+          objective={objective}
+          style={{ marginBottom: space.sm }}
+        />
         <Window tone="dark" pad={8}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {companion ? <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={30} /> : null}
@@ -89,6 +100,7 @@ export default function HubScreen() {
           options={[
             { label: 'Route 1', value: 'route', sublabel: 'real miles' },
             { label: 'Train', value: 'workout', sublabel: 'quick sets' },
+            { label: 'Training Hall', value: 'gym', sublabel: 'the gym floor' },
             { label: 'Forge', value: 'forge', sublabel: 'your plans' },
             { label: 'Go Home', value: 'rest', sublabel: 'sleep upstairs' },
             { label: 'Team', value: 'party', sublabel: 'companions' },

@@ -285,6 +285,40 @@ accumulating, so the daily reward cap must not pro-rate (that would pay *less*
 for a longer night). Instead a `paid` ledger pays the difference, so correcting
 an entry upward tops you up and downward pays nothing without clawing back.
 
+## Phase 7 — DONE: the characters are the cards, and the gym has an inside
+
+**Characters.** The committed cards in `assets/characters/` were shown as flat
+`<Image>` on three screens while the world drew 2023-era placeholder sprites, so
+you met a painted Coach Maple in the intro and a blue-haired stranger in the
+overworld. `tools/convert_character.py` now traces the cards into portraits, and
+`hero()` draws a matching 24x32 overworld set per character. `playerGender` was
+stored, migrated and never read — `src/data/characters.js` is the single
+resolver every screen goes through now. See `docs/ART_KIT.md` for the two-tier
+split and why the overworld sprite is authored rather than downsampled.
+
+Two bugs fell out of it, both in `tools/make_sprites.py`:
+- `ramp()` interpolated hue as a plain number, so a ramp straddling red took the
+  340-degree detour through cyan. That is why a red-to-coral character came out
+  purple in the midtones. Fixed wrap-aware; only the wrap-crossing palettes
+  changed, which also repaired `spore` (Sporelet / Mycobloom / Canopore).
+- `build_all()` now **fails** if any traced art reaches no sprite. The silent
+  fallback in `add()` is what let the cards go unused for a release.
+
+**Training Hall.** The gym door used to jump straight to the exercise list. It
+is a room now (`GYM` in `src/data/maps.js`, `src/screens/GymScreen.js`) with
+barbell and dumbbell racks, cable machines, a treadmill, bench, mirrors, water
+station and training mats. Walking into a station is how you use it — the
+equipment *is* the menu, so the room demonstrates the systems the tutorial used
+to explain in a wall of text. Interiors also stopped being carpeted in lawn:
+maps declare an `id` and `FLOOR_BY_MAP` gives them floorboards or rubber matting.
+
+**UI system.** `src/theme/tokens.js` holds the Trailkeeper ramps (ink, paper,
+grove, trail, sky, ember), a 4px spacing scale with a 44px touch minimum, and
+three motion speeds. `FieldCard`, `TrailAction` and `ObjectiveRibbon` are the
+shared primitives. This is **additive** — `palette` still works and still means
+what it did. Hub and the Hall are converted; the remaining screens still use
+`Window`/`PixelButton` and are the next pass.
+
 ## Phase 6 — ideas, not committed
 
 Reading / chores / social check-in modules; per-movement progression charts off
