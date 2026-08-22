@@ -796,6 +796,66 @@ session baseline is taken from the LIFETIME stats (which persist) and parked in
 Sludgewad, do ten push-ups, come back — the console still reads 0.20 mi, and
 now reads the reps too. "Back to Maple Lane" is what ends the walk.
 
+## Phase 14 — DONE: the audit, and making drift catchable everywhere
+
+An audit of every file against the code, prompted by one question: are all 18
+companions really in there? They are — 6 families of 3 stages, every one
+traced, plus 4 procedural obstacles. But asking found a bug and a pile of
+stale prose behind it.
+
+**The Creature Index could never show a final evolution.** `buildOrder()`
+followed `evolvesTo` exactly ONCE, so it listed 13 of the 22 — three starters
+plus one evolution each, three base forms with none, four obstacles. Worse
+than a short list, because `EVOLVE` stamps `dex[groveheart] = 'owned'`: the
+save recorded a companion the page could never print. `familyChain()` and
+`INDEX_ORDER` live in `creatures.js` now (order belongs to the roster, not to
+the screen showing it) and the module **throws at import** if a creature
+reaches no entry — the same guard `build_all()` uses on unused art and
+`maps.js` uses on its grids.
+
+**Four user-visible copy bugs.** The spar screen still said "MAPLE TRAINING
+HALL"; the Coach told anyone with no plans to go to "Town -> Forge -> New
+Plan", a menu entry deleted when the gym BECAME the menu; Route 1's exit said
+"Back to Town" long after the town became Maple Lane. `PLACE_LABELS` moved to
+`navContext` so a place has one name (Router imports every screen, so a screen
+importing Router back would close a cycle).
+
+**The Status screen now shows the exercise.** Reps, sets and held seconds were
+banked by `LOG_EXERCISE` and only ever surfaced on the session console, which
+resets when you go home — so "how many push-ups have I ever done" had no
+answer. Four cells plus a full breakdown, running the console's own diff
+against a zero baseline.
+
+**Dead code, deleted.** `state/usePedometer.js` mattered most: superseded by
+`useDistance`, and it carried `showInjector: available === false` with **no
+`__DEV__` gate** — a live copy of exactly the rule this project forbids, one
+import away from a release build. Also `screens/RestScreen.js` (never
+registered), `data/index.js` (a barrel nothing imported), `SET_PLAYER_OUTFIT`,
+and one of the two definitions of encounter gating — the tunable copy was the
+unreachable one. `GAIN_BOND` has no caller either but STAYS: it is offered to
+life modules as part of the progression contract above, so it is an interface,
+not a leftover.
+
+**`tools/check_docs.py` reads four files now, not one.** It only ever checked
+GAME_BIBLE.md, so every figure in this file, README.md and ART_KIT.md was on
+the honour system — which is where the stale ones had collected. 25 figures.
+The worst of them: the sprite generator was **stamping a false claim about its
+own output format on top of `sprites.js` every single build** ("base-36
+indices" against a 90-character alphabet). A doc nobody re-reads goes stale
+quietly; a doc a script rewrites goes stale loudly and still nobody notices.
+
+**`tools/make_audio.py` is seeded.** The hit is a noise burst off an unseeded
+`random`, so every run rewrote `hit.wav` with a file that sounded identical
+and differed in every sample — meaning "run the generator and diff" could
+prove the art was current but never the audio.
+
+**One gap is written down rather than closed.** ART_KIT claimed all 18
+companion masters are committed; only 15 are. `sproutle`, `emberkit` and
+`dewbble` have traced JSON but no master, and none is in the history either.
+Provenance is this file's first non-negotiable, so for those three the
+committed chain starts at the indexed output rather than a source image. It is
+stated as a gap to close, and `check_docs.py` counts the masters.
+
 ## Phase 6 — ideas, not committed
 
 Reading / chores / social check-in modules; per-movement progression charts off
@@ -809,5 +869,9 @@ import.
 - Don't ship secrets in the client — the coach key stays in `server/`.
 - After a phase, add a short "how to test" note and ask what to tune.
 - Branch is whatever the session assigns (Phase 3 landed on
-  `claude/phase-3-life-modules-584f0k`).
+  `claude/phase-3-life-modules-584f0k`; Phases 7-14 on
+  `claude/peaceful-lamport-74pdc1`).
+- **Nothing published is current.** `.github/workflows/web.yml` builds Pages
+  from `main`, and the feature branch is a hundred-plus commits ahead of it, so
+  the live page is Phase 1-era. Merging is what ships.
 
