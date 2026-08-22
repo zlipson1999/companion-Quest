@@ -58,6 +58,11 @@ def build_checks():
         d = re.search(r'cols: (\d+),\n  rows: (\d+)', blk)
         return f'{d.group(1)}x{d.group(2)}'
 
+    art_kit = read('docs/ART_KIT.md')
+    readme = read('README.md')
+    claude = read('CLAUDE.md')
+    masters = len(list((ROOT / 'tools/reference_art').glob('*.png')))
+
     checks = [
         ('save version', r'`version: (\d+)`',
          first(r'SAVE_VERSION = (\d+)', game, 'SAVE_VERSION')),
@@ -93,35 +98,57 @@ def build_checks():
                        r'\(`' + const + r'`\) \| (\d+)',
                        first(const + r' = (\d+)', econ, const)))
 
+    # Not every documented figure lives in the bible. These are checked against
+    # the file that actually claims them.
+    other = [
+        ('committed reference masters', art_kit, r'\*\*(\d+) of the 18', str(masters)),
+        ('perks', claude, r'`forge/perks\.js` — (\d+) perks',
+         str(len(re.findall(r"^    id: '", read('src/modules/forge/perks.js'), re.M)))),
+        ('hub menu entries', claude, r'It lists (\w+) places now',
+         WORDS[len(re.findall(r"^  \{ label: '", read('src/screens/HubScreen.js'), re.M))]),
+        ('README module count', readme, r'plugin system \+ (\d+) modules',
+         str(len(first(r'MODULES = \[([^\]]+)\]',
+                       read('src/modules/index.js'), 'MODULES').split(',')))),
+        ('CLAUDE.md save version', claude, r'auto-migrated by `version`, currently\n\*\*(\d+)\*\*',
+         first(r'SAVE_VERSION = (\d+)', game, 'SAVE_VERSION')),
+    ]
+
     for name, label in (('HUB', r'Maple Lane \(`HUB`\)'),
                         ('GYM', r'Quest Fitness \(`GYM`\)'),
                         ('DOWNSTAIRS', r'Downstairs \(`DOWNSTAIRS`\)'),
                         ('BEDROOM', r'Bedroom \(`BEDROOM`\)')):
         checks.append((f'{name} size', label + r' \| (\d+.\d+) \|', map_dims(name)))
 
-    return bible, checks
+    return bible, checks, other
+
+
+WORDS = {0: 'zero', 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five',
+         6: 'six', 7: 'seven', 8: 'eight', 9: 'nine', 10: 'ten',
+         11: 'eleven', 12: 'twelve', 13: 'thirteen', 14: 'fourteen'}
 
 
 def main():
-    bible, checks = build_checks()
+    bible, checks, other = build_checks()
     bad = []
-    for label, pattern, actual in checks:
-        m = re.search(pattern, bible)
+    for label, pattern, actual in checks + [(l, p, a) for l, _, p, a in other]:
+        doc = bible if not any(l == label for l, _, _, _ in other) else \
+            next(d for l, d, _, _ in other if l == label)
+        m = re.search(pattern, doc)
         claimed = m.group(1).replace('×', 'x') if m else None
         good = claimed == actual.replace('×', 'x')
         print(f"{'ok  ' if good else 'DRIFT'} {label:<30} "
-              f"bible={claimed or '(missing)':<10} code={actual}")
+              f"doc={claimed or '(missing)':<10} code={actual}")
         if not good:
             bad.append(label)
 
     print()
     if bad:
-        print(f'{len(bad)} figure(s) in docs/GAME_BIBLE.md no longer match the code:')
+        print(f'{len(bad)} documented figure(s) no longer match the code:')
         for b in bad:
             print(f'  - {b}')
-        print('\nFix the bible (and the prose around the number, not just the digit).')
+        print('\nFix the doc (and the prose around the number, not just the digit).')
         return 1
-    print(f'docs/GAME_BIBLE.md agrees with the code on all {len(checks)} checked figures.')
+    print(f'The docs agree with the code on all {len(checks) + len(other)} checked figures.')
     return 0
 
 

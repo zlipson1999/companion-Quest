@@ -166,7 +166,7 @@ export function catchFullLine(wildName) {
   return `Your Circle has no open place, so ${wildName} can't join yet — the meeting is recorded in your Journal.`;
 }
 
-export function noTokenLine() {
+export function noKnotLine() {
   return 'You\'re out of Kinship Knots! The trail leaves them at milestones, and the smoothie bar braids them.';
 }
 

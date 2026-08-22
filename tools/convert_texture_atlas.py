@@ -40,7 +40,7 @@ CELLS = {
     'tile_grass': (0, 0), 'tile_grass_b': (1, 0), 'tile_flowers': (2, 0), 'tile_tallgrass': (3, 0),
     'tile_path': (0, 1), 'tile_path_b': (1, 1), 'tile_water': (2, 1), 'tile_water_b': (3, 1),
     'tile_tree': (0, 2), 'tile_wall': (2, 2),
-    'tile_roof_rest': (0, 3), 'tile_roof_gym': (1, 3), 'tile_door': (2, 3), 'tile_gate': (3, 3),
+    'tile_roof_rest': (0, 3), 'tile_roof_gym': (1, 3), 'tile_door': (2, 3),
 }
 
 def make_seamless(image):

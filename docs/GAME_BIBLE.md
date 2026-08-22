@@ -130,6 +130,7 @@ npx expo export --platform web --output-dir dist # web build
 python3 tools/make_sprites.py                    # regenerate ALL art
 python3 tools/make_audio.py                      # regenerate ALL audio
 node --check server/index.js                     # server is outside Metro graph
+python3 tools/check_docs.py                      # this file still agrees with the code
 ```
 
 Web deploy: `web.output: "single"` (SPA — `static` needs expo-router and
@@ -145,7 +146,7 @@ against Rowan → Maple Lane, then free roam.
 
 **The room IS the menu, in all three places.** Maple Lane has walk-in triggers
 (your front door, the gym door, the trail carrying on north) and a 6-entry menu;
-the other thirteen destinations it used to list are things you now WALK to.
+the other eight destinations it used to list are things you now WALK to.
 Quest Fitness: every piece of iron opens the Forge, Coach hands you a session
 off the shelf, treadmill and rower are cardio in the room, the turf and the
 mats each open the routine they are FOR, the mirror is form check, lockers are
@@ -418,7 +419,7 @@ meters) and no `onStop`, because outdoors there is no getting off a trail.
 **A session survives a challenge.** A battle unmounts the trail and
 `useDistance` restarts from zero with it, so the session baseline is taken from
 the LIFETIME stats (which persist) and parked in `placeMemory` across the round
-trip. "Back to Town" ends the walk.
+trip. "Back to Maple Lane" ends the walk.
 
 **THIS SESSION** breaks it down: "20 Push-ups · 20s Plank · 15 Squats".
 `stats.exercises` tallies per exercise id (routines under a `workout:` prefix,
@@ -516,7 +517,7 @@ never learns how progression works.
 | Nourish | check-ins | 5 | balanced 2→20/6 · produce 1→12/4 · mindful 1→10/6 · cooked 2→18/7 | 55/20 |
 | Sleep (`replaces`) | hours | 8 | <6h 5→4/2 · 6-7 6.5→10/5/10 · 7-8 7.5→16/8/20 · 8+ 8.5→18/10/25 | 30/14 |
 | Stillness | minutes | 10 | 2→4/3 · 5→10/6/8 · 10→20/12/15 · scan 15→26/14/20 | 28/12 |
-| Forge (`training`) | sessions | 1 | actions = your saved plans; reward = analysed | — |
+| Forge (`training`) | sessions | 1 | actions = your saved plans; reward = analysed | 20/6 |
 
 ### 7.4 Workout Forge (`modules/forge/`)
 
@@ -589,7 +590,9 @@ faint.
   achefang, couchlurk), which are procedural. An evolution is its OWN drawn
   sprite, never a tinted copy of the base.
   The first three families are the ones offered at first bond
-  (`STARTER_IDS`); all six are met on the trail (`WILD_COMPANION_IDS`), always
+  (each goal names its own via `GOALS[].companionId`; `STARTER_IDS` is a
+  convenience list the running game does not read); all six are met on the
+  trail (`WILD_COMPANION_IDS`), always
   as their base form. `INDEX_ORDER` in `creatures.js` is the roster order the
   Creature Index reads, built by walking each family whole with
   `familyChain()`, and the module **throws at import** if any creature reaches
@@ -597,7 +600,10 @@ faint.
   itself and followed `evolvesTo` exactly once: it listed 13 of the 22 and not
   one final evolution among them, while `EVOLVE` was stamping
   `dex[groveheart] = 'owned'` for a row the page could never print.
-- Hero 24×32: 4 facings × 3 frames, distinct silhouettes per facing.
+- Hero: the sprites actually rendered are the traced per-character sets at
+  26×48 (Coach Maple 30×48), 4 facings × 3 frames, resolved by
+  `playerSprite()` in `data/characters.js`. `hero_*` at 24×32 is the fallback
+  used only when no character cards are present.
 - Items/module icons 24×24: apple, water, energybar, charm, **knot**, three
   smoothie blends (green/berry/gold, one drawing and three palettes), droplet,
   plate, check (fallback), barbell, moon, still.

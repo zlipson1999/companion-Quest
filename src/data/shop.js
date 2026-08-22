@@ -17,7 +17,7 @@ import { CREDIT_PER_MILE } from '../state/economy';
 import { getItem } from './items';
 
 // Priced in miles, converted once. Written this way so the intent survives a
-// balance pass: "a token is worth about two and a half miles" is a design
+// balance pass: "a knot is worth about two and a half miles" is a design
 // decision, `25` is not.
 const MILES = (n) => Math.round(n * CREDIT_PER_MILE);
 
@@ -43,7 +43,7 @@ export const SHELVES = [
     ],
   },
   {
-    id: 'tokens',
+    id: 'knots',
     name: 'Behind the Till',
     blurb: 'Kept behind the counter because people ask for them by name.',
     stock: [

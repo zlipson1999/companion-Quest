@@ -58,9 +58,12 @@ Pages. Two settings make it work and are easy to break:
 - `experiments.baseUrl` must equal `/<repo-name>`. A project Pages site serves
   from a subpath, so without it the page loads and then 404s fetching its bundle.
 
-On the web there is no pedometer, so `useDistance` reports none available and the
-Route falls back to its distance injector — the loop stays playable, but the real
-engine is only there on a phone.
+On the web there is no pedometer, so `useDistance` reports none available. The
+stand-in step buttons are `__DEV__`-gated, and `__DEV__` is false in every
+release build **including the published web build** — so the web page shows the
+world and the systems but cannot advance distance. The real engine is only there
+on a phone, deliberately: buttons that add distance you did not walk are the one
+thing this game is built not to have.
 
 ## Original assets are GENERATED, not hand-placed as image/audio files
 
@@ -69,11 +72,16 @@ engine is only there on a phone.
   surface normal and dots it with a light vector, `outline()` walks the
   silhouette, `rim()` adds bounce light along the shaded edge. That is why
   things read as round now — the lighting is computed, not guessed.
-  - **Sizes:** creatures 48×48, hero 24×32 (4 facings × 3 frames), items and
-    module icons 24×24, tiles 16×16.
+  - **Sizes,** as RENDERED (authored art is often smaller and scaled): creatures
+    96×96, the traced per-character hero sets 26×48 (Coach 30×48) at 4 facings
+    × 3 frames, items and module icons 24×24, tiles 32px (`TILE_SCALE = 2` over
+    16×16 authored cells). `hero_*` at 24×32 is only the fallback used when no
+    character cards are present.
   - **Palettes** are ramp specs (`PALETTE_SPECS`): a dark→light pair per ramp
-    (`body`/`leaf`/`belly`), expanded to `RAMP_STEPS` and flattened. Grids are
-    **base-36** indices, so a sprite can use up to 35 colours. The script emits
+    (`body`/`leaf`/`belly`), expanded to `RAMP_STEPS` and flattened. Grids index
+    the palette through `PixelArt`'s **90-character printable-ASCII alphabet**,
+    so a sprite can use up to 90 colours. (It was base-36 once; the traced
+    creature art needed more than 35.) The script emits
     `SPRITE_PALETTES` into `src/data/sprites.js` alongside the art — **nothing is
     mirrored into `colors.js` by hand any more.**
   - To add a creature: write a function composing shaded forms, register it in
@@ -111,21 +119,24 @@ permission needed, but foreground-only. The Route states which is running rather
 than pretending they are equivalent. See `docs/STEP_COUNTING.md`.
 
 **State shape** (persisted to AsyncStorage, auto-migrated by `version`, currently
-3): `{ started, goalId, party:[{id,baseId,xp,bond,hp}], activeIndex, stats, bag,
-dex, modules, settings, meta }`. Companion XP is a lifetime total; level/HP are derived
+**8**): `{ started, goalId, playerOutfit, playerGender, party:[{id,baseId,xp,
+bond,evo,hp}], activeIndex, credits, stats, bag, dex, modules, history,
+settings, meta }`. Companion XP is a lifetime total; level/HP are derived
 (`src/state/leveling.js`). `useCompanion()` returns the active party member;
 `useParty()` returns the whole team. Distance is in miles (`stats.distanceMi`);
 the Route auto-advances and rolls grass encounters off real distance.
 
 **Navigation:** a tiny custom router (`src/screens/Router.js` + `navContext`) —
 `navigate(name)` and `toBattle(params)` (which plays the flash/wipe). Register
-new screens in `Router.js` (SCREENS map + TOWN_BGM) and add a hub menu entry in
-`HubScreen.js`.
+new screens in `Router.js` (SCREENS map + TOWN_BGM) and give them a way IN —
+normally a station on a map (`interactions` in `data/maps.js`), not a hub menu
+entry. The menu is deliberately six items; Phase 7 removed the other thirteen
+so the rooms would carry the systems.
 
 **Data-driven:** creatures/goals/items/exercises/obstacles/wild/workouts/maps all
 live in `src/data/*` as plain objects. Add content there.
 
-**The overworld** (`components/TileMap.js`) draws real 16×16 tile sprites, not
+**The overworld** (`components/TileMap.js`) draws real 32px tile sprites, not
 coloured rectangles: two grass variants scattered by coordinate so fields do not
 visibly tile, two-frame water, and a hero walk cycle that advances only on an
 actual move.
@@ -141,7 +152,7 @@ owns the calendar (day roll, streaks, reward math) and is pure/testable;
   Stop, Status, Creature Index, Bag, Options → persistence + evolution.
 - **Phase 1.5** — real distance moves you (steps→miles + GPS "Start Run" via
   `expo-location`, `src/state/useDistance.js`); tall-grass wild encounters
-  (`src/data/wild.js`); **invite trail companions with a Bond Token + build a
+  (`src/data/wild.js`); **invite trail companions with a **Kinship Knot** + build a
   Circle** (Offer Bond/Rotate in `BattleScreen`, Circle screen); goal-tuned pacing.
 - **Phase 5** — **memory**: a 60-day activity history, acute/chronic **recovery**
   with rest-day advice and a loggable rest day, **per-plan history + PRs**, a
@@ -202,11 +213,15 @@ that workouts and battles use — a module never learns how progression works.
 
 **UI:** `HabitsScreen` (hub, one bordered card per installed module) and
 `HabitLogScreen` (a module's actions, today's bar, streaks, today's log tape),
-registered in `Router.js` as `habits` / `habit` with a "Habits" hub menu entry.
+registered in `Router.js` as `habits` / `habit`, reached by walking into the
+bedroom desk or the gym's water station (there is no Habits menu entry — see
+Phase 7, the gym IS the menu).
 The Status screen grew a "Daily Habits" block plus habit-log stats.
 
-**Art:** three new original 16×16 icons in `tools/make_sprites.py` —
-`mod_droplet`, `mod_plate`, and `mod_check` (the art-less-module fallback). No
+**Art:** original 24×24 module icons in `tools/make_sprites.py` — `mod_droplet`,
+`mod_plate` and `mod_check` (the art-less-module fallback) shipped with Phase 3;
+`mod_barbell`, `mod_moon` and `mod_still` followed with the Forge, Sleep and
+Stillness, for six. No
 new audio: logs reuse `item`/`milestone`/`levelup`.
 
 ## Phase 4 — DONE: Workout Forge + battle-stage fidelity
@@ -228,7 +243,7 @@ the reducer knowing about any specific module. Any future module can use all of 
 - `forge/analysis.js` — the on-device analyser. **Deterministic scoring, not an
   LLM**: coverage, pattern balance, volume (load weighted superlinearly so hard
   short sets beat easy long ones), intensity, duration. Explains every number.
-- `forge/perks.js` — 8 perks, each with its own test and a plain-language reason.
+- `forge/perks.js` — 9 perks, each with its own test and a plain-language reason.
   Gated behind `PERK_MIN_SETS`/`PERK_MIN_VOLUME` so a token plan earns nothing.
 - `components/BodyMap3D.js` — real 3D via `expo-gl` + `three`, low-poly and
   flat-shaded, built procedurally from the muscle data (still zero asset files).
@@ -237,7 +252,7 @@ the reducer knowing about any specific module. Any future module can use all of 
   **Not pose analysis** — there is no pose model in the app, and the screen says
   so. Nothing recorded or sent; works fully with the camera declined.
 
-**Integration:** the Forge has its own hub-menu entry beside Train; Form Check
+**Integration:** the Forge is reached by walking into any of the gym's iron; Form Check
 carries the running session's progress across in `params.resume` so leaving for
 a mirror does not discard it; every non-battle route is in `TOWN_BGM` (fleeing a
 battle to the Route used to keep the battle music playing).
@@ -396,7 +411,8 @@ the shared one.
   Equipment is props rather than tiles so it can take its own `gymkit` palette —
   colour-coded bumper plates are most of what makes a rack read as a rack at a
   quarter of a tile. The iron is where you WRITE a session (racks, dumbbells,
-  EZ bars, cable, pull-up bar, kettlebells all open the Forge); Coach hands you
+  EZ bars, benches, the selectorised machines, pull-up bar and kettlebells all
+  open the Forge); Coach hands you
   one off the shelf; treadmill and rower are cardio with nothing to interrupt
   you. That split is the logic of the room: equipment is the work, people are
   the advice.
@@ -449,11 +465,11 @@ it on a timer, so movement stays grid-stepped underneath.
 
 **Quest Fitness.** The gym door used to jump straight to the exercise list. It
 is a room now (`GYM` in `src/data/maps.js`, `src/screens/GymScreen.js`) with
-barbell and dumbbell racks, cable machines, a treadmill, bench, mirrors, water
-station and training mats. Walking into a station is how you use it — the
+barbell and dumbbell racks, selectorised machines, a treadmill, benches,
+mirrors, water station and training mats. Walking into a station is how you use it — the
 equipment *is* the menu, so the room demonstrates the systems the tutorial used
 to explain in a wall of text. Interiors also stopped being carpeted in lawn:
-maps declare an `id` and `FLOOR_BY_MAP` gives them floorboards or rubber matting.
+maps declare an `id` and `FIELD_BY_MAP` gives them floorboards or rubber matting.
 
 **Tiles are 32px and render from a PNG atlas.** `PixelArt` emits a View per
 colour run per row, which cost 236 Views for one grass tile and ~28,000 for a
@@ -778,7 +794,7 @@ battle unmounts the trail and `useDistance` restarts from zero with it, so the
 session baseline is taken from the LIFETIME stats (which persist) and parked in
 `placeMemory` across the round trip. Walk a fifth of a mile, get stopped by a
 Sludgewad, do ten push-ups, come back — the console still reads 0.20 mi, and
-now reads the reps too. "Back to Town" is what ends the walk.
+now reads the reps too. "Back to Maple Lane" is what ends the walk.
 
 ## Phase 6 — ideas, not committed
 

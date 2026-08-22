@@ -1,10 +1,19 @@
 # The art kit
 
 All 18 members of the six companion families are traced from reference
-artwork. Their transparent masters are committed in `tools/reference_art/`;
-their indexed outputs live as
-`tools/traced_<name>.json`. This keeps the roster reproducible and prevents the
-evolutions from silently falling back to procedural stand-ins.
+artwork — no companion falls back to a procedural stand-in, and `build_all()`
+fails if traced art reaches no sprite. Their indexed outputs live as
+`tools/traced_<name>.json`, which is what the generator reads.
+
+**15 of the 18 transparent masters are committed** in `tools/reference_art/`.
+The three first-bond BASE forms — `sproutle`, `emberkit`, `dewbble` — have
+traced JSON but no master in the repo, and none is in the history either. That
+is a **provenance gap, not a naming quirk**: this project's first
+non-negotiable is original expression *with documented provenance*, and for
+those three the committed chain starts at the indexed output rather than at a
+source image. Re-committing their masters (or re-tracing them from masters that
+are) is the fix; until then the gap is stated here rather than rounded up to
+"all 18", which is what this file used to say.
 
 The authored world-material atlas lives in `assets/textures/masters/`.
 `tools/convert_texture_atlas.py` turns its cells into indexed runtime tiles;
@@ -25,7 +34,7 @@ Two tiers, because one card cannot be both:
 - **Portraits** — `traced_portrait_{maple,woman,man,nonbinary}.json`, traced
   straight off the committed cards at 64x128 (88x128 for Maple, whose gesturing
   arm widens her crop). These carry the face and are used anywhere the player is
-  shown large and at rest: intro, character creation, the Hall welcome.
+  shown large and at rest: intro, character creation, the Quest Fitness welcome.
 - **Overworld** — `traced_walk_<name>.json`, the card traced at 26x48 (30x48 for
   Maple), and the rest of the set derived from that one pose by `walk_set()`:
   two stride frames per facing, a back view made by covering the face with the

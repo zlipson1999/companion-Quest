@@ -18,7 +18,7 @@ import { battleMovesFor, movesLearnedBetween } from '../data/exercises';
 import {
   wildIntro,
   sparIntro, movePrompt, moveLanded, victoryLines, defeatLines, levelUpLine, evolveLines,
-  catchSuccessLines, catchFailLine, catchFullLine, noTokenLine, companionFledLines, swapLine,
+  catchSuccessLines, catchFailLine, catchFullLine, noKnotLine, companionFledLines, swapLine,
 } from '../coach';
 
 function clamp(n, lo, hi) {
@@ -287,7 +287,7 @@ export default function BattleScreen({ params }) {
 
   const attemptCatch = () => {
     if (knots <= 0) {
-      say([{ speaker: 'Narration', text: noTokenLine() }], () => setPhase('menu'));
+      say([{ speaker: 'Narration', text: noKnotLine() }], () => setPhase('menu'));
       return;
     }
     if (teamFull) {
