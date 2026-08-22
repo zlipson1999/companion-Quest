@@ -11,13 +11,15 @@ import BattleTransition from '../components/BattleTransition';
 
 import TitleScreen from './TitleScreen';
 import IntroScreen from './IntroScreen';
+import HomeIntroScreen from './HomeIntroScreen';
+import CoachTutorialScreen from './CoachTutorialScreen';
 import GoalSelectScreen from './GoalSelectScreen';
 import PairingScreen from './PairingScreen';
 import HubScreen from './HubScreen';
 import RouteScreen from './RouteScreen';
 import BattleScreen from './BattleScreen';
 import WorkoutScreen from './WorkoutScreen';
-import RestScreen from './RestScreen';
+import HomeRestScreen from './HomeRestScreen';
 import SummaryScreen from './SummaryScreen';
 import IndexScreen from './IndexScreen';
 import BagScreen from './BagScreen';
@@ -35,13 +37,15 @@ import LoadingScreen from './LoadingScreen';
 const SCREENS = {
   title: TitleScreen,
   intro: IntroScreen,
+  homeIntro: HomeIntroScreen,
+  coachTutorial: CoachTutorialScreen,
   goal: GoalSelectScreen,
   pairing: PairingScreen,
   hub: HubScreen,
   route: RouteScreen,
   battle: BattleScreen,
   workout: WorkoutScreen,
-  rest: RestScreen,
+  rest: HomeRestScreen,
   summary: SummaryScreen,
   index: IndexScreen,
   bag: BagScreen,
@@ -60,7 +64,7 @@ const SCREENS = {
 // fleeing a battle returns there, and without an entry here the battle music
 // just kept playing over the walk.
 const TOWN_BGM = new Set([
-  'title', 'intro', 'goal', 'pairing', 'hub', 'route', 'rest', 'workout', 'summary', 'index', 'bag',
+  'title', 'intro', 'homeIntro', 'coachTutorial', 'goal', 'pairing', 'hub', 'route', 'rest', 'workout', 'summary', 'index', 'bag',
   'party', 'coach', 'options', 'habits', 'habit', 'forge', 'forgeEdit', 'formcheck', 'week',
 ]);
 
@@ -114,3 +118,4 @@ export default function Router() {
     </NavContext.Provider>
   );
 }
+
