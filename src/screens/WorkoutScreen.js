@@ -111,10 +111,10 @@ export default function WorkoutScreen({ params = {} }) {
   return (
     <Screen style={{ padding: space.md }}>
       <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
-        Training Yard
+        Off the Shelf
       </PixelText>
       <PixelText size="tiny" color={palette.windowTextDim} align="center" style={{ marginBottom: space.md }}>
-        Real workouts make {companion ? companion.creature.name : 'your companion'} stronger.
+        Sessions already written. Real work, so {companion ? companion.creature.name : 'your companion'} grows from it.
       </PixelText>
       <ScrollView showsVerticalScrollIndicator={false}>
         {WORKOUTS.map((w) => (

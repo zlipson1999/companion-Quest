@@ -133,7 +133,10 @@ const INTERACTIONS = {
   // only ever minted by real effort — see src/state/economy.js.
   J: { screen: 'smoothiebar', label: 'Smoothie bar — blends, and Kinship Knots' },
   I: { screen: 'smoothiebar', label: 'Smoothie bar — blends, and Kinship Knots' },
-  B: { screen: 'rest', label: 'Bench — rest and recover' },
+  // A flat bench is iron, not furniture. It used to open 'rest', which is the
+  // HOUSE — so walking into a bench in the middle of the gym put you in your
+  // own kitchen. It belongs with the racks: something you write a session on.
+  B: { screen: 'forge', label: 'Flat bench — build your own session' },
   w: { screen: 'habits', label: 'Water station — daily habits' },
   M: { screen: 'formcheck', label: 'Mirror — form check' },
   // Resolved in GymScreen: before you have a companion this is where the goal
