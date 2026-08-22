@@ -32,6 +32,20 @@ inside Expo Go. The trade-off is real, and the Route says so on screen:
 Close the app and your steps stop counting. This is a fallback, not a
 replacement.
 
+## 3. The stand-in buttons — DEVELOPMENT ONLY
+
+When neither source exists at all (a desktop browser, a simulator), the trail
+and the cardio console offer `+0.05mi` / `+0.25mi` / `+1mi` buttons.
+
+These are gated on `__DEV__` as well as `source === 'none'`. A button that adds
+distance you did not walk is the exact thing this game is built not to have —
+real life is the game, there are no walk buttons — so they exist to test on a
+desktop and never reach a phone or the published web build.
+
+The consequence is worth knowing before you go looking for it: **a release
+build cannot be driven.** Testing anything downstream of distance end to end
+means building once with the gate lifted, and putting it back afterwards.
+
 ## Getting the real thing: a development build
 
 To reach the hardware step counter, build a real app instead of running inside

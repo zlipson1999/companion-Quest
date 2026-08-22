@@ -6,7 +6,11 @@ session) picking up this repo.
 **Deep reference: `docs/GAME_BIBLE.md`** — the full audit of every system with
 the exact numbers (formulas, reward tables, timings, save schema, known gaps).
 This file is the summary; the bible is the source of truth for tuning. If you
-change a number in code, change it there in the same commit.
+change a number in code, change it there in the same commit — and **run
+`python3 tools/check_docs.py`**, which compares the bible's figures against the
+source and fails on drift. That rule used to rely on memory and the bible went
+thirty commits stale on it: save version 5 documented against 8 in code, 21
+screens against 28. Every one of those commits was individually fine.
 
 ## What this is
 

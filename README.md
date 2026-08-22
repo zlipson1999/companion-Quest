@@ -30,17 +30,21 @@ Android needs the *Physical activity* permission (declared in `app.json`; Expo G
 
 ```
 src/
-  theme/       palette, pixel typography, metrics
+  theme/       palette + Trailkeeper tokens, pixel typography, metrics
   data/        original creatures, goals, items, exercises, obstacles, workouts,
-               hub map, route tuning, generated sprite grids (sprites.js)
-  state/       game reducer + context (auto-persist), leveling, storage, pedometer
-  components/  PixelArt/PixelSprite, Window, DialogueBox, Menu, HPBar, ProgressBar,
-               DualPane, TileMap, Dpad, PixelButton, BattleTransition, Triangle, Screen
+               the four maps (+ floor zones), 140 movements, 74 recipes, the
+               shop, route tuning, and the GENERATED sprites.js / tileAtlas.js
+  state/       game reducer + context (auto-persist), leveling, evolution,
+               history, recovery, economy (Trail Credit), cardio maths,
+               distance (pedometer / accelerometer / GPS)
+  components/  28 blocks — WorldScreen, TileMap/TileImage, CardioConsole,
+                CompanionStatus, Joystick, the Trailkeeper primitives, ...
+  modules/     the life-module plugin system + 5 modules + the Workout Forge
   coach/       the companion/Coach's warm, in-character dialogue
   audio/       expo-av sound manager for the original SFX + chiptune loops
-  screens/     Title, Intro, GoalSelect, Pairing, Hub, Route, Battle, Workout,
-               Rest, Summary, Index, Bag, Options + the Router
+  screens/     28 screens + the Router (with a real back stack)
 assets/sfx/    generated 8-bit WAV SFX + looping chiptune tracks
+assets/tiles/  generated tile atlas + room lighting
 tools/         asset generators (make_sprites.py, make_audio.py)
 ```
 
@@ -59,22 +63,34 @@ python3 tools/make_sprites.py
 python3 tools/make_audio.py
 ```
 
-## What's in this build (Phase 1 + 1.5)
+## What's in this build
 
 - **Real movement = in-game movement.** Your steps become miles (~2000/mi), or tap
   **Start Run** for GPS-tracked outdoor miles (`expo-location`). Distance auto-advances
-  you along the trail. No pedometer (desktop/sim)? A dev injector simulates distance.
+  you along the trail. No pedometer (desktop/sim)? Stand-in buttons appear — but only
+  in a **development** build, because a button that adds distance you did not walk is
+  the one thing this game must not ship.
 - **Trail discoveries.** As you move, the route reveals encounters — either a
   **befriendable companion** or a **bad-habit obstacle** (Sludgewad, the Snooze, ...).
 - **Challenge = real exercise.** Your active companion helps; your real push-ups,
-  squats, and planks build resolve. **Offer Bond** to a receptive companion;
+  squats, and planks build resolve, and every set you confirm is counted. Offer a
+  **Kinship Knot** to a companion that has seen you do the work and is still standing;
   **Rotate** your Circle; clear obstacles for growth + bond.
 - **Build a Circle.** Keep your first bonded companion and befriend companions
   encountered on the trail. Set your active buddy from the **Circle** screen.
 - **Goal-tuned pacing.** Your chosen goal tunes milestone spacing, encounter cadence,
   and workout XP over the same shared mechanics.
-- Plus: Rest Stop (heals the whole team), Workouts, Status readout, Creature Index,
-  Bag, Options, level-ups + evolutions, full persistence, original art + chiptune audio.
+- **Three places you walk around, where the room is the menu.** Maple Lane, the gym
+  (Quest Fitness) and your own house. Walk into a rack to write a session, the treadmill
+  to run it in the room with a real console (time, distance, laps, pace, kcal, sets,
+  reps), Coach for a session off the shelf, the turf for walking stretches, the mats for
+  bodyweight work, the kitchen shelf for 74 recipes, your bed to log last night.
+- **Trail Credit**, earned only by moving — never bought — and spent at the gym's
+  smoothie bar.
+- **Life modules** (hydration, nourish, sleep, stillness) and the **Workout Forge**:
+  build your own plans, with a 3D muscle map and on-device analysis.
+- Plus: Status, Creature Index, Bag, your Week, recovery advice, a domain-locked AI
+  Coach, level-ups + evolutions, full persistence, original art + chiptune audio.
 
 ## Phase 2 — AI Companion Coach (domain-locked chat)
 
@@ -95,10 +111,14 @@ runs (guardrail + persona) but won't produce live replies.
 
 ## Roadmap
 
-- **Phase 3 (next):** pluggable life modules, starting with diet/hydration.
+See `CLAUDE.md` for the phase-by-phase history and `docs/GAME_BIBLE.md` for every
+system with its exact numbers. Next up: reading the recorded reps and sets back out
+in the Week view and the Coach's brief, and a design pass on Route 1.
 
 ## Tech
 
-Expo (React Native) · expo-sensors (Pedometer) · expo-location (GPS, Phase 1.5) ·
-AsyncStorage · expo-av · @expo-google-fonts/press-start-2p · expo-keep-awake.
+Expo (React Native) · expo-sensors (Pedometer + accelerometer fallback) ·
+expo-location (GPS) · expo-camera (the form-check mirror) · expo-gl + three (the
+3D muscle map) · AsyncStorage · expo-av · @expo-google-fonts/press-start-2p ·
+expo-keep-awake. No navigation or state library — one reducer and a small router.
 

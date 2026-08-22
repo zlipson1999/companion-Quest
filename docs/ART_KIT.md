@@ -101,9 +101,63 @@ half a tile deep with per-plank tone, grain streaking along the length, staggere
 butt joints and the odd knot; `home_wall_field` is soft-blotched plaster rather
 than the outdoor stone, which made a house read as a castle; `gym_floor_field`
 is flecked rubber, which is what makes it read as rubber and not as flat paint
-at this size. Two tuning notes worth keeping: boards at 11px deep with a hard
-seam per course read as **brickwork**, and a vertical drift of 0.05 on plaster
-reads as **corrugated iron**. Both had to come down by roughly half.
+at this size.
+
+Three tuning notes worth keeping, all the same mistake in different clothes.
+Boards at 11px deep with a hard seam per course read as **brickwork**; a
+vertical drift of 0.05 on plaster reads as **corrugated iron**; and the second
+attempt at floorboards read as brickwork AGAIN for a different reason — every
+course the same depth, every plank within a rounding error of the same tone, and
+the butt joints coming round twice per field. Regular short rectangles all one
+colour is a wall, whatever you meant by it. What makes wood read as wood is that
+no two boards match: wide per-plank tone spread, grain hard enough to see, each
+board crowning slightly so its middle catches light, and joints that are RARE.
+
+The house's wall and floor were also both warm browns off the same furniture
+ramp, so a room had no visible corners. Interior plaster has its own `plaster`
+palette now — cool and pale against a honey board floor — and that difference IS
+the edge of the room.
+
+`light_pool()` bakes a ceiling fixture's pool into a floor field. A field is
+exactly one fixture cell across, so the pools land on a regular grid for free
+and the floor between them falls away instead of being one flat sheet. Drawn as
+its OWN dithered layer first, which is what a single-colour overlay has to do to
+fake a gradient, and at this tile size the scatter read as television static laid
+over the rubber. It belongs in the material's own ramp. Where a dither IS
+unavoidable — the zone joints — use an **ordered Bayer threshold**, which reads
+as a ramp where hash noise reads as static. Note it is deliberately NOT applied
+to walls: a wall is vertical, and running the pool across it put a visible 2x2
+grid of soft blobs on the plaster.
+
+**Zone joints.** Wood, turf, matting, rug and kitchen vinyl all butt against
+another material somewhere, and a dead-straight value step four tiles long reads
+as a grid line even when neither material does. `zone_edge(side)` draws the
+joint from inside the zone: a zone is an INLAY, so it gets a dark joint all
+round, its north and west inner edges in the shadow of the lip above them, and
+its south and east edges catching the light that gets in. Composited at 0.34.
+
+**Multi-tile furniture autotiles.** Drawn whole in every tile it occupied, a
+two-tile sofa was two sofas with four arms and a two-tile wardrobe was two
+wardrobes — the same mistake as the kitchen run where every counter had its own
+sink. `RUN_PROPS` picks `_l`/`_m`/`_r` from a prop's own horizontal neighbours,
+exactly the way a path picks its edge, so what runs the length of the piece is
+shared and only the end moves. The shadow underneath has to run the length too,
+or the join has daylight beneath it.
+
+**Buildings get their form from their own shape**, not from extra codes
+somebody has to remember to place: a roof with no roof above it takes
+`prop_ridge` (capping tiles, sky on the top edge, the shadow it throws down the
+pitch), a wall with a roof above it takes `prop_eave`. Roofs are two rows deep —
+one row of shingle has no apex, so a building read as a coloured rectangle with
+a strip under it.
+
+**A mirrored wall has to stack.** The first mirror framed its glass on all four
+sides, which is fine for three panels and wrong for seventeen: stacked, it puts
+a rung across the wall every sixteen pixels, which is the tile grid redrawn by
+hand in the one room that had just had its grid taken out of the floor. The
+glass runs the full height of the tile, the only frame is the vertical edge, and
+the variant that breaks up a long wall is a VERTICAL reflection band — a
+diagonal streak would be chopped off at every boundary.
 
 `emit_room_light()` writes `assets/tiles/room-light.png`, a soft elliptical
 falloff stretched across the whole map under the player. Every other shading cue
