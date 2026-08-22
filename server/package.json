@@ -7,7 +7,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test:friends": "node test/friends.test.js"
+    "test:friends": "node test/friends.test.js",
+    "test:auth": "node test/auth.test.js",
+    "test": "node test/auth.test.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",

@@ -42,16 +42,22 @@ const PROVIDERS = { apple: APPLE, google: GOOGLE };
 
 const SESSION_DAYS = 90;
 
-async function verifyIdToken(provider, idToken) {
-  const cfg = PROVIDERS[provider];
-  if (!cfg) throw Object.assign(new Error('unknown provider'), { status: 400 });
-
+// The verification itself, against whatever key set and audience it is handed.
+//
+// Split out from `verifyIdToken` so the security-critical part can be TESTED:
+// the test builds a config pointing at a local key set it controls, mints
+// tokens, and checks that the wrong audience, the wrong issuer, an expired
+// token and a token signed by somebody else's key are all rejected. There is no
+// env hook and no test mode in the production path — the test simply calls this
+// with its own config, which is the difference between a testable function and
+// a back door.
+async function verifyWithConfig(cfg, idToken, label = 'that sign-in') {
   const audience = cfg.audience();
   if (!audience.length) {
     // Refuse rather than fall back to "any audience". A misconfigured server
     // that accepts every token is worse than one that accepts none.
     throw Object.assign(
-      new Error(`${provider} sign-in is not configured on this server`),
+      new Error(`${label} is not configured on this server`),
       { status: 503 }
     );
   }
@@ -60,13 +66,19 @@ async function verifyIdToken(provider, idToken) {
   try {
     ({ payload } = await jwtVerify(idToken, cfg.jwks, { issuer: cfg.issuer, audience }));
   } catch (err) {
-    throw Object.assign(new Error('could not verify that sign-in'), { status: 401, cause: err });
+    throw Object.assign(new Error(`could not verify ${label}`), { status: 401, cause: err });
   }
 
   if (!payload.sub) throw Object.assign(new Error('token has no subject'), { status: 401 });
   // Google sets email_verified; Apple only sends an email on first sign-in and
   // we do not store it either way. The subject is the identity.
   return String(payload.sub);
+}
+
+async function verifyIdToken(provider, idToken) {
+  const cfg = PROVIDERS[provider];
+  if (!cfg) throw Object.assign(new Error('unknown provider'), { status: 400 });
+  return verifyWithConfig(cfg, idToken, `${provider} sign-in`);
 }
 
 const now = () => new Date().toISOString();
@@ -149,6 +161,7 @@ function requireAuth(req, res, next) {
 
 module.exports = {
   verifyIdToken,
+  verifyWithConfig,
   findOrCreatePlayer,
   issueSession,
   playerForToken,

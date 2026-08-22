@@ -128,7 +128,44 @@ Client side, in the app's environment:
 | `EXPO_PUBLIC_COACH_API_URL` | the proxy. Without it friends and boards are simply off, and both screens say so. |
 | `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` / `..._ANDROID_...` / `..._WEB_...` | per platform. A button with nothing behind it is not drawn. |
 
+### Safe by default
+
+`preflight()` in `server/index.js` runs at boot and refuses configurations that
+work fine on a laptop and are holes on a public host:
+
+- `FRIENDS_TEST_AUTH=1` with `NODE_ENV=production` is a **hard stop**, exit 1.
+  It signs in any caller as anyone.
+- `ALLOWED_ORIGINS` containing `*` in production warns loudly.
+- No provider configured in production warns that nobody can sign in.
+
 ### Testing it
+
+```bash
+npm --prefix server test          # token verification — no server needed
+```
+
+Nine checks that the verification actually rejects what it must. It mints its
+own signing key, serves its own JWKS and issues tokens each wrong in one way:
+
+| the token | must be |
+|---|---|
+| correctly signed, our audience | accepted |
+| **minted for a different app** | refused |
+| from a different issuer | refused |
+| signed with somebody else's key | refused |
+| expired | refused |
+| no subject | refused |
+| `alg: none` | refused |
+| any token, provider unconfigured | refused **503**, not accepted |
+
+The audience row is the one that matters and the easiest to get wrong: a token
+from another app is a completely valid, correctly signed Google token. A server
+that checks the signature and forgets `aud` accepts it, and then anybody who can
+get a user to sign into their own unrelated app can sign in here as that user.
+
+There is no test hook in the production path. `verifyWithConfig` takes its key
+set and audience as arguments and the test passes its own — the difference
+between a testable function and a back door.
 
 ```bash
 rm -f /tmp/cq-test.db
@@ -137,9 +174,9 @@ FRIENDS_DB=/tmp/cq-test.db FRIENDS_TEST_AUTH=1 PORT=8788 \
 npm --prefix server run test:friends
 ```
 
-21 checks, asserting the privacy rule from the outside over HTTP: a stranger is
-invisible, a **pending** friend is invisible, you cannot accept your own
-request, unfriending re-hides, a deleted account is really gone, and the
+21 more checks, asserting the privacy rule from the outside over HTTP: a
+stranger is invisible, a **pending** friend is invisible, you cannot accept your
+own request, unfriending re-hides, a deleted account is really gone, and the
 implausible-day checks fire.
 
 `FRIENDS_TEST_AUTH` mounts a sign-in stub so this runs without real Apple or
@@ -149,10 +186,23 @@ must not ship with.
 
 ## 5. What is not proven
 
-**The Apple and Google handshakes themselves.** They need real client ids and a
-device, so they have never run. Everything downstream of the token — the
-verification path's shape, sessions, sync, friendships, boards — is tested.
-Expect to iterate on the two provider flows the first time you build to a phone.
+**Only the provider handshakes** — `AppleAuthentication.signInAsync` and the
+Google auth-session prompt. They need real client ids and a device, so they have
+never run, and that is where to expect friction the first time you build to a
+phone.
+
+Everything else is tested, including the part that would actually let a stranger
+into somebody's account: the token verification is exercised against real
+signatures (§4), and sessions, sync, friendships and boards are exercised over
+HTTP. The untested piece is "does the SDK hand us a token", not "do we check the
+token".
+
+### On the SQLite dependency
+
+`better-sqlite3` ships **prebuilt binaries** and a clean `npm install` downloads
+one rather than compiling — verified. It falls back to building from source only
+on a platform or Node version with no prebuild, which is when build tools are
+needed.
 
 ## 6. Where it lives
 
