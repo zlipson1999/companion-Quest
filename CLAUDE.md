@@ -316,18 +316,23 @@ bar, rower, kettlebells, lockers, reception and more racks. Props are
 transparent overlays over the room's floor — see `docs/ART_KIT.md`. The bed is
 solid, so `HomeRestScreen` sleeps when you walk *into* it rather than onto it.
 
-**Two presentations, chosen per screen.** `WorldScreen` takes `layout`:
+**You can always see the whole place you are standing in.** `WorldScreen`
+CONTAINS every map — room, Hall and town alike. Tile size is whatever makes the
+map fit across the phone, and nothing is cropped or scrolled out of view.
+Covering the screen instead put a camera on a space you could not see the shape
+of, which is disorienting in a room you cross in six steps and no better in a
+hall.
 
-- `full` — the world IS the phone, interface floating over it. Maple Lane, the
-  Hall, Route 1. Tiles are sized to COVER the height; the width overflows and
-  the camera scrolls it.
-- `half` — the world in the upper 56% with a panel under it. The house. Tiles
-  are sized to CONTAIN, so you see the whole room at once: these are small
-  spaces crossed in six steps, and filling the phone with one meant either
-  enormous tiles or a camera swinging around a room already in view.
+A map is roughly square and a phone is not, so containing leaves slack. It
+belongs to the WORLD band, filled with the world's own tone — a strip of dark
+grass above the town reads as distance, where the same strip in interface navy
+read as a gap somebody forgot to fill. The HUD sits on the bottom edge:
+objective ribbon, the stick, and `CompanionStatus` — sprite, level, Resolve and
+Growth meters, bond, HP and lifetime totals. That used to be a strip only Maple
+Lane drew, so stepping indoors lost sight of the thing the game is about.
 
-Cover versus contain is the whole difference, and getting it backwards is what
-cropped the bedroom walls off the sides on the first attempt.
+Route 1 stays full-bleed: it has no map to see the shape of, only a trail
+scrolling past.
 
 **Route 1 is full-bleed too.** The trail was a window in the top 42% with a
 panel of step diagnostics under it. The scene is the screen now; the trail

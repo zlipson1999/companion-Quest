@@ -19,34 +19,24 @@ import PixelText from './PixelText';
 import Screen from './Screen';
 import { palette, space, screen, tokens, scale } from '../theme';
 
-// How much of the phone the world takes.
+// You should be able to see the whole place you are standing in.
 //
-//   'full'  the world IS the screen; the interface floats over it.
-//   'half'  the world sits in the upper portion with a panel under it.
+// Rooms, the Hall and the town all CONTAIN: the tile size is whatever makes the
+// entire map fit across the phone, and nothing is ever cropped or scrolled out
+// of view. Covering the screen instead meant a camera swinging around a space
+// you could not see the shape of, which is disorienting in a room you cross in
+// six steps and no better in a hall.
 //
-// Not every space wants the same treatment. Route 1 and the open maps earn the
-// whole phone — that is where the game is looked at. The house is a short
-// scripted walk through small rooms, and filling the screen with it means
-// either enormous tiles or a camera swinging around a space you cross in six
-// steps; a calmer frame with the room's name under it reads better and keeps
-// the hint where the eye already is.
-export const HALF_SHARE = 0.56;
+// A map is roughly square and a phone is not, so containing leaves room under
+// the world. That space is not a gap — it is where the companion's condition
+// lives, on every screen rather than only on the one that remembered to draw it.
+const WORLD_MAX_SHARE = 0.66;
 
-export function worldTileFor(map, layout = 'full') {
-  if (layout === 'half') {
-    // CONTAIN, not cover. The whole point of the calmer frame is that you can
-    // see the room you are standing in; sizing it to fill the box cropped the
-    // walls off the sides and left the camera swinging around a space you
-    // cross in six steps.
-    const box = screen.height * HALF_SHARE;
-    return Math.max(24, Math.floor(Math.min(box / map.rows, screen.width / map.cols)));
-  }
-  // Full screen covers the height. The width is free to overflow — the camera
-  // scrolls it — but a short map must never leave a band of nothing under it.
-  // This was clamped at 68 before, which letterboxed tall phones by about a
-  // hundred pixels. The floor is only for a map tall enough that covering
-  // would otherwise make the tiles unreadably small.
-  return Math.max(40, Math.ceil(screen.height / map.rows));
+export function worldTileFor(map) {
+  return Math.max(20, Math.floor(Math.min(
+    screen.width / map.cols,
+    (screen.height * WORLD_MAX_SHARE) / map.rows
+  )));
 }
 
 // Where the map does not reach, show the world's own tone rather than black —
@@ -94,57 +84,19 @@ export default function WorldScreen({
   objective,
   menu = [],
   onSelect,
+  // The panel under the world. Screens pass their companion card; anything
+  // falsy just leaves the place and objective.
   status,
-  // Some rooms want a line of their own under the ribbon (a station name, a
-  // hint). Kept to one line: the world is the thing being looked at.
-  note,
   showControl = true,
-  layout = 'full',
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const half = layout === 'half';
-  const worldH = half ? Math.round(screen.height * HALF_SHARE) : screen.height;
-  const viewport = { width: screen.width, height: worldH };
-  const tile = worldTileFor(map, layout);
+  const tile = worldTileFor(map);
+  const worldW = map.cols * tile;
+  const worldH = map.rows * tile;
   const voidColor = VOID_BY_MAP[map.id] || palette.grassDark;
 
-  const chrome = (
-    <>
-      {/* Top: where you are, what to do next, and the way into everything
-          else. One row, so the world keeps the screen. */}
-      <View
-        style={{
-          position: 'absolute',
-          top: TOP_INSET,
-          left: space.sm,
-          right: space.sm,
-          flexDirection: 'row',
-          alignItems: 'flex-start',
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          <ObjectiveRibbon place={place} objective={objective} />
-          {note ? (
-            <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 6, marginLeft: 4, lineHeight: 13 }}>
-              {note}
-            </PixelText>
-          ) : null}
-        </View>
-        {menu.length ? (
-          <View style={{ marginLeft: space.sm }}>
-            <MenuButton onPress={() => setMenuOpen(true)} />
-          </View>
-        ) : null}
-      </View>
-
-      {status ? (
-        <View style={{ position: 'absolute', top: TOP_INSET + 76, left: space.sm, right: space.sm }}>{status}</View>
-      ) : null}
-    </>
-  );
-
   const sheet = (
-      <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
+    <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
       <Pressable style={{ flex: 1, backgroundColor: '#000000cc' }} onPress={() => setMenuOpen(false)}>
         <Pressable
           onPress={() => {}}
@@ -181,52 +133,35 @@ export default function WorldScreen({
     </Modal>
   );
 
-  if (half) {
-    return (
-      <Screen padTop={false} style={{ padding: 0 }}>
-        <View style={{ height: worldH, backgroundColor: voidColor }}>
-          <TileMap map={map} player={player} tileSize={tile} viewport={viewport} />
-          {menu.length ? (
-            <View style={{ position: 'absolute', top: TOP_INSET, right: space.sm }}>
-              <MenuButton onPress={() => setMenuOpen(true)} />
-            </View>
-          ) : null}
-          {status ? (
-            <View style={{ position: 'absolute', top: TOP_INSET, left: space.sm, right: space.sm + 56 }}>{status}</View>
-          ) : null}
-        </View>
-        {/* The panel the world does not take. In a small room there is space
-            for the stick to sit beside the hint rather than over it. */}
-        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: space.md, backgroundColor: palette.bgAlt }}>
-          {showControl ? <MoveControl onMove={onMove} /> : null}
-          <View style={{ flex: 1, marginLeft: space.md }}>
-            <PixelText size="small" color={palette.secondary}>{place}</PixelText>
-            {objective ? (
-              <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 8, lineHeight: 15 }}>
-                {objective}
-              </PixelText>
-            ) : null}
-          </View>
-        </View>
-        {sheet}
-      </Screen>
-    );
-  }
-
   return (
     <Screen padTop={false} style={{ padding: 0 }}>
-      <View style={{ flex: 1, backgroundColor: voidColor }}>
-        <TileMap map={map} player={player} tileSize={tile} viewport={viewport} />
-
-        {chrome}
-
-        {/* The stick lives in the thumb's corner, over the world rather than
-            in a panel below it. */}
-        {showControl ? (
-          <View style={{ position: 'absolute', left: space.md, bottom: space.xl }}>
-            <MoveControl onMove={onMove} />
+      {/* The world, whole. Centred in a band the width of the phone; the
+          margin either side of a narrow map takes the world's own tone rather
+          than black, so it reads as distance and not as a letterbox. */}
+      <View style={{ flex: 1, backgroundColor: voidColor, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: worldW, height: worldH }}>
+          <TileMap map={map} player={player} tileSize={tile} viewport={{ width: worldW, height: worldH }} />
+        </View>
+        {menu.length ? (
+          <View style={{ position: 'absolute', top: TOP_INSET, right: space.sm }}>
+            <MenuButton onPress={() => setMenuOpen(true)} />
           </View>
         ) : null}
+      </View>
+
+      {/* Under the world: where you are, what to do next, your companion's
+          condition, and the stick.
+          A contained map is roughly square and a phone is not, so there is
+          always slack above the panel. It belongs to the WORLD band, filled
+          with the world's own tone — a strip of dark grass above the town reads
+          as distance, where the same strip in interface navy read as a gap
+          somebody forgot to fill. */}
+      <View style={{ backgroundColor: palette.bgAlt, paddingHorizontal: space.md, paddingBottom: space.lg, paddingTop: space.sm }}>
+        <ObjectiveRibbon place={place} objective={objective} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: space.md }}>
+          {showControl ? <MoveControl onMove={onMove} /> : null}
+          <View style={{ flex: 1, marginLeft: showControl ? space.md : 0 }}>{status}</View>
+        </View>
       </View>
 
       {sheet}

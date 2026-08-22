@@ -24,3 +24,4 @@ export { default as Joystick } from './Joystick';
 export { default as MoveControl, CONTROL_MODES } from './MoveControl';
 export { default as TileImage } from './TileImage';
 export { default as WorldScreen, worldTileFor, MenuButton, TOP_INSET } from './WorldScreen';
+export { default as CompanionStatus } from './CompanionStatus';

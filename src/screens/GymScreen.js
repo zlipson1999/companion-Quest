@@ -7,7 +7,7 @@
 // explaining the systems with a room that demonstrates them.
 
 import React, { useRef, useState } from 'react';
-import { WorldScreen } from '../components';
+import { WorldScreen, CompanionStatus } from '../components';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
@@ -75,6 +75,7 @@ export default function GymScreen() {
       objective={facingStation ? facingStation.label : 'Walk into any equipment to use it'}
       menu={MENU}
       onSelect={(item) => navigate(item.value)}
+      status={<CompanionStatus companion={companion} stats={state.stats} />}
     />
   );
 }

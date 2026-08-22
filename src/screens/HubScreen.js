@@ -8,7 +8,7 @@
 
 import React, { useRef, useState } from 'react';
 import { View } from 'react-native';
-import { WorldScreen, Window, PixelText, PixelSprite } from '../components';
+import { WorldScreen, CompanionStatus } from '../components';
 import { palette, space, tokens } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
@@ -58,28 +58,6 @@ export default function HubScreen() {
       ? 'Head out through the north gate and walk Route 1'
       : 'Train at the Hall, or walk Route 1 for more distance';
 
-  const status = companion ? (
-    <Window tone="dark" pad={8}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={28} />
-        <View style={{ flex: 1, marginLeft: space.sm }}>
-          <PixelText size="tiny" color={palette.secondary}>
-            {`${companion.creature.name}  Lv.${companion.level}`}
-          </PixelText>
-          <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 4 }}>
-            {state.stats.totalSteps.toLocaleString()} steps
-          </PixelText>
-        </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <PixelText size="tiny" color={tokens.resolve}>{`BOND ${companion.bond}`}</PixelText>
-          <PixelText size="tiny" color={tokens.growth} style={{ marginTop: 4 }}>
-            {`HP ${Math.round(companion.hp)}`}
-          </PixelText>
-        </View>
-      </View>
-    </Window>
-  ) : null;
-
   return (
     <WorldScreen
       map={HUB}
@@ -87,7 +65,7 @@ export default function HubScreen() {
       onMove={move}
       place="Maple Lane"
       objective={objective}
-      status={status}
+      status={<CompanionStatus companion={companion} stats={state.stats} />}
       menu={MENU}
       onSelect={(item) => navigate(item.value)}
     />

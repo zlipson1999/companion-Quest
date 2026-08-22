@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
-import { Screen, WorldScreen, DialogueBox } from '../components';
+import { Screen, WorldScreen, DialogueBox, CompanionStatus } from '../components';
 import { palette, screen, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
@@ -47,7 +47,7 @@ const FLOORS = {
 };
 
 export default function HomeRestScreen() {
-  const { dispatch } = useGame();
+  const { state, dispatch } = useGame();
   const companion = useCompanion();
   const { navigate } = useNav();
   const [floorId, setFloorId] = useState('downstairs');
@@ -101,7 +101,7 @@ export default function HomeRestScreen() {
       onMove={move}
       place={floor.name}
       objective={floor.hint}
-      layout="half"
+      status={<CompanionStatus companion={companion} stats={state.stats} />}
     />
   );
 }
