@@ -10,21 +10,22 @@ change a number in code, change it there in the same commit.
 
 ## What this is
 
-A DS-era **creature-companion RPG that gamifies real-life healthy behavior** —
-Pokémon's structure and feel, fully rebranded, where **real fitness is the
-engine**. Built with Expo (React Native), testable in Expo Go.
+An original **creature-companion wellness adventure** where **real fitness is
+the engine**. Built with Expo (React Native), testable in Expo Go.
 
 **Non-negotiables:**
-- **100% original** creatures, names, art, and audio. ZERO third-party IP (no
-  Pokémon names/sprites/music/type system/move names/trade dress). If tempted to
-  reference a real Pokémon, invent an original equivalent.
+- **100% original expression and documented provenance.** Do not use another
+  franchise as a design specification. Names, silhouettes, art, audio, copy,
+  screen composition, progression, world fiction, and marketing must stand on
+  their own. Familiar abstract mechanics are not permission to copy their
+  recognizable presentation or combine them into a lookalike product.
 - **Real life is the game.** No "walk" buttons — movement comes only from the
   real pedometer / GPS. Battles are real exercise. The companion grows from real
   behavior.
-- **DS-era presentation:** dual-pane "handheld" layout, tile overworld, chunky
-  low-res pixel art + limited palette + hard edges, pixel font for ALL text,
-  typewriter dialogue boxes, bordered menus with a cursor, DS-style battles,
-  original chiptune + 8-bit SFX, flash/wipe + level-up + evolution beats.
+- **Companion Quest presentation:** paired trail/log panes, tactile pixel art,
+  a field-journal palette, hard-edged panels, typewriter dialogue, original
+  exercise-challenge composition, original chiptune + 8-bit SFX, and accessible
+  growth ceremonies. No platform or franchise trade dress is a target.
 
 ## How to run & verify
 
@@ -131,13 +132,13 @@ owns the calendar (day roll, streaks, reward math) and is pure/testable;
 
 ## What's already built
 
-- **Phase 1** — intro (title → coach dialogue → pick goal → paired with starter)
-  → tile hub → Route (pedometer) → DS battles = real exercise → Workouts, Rest
+- **Phase 1** — intro (title → coach dialogue → pick intention → first bond)
+  → tile hub → Route (pedometer) → exercise challenges → Workouts, Rest
   Stop, Status, Creature Index, Bag, Options → persistence + evolution.
 - **Phase 1.5** — real distance moves you (steps→miles + GPS "Start Run" via
   `expo-location`, `src/state/useDistance.js`); tall-grass wild encounters
-  (`src/data/wild.js`); **catch wild companions with a Bond Token + build a team
-  of 6** (Catch/Swap in `BattleScreen`, Team screen); goal-tuned pacing.
+  (`src/data/wild.js`); **invite trail companions with a Bond Token + build a
+  Circle** (Offer Bond/Rotate in `BattleScreen`, Circle screen); goal-tuned pacing.
 - **Phase 5** — **memory**: a 60-day activity history, acute/chronic **recovery**
   with rest-day advice and a loggable rest day, **per-plan history + PRs**, a
   **weekly rollup**, a **Coach grounded in your real logged activity**, and
@@ -145,7 +146,7 @@ owns the calendar (day roll, streaks, reward math) and is pure/testable;
 - **Phase 4** — **Workout Forge**: build/log/store your own workout plans, a real
   3D muscle body map, on-device analysis that derives perks and rewards from what
   a plan actually trains, and a camera form-check mirror. Plus the battle stage
-  rebuilt to genre-standard framing (horizon, platforms, EXP bar).
+  rebuilt as an original Resolve/Growth challenge console.
 - **Phase 3** — **pluggable life modules** (`src/modules/`): a registry + shared
   daily/streak engine feeding the same XP/bond reducer path, with **Hydration**
   and **Nourish** shipped as the example modules, a **Habits** hub + per-module
@@ -241,10 +242,10 @@ battle to the Route used to keep the battle music playing).
 the daily goal. Logging past the goal is tallied but pays nothing, so no log
 button is ever a free progression button. Forge `dailyGoal` is 1 session.
 
-**Battle-stage fidelity** — `components/BattleStage.js` (horizon + stacked-rect
-"pixel ellipse" platforms, hard edges preserved) and `components/StatusPlate.js`
-(name/Lv, tagged HP bar, and the EXP strip under YOUR plate only). This is the
-genre's most recognisable furniture and it was the main visual gap.
+**Challenge-stage presentation** — `components/BattleStage.js` provides the
+shared environment while `components/StatusPlate.js` uses matched Resolve and
+Growth instruments. Composition must be evaluated against the separation
+contract above, not against another game's battle screen.
 
 ## Phase 5 — DONE: memory, recovery and a grounded Coach
 
@@ -298,3 +299,4 @@ import.
 - After a phase, add a short "how to test" note and ask what to tune.
 - Branch is whatever the session assigns (Phase 3 landed on
   `claude/phase-3-life-modules-584f0k`).
+
