@@ -360,11 +360,22 @@ the shared one.
 - **Bedroom** — bed logs last night's sleep, desk opens your daily habits,
   the screen shows the week, the shelf is your creature index.
 - **Kitchen** — counter, fridge and table log a meal to Nourish; the shelf is
-  `CookbookScreen`, six plain recipes with a time, a short list and steps you
-  can follow while tired. Each names the Nourish check-in it honestly counts
-  as, so "I Made This" is one motion. Deliberately not calorie maths — the
-  module is check-in based because the game rewards showing up, and the
-  cookbook has to agree with it. The sofa is a stillness check-in.
+  `CookbookScreen`, a real browsable cookbook: **74 original recipes across 15
+  cuisines** in `src/data/recipes.js`, reached through **18 categories** (Quick
+  & Easy, Meal Prep, Vegan, High Protein, Low Carb, Seafood, One Pan, No Cook,
+  Budget, Around the World...) or by **searching name, blurb, tags and
+  ingredients** — "what can I do with a tin of chickpeas" is the question people
+  actually have. Categories are `{ id, name, color, match(recipe) }` derived
+  from tags, so the counts on the shelf and the lists behind them come from the
+  same predicate and cannot drift; adding a category is one line. Each recipe
+  names the Nourish check-in it honestly counts as (`logAs`), so "I Made This"
+  is one motion; `LOG_ACTIONS` is asserted at import so a typo fails the build
+  instead of silently logging the wrong check-in. Deliberately not calorie maths
+  — the module is check-in based because the game rewards showing up, and the
+  cookbook has to agree with it. **All recipe text is written for this project**;
+  cooking methods are common knowledge and dish styles belong to the cuisines
+  that made them, but no phrasing is lifted from anyone's book or app, and that
+  has to stay true of anything added. The sofa is a stillness check-in.
 - **Training Hall** — zoned rather than scattered: a wood lifting platform
   under the racks, a turf lane down one side, rubber everywhere else, and the
   wall carries a banner, a clock and a whiteboard. Equipment moved from tiles to
