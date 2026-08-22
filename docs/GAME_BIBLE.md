@@ -32,6 +32,16 @@ be independently authored and recognizably ours.
 - Counsel sign-off and documented provenance are release gates; this audit
   reduces avoidable risk but cannot guarantee non-infringement.
 
+### Onboarding canon
+
+Coach Maple is an original trail mentor, not a laboratory professor or a
+substitute for any franchise character. New players begin upstairs at home,
+walk downstairs and outside, cross to the neighboring Maple Training Hall, and
+learn the systems from Maple before discussing their goals. No companion is
+previewed or selected at the start; the goal conversation leads to a surprise
+first-bond ceremony at the end of the tutorial. Recovery is spatial too: the
+player returns home, walks upstairs, and sleeps to restore Resolve.
+
 The complete reference: every system, every screen, every number, every sprite.
 Built by auditing the code, not from memory — where this document and the code
 disagree, the code won and the document is the bug. Keep it that way: **change
