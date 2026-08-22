@@ -1,5 +1,37 @@
 # Companion Quest — The Game Bible
 
+> **Release gate: IP separation and title clearance.** This document is a
+> design record, not legal clearance. Before commercial release, qualified
+> counsel must clear the product title, source-identifier risk, copyright,
+> trade dress, trademarks, and any applicable patents in launch territories.
+> A separate game is already publicly using “Companion Quest”; keep the title
+> provisional until a professional search is complete.
+
+## 0. Originality and separation contract
+
+Companion Quest may use ideas common to games—progress, teams, turns,
+collecting, and exercise inputs—but may not use another franchise as its
+creative specification. The selection, arrangement, wording, art, audio,
+characters, screen composition, ceremonies, world fiction, and marketing must
+be independently authored and recognizably ours.
+
+- Never request or approve “the look, feel, soul, structure, fidelity, or
+  equivalent” of a named game or company product.
+- Maintain source files, dates, prompts, licenses, and contributor records for
+  every shipped asset. “AI-generated” or “original-looking” is not provenance.
+- Run similarity review on names, silhouettes, icons, encounter language,
+  challenge composition, growth ceremonies, item shapes, audio motifs, and
+  store imagery as a whole—not only one asset at a time.
+- Keep the Trail / Circle / Bond / Resolve / Growth / Hearth / Journal design
+  language consistent in code, UI, documentation, screenshots, and marketing.
+- Do not market the game by comparison to Pokémon, Nintendo, a Nintendo
+  handheld, or “the closest legal” version of any franchise.
+- New location/sensor interaction and exercise-verification mechanics require
+  a targeted patent review before commercialization. This is a review trigger,
+  not a claim that any particular patent applies.
+- Counsel sign-off and documented provenance are release gates; this audit
+  reduces avoidable risk but cannot guarantee non-infringement.
+
 The complete reference: every system, every screen, every number, every sprite.
 Built by auditing the code, not from memory — where this document and the code
 disagree, the code won and the document is the bug. Keep it that way: **change
@@ -642,3 +674,4 @@ A change is done only when all applicable items are true:
 *Audited against the current codebase. Sections marked OPEN are deliberately
 unresolved; update them when the owner decides rather than letting code make the
 decision accidentally.*
+
