@@ -3,7 +3,7 @@
 // bad-habit obstacles are cleared. Swap brings in another team member.
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, View } from 'react-native';
+import { Animated, Easing, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Screen, DualPane, Window, Menu, DialogueBox, BattleStage, Platform, StatusPlate, PixelText, PixelSprite, PixelButton } from '../components';
 import { palette, space } from '../theme';
@@ -14,7 +14,7 @@ import { playSfx } from '../audio';
 import { ENCOUNTERS } from '../data/obstacles';
 import { getCreature } from '../data/creatures';
 import { canEvolve } from '../state/evolution';
-import { getExercise, BATTLE_MOVES } from '../data/exercises';
+import { battleMovesFor, movesLearnedBetween } from '../data/exercises';
 import {
   wildIntro, movePrompt, moveLanded, victoryLines, defeatLines, levelUpLine, evolveLines,
   catchSuccessLines, catchFailLine, catchFullLine, noTokenLine, companionFledLines, swapLine,
@@ -42,6 +42,34 @@ function resolveTarget(params) {
   return { targetId: e.creatureId, isCompanion: false, hp: e.hp, xp: e.xp, bond: e.bond, catchRate: 0 };
 }
 
+// A floating damage number over whoever was struck. Keyed by an incrementing
+// id so a rapid second hit restarts the animation rather than being swallowed.
+function DamagePop({ pop, color }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!pop.id) return;
+    anim.setValue(0);
+    Animated.timing(anim, { toValue: 1, duration: 750, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+  }, [pop.id, anim]);
+  if (!pop.id) return null;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        top: -6,
+        alignSelf: 'center',
+        opacity: anim.interpolate({ inputRange: [0, 0.15, 0.8, 1], outputRange: [0, 1, 1, 0] }),
+        transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, -26] }) }],
+      }}
+    >
+      <PixelText size="small" color={color}>
+        -{pop.amount}
+      </PixelText>
+    </Animated.View>
+  );
+}
+
 export default function BattleScreen({ params }) {
   useKeepAwake();
   const { state, dispatch } = useGame();
@@ -65,8 +93,34 @@ export default function BattleScreen({ params }) {
   const [selectedMove, setSelectedMove] = useState(null);
   const [hold, setHold] = useState(0);
 
+  // Moves come from the companion's level and evolution stage, already
+  // decorated with tier scaling — never from the raw exercise table, or a
+  // Tier III companion would fight with Tier I numbers.
+  const battleMoves = battleMovesFor(companion.level, companion.creature.stage || 1);
+  const getMove = (id) => battleMoves.find((m) => m.id === id) || null;
+
   const [wildHit, setWildHit] = useState(0);
   const [companionHit, setCompanionHit] = useState(0);
+  const [wildLunge, setWildLunge] = useState(0);
+  const [companionLunge, setCompanionLunge] = useState(0);
+  const [wildPop, setWildPop] = useState({ id: 0, amount: 0 });
+  const [compPop, setCompPop] = useState({ id: 0, amount: 0 });
+  // Timers for the strike choreography; cleared on unmount so a fled battle
+  // does not set state on a dead screen.
+  const timersRef = useRef([]);
+  const later = (ms, fn) => timersRef.current.push(setTimeout(fn, ms));
+  useEffect(() => () => timersRef.current.forEach(clearTimeout), []);
+
+  // The two sides walk on rather than starting planted: wild from the right,
+  // companion from the left, staggered like the genre expects.
+  const wildEnter = useRef(new Animated.Value(90)).current;
+  const compEnter = useRef(new Animated.Value(-110)).current;
+  useEffect(() => {
+    Animated.stagger(160, [
+      Animated.timing(wildEnter, { toValue: 0, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(compEnter, { toValue: 0, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+  }, [wildEnter, compEnter]);
   const [wildFaint, setWildFaint] = useState(false);
   const [companionFaint, setCompanionFaint] = useState(false);
 
@@ -86,7 +140,7 @@ export default function BattleScreen({ params }) {
 
   useEffect(() => {
     if (phase !== 'doing' || !selectedMove) return undefined;
-    const move = getExercise(selectedMove);
+    const move = getMove(selectedMove);
     if (move.kind !== 'hold' || hold <= 0) return undefined;
     const id = setTimeout(() => setHold((h) => h - 1), 1000);
     return () => clearTimeout(id);
@@ -136,7 +190,10 @@ export default function BattleScreen({ params }) {
     const afterLevel = levelFromXp(afterXp);
     if (afterLevel > beforeLevel) {
       playSfx('levelup');
-      say([{ speaker: 'Narration', text: levelUpLine(companion.creature.name, afterLevel) }], () => maybeEvolve(afterLevel, done));
+      const learned = movesLearnedBetween(beforeLevel, afterLevel).map(
+        (m) => ({ speaker: 'Narration', text: `${companion.creature.name} learned ${m.name}!` })
+      );
+      say([{ speaker: 'Narration', text: levelUpLine(companion.creature.name, afterLevel) }, ...learned], () => maybeEvolve(afterLevel, done));
     } else {
       done();
     }
@@ -145,22 +202,31 @@ export default function BattleScreen({ params }) {
   const wildCounter = () => 4 + Math.floor(target.hp / 15) + Math.floor(Math.random() * 4);
 
   const startMove = (moveId) => {
-    const move = getExercise(moveId);
+    const move = getMove(moveId);
     setSelectedMove(moveId);
     setHold(move.kind === 'hold' ? move.target : 0);
     setPhase('doing');
   };
 
   const confirmMove = () => {
-    const move = getExercise(selectedMove);
+    const move = getMove(selectedMove);
     const dmg = move.power + Math.floor((companion.level - 1) * 2);
     const newWildHp = Math.max(0, wildHp - dmg);
-    setWildHp(newWildHp);
-    setWildHit((h) => h + 1);
-    playSfx('hit');
+    // Choreography: the companion steps INTO the strike, and only then does the
+    // wild flinch — cause before effect, ~140ms apart. Damage numbers ride the
+    // flinch, not the tap.
+    setCompanionLunge((n) => n + 1);
+    later(140, () => {
+      setWildHp(newWildHp);
+      setWildHit((h) => h + 1);
+      setWildPop((p) => ({ id: p.id + 1, amount: dmg }));
+      playSfx('hit');
+    });
 
     if (newWildHp <= 0) {
-      setWildFaint(true);
+      // Faint AFTER the flinch, not with it: lunge at 0ms, hit at 140, and the
+      // drop starts once the flash has read.
+      later(430, () => setWildFaint(true));
       const beforeLevel = companion.level;
       if (target.isCompanion) {
         const half = Math.max(6, Math.floor(target.xp / 2));
@@ -180,8 +246,13 @@ export default function BattleScreen({ params }) {
 
     const counter = wildCounter();
     const newCompHp = Math.max(0, companionHp - counter);
-    setCompanionHp(newCompHp);
-    setCompanionHit((h) => h + 1);
+    later(650, () => setWildLunge((n) => n + 1));
+    later(790, () => {
+      setCompanionHp(newCompHp);
+      setCompanionHit((h) => h + 1);
+      setCompPop((p) => ({ id: p.id + 1, amount: counter }));
+      playSfx('hit');
+    });
     say(
       [
         { speaker: companion.creature.name, text: moveLanded(companion.creature.name, move) },
@@ -223,8 +294,13 @@ export default function BattleScreen({ params }) {
     } else {
       const counter = wildCounter();
       const newCompHp = Math.max(0, companionHp - counter);
-      setCompanionHp(newCompHp);
-      setCompanionHit((h) => h + 1);
+      setWildLunge((n) => n + 1);
+      later(140, () => {
+        setCompanionHp(newCompHp);
+        setCompanionHit((h) => h + 1);
+        setCompPop((p) => ({ id: p.id + 1, amount: counter }));
+        playSfx('hit');
+      });
       say([{ speaker: 'Narration', text: catchFailLine(wild.name) + ` (-${counter})` }], () => {
         if (newCompHp <= 0) {
           setCompanionFaint(true);
@@ -256,17 +332,19 @@ export default function BattleScreen({ params }) {
     navigate(returnTo);
   };
 
-  const move = selectedMove ? getExercise(selectedMove) : null;
+  const move = selectedMove ? getMove(selectedMove) : null;
   const holdReady = move && move.kind === 'hold' ? hold <= 0 : true;
   const companionMax = companion.maxHp;
 
   // Classic battle framing: their plate top-left with the creature opposite it,
   // your plate bottom-right with your companion opposite that, both standing on
-  // lit discs over a horizon.
+  // lit discs. The horizon sits high (0.16) so BOTH combatants stand on the
+  // ground plane — lower, and the enemy floats in the sky with a platform
+  // under it.
   const stageTone = params.from === 'route' ? 'grass' : 'trail';
 
   const top = (
-    <BattleStage tone={stageTone} horizon={0.5}>
+    <BattleStage tone={stageTone} horizon={0.16}>
       <View style={{ flex: 1, padding: space.sm }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
           <StatusPlate
@@ -277,20 +355,41 @@ export default function BattleScreen({ params }) {
             tagColor={target.isCompanion ? palette.hpHigh : palette.danger}
             style={{ flex: 1, marginRight: space.lg }}
           />
-          <View style={{ alignItems: 'center', marginTop: 2 }}>
-            <PixelSprite spriteKey={wild.sprite} palette={wild.palette} size={84} bob={!wildFaint} hitCount={wildHit} fainting={wildFaint} />
+          <Animated.View style={{ alignItems: 'center', marginTop: 2, transform: [{ translateX: wildEnter }] }}>
+            <PixelSprite
+              spriteKey={wild.sprite}
+              palette={wild.palette}
+              size={84}
+              bob={!wildFaint}
+              hitCount={wildHit}
+              lungeCount={wildLunge}
+              lungeDir={{ x: -0.9, y: 0.45 }}
+              fainting={wildFaint}
+            />
+            <DamagePop pop={wildPop} color={palette.secondary} />
             <Platform width={92} tone={stageTone} />
-          </View>
+          </Animated.View>
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 'auto' }}>
-          <View style={{ alignItems: 'center', marginRight: space.md }}>
+          <Animated.View style={{ alignItems: 'center', marginRight: space.md, transform: [{ translateX: compEnter }] }}>
             <View>
-              <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={96} bob={!companionFaint} hitCount={companionHit} fainting={companionFaint} flip />
+              <PixelSprite
+                spriteKey={companion.creature.sprite}
+                palette={companion.creature.palette}
+                size={96}
+                bob={!companionFaint}
+                hitCount={companionHit}
+                lungeCount={companionLunge}
+                lungeDir={{ x: 0.9, y: -0.45 }}
+                fainting={companionFaint}
+                flip
+              />
               <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, backgroundColor: '#fff', opacity: evoFlash }} />
             </View>
+            <DamagePop pop={compPop} color={palette.danger} />
             <Platform width={108} tone={stageTone} />
-          </View>
+          </Animated.View>
           <StatusPlate
             name={companion.creature.name}
             level={companion.level}
@@ -317,10 +416,11 @@ export default function BattleScreen({ params }) {
         <Menu
           tone="cream"
           columns={2}
-          options={BATTLE_MOVES.map((id) => {
-            const m = getExercise(id);
-            return { label: m.name, value: id, sublabel: m.kind === 'hold' ? `${m.target}s ${m.exercise}` : `${m.target} ${m.exercise}` };
-          })}
+          options={battleMoves.map((m) => ({
+            label: m.name,
+            value: m.id,
+            sublabel: m.kind === 'hold' ? `${m.target}s ${m.exercise}` : `${m.target} ${m.exercise}`,
+          }))}
           onSelect={(opt) => startMove(opt.value)}
         />
         <View style={{ flexDirection: 'row', marginTop: space.sm }}>

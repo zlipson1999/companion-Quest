@@ -14,6 +14,10 @@ export default function PixelSprite({
   size = 96,
   bob = false,
   hitCount = 0,
+  // Increment to make the sprite lunge toward its opponent — the attack HAS a
+  // body now instead of damage simply appearing on the other side.
+  lungeCount = 0,
+  lungeDir = { x: 1, y: 0 },
   fainting = false,
   flip = false,
   style,
@@ -23,7 +27,9 @@ export default function PixelSprite({
   const shakeX = useRef(new Animated.Value(0)).current;
   const flash = useRef(new Animated.Value(0)).current;
   const faint = useRef(new Animated.Value(0)).current;
+  const lunge = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const firstHit = useRef(true);
+  const firstLunge = useRef(true);
 
   useEffect(() => {
     if (!bob) {
@@ -58,6 +64,24 @@ export default function PixelSprite({
   }, [hitCount, shakeX, flash]);
 
   useEffect(() => {
+    if (firstLunge.current) {
+      firstLunge.current = false;
+      return;
+    }
+    // Sharp out, soft back: the strike is fast and the recovery settles.
+    Animated.sequence([
+      Animated.timing(lunge, {
+        toValue: { x: (lungeDir.x || 0) * 20, y: (lungeDir.y || 0) * 20 },
+        duration: 110,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(lunge, { toValue: { x: 0, y: 0 }, duration: 240, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+    ]).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lungeCount]);
+
+  useEffect(() => {
     if (fainting) {
       Animated.timing(faint, { toValue: 1, duration: 600, useNativeDriver: true }).start();
     } else {
@@ -76,7 +100,10 @@ export default function PixelSprite({
 
   const faintTranslate = faint.interpolate({ inputRange: [0, 1], outputRange: [0, 14] });
   const faintOpacity = faint.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
-  const whitePal = Array(8).fill('#ffffff');
+  // Must cover the full 90-index alphabet: at 8 entries the flash overlay
+  // resolved to transparent for almost every pixel of a modern sprite, which
+  // made the hit flash invisible.
+  const whitePal = Array(96).fill('#ffffff');
 
   return (
     <Animated.View
@@ -85,7 +112,11 @@ export default function PixelSprite({
           width: w,
           height: h,
           opacity: faintOpacity,
-          transform: [{ translateX: shakeX }, { translateY: Animated.add(bobY, faintTranslate) }, { scaleX: flip ? -1 : 1 }],
+          transform: [
+            { translateX: Animated.add(shakeX, lunge.x) },
+            { translateY: Animated.add(lunge.y, Animated.add(bobY, faintTranslate)) },
+            { scaleX: flip ? -1 : 1 },
+          ],
         },
         style,
       ]}

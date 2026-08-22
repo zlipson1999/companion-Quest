@@ -1,34 +1,28 @@
-// The battle backdrop: a sky, a horizon, receding ground bands, and a raised
-// disc under each combatant.
+// The battle backdrop: sky, a haze line at the horizon, and REAL GROUND — the
+// same 16x16 tiles the overworld walks on, drawn big. The zoomed-in tiles are
+// what ties the fight to the world: you were just standing on this grass.
 //
-// The discs are drawn as stacked rectangles of decreasing width — which is how
-// a low-res sprite draws an ellipse, and keeps the hard-edged rule intact while
-// still reading as a lit platform in perspective. No rounded corners anywhere.
-//
-// The first version was four flat rectangles: one sky, one horizon line, one
-// ground, one darker strip. Flat colour is what makes a backdrop read as a
-// placeholder. Everything here is banded instead — the sky steps lighter as it
-// approaches the horizon, the ground steps darker as it comes toward you, and
-// the platform has a lit top, a body and a shadowed underside.
+// The first version banded the sky and ground into flat colour stripes. Bands
+// read as a gradient tool, not a place; the tiles already existed and already
+// read as terrain, so the ground uses them instead of reinventing anything.
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View } from 'react-native';
-import { palette, shade } from '../theme';
+import { palette, screen, shade } from '../theme';
+import { Tile } from './TileMap';
 
 // Half-widths down the disc: widest just past the middle, so it reads as a
 // shallow ellipse lit from above rather than a flat stripe.
 const DISC = [0.52, 0.78, 0.93, 1.0, 1.0, 0.96, 0.84, 0.62];
 
 const TONES = {
-  grass: { sky: '#4a6ea8', far: '#7fa8d8', ground: palette.grass, groundDark: palette.grassDark, disc: palette.grassTall },
-  trail: { sky: '#5f7fb4', far: '#9fc0e0', ground: palette.path, groundDark: palette.pathDark, disc: palette.sand },
-  dusk: { sky: '#3a2c52', far: '#8a6a9e', ground: '#4a3d5e', groundDark: '#332a45', disc: '#6b5d7a' },
+  grass: { sky: '#4a6ea8', far: '#7fa8d8', disc: palette.grassTall, field: 'grass' },
+  trail: { sky: '#5f7fb4', far: '#9fc0e0', disc: palette.sand, field: 'path' },
+  dusk: { sky: '#3a2c52', far: '#8a6a9e', disc: '#6b5d7a', field: 'grass' },
 };
 
-// Sky and ground each step through a few hard bands. Four is enough to read as
-// distance and few enough to stay in the handheld idiom.
-const SKY_BANDS = [0, 0.06, 0.13, 0.22];
-const GROUND_BANDS = [0.1, 0, -0.1, -0.2];
+// Battle tiles are drawn at 3x the overworld's usual scale — "zoomed in".
+const TILE_SIZE = 52;
 
 export function Platform({ width = 96, tone = 'grass' }) {
   const t = TONES[tone] || TONES.grass;
@@ -37,8 +31,7 @@ export function Platform({ width = 96, tone = 'grass' }) {
   return (
     <View style={{ alignItems: 'center' }}>
       {DISC.map((w, i) => {
-        // top two rows catch the light, the middle is the body, the bottom two
-        // are the shaded underside of the rock
+        // top rows catch the light, the bottom rows are the shaded underside
         const amt = i === 0 ? 0.34 : i === 1 ? 0.18 : i >= last - 1 ? -0.34 : i >= last - 2 ? -0.16 : 0;
         return (
           <View
@@ -58,41 +51,54 @@ export function Platform({ width = 96, tone = 'grass' }) {
   );
 }
 
+// The ground: rows of real tiles, scattered exactly the way the overworld
+// scatters them (same coordinate hash, via Tile), clipped to the stage.
+function TileGround({ field }) {
+  const cols = Math.ceil(screen.width / TILE_SIZE) + 1;
+  const rows = Math.ceil((screen.height * 0.5) / TILE_SIZE) + 1;
+  const grid = useMemo(() => {
+    const out = [];
+    for (let y = 0; y < rows; y += 1) {
+      let row = '';
+      for (let x = 0; x < cols; x += 1) {
+        if (field === 'path') {
+          row += '#';
+        } else {
+          // mostly grass, the odd tall-grass clump toward the edges — the
+          // middle stays calm so the combatants read cleanly against it
+          const h = ((x * 7 + y * 13) >>> 0) % 17;
+          row += h === 0 && (x < 2 || x > cols - 3) ? '^' : '.';
+        }
+      }
+      out.push(row);
+    }
+    return out;
+  }, [field, cols, rows]);
+
+  return (
+    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden' }}>
+      {grid.map((row, y) => (
+        <View key={y} style={{ flexDirection: 'row' }}>
+          {row.split('').map((code, x) => (
+            <Tile key={x} code={code} s={TILE_SIZE} frame={0} x={x} y={y} />
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
 // A full-bleed backdrop. `horizon` is where the ground starts, 0..1 from top.
 export default function BattleStage({ tone = 'grass', horizon = 0.52, children, style }) {
   const t = TONES[tone] || TONES.grass;
   const skyH = horizon * 100;
-  const groundH = 100 - skyH;
   return (
     <View style={[{ flex: 1, backgroundColor: t.sky }, style]}>
-      {SKY_BANDS.map((amt, i) => (
-        <View
-          key={`s${i}`}
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: `${(skyH / SKY_BANDS.length) * i}%`,
-            height: `${skyH / SKY_BANDS.length}%`,
-            backgroundColor: shade(t.sky, amt),
-          }}
-        />
-      ))}
-      {/* the far band along the horizon reads as haze over distant ground */}
-      <View style={{ position: 'absolute', left: 0, right: 0, top: `${skyH}%`, height: 3, backgroundColor: t.far }} />
-      {GROUND_BANDS.map((amt, i) => (
-        <View
-          key={`g${i}`}
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: `${skyH + (groundH / GROUND_BANDS.length) * i}%`,
-            height: `${groundH / GROUND_BANDS.length}%`,
-            backgroundColor: shade(i === 0 ? t.ground : i === GROUND_BANDS.length - 1 ? t.groundDark : t.ground, amt),
-          }}
-        />
-      ))}
+      {/* haze over distant ground — one line, not a stack of stripes */}
+      <View style={{ position: 'absolute', left: 0, right: 0, top: `${skyH}%`, height: 4, backgroundColor: t.far }} />
+      <View style={{ position: 'absolute', left: 0, right: 0, top: `${skyH}%`, bottom: 0 }}>
+        <TileGround field={t.field} />
+      </View>
       <View style={{ flex: 1 }}>{children}</View>
     </View>
   );

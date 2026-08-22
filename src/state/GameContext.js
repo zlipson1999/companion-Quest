@@ -10,6 +10,7 @@ import React, { createContext, useContext, useEffect, useReducer, useRef } from 
 import { getCreature } from '../data/creatures';
 import { getItem } from '../data/items';
 import { pacingForGoal } from '../data/route';
+import { migrateGoalId } from '../data/goals';
 import { xpProgress, levelFromXp, maxHpFor } from './leveling';
 import { loadGame, saveGame, clearGame } from './storage';
 import { stamp, trim } from './history';
@@ -121,6 +122,9 @@ function reducer(state, action) {
       const merged = {
         ...FRESH,
         ...saved,
+        // Saves written before the Forge Might / Travel Light / Take Root goal
+        // set carry the old ids; translate once so nothing downstream has to.
+        goalId: migrateGoalId(saved.goalId) || null,
         stats: { ...FRESH.stats, ...(saved.stats || {}) },
         bag: { ...(saved.bag || {}) },
         dex: { ...(saved.dex || {}) },
@@ -199,7 +203,7 @@ function reducer(state, action) {
       // Walking pays XP now. Distance arrives a thousandth of a mile at a
       // time, so the fraction is carried between dispatches — rounding each
       // step's worth on its own would floor every one of them to zero.
-      const carry = (state.stats.xpCarry || 0) + mi * XP_PER_MILE;
+      const carry = (state.stats.xpCarry || 0) + mi * XP_PER_MILE * (pacing.mileXpMult || 1);
       const walkXp = Math.floor(carry);
       const withEvo = updateActive(state, (m) =>
         applyEffect(m, {

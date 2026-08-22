@@ -2,7 +2,7 @@
 // starts the game (creates the companion) and moves to the pairing scene.
 
 import React, { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Screen, Window, PixelText, PixelSprite, PixelButton, Triangle } from '../components';
 import { palette, space } from '../theme';
 import { useGame } from '../state';
@@ -37,7 +37,7 @@ export default function GoalSelectScreen() {
           return (
             <View key={g.id} style={{ marginBottom: space.md }}>
               <Window tone="cream" pad={12} style={{ borderColor: isSel ? palette.accent : palette.windowBorder }} innerStyle={isSel ? { borderColor: palette.accent } : null}>
-                <View onTouchEnd={() => { playSfx('cursor'); setSelected(g.id); }} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Pressable onPress={() => { playSfx('cursor'); setSelected(g.id); }} style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <PixelSprite spriteKey={c.sprite} palette={c.palette} size={56} bob={isSel} />
                   <View style={{ flex: 1, marginLeft: space.md }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -52,7 +52,7 @@ export default function GoalSelectScreen() {
                       {g.tagline}
                     </PixelText>
                   </View>
-                </View>
+                </Pressable>
               </Window>
             </View>
           );

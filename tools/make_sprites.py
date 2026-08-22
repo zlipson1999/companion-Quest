@@ -570,6 +570,348 @@ class Canvas:
 
 
 # =========================================================================
+# DRAWN — a hand-authored outline, inflated into a volume.
+#
+# Blending primitives fixed the lighting but not the shape: the silhouette was
+# still a union of circles and capsules, and you can see that in the outline no
+# matter how well the interior is lit. A creature built from geometry looks like
+# geometry.
+#
+# So the outline stops being derived and starts being DRAWN. A closed contour is
+# authored point by point — deliberately asymmetric, with the bumps and pinches
+# a hand would make — smoothed through a Catmull-Rom spline, and filled. Volume
+# then comes from the distance transform of that filled shape: every interior
+# pixel knows how far it is from the edge, and that distance is inflated into a
+# height. The middle of the form stands proud, the rim falls away, and the
+# normal follows the drawn contour rather than any underlying circle.
+#
+# Interior structure — where a leg meets a body, the line under a jaw — is cut
+# as a CREASE: a valley pressed into the height field along an authored line.
+# That is how a drawing separates forms, and unlike a seam between two objects
+# it is part of the same continuous surface.
+# =========================================================================
+
+
+def catmull(points, samples=12, closed=True, alpha=0.5):
+    """Centripetal Catmull-Rom through hand-placed points.
+
+    Uniform parameterisation overshoots badly wherever the spacing between
+    control points varies, which scalloped the contour into a lumpy potato. The
+    centripetal variant (alpha=0.5) is specifically the one that cannot form
+    cusps or self-intersections, so an outline stays where it was drawn.
+    """
+    n = len(points)
+    if n < 4:
+        return list(points)
+
+    def tj(ti, pi, pj):
+        d = math.hypot(pj[0] - pi[0], pj[1] - pi[1])
+        return ti + (d ** alpha if d > 1e-9 else 1e-9)
+
+    out = []
+    rng = range(n) if closed else range(1, n - 2)
+    for i in rng:
+        p0 = points[(i - 1) % n]
+        p1 = points[i % n]
+        p2 = points[(i + 1) % n]
+        p3 = points[(i + 2) % n]
+        t0 = 0.0
+        t1 = tj(t0, p0, p1)
+        t2 = tj(t1, p1, p2)
+        t3 = tj(t2, p2, p3)
+        for sN in range(samples):
+            t = t1 + (t2 - t1) * (sN / float(samples))
+            def lerp(a_, b_, ta, tb):
+                f = (tb - t) / ((tb - ta) or 1e-9)
+                g = (t - ta) / ((tb - ta) or 1e-9)
+                return (a_[0] * f + b_[0] * g, a_[1] * f + b_[1] * g)
+            A1 = lerp(p0, p1, t0, t1)
+            A2 = lerp(p1, p2, t1, t2)
+            A3 = lerp(p2, p3, t2, t3)
+            B1 = lerp(A1, A2, t0, t2)
+            B2 = lerp(A2, A3, t1, t3)
+            out.append(lerp(B1, B2, t1, t2))
+    return out
+
+
+def _inside(poly, x, y):
+    inside = False
+    n = len(poly)
+    j = n - 1
+    for i in range(n):
+        xi, yi = poly[i]
+        xj, yj = poly[j]
+        if (yi > y) != (yj > y):
+            if x < (xj - xi) * (y - yi) / ((yj - yi) or 1e-9) + xi:
+                inside = not inside
+        j = i
+    return inside
+
+
+def _seg_dist(px, py, x0, y0, x1, y1):
+    dx, dy = x1 - x0, y1 - y0
+    seg2 = dx * dx + dy * dy or 1e-9
+    t = max(0.0, min(1.0, ((px - x0) * dx + (py - y0) * dy) / seg2))
+    cx, cy = x0 + dx * t, y0 + dy * t
+    return math.hypot(px - cx, py - cy)
+
+
+class Drawn:
+    """A creature drawn as an outline and inflated."""
+
+    def __init__(self, palette, size=48, scale=2, bands=14):
+        self.palette = palette
+        self.size = size
+        self.scale = scale
+        self.bands = bands
+        self.w = self.h = size * scale
+        self.outline_pts = None
+        self._mask_cov = None
+        self._mask_ramp = None
+        self.regions = []     # (poly, ramp)
+        self.creases = []     # (pts, depth, width)
+        self.ridges = []      # (pts, height, width)
+
+    # -- authoring -----------------------------------------------------------
+    def mask(self, rows, legend=None, smooth=2):
+        """Draw the creature directly, as a grid of characters.
+
+        Placing spline control points blind is drawing with coordinates, and it
+        fights back: an arm becomes a spike because two points landed too close.
+        A character grid is how pixel artists actually work — the shape is
+        visible in the source, so it can be read and corrected like a drawing.
+
+        The grid is authored coarse (a 32-square is comfortable to write and to
+        read) and upsampled to the sprite resolution. Stair-stepping does not
+        survive: the coverage is blurred before the distance transform, and the
+        inflation rounds what is left.
+
+        '.' or ' ' is empty. Every other character is body, and any character in
+        `legend` also names the ramp for that area.
+        """
+        legend = legend or {}
+        gh = len(rows)
+        gw = max(len(r) for r in rows)
+        cov = [[0.0] * self.w for _ in range(self.h)]
+        ramp_at = [[None] * self.w for _ in range(self.h)]
+        sx = self.w / float(gw)
+        sy = self.h / float(gh)
+        for gy, row in enumerate(rows):
+            for gx, ch in enumerate(row):
+                if ch in ('.', ' '):
+                    continue
+                r = legend.get(ch)
+                for y in range(int(gy * sy), int((gy + 1) * sy)):
+                    for x in range(int(gx * sx), int((gx + 1) * sx)):
+                        if 0 <= y < self.h and 0 <= x < self.w:
+                            cov[y][x] = 1.0
+                            if r:
+                                ramp_at[y][x] = r
+        # Soften the ramp map too. Only the coverage was blurred, so a legend
+        # area like a pale belly kept the raw mask's blocky edge and read as a
+        # rectangle pasted onto a rounded body.
+        for r in set(v for v in legend.values()):
+            field = [[1.0 if ramp_at[y][x] == r else 0.0 for x in range(self.w)] for y in range(self.h)]
+            for _ in range(smooth + 2):
+                nxt = [row[:] for row in field]
+                for y in range(self.h):
+                    for x in range(self.w):
+                        acc = n = 0.0
+                        for dy in (-1, 0, 1):
+                            for dx in (-1, 0, 1):
+                                yy, xx = y + dy, x + dx
+                                if 0 <= yy < self.h and 0 <= xx < self.w:
+                                    acc += field[yy][xx]; n += 1
+                        nxt[y][x] = acc / n
+                field = nxt
+            for y in range(self.h):
+                for x in range(self.w):
+                    if field[y][x] >= 0.5:
+                        ramp_at[y][x] = r
+                    elif ramp_at[y][x] == r:
+                        ramp_at[y][x] = None
+
+        # soften the staircase before the shape is measured
+        for _ in range(smooth):
+            nxt = [row[:] for row in cov]
+            for y in range(self.h):
+                for x in range(self.w):
+                    acc = n = 0.0
+                    for dy in (-1, 0, 1):
+                        for dx in (-1, 0, 1):
+                            yy, xx = y + dy, x + dx
+                            if 0 <= yy < self.h and 0 <= xx < self.w:
+                                acc += cov[yy][xx]
+                                n += 1
+                    nxt[y][x] = acc / n
+            cov = nxt
+        self._mask_cov = cov
+        self._mask_ramp = ramp_at
+
+    # -- authoring -----------------------------------------------------------
+    def shape(self, pts, samples=14):
+        S = self.scale
+        self.outline_pts = [(x * S, y * S) for x, y in catmull(pts, samples)]
+
+    def region(self, pts, ramp, samples=12):
+        S = self.scale
+        self.regions.append(([(x * S, y * S) for x, y in catmull(pts, samples)], ramp))
+
+    def crease(self, pts, depth=2.2, width=1.6):
+        S = self.scale
+        self.creases.append(([(x * S, y * S) for x, y in pts], depth * S, width * S))
+
+    def ridge(self, pts, height=1.6, width=2.0):
+        S = self.scale
+        self.ridges.append(([(x * S, y * S) for x, y in pts], height * S, width * S))
+
+    # -- volume --------------------------------------------------------------
+    def _distance_field(self):
+        """Chamfer distance to the edge, for interior pixels."""
+        w, h = self.w, self.h
+        INF = 1e9
+        d = [[INF] * w for _ in range(h)]
+        inside = [[False] * w for _ in range(h)]
+
+        if getattr(self, '_mask_cov', None) is not None:
+            for y in range(h):
+                for x in range(w):
+                    inside[y][x] = self._mask_cov[y][x] >= 0.5
+            for y in range(h):
+                for x in range(w):
+                    if not inside[y][x]:
+                        d[y][x] = -1.0
+                        continue
+                    if (x == 0 or y == 0 or x == w - 1 or y == h - 1
+                            or not inside[y][x - 1] or not inside[y][x + 1]
+                            or not inside[y - 1][x] or not inside[y + 1][x]):
+                        d[y][x] = 0.0
+            return self._chamfer(d, inside)
+
+        # scanline fill
+        ys = [p[1] for p in self.outline_pts]
+        for y in range(max(0, int(min(ys))), min(h, int(max(ys)) + 1)):
+            xs = []
+            n = len(self.outline_pts)
+            for i in range(n):
+                x0, y0 = self.outline_pts[i]
+                x1, y1 = self.outline_pts[(i + 1) % n]
+                if (y0 <= y + 0.5 < y1) or (y1 <= y + 0.5 < y0):
+                    xs.append(x0 + (y + 0.5 - y0) * (x1 - x0) / ((y1 - y0) or 1e-9))
+            xs.sort()
+            for i in range(0, len(xs) - 1, 2):
+                for x in range(max(0, int(math.ceil(xs[i] - 0.5))), min(w, int(xs[i + 1] + 0.5) + 1)):
+                    inside[y][x] = True
+
+        for y in range(h):
+            for x in range(w):
+                if inside[y][x]:
+                    # boundary if any 4-neighbour is outside
+                    if (x == 0 or y == 0 or x == w - 1 or y == h - 1
+                            or not inside[y][x - 1] or not inside[y][x + 1]
+                            or not inside[y - 1][x] or not inside[y + 1][x]):
+                        d[y][x] = 0.0
+                else:
+                    d[y][x] = -1.0
+
+        return self._chamfer(d, inside)
+
+    def _chamfer(self, d, inside):
+        h = len(d); w = len(d[0])
+        for y in range(h):
+            for x in range(w):
+                if d[y][x] < 0:
+                    continue
+                best = d[y][x]
+                for dx, dy, c in ((-1, 0, 1.0), (0, -1, 1.0), (-1, -1, 1.414), (1, -1, 1.414)):
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < w and 0 <= ny < h and d[ny][nx] >= 0:
+                        best = min(best, d[ny][nx] + c)
+                d[y][x] = best
+        for y in range(h - 1, -1, -1):
+            for x in range(w - 1, -1, -1):
+                if d[y][x] < 0:
+                    continue
+                best = d[y][x]
+                for dx, dy, c in ((1, 0, 1.0), (0, 1, 1.0), (1, 1, 1.414), (-1, 1, 1.414)):
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < w and 0 <= ny < h and d[ny][nx] >= 0:
+                        best = min(best, d[ny][nx] + c)
+                d[y][x] = best
+        return d, inside
+
+    def to_canvas(self, dome=7.0, ambient=0.12, backlight=1.0, gamma=1.25, base='body'):
+        w, h = self.w, self.h
+        S = self.scale
+        R = dome * S
+        d, inside = self._distance_field()
+        H = [[0.0] * w for _ in range(h)]
+        for y in range(h):
+            for x in range(w):
+                if not inside[y][x]:
+                    continue
+                # Quarter-circle inflation: zero at the drawn edge, full height
+                # once you are `dome` in. The rim rolls over instead of ending
+                # in a cliff, which is what makes it read as a body.
+                t = min(1.0, d[y][x] / R)
+                H[y][x] = R * math.sqrt(max(0.0, 1.0 - (1.0 - t) ** 2))
+
+        for pts, depth, width in self.creases:
+            for y in range(h):
+                for x in range(w):
+                    if not inside[y][x]:
+                        continue
+                    best = min(_seg_dist(x + 0.5, y + 0.5, pts[i][0], pts[i][1],
+                                         pts[i + 1][0], pts[i + 1][1])
+                               for i in range(len(pts) - 1))
+                    if best < width * 3:
+                        H[y][x] -= depth * math.exp(-(best / width) ** 2)
+        for pts, height, width in self.ridges:
+            for y in range(h):
+                for x in range(w):
+                    if not inside[y][x]:
+                        continue
+                    best = min(_seg_dist(x + 0.5, y + 0.5, pts[i][0], pts[i][1],
+                                         pts[i + 1][0], pts[i + 1][1])
+                               for i in range(len(pts) - 1))
+                    if best < width * 3:
+                        H[y][x] += height * math.exp(-(best / width) ** 2)
+
+        c = Canvas(self.size, self.size, self.palette, scale=S, bands=self.bands)
+        lx, ly, lz = LIGHT
+        n = math.sqrt(lx * lx + ly * ly + lz * lz)
+        lx, ly, lz = lx / n, ly / n, lz / n
+        bx, by = -lx, -ly
+
+        for y in range(h):
+            for x in range(w):
+                if not inside[y][x]:
+                    continue
+                hl = H[y][x - 1] if x > 0 and inside[y][x - 1] else 0.0
+                hr = H[y][x + 1] if x < w - 1 and inside[y][x + 1] else 0.0
+                hu = H[y - 1][x] if y > 0 and inside[y - 1][x] else 0.0
+                hd = H[y + 1][x] if y < h - 1 and inside[y + 1][x] else 0.0
+                nx, ny, nz = (hl - hr), (hu - hd), 2.2
+                m = math.sqrt(nx * nx + ny * ny + nz * nz) or 1.0
+                nx, ny, nz = nx / m, ny / m, nz / m
+                lam = max(0.0, nx * lx + ny * ly + nz * lz)
+                shade = ambient + (1.0 - ambient) * (lam ** gamma)
+                rim = max(0.0, nx * bx + ny * by)
+                edge = 1.0 - min(1.0, d[y][x] / (R * 0.9))
+                shade += backlight * (rim ** 3) * (edge ** 1.5)
+
+                ramp = base
+                if self._mask_ramp is not None and self._mask_ramp[y][x]:
+                    ramp = self._mask_ramp[y][x]
+                for poly, rname in self.regions:
+                    if _inside(poly, x + 0.5, y + 0.5):
+                        ramp = rname
+                c.px[y][x] = (ramp, max(0.0, min(1.0, shade)), 1.0, True)
+                c.lay[y][x] = 1
+        return c
+
+
+# =========================================================================
 # BODY — one surface, lit once.
 #
 # The previous model drew a creature as a union of independently lit parts: each
@@ -726,41 +1068,71 @@ def new_creature(palette):
 
 
 def sproutle(pal='sprout'):
-    """Seedling companion.
+    """Seedling companion — drawn as a mask, then inflated.
 
-    One surface: the arms and legs are tubes that the height field fuses into
-    the torso, so they read as part of the body rather than pushed into it. The
-    sprout is the only thing deliberately separate — a stem should look grown,
-    not moulded.
+    The grid below IS the drawing: '#' is body, 'b' the pale front, '.' empty.
+    A 32-square is coarse enough to author and read as a picture and fine enough
+    that, once the coverage is blurred and the distance transform rounds it, no
+    stair-stepping survives into the sprite.
+
+    Deliberately not symmetrical — the left arm hangs a row lower than the right.
     """
-    b = Body(pal, blend=2.4)
+    d = Drawn(pal)
+    d.mask([
+        '................................',
+        '................................',
+        '................................',
+        '................................',
+        '................................',
+        '.............#######............',
+        '...........###########..........',
+        '.........##############.........',
+        '........################........',
+        '........#################.......',
+        '.......##################.......',
+        '.......###################......',
+        '......####################......',
+        '......####################......',
+        '......########################..',
+        '...############################.',
+        '..#############################.',
+        '..#########bbbbbbbbbb##########.',
+        '..########bbbbbbbbbbbb########..',
+        '...#######bbbbbbbbbbbb######....',
+        '...#######bbbbbbbbbbbb#####.....',
+        '......#####bbbbbbbbbb######.....',
+        '.......#####bbbbbbbb######......',
+        '........#####bbbbbb######.......',
+        '.........###############........',
+        '.........#####.....#####........',
+        '.........#####.....#####........',
+        '........######.....######.......',
+        '........######.....######.......',
+        '.......#######.....#######......',
+        '.......########...########......',
+        '................................',
+    ], legend={'b': 'belly'}, smooth=6)
 
-    b.tube(24, 18, 24, 9, 1.6, 1.2, 'leaf')            # stem
-    b.ball(17.2, 7.0, 6.4, 3.3, 2.6, 'leaf')           # leaves
-    b.ball(30.8, 6.0, 5.8, 3.0, 2.4, 'leaf')
+    # Creases separate the legs and set the brow. A drawing divides forms with a
+    # line pressed into the surface, not with a gap between two objects.
+    d.crease([(20.2, 36.0), (20.2, 45.5)], depth=3.2, width=1.3)
+    d.crease([(27.8, 36.0), (27.8, 45.5)], depth=3.2, width=1.3)
+    d.crease([(9.5, 22.0), (9.0, 29.0)], depth=2.0, width=1.2)
+    d.crease([(39.0, 21.0), (39.5, 27.5)], depth=2.0, width=1.2)
+    d.crease([(15.0, 14.5), (24.0, 13.2), (33.0, 14.8)], depth=1.2, width=1.7)
 
-    b.tube(18.5, 34, 16.0, 43, 3.2, 2.7)               # legs
-    b.tube(29.5, 34, 32.0, 43, 3.2, 2.7)
-    b.ball(15.4, 44.4, 4.0, 2.3, 2.2)
-    b.ball(32.6, 44.4, 4.0, 2.3, 2.2)
+    c = d.to_canvas(dome=6.6, ambient=0.11, backlight=1.0, gamma=1.22)
 
-    b.ball(24, 28, 13.2, 12.8, 12.0)                   # torso — a pear
-    b.ball(24, 33, 11.2, 9.4, 11.0)
-    b.ball(24, 34.8, 7.6, 4.8, 12.4, 'belly')          # pale front, proud
+    c.limb(24, 8.5, 24, 3.0, 1.7, 1.2, 'leaf', ambient=0.30)
+    c.sphere(17.5, 1.8, 6.0, 3.0, 'leaf', ambient=0.34)
+    c.sphere(30.5, 1.0, 5.4, 2.7, 'leaf', ambient=0.40)
+    c.spec(15.5, 1.0, 2.4, 'leaf', strength=0.45)
+    c.spec(18.0, 14.0, 4.4, strength=0.38)
 
-    b.tube(14.0, 27, 10.0, 34, 3.0, 2.2)               # arms
-    b.tube(34.0, 27, 38.0, 34, 3.0, 2.2)
-    b.ball(9.4, 35.4, 2.8, 2.6, 2.4)
-    b.ball(38.6, 35.4, 2.8, 2.6, 2.4)
-
-    c = b.to_canvas(ambient=0.11, backlight=1.0, gamma=1.25)
-    c.spec(18.6, 21.5, 4.8, strength=0.42)
-    c.spec(15.2, 5.9, 2.8, 'leaf', strength=0.45)
-
-    c.eye(19, 25.5, 3.4)
-    c.eye(29, 25.5, 3.4)
-    c.blob(23.1, 30.4, 1.3, 0.6, 'eye', 0.0)
-    c.blob(24.9, 30.4, 1.3, 0.6, 'eye', 0.0)
+    c.eye(18.6, 17.6, 3.4)
+    c.eye(29.4, 17.6, 3.4)
+    c.blob(23.0, 22.4, 1.3, 0.6, 'eye', 0.0)
+    c.blob(25.0, 22.4, 1.3, 0.6, 'eye', 0.0)
     c.outline()
     return c
 
@@ -928,86 +1300,130 @@ def pyrelynx(pal='pyre'):
 
 
 def emberkit(pal='ember'):
-    """Ember cub, sitting.
+    """Ember cub, sitting — drawn as a mask, then inflated.
 
-    Built as ONE surface: haunches, chest, neck and head are separate volumes
-    that the height field fuses, so the light runs from the top of the skull all
-    the way down the chest without meeting a seam.
+    The ears, skull, chest, paws and tail are one connected shape in the grid,
+    so there is nothing to seam: the whole animal is a single drawn outline that
+    the distance transform gives volume to.
     """
-    b = Body(pal, blend=2.3)
+    d = Drawn(pal)
+    d.mask([
+        '................................',
+        '................................',
+        '................................',
+        '........###..........###........',
+        '.......#####........#####.......',
+        '.......######......######.......',
+        '........################........',
+        '.........##############.........',
+        '........################........',
+        '........################........',
+        '........################........',
+        '........#####bbbbbb#####........',
+        '.........####bbbbbb####.........',
+        '..........############..........',
+        '............########............',
+        '...........##########...........',
+        '..........############..........',
+        '.........##############.........',
+        '........################........',
+        '.......######bbbbbb######.......',
+        '......######bbbbbbbb######......',
+        '......######bbbbbbbb######......',
+        '......######bbbbbbbb######......',
+        '......#######bbbbbb#######......',
+        '......####################......',
+        '.......##################.......',
+        '.......##################.......',
+        '........################........',
+        '.......######......######.......',
+        '......########....########......',
+        '................................',
+        '................................',
+    ], legend={'b': 'belly'}, smooth=6)
 
-    b.tube(30, 34, 38, 26, 2.6, 1.5)                 # tail
-    b.tube(38, 26, 42, 17, 1.5, 0.8, 'leaf')
+    d.crease([(19.0, 42.0), (19.0, 46.5)], depth=3.0, width=1.3)      # paw split
+    d.crease([(29.0, 42.0), (29.0, 46.5)], depth=3.0, width=1.3)
+    d.crease([(14.0, 21.5), (24.0, 20.5), (34.0, 21.5)], depth=1.6, width=1.6)  # brow
+    d.crease([(15.0, 26.5), (24.0, 28.0), (33.0, 26.5)], depth=1.8, width=1.5)  # jawline
+    d.crease([(12.0, 12.0), (13.5, 8.0)], depth=1.6, width=1.1)       # ear fold
+    d.crease([(36.0, 12.0), (34.5, 8.0)], depth=1.6, width=1.1)
 
-    b.ball(14.0, 37.5, 6.6, 7.0, 5.0)                # haunches
-    b.ball(34.0, 37.5, 6.6, 7.0, 5.0)
+    c = d.to_canvas(dome=6.0, ambient=0.10, backlight=1.05, gamma=1.32)
 
-    b.ball(24, 33, 10.2, 9.8, 9.2)                   # chest
-    # Pale front, standing PROUD of the chest so it catches light rather than
-    # sitting in its shadow. Kept shallow and wide — a tall narrow one read as a
-    # bald patch stuck on the fur.
-    b.ball(24, 37.0, 7.2, 4.6, 9.4, 'belly')
-    b.tube(20.5, 32, 20, 43, 2.7, 2.3)               # forelegs
-    b.tube(27.5, 32, 28, 43, 2.7, 2.3)
-    b.ball(19.6, 44.2, 3.3, 2.1, 2.2, 'belly')
-    b.ball(28.4, 44.2, 3.3, 2.1, 2.2, 'belly')
-    b.ball(12.8, 44.2, 4.2, 2.3, 2.2)
-    b.ball(35.2, 44.2, 4.2, 2.3, 2.2)
+    c.limb(37.0, 32.0, 44.0, 22.0, 2.4, 1.0, 'body', ambient=0.22)    # tail
+    c.limb(43.5, 23.5, 46.0, 16.0, 1.4, 0.5, 'leaf', ambient=0.48)
+    c.limb(13.0, 12.5, 12.0, 6.0, 1.8, 0.5, 'leaf', ambient=0.50)     # inner ear
+    c.limb(35.0, 12.5, 36.0, 6.0, 1.8, 0.5, 'leaf', ambient=0.44)
+    c.spec(18.0, 12.0, 4.6, strength=0.42)
+    c.spec(19.0, 31.0, 3.0, strength=0.30)
 
-    b.tube(24, 30, 24, 22, 6.6, 8.2)                 # neck into skull
-    b.ball(24, 19, 12.0, 10.6, 10.4)
-    b.ball(24, 24.3, 5.4, 3.6, 10.9, 'belly')        # muzzle, standing forward
-
-    b.tube(18.0, 13.5, 15.0, 3.5, 4.2, 0.9)          # ears
-    b.tube(30.0, 13.5, 33.0, 3.5, 4.2, 0.9)
-
-    c = b.to_canvas(ambient=0.10, backlight=1.05, gamma=1.3)
-
-    c.limb(17.6, 13.0, 15.8, 6.0, 2.0, 0.5, 'leaf', ambient=0.50)
-    c.limb(30.4, 13.0, 32.2, 6.0, 2.0, 0.5, 'leaf', ambient=0.44)
-    c.limb(24, 12.5, 24, 7.0, 2.2, 0.5, 'leaf', ambient=0.66)
-    c.spec(19.2, 13.0, 4.6, strength=0.40)
-
-    c.eye(18.6, 18.5, 3.5)
-    c.eye(29.4, 18.5, 3.5)
-    c.blob(24, 22.6, 1.9, 1.2, 'eye', 0.0)           # nose
-    c.blob(23.0, 25.4, 1.5, 0.6, 'eye', 0.0)         # mouth, two short strokes
-    c.blob(25.0, 25.4, 1.5, 0.6, 'eye', 0.0)
+    c.eye(19.0, 15.0, 3.4)
+    c.eye(29.0, 15.0, 3.4)
+    c.blob(24, 17.6, 1.8, 1.1, 'eye', 0.0)
+    c.blob(22.8, 19.6, 1.3, 0.6, 'eye', 0.0)
+    c.blob(25.2, 19.6, 1.3, 0.6, 'eye', 0.0)
     c.outline()
     return c
 
 
 def dewbble(pal='dew'):
-    """Dewdrop companion.
+    """Dewdrop companion — drawn as a mask, then inflated.
 
-    The point and the body are one volume, tapered — a drop is a single surface
-    and drawing it as a cone stuck on a ball was the most obvious seam in the
-    whole roster. Wet is a hard specular over a lit core, not a colour.
+    The point and the body are one outline, tapering the whole way, which is
+    what a drop actually is. Wet comes from a hard specular over a lit core, not
+    from the colour.
     """
-    b = Body(pal, blend=2.6)
+    d = Drawn(pal)
+    d.mask([
+        '................................',
+        '................................',
+        '................................',
+        '...............##...............',
+        '...............##...............',
+        '..............####..............',
+        '..............####..............',
+        '.............######.............',
+        '.............######.............',
+        '............########............',
+        '...........##########...........',
+        '..........############..........',
+        '.........##############.........',
+        '.........##############.........',
+        '........################........',
+        '........################........',
+        '.......##################.......',
+        '......####################......',
+        '......#####bbbbbbbbbb#####......',
+        '......####bbbbbbbbbbbb####......',
+        '......####bbbbbbbbbbbb####......',
+        '.......####bbbbbbbbbb####.......',
+        '........####bbbbbbbb####........',
+        '.........##############.........',
+        '...........##########...........',
+        '..........####....####..........',
+        '..........####....####..........',
+        '.........#####....#####.........',
+        '.........#####....#####.........',
+        '.........######..######.........',
+        '.........######..######.........',
+        '................................',
+    ], legend={'b': 'belly'}, smooth=6)
 
-    b.tube(20.0, 35, 17.0, 43, 2.9, 2.4)               # legs
-    b.tube(28.0, 35, 31.0, 43, 2.9, 2.4)
-    b.ball(16.4, 44.4, 3.8, 2.2, 2.1)
-    b.ball(31.6, 44.4, 3.8, 2.2, 2.1)
+    d.crease([(20.0, 38.0), (20.0, 46.5)], depth=3.0, width=1.3)
+    d.crease([(28.0, 38.0), (28.0, 46.5)], depth=3.0, width=1.3)
+    # No arms: at the drop's widest rows they fused with the body into one
+    # diamond and the whole creature read as a four-pointed star. A drop is
+    # better without them, and it separates this line from the other two.
 
-    # the drop: one tapered volume from the point down into the body
-    b.tube(24, 30, 24, 6, 12.0, 1.2, rz=12.0)
-    b.ball(24, 31, 13.4, 12.4, 13.0)
-    b.ball(24, 35.5, 8.2, 5.4, 13.4, 'belly')          # lit core, standing proud
+    c = d.to_canvas(dome=7.2, ambient=0.13, backlight=1.15, gamma=1.20)
 
-    b.tube(13.6, 30, 10.0, 36, 2.7, 2.1)               # arms
-    b.tube(34.4, 30, 38.0, 36, 2.7, 2.1)
-    b.ball(9.4, 37.0, 2.6, 2.4, 2.2)
-    b.ball(38.6, 37.0, 2.6, 2.4, 2.2)
+    c.spec(18.5, 20.0, 4.2, 'leaf', strength=0.95)                    # wet highlight
+    c.spec(22.0, 9.0, 1.9, 'leaf', strength=0.75)
 
-    c = b.to_canvas(ambient=0.13, backlight=1.15, gamma=1.2)
-    c.spec(18.8, 22.5, 4.4, 'leaf', strength=0.95)     # the wet highlight
-    c.spec(21.0, 12.5, 2.0, 'leaf', strength=0.75)
-
-    c.eye(19, 28.5, 3.4)
-    c.eye(29, 28.5, 3.4)
-    c.blob(24, 33.5, 1.9, 1.0, 'eye', 0.0)
+    c.eye(19.0, 25.5, 3.4)
+    c.eye(29.0, 25.5, 3.4)
+    c.blob(24, 30.5, 1.9, 1.0, 'eye', 0.0)
     c.outline()
     return c
 
@@ -1597,12 +2013,54 @@ def tile_gate():
 
 
 # =========================================================================
+# TRACED — sprites converted from reference artwork.
+#
+# The procedural pipeline can build a coherent lit form, but the DESIGN — the
+# proportions, where the weight sits, how a face is arranged — was the limit,
+# and it was mine rather than the engine's. A drawn reference solves that
+# directly: the artwork is downsampled, quantised to a hand-ordered palette, and
+# kept here as data.
+#
+# These are the kit. Everything procedural should inherit their palette ramps
+# and their proportions so the roster reads as one family rather than as two
+# separate art styles sharing a screen.
+# =========================================================================
+TRACED_DIR = HERE
+
+
+def load_traced(name):
+    path = os.path.join(TRACED_DIR, 'traced_%s.json' % name)
+    if not os.path.exists(path):
+        return None
+    with open(path) as f:
+        blob = json.load(f)
+    pal = ['transparent'] + list(blob['palette'])
+    # Re-index from the converter's A.. alphabet into the sprite alphabet, with
+    # 0 reserved for transparent as everywhere else.
+    grid = []
+    for row in blob['rows']:
+        out = ''
+        for ch in row:
+            out += TRANSPARENT if ch == '.' else DIGITS[ord(ch) - 64]
+        grid.append(out)
+    return {'palette': pal, 'grid': grid}
+
+
+# =========================================================================
 # REGISTRY
 # =========================================================================
 def build_all():
     s = {}
+    traced_palettes = {}
 
     def add(name, canvas):
+        # Reference artwork, where we have it, beats anything generated.
+        t = load_traced(name)
+        if t:
+            key = 'art_' + name
+            traced_palettes[key] = t['palette']
+            s[name] = {'palette': key, 'grid': t['grid']}
+            return
         s[name] = {'palette': canvas.palette, 'grid': canvas.resolve()}
 
     # creatures
@@ -1639,6 +2097,7 @@ def build_all():
     add('tile_roof_rest', tile_roof('ache')); add('tile_roof_gym', tile_roof('hero'))
     add('tile_wall', tile_wall('couch')); add('tile_window', tile_window('couch'))
     add('tile_door', tile_door('couch')); add('tile_gate', tile_gate())
+    PALETTES.update(traced_palettes)
     return s
 
 
