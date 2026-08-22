@@ -180,6 +180,13 @@ function logModule(state, payload, { mintCredit = true } = {}) {
   };
 }
 
+// Record a battle target as seen, but only if it IS one of the roster. A
+// sparring partner is a person handed in whole by the scene, not a creature id.
+function seenDex(dex, targetId) {
+  if (!getCreature(targetId)) return dex;
+  return { ...dex, [targetId]: dex[targetId] || 'seen' };
+}
+
 function reducer(state, action) {
   switch (action.type) {
     case 'HYDRATE': {
@@ -394,10 +401,13 @@ function reducer(state, action) {
           creditCarry: won.creditCarry,
           battlesWon: state.stats.battlesWon + 1,
         },
-        dex: { ...state.dex, [targetId]: state.dex[targetId] || 'seen' },
-        // Winning the spar is the end of that scene. A person is not a
-        // creature, so this does not touch the Index — it just means Rowan has
-        // finished his session and gone.
+        // A person is not a creature. The spar passes its opponent in whole
+        // rather than by creature id, so `spar` must not be recorded as one —
+        // this line used to stamp it regardless, and only INDEX_ORDER filtering
+        // the roster kept `dex.spar` from being visible.
+        dex: seenDex(state.dex, targetId),
+        // Winning the spar is the end of that scene: Rowan has finished his
+        // session and gone.
         meta: spar ? { ...state.meta, sparDone: true } : state.meta,
       };
     }
@@ -420,7 +430,7 @@ function reducer(state, action) {
       return {
         ...next,
         stats: { ...state.stats, battlesLost: state.stats.battlesLost + 1 },
-        dex: { ...state.dex, [targetId]: state.dex[targetId] || 'seen' },
+        dex: seenDex(state.dex, targetId),
       };
     }
 
