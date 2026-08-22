@@ -1,2 +1,8 @@
 node_modules/
 .env
+
+# The friends database holds real people's training logs and live session
+# hashes. It is never committed, and a backup of it is a backup of that.
+friends.db
+friends.db-wal
+friends.db-shm

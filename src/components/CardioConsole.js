@@ -40,6 +40,10 @@ function Readout({ label, value, unit, big, live }) {
   );
 }
 
+// Readouts per row. Five across a phone is unreadable; three is the most that
+// fits with its label intact.
+const PER_ROW = 3;
+
 export default function CardioConsole({
   station = 'treadmill',
   // What the fascia calls itself. The trail is not a treadmill.
@@ -47,9 +51,13 @@ export default function CardioConsole({
   seconds = 0,
   miles = 0,
   steps = 0,
-  reps = 0,
-  sets = 0,
-  holdSec = 0,
+  // Bodyweight work done on this outing, as ONE number. It used to be SETS and
+  // REPS side by side, which asked you to add two figures together to know how
+  // much you had done — and the breakdown underneath already names every
+  // exercise, so the detail was never in the digits. Omitted entirely by the
+  // cardio deck: there is nothing to interrupt you on a treadmill, so a
+  // permanently-zero counter would be furniture.
+  workouts,
   // A short line of what the session actually consisted of. "42 reps" is a
   // number; "10 push-ups · 15 squats · 20s plank" is what you did.
   breakdown,
@@ -68,6 +76,22 @@ export default function CardioConsole({
 }) {
   const pace = paceFor(miles, seconds);
   const kcal = kcalFor(miles, seconds, bodyWeightLb);
+
+  const cells = [
+    { label: 'LAPS', value: lapsFor(miles).toFixed(1) },
+    { label: 'PACE', value: formatPace(pace), unit: '/mi' },
+    { label: 'KCAL', value: String(Math.round(kcal)) },
+    { label: 'STEPS', value: steps.toLocaleString() },
+    // The work, as opposed to the walking. Challenges are real sets of real
+    // exercises; they used to pay their damage and then vanish uncounted.
+    ...(workouts == null ? [] : [{ label: 'WORKOUTS', value: String(workouts) }]),
+  ];
+  const rows = [];
+  for (let i = 0; i < cells.length; i += PER_ROW) {
+    const row = cells.slice(i, i + PER_ROW);
+    while (row.length < PER_ROW) row.push(null);
+    rows.push(row);
+  }
 
   return (
     <View
@@ -98,21 +122,16 @@ export default function CardioConsole({
       </View>
 
       {/* Three to a row. Five across a phone put four characters under a
-          five-character label and the whole band stopped being readable. */}
-      <View style={{ flexDirection: 'row', marginTop: space.sm }}>
-        <Readout label="LAPS" value={lapsFor(miles).toFixed(1)} />
-        <Readout label="PACE" value={formatPace(pace)} unit="/mi" />
-        <Readout label="KCAL" value={String(Math.round(kcal))} />
-      </View>
-
-      {/* The work, as opposed to the walking. Challenges and routines are real
-          sets of real exercises; they used to pay their damage and then vanish
-          without being counted anywhere. */}
-      <View style={{ flexDirection: 'row', marginTop: space.sm }}>
-        <Readout label="STEPS" value={steps.toLocaleString()} />
-        <Readout label="SETS" value={String(sets)} />
-        <Readout label="REPS" value={holdSec > 0 && reps === 0 ? `${holdSec}s` : String(reps)} />
-      </View>
+          five-character label and the whole band stopped being readable — so
+          the readouts are laid out as a grid rather than as fixed rows, and a
+          short last row is padded to keep its columns under the ones above. */}
+      {rows.map((row, i) => (
+        <View key={i} style={{ flexDirection: 'row', marginTop: space.sm }}>
+          {row.map((cell, j) =>
+            cell ? <Readout key={cell.label} {...cell} /> : <View key={`pad${j}`} style={{ flex: 1 }} />
+          )}
+        </View>
+      ))}
 
       {breakdown ? (
         <View

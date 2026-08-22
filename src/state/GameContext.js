@@ -311,7 +311,10 @@ function reducer(state, action) {
       return {
         ...withEvo,
         credits: earned.credits,
-        history: remember(state, { distanceMi: mi, load: mi * LOAD_PER_MILE, xp: walkXp }),
+        // Steps are recorded per day as well as lifetime: a friends board can
+        // only check that a day's distance and its step count agree with each
+        // other if it has both. See server/validate.js.
+        history: remember(state, { steps, distanceMi: mi, load: mi * LOAD_PER_MILE, xp: walkXp }),
         stats: {
           ...state.stats,
           xpCarry: carry - walkXp,

@@ -20,6 +20,7 @@ export function blankDay(date) {
     date: date || todayKey(),
     xp: 0,
     bond: 0,
+    steps: 0,
     distanceMi: 0,
     battles: 0,
     workouts: 0,

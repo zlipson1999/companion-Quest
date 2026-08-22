@@ -3606,6 +3606,33 @@ def prop_reception():
     return c
 
 
+def prop_noticeboard():
+    """The friends noticeboard, hung on the wall by reception.
+
+    Cork with pinned cards, because that is the honest object: a board of your
+    friends' weeks is a few notes somebody put up, not a stock ticker. The
+    cards sit at slight angles and at different heights — a perfectly aligned
+    grid would read as a screen, and a screen is the thing this deliberately
+    is not."""
+    c = _prop('gymkit')
+    c.rect(0, 1, 15, 14, 'body', 0.22)                       # frame
+    c.rect(1, 2, 14, 13, 'belly', 0.52)                      # cork
+    mottle(c, 'belly', 0.44, 0.05, 61, cell=2)               # cork grain
+    # Pinned cards, none of them square to each other.
+    c.rect(2, 3, 6, 6, 'leaf', 0.92)
+    c.rect(3, 4, 7, 7, 'leaf', 0.86)
+    c.rect(8, 4, 12, 7, 'leaf', 0.94)
+    c.rect(2, 8, 7, 11, 'leaf', 0.88)
+    c.rect(9, 9, 13, 12, 'leaf', 0.90)
+    # Pin heads.
+    c.rect(4, 3, 4, 3, 'body', 0.72)
+    c.rect(10, 4, 10, 4, 'body', 0.72)
+    c.rect(4, 8, 4, 8, 'body', 0.72)
+    c.rect(11, 9, 11, 9, 'body', 0.72)
+    c.rect(0, 14, 15, 15, 'body', 0.12)                      # shadow on the wall
+    return c
+
+
 def tile_gym_wall_side():
     """Left/right wall. The dado rail is horizontal, so tiling the front wall
     down a column stacked it into a ladder; the side run gets a pilaster
@@ -4166,6 +4193,7 @@ def build_all():
     add('prop_lockers', prop_lockers()); add('prop_pullup_bar', prop_pullup_bar())
     add('prop_kettlebells', prop_kettlebells()); add('prop_rower', prop_rower())
     add('prop_reception', prop_reception())
+    add('prop_noticeboard', prop_noticeboard())
     add('tile_gym_mirror', tile_gym_mirror()); add('tile_gym_mirror_b', tile_gym_mirror(1)); add('tile_gym_exit', tile_gym_exit())
     add('prop_rack_barbell', prop_rack_barbell()); add('prop_rack_dumbbell', prop_rack_dumbbell())
     add('prop_machine', prop_machine()); add('prop_treadmill', prop_treadmill())
