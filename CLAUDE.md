@@ -590,6 +590,17 @@ and nightstand, wardrobe, screen, shelf, desk and chair, lamp, plant, rug.
 Seven new props — worktop, cooker, chair, coffee table, floor lamp, wardrobe,
 nightstand — and the house is lit by `light_pool` like everything else.
 
+**Furniture wider than a tile autotiles.** Drawn whole in every tile it
+occupied, the two-tile sofa was two sofas with four arms and the two-tile
+wardrobe was two wardrobes — the same mistake as the kitchen run where every
+counter had its own sink. `RUN_PROPS` in `TileMap` picks `_l`/`_m`/`_r` from a
+prop's own horizontal neighbours, exactly the way a path picks its edge, so
+what runs the length of the piece is shared and only the end moves. The shadow
+under it runs the whole length too, or the join has daylight beneath it. The
+rug PROP was deleted in the same pass: the rug is a zone now, so the sprite
+reached no map, and dead art is how the character cards sat unused for a
+release.
+
 Walked all twelve stations afterwards: sink, cooker, fridge and table log to
 Nourish, the shelf is the cookbook, the sofa is Stillness, both screens are
 your week, the desk is Habits, the bedroom shelf is the Index, the wardrobe is

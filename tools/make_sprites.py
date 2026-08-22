@@ -3184,29 +3184,37 @@ def prop_desk():
     return c
 
 
-def prop_rug():
-    """A rug breaks the boards up and marks the middle of a room."""
-    c = _prop('ache')
-    c.rect(1, 2, 14, 13, 'body', 0.30)
-    c.rect(2, 3, 13, 12, 'body', 0.50)
-    c.rect(4, 5, 11, 10, 'leaf', 0.62)
-    c.rect(6, 7, 9, 8, 'body', 0.36)
-    c.rect(1, 2, 14, 2, 'body', 0.60)                        # lit top edge
-    c.rect(1, 13, 14, 13, 'body', 0.20)
+def _sofa_body(c):
+    """The parts of a sofa that run its whole length, so halves meet cleanly."""
+    c.rect(0, 2, 15, 6, 'body', 0.36)                        # back
+    c.rect(0, 2, 15, 2, 'body', 0.56)                        # lit top of the back
+    c.rect(0, 7, 15, 12, 'body', 0.62)                       # seat
+    c.rect(0, 7, 15, 7, 'body', 0.74)                        # lit front of the cushion
     return c
 
 
-def prop_sofa():
-    """Two-seat sofa, back to the wall."""
-    c = _prop('snooze')
-    c.rect(1, 2, 14, 6, 'body', 0.36)                        # back
-    c.rect(1, 2, 14, 2, 'body', 0.56)
-    c.rect(0, 4, 2, 13, 'body', 0.44)                        # arms
-    c.rect(13, 4, 15, 13, 'body', 0.26)
-    c.rect(3, 7, 12, 12, 'body', 0.62)                       # seat cushions
-    c.rect(7, 7, 8, 12, 'body', 0.46)                        # seam
-    c.rect(3, 7, 12, 7, 'body', 0.74)
-    c.rect(2, 13, 13, 15, 'ink', 0)                          # base in shadow
+def prop_sofa(half=None):
+    """Two-seat sofa, back to the wall.
+
+    `half` picks an end when the sofa spans more than one tile. Drawn whole in
+    every tile it occupied, a two-tile sofa was two sofas with four arms — the
+    same mistake as the kitchen run where every counter had its own sink. What
+    runs the length of the sofa is shared, so the halves meet without a seam;
+    only the arm moves.
+    """
+    c = _sofa_body(_prop('snooze'))
+    if half in (None, 'l'):
+        c.rect(0, 4, 2, 13, 'body', 0.44)                    # left arm, lit
+    if half in (None, 'r'):
+        c.rect(13, 4, 15, 13, 'body', 0.26)                  # right arm, shaded
+    if half is None:
+        c.rect(7, 7, 8, 12, 'body', 0.46)                    # one tile seats two
+    elif half == 'l':
+        c.rect(15, 7, 15, 12, 'body', 0.46)                  # cushion seam at the join
+    # The shadow under it runs the whole length too, or the sofa has a gap of
+    # daylight under the join.
+    c.rect(2 if half in (None, 'l') else 0, 13,
+           13 if half in (None, 'r') else 15, 15, 'ink', 0)
     return c
 
 
@@ -3308,17 +3316,31 @@ def prop_lamp():
     return c
 
 
-def prop_wardrobe():
-    """Tall cupboard: two doors, two handles."""
+def prop_wardrobe(half=None):
+    """Tall cupboard.
+
+    Same story as the sofa: drawn whole in both tiles, a two-tile wardrobe was
+    two wardrobes. The carcass runs through and only the end panel and the door
+    change, with the handles meeting where the doors do.
+    """
     c = _prop('couch')
     c.rect(0, 0, 15, 14, 'body', 0.30)                       # carcass
     c.rect(0, 0, 15, 1, 'body', 0.56)                        # lit top
-    c.rect(0, 0, 0, 14, 'body', 0.48)
-    c.rect(15, 1, 15, 14, 'body', 0.18)                      # shaded side
-    c.rect(1, 2, 7, 13, 'leaf', 0.42)                        # left door
-    c.rect(8, 2, 14, 13, 'leaf', 0.36)                       # right door
-    c.rect(1, 2, 7, 2, 'leaf', 0.60); c.rect(8, 2, 14, 2, 'leaf', 0.54)
-    c.rect(6, 7, 6, 9, 'belly', 0.74); c.rect(9, 7, 9, 9, 'belly', 0.74)  # handles
+    if half in (None, 'l'):
+        c.rect(0, 0, 0, 14, 'body', 0.48)                    # lit end panel
+    if half in (None, 'r'):
+        c.rect(15, 1, 15, 14, 'body', 0.18)                  # shaded end panel
+    if half is None:
+        c.rect(1, 2, 7, 13, 'leaf', 0.42); c.rect(8, 2, 14, 13, 'leaf', 0.36)
+        c.rect(1, 2, 7, 2, 'leaf', 0.60); c.rect(8, 2, 14, 2, 'leaf', 0.54)
+        c.rect(6, 7, 6, 9, 'belly', 0.74); c.rect(9, 7, 9, 9, 'belly', 0.74)
+    else:
+        lo = 1 if half == 'l' else 0
+        hi = 14 if half == 'r' else 15
+        c.rect(lo, 2, hi, 13, 'leaf', 0.40)                  # one door per tile
+        c.rect(lo, 2, hi, 2, 'leaf', 0.58)
+        hx = hi - 2 if half == 'l' else lo + 2
+        c.rect(hx, 7, hx, 9, 'belly', 0.74)                  # handle, at the opening
     c.rect(0, 15, 15, 15, 'ink', 0)
     return c
 
@@ -4033,7 +4055,7 @@ def build_all():
     # Props — transparent overlays stacked on whatever floor their room has.
     add('prop_bed_head', prop_bed_head()); add('prop_bed_foot', prop_bed_foot())
     add('prop_tv', prop_tv()); add('prop_desk', prop_desk())
-    add('prop_rug', prop_rug()); add('prop_sofa', prop_sofa())
+    add('prop_sofa', prop_sofa())
     add('prop_table', prop_table()); add('prop_counter', prop_counter())
     add('prop_fridge', prop_fridge()); add('prop_stairs', prop_stairs())
     add('prop_plant', prop_plant()); add('prop_bookshelf', prop_bookshelf())
@@ -4041,6 +4063,10 @@ def build_all():
     add('prop_chair', prop_chair()); add('prop_coffee_table', prop_coffee_table())
     add('prop_lamp', prop_lamp()); add('prop_wardrobe', prop_wardrobe())
     add('prop_nightstand', prop_nightstand())
+    # Ends and middles for the furniture that spans more than one tile.
+    for _h in ('l', 'm', 'r'):
+        add('prop_sofa_%s' % _h, prop_sofa(_h))
+        add('prop_wardrobe_%s' % _h, prop_wardrobe(_h))
     add('prop_flowers', prop_flowers()); add('prop_eave', prop_eave())
     add('prop_lockers', prop_lockers()); add('prop_pullup_bar', prop_pullup_bar())
     add('prop_kettlebells', prop_kettlebells()); add('prop_rower', prop_rower())

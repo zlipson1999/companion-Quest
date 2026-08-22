@@ -68,7 +68,6 @@ const PROP_SPRITES = {
   E: 'prop_bed_foot',
   v: 'prop_tv',
   k: 'prop_desk',
-  r: 'prop_rug',
   f: 'prop_sofa',
   a: 'prop_table',
   c: 'prop_counter',
@@ -131,6 +130,22 @@ function zoneEdges(map, x, y, field) {
 
 // Props that belong to a wall rather than a floor.
 const WALL_DRESSING = new Set(['V', 'O', 'Z']);
+
+// Some furniture is wider than one tile. Drawn whole in every tile it occupies,
+// a two-tile sofa is two sofas with four arms, and a two-tile wardrobe is two
+// wardrobes — the same mistake as the kitchen run where every counter had its
+// own sink. A run prop picks an end from its own neighbours, exactly the way a
+// path picks its edge, so a piece of furniture can be as wide as it needs to be.
+const RUN_PROPS = new Set(['f', 'P']);
+
+function runSuffix(map, code, x, y) {
+  const left = codeAt(map, x - 1, y) === code;
+  const right = codeAt(map, x + 1, y) === code;
+  if (left && right) return '_m';
+  if (right) return '_l';
+  if (left) return '_r';
+  return '';
+}
 
 // Ground is a FIELD, not a tile: one texture windowed across a FIELD_SPAN block
 // so it runs continuously and its repeat is four tiles apart instead of one.
@@ -268,7 +283,8 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
     // Wall dressing hangs on the wall, not on the floor.
     const onWall = WALL_DRESSING.has(code);
     const under = onWall ? groundKey(wallField || GROUND_FIELD, x, y) : ground;
-    layers = [{ key: under }, ...(onWall ? [] : edges), { key: PROP_SPRITES[code] }];
+    const prop = PROP_SPRITES[code] + (RUN_PROPS.has(code) ? runSuffix(map, code, x, y) : '');
+    layers = [{ key: under }, ...(onWall ? [] : edges), { key: prop }];
   } else if (FIELD_CODES[code]) {
     const wall = code === 'W' && wallField ? wallField : FIELD_CODES[code];
     layers = [{ key: groundKey(wall, x, y) }];
