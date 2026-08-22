@@ -90,6 +90,13 @@ const PROP_SPRITES = {
   Q: 'prop_ball_rack',
   J: 'prop_bar_counter',
   I: 'prop_bar_blender',
+  n: 'prop_worktop',
+  u: 'prop_oven',
+  m: 'prop_chair',
+  x: 'prop_coffee_table',
+  l: 'prop_lamp',
+  P: 'prop_wardrobe',
+  g: 'prop_nightstand',
   B: 'prop_bench',
   w: 'prop_water_station',
   V: 'prop_banner',
@@ -166,6 +173,7 @@ const SHADOW_CASTERS = new Set([
   '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w',
   'e', 'E', 'v', 'k', 'f', 'a', 'c', 'F', 'o',
   'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q', 'J', 'I',
+  'n', 'u', 'm', 'x', 'l', 'P', 'g',
 ]);
 
 function codeAt(map, x, y) {

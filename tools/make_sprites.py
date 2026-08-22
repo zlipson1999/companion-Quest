@@ -141,6 +141,16 @@ PALETTE_SPECS = {
     'snooze':  {'body': ('#2a2650', '#b9b6ee'), 'leaf': ('#413a72', '#d5d2ff'), 'belly': ('#38346a', '#c9c6f7')},
     'ache':    {'body': ('#6b1730', '#ffb0c4'), 'leaf': ('#93253f', '#ffd0dc'), 'belly': ('#7d2038', '#ffc2d2')},
     'couch':   {'body': ('#3f2a17', '#d4a374'), 'leaf': ('#5a3d22', '#e8c49a'), 'belly': ('#4d3520', '#dcb387')},
+    # Interior plaster. Its own palette because the wall and the floor were
+    # both warm browns off the furniture ramp, so a room read as a brown box
+    # with the corners missing. A painted wall is cooler and much paler than a
+    # board floor, and that difference IS the edge of the room.
+    'plaster': {'body': ('#5e5648', '#f4efe4'), 'leaf': ('#403a30', '#c3b8a5'),
+                'belly': ('#6b5f4e', '#e6dccb'), 'accent': ('#7a4b2a', '#d9a06a')},
+    # A wool rug: muted terracotta with a cream motif. The old one was drawn
+    # in the candy 'item' pink, which is why it read as six sweets on the floor.
+    'rug':     {'body': ('#4a1f18', '#c96a4a'), 'leaf': ('#5c4a2a', '#ead8ae'),
+                'belly': ('#3a2418', '#a08060')},
     'item':    {'body': ('#7a1440', '#ff9dc0'), 'leaf': ('#a8801a', '#ffe486'), 'belly': ('#1d6b3a', '#8ef0a8')},
     # The Kinship Knot: waxed cord and a wooden bead. Its own palette because
     # the item ramps are candy-bright and a braided cord is not.
@@ -2775,47 +2785,46 @@ def tile_home_floor(variant=0):
 def home_floor_field(span=FIELD_SPAN):
     """Floorboards laid across a whole 4x4 block of tiles.
 
-    Drawn per tile, the board seams landed on every tile edge and drew the grid
-    for us. Across a field the boards run for four tiles, the butt joints
-    stagger course by course, and no seam coincides with a tile boundary except
-    by accident.
+    The first pass read as BRICKWORK, and for the reasons brickwork reads as
+    brickwork: every course was the same depth, every plank was the same tone
+    to within a rounding error, and the butt joints came round twice per field.
+    Regular short rectangles all the same colour is a wall, whatever you meant.
 
-    At 32px a board is wide enough to hold what actually makes wood read as
-    wood: each plank sits at its own value, grain runs along its length, and
-    the occasional knot interrupts it. A flat mottle at 16px could only ever
-    look like speckled card.
+    What makes wood read as wood is that no two boards match. Each plank here
+    is cut from a different part of the tree and sits at its own value, the
+    grain runs the length of it hard enough to see, and a joint is RARE — a
+    board runs the width of the room and then some.
     """
     size = TILE * span
     c = Canvas(size, size, 'couch', scale=TILE_SCALE)
     px = size * TILE_SCALE
     _mottle_raw(c, 'body', 0.54, 0.03, 61, px, px, cell=2)
 
-    # Wide boards, few joints. At 11px deep with a hard seam every course the
-    # floor read as brickwork — a plank is half a tile deep and runs most of the
-    # field before it breaks.
     board = 16
     for course, top in enumerate(range(0, px, board)):
-        # Each plank is cut from a different part of the tree.
-        tone = 0.52 + (hsh(course, 3, 71) - 0.5) * 0.035
+        # Wide tone spread, so neighbouring boards are plainly different
+        # boards. At the old +/-0.035 they were one surface with lines ruled
+        # across it.
+        tone = 0.53 + (hsh(course, 3, 71) - 0.5) * 0.14
         for y in range(top, min(top + board, px)):
+            depth = (y - top) / float(board)
+            # Boards are not flat: each one crowns slightly, so the middle
+            # catches light and the edges fall away into the seam.
+            crown = (0.5 - abs(depth - 0.5)) * 0.055
             for x in range(px):
-                # Grain: long, low-frequency streaks along the board, plus a
-                # finer flicker so it does not read as printed stripes.
-                # Long streaks along the board carry the direction; the fine
-                # flicker stops them reading as printed stripes.
-                grain = ((hsh(x // 15, course, 83) - 0.5) * 0.048
-                         + (hsh(x // 3, course, 87) - 0.5) * 0.020)
-                fleck = (hsh(x // 2, y, 89) - 0.5) * 0.016
-                c._set(x, y, 'body', tone + grain + fleck)
-        c.rect_px(0, top, px - 1, top, 'body', tone - 0.065)         # seam
-        c.rect_px(0, top + 1, px - 1, top + 1, 'body', tone + 0.05)  # lit lip
+                grain = ((hsh(x // 19, course, 83) - 0.5) * 0.075
+                         + (hsh(x // 5, course, 87) - 0.5) * 0.030
+                         + (hsh(x // 2, course * 7 + (y - top), 93) - 0.5) * 0.014)
+                c._set(x, y, 'body', tone + crown + grain)
+        c.rect_px(0, top, px - 1, top, 'body', tone - 0.10)          # the seam
+        c.rect_px(0, top + 1, px - 1, top + 1, 'body', tone + 0.07)  # lit lip below it
 
-        # Joints move along by a third of a board each course, the way boards
-        # are actually laid, so no two courses break in the same place.
-        offset = (course * 41) % 113
-        for bx in range(offset, px, 113):
-            c.rect_px(bx, top + 2, bx, min(top + board - 1, px - 1), 'body', tone - 0.055)
-            c.rect_px(bx + 1, top + 2, bx + 1, min(top + board - 1, px - 1), 'body', tone + 0.035)
+        # One butt joint per course at most, and not on every course. Two per
+        # field was what turned the boards into bricks.
+        if hsh(course, 13, 107) > 0.42:
+            bx = int(hsh(course, 17, 109) * (px - 24)) + 12
+            c.rect_px(bx, top + 2, bx, min(top + board - 1, px - 1), 'body', tone - 0.085)
+            c.rect_px(bx + 1, top + 2, bx + 1, min(top + board - 1, px - 1), 'body', tone + 0.05)
 
         # A knot every few boards, offset so they never line up.
         if hsh(course, 7, 97) > 0.62:
@@ -2824,26 +2833,96 @@ def home_floor_field(span=FIELD_SPAN):
             for ry in range(-2, 3):
                 for rx in range(-3, 4):
                     if rx * rx * 0.5 + ry * ry <= 4 and 0 <= ky + ry < px:
-                        c._set(kx + rx, ky + ry, 'body', tone - 0.10)
-            c._set(kx, ky, 'body', tone - 0.16)
+                        c._set(kx + rx, ky + ry, 'body', tone - 0.12)
+            c._set(kx, ky, 'body', tone - 0.19)
+    light_pool(c, 0.15)
     return c
 
 
 def home_wall_field(span=FIELD_SPAN):
-    """Interior plaster. Rooms were using the outdoor stone wall, which read as
-    a castle; a house wants a flat painted surface with a little life in it."""
+    """Interior plaster, painted.
+
+    Rooms first used the outdoor stone wall, which read as a castle. Then it
+    was plaster off the furniture palette, which read as more floor — a room
+    whose wall and floor are the same warm brown has no visible corners, and
+    that was most of why the house looked like a box with things in it.
+
+    Emulsion is not flat: it dries in soft blotches and it takes the light from
+    the room, so the fixture pool runs across it the way it runs across
+    everything else.
+    """
     size = TILE * span
-    c = Canvas(size, size, 'couch', scale=TILE_SCALE)
+    c = Canvas(size, size, 'plaster', scale=TILE_SCALE)
     px = size * TILE_SCALE
     for y in range(px):
         for x in range(px):
-            # Soft blotching, the way emulsion dries, plus a whisper of grain.
+            # Soft blotching the way emulsion dries, plus a whisper of grain.
             # An earlier vertical drift at 0.05 read as corrugated iron.
-            v = (0.80
-                 + (hsh(x // 11, y // 9, 113) - 0.5) * 0.030
-                 + (hsh(x // 4, y // 4, 127) - 0.5) * 0.014
-                 + (hsh(x, y, 131) - 0.5) * 0.010)
-            c._set(x, y, 'belly', v)
+            v = (0.82
+                 + (hsh(x // 11, y // 9, 113) - 0.5) * 0.026
+                 + (hsh(x // 4, y // 4, 127) - 0.5) * 0.013
+                 + (hsh(x, y, 131) - 0.5) * 0.009)
+            c._set(x, y, 'body', v)
+    return c
+
+
+def home_rug_field(span=FIELD_SPAN):
+    """A woven rug, as a SURFACE.
+
+    It used to be six bright prop squares dropped in the middle of BOTH rooms —
+    the same mistake as the training mats in the gym, and just as visible from
+    arm's length. A rug is something the floor is covered with, so it belongs
+    down here with the boards and the vinyl, and the zone joint gives it its
+    edge.
+    """
+    size = TILE * span
+    c = Canvas(size, size, 'rug', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    _mottle_raw(c, 'body', 0.40, 0.028, 149, px, px, cell=2)
+    # Warp and weft, a pixel each: cloth up close, texture at arm's length.
+    for y in range(px):
+        for x in range(px):
+            if (x + y) % 4 == 0:
+                c._set(x, y, 'body', 0.49)
+            elif (x - y) % 5 == 0:
+                c._set(x, y, 'body', 0.34)
+    # A repeating motif, one every two tiles, in the cream.
+    for cy in range(32, px, 64):
+        for cx in range(32, px, 64):
+            for dy in range(-13, 14):
+                for dx in range(-13, 14):
+                    d = abs(dx) + abs(dy)
+                    if 10 <= d <= 12:
+                        c._set(cx + dx, cy + dy, 'leaf', 0.60)
+                    elif d <= 4:
+                        c._set(cx + dx, cy + dy, 'leaf', 0.48)
+    light_pool(c, 0.12)
+    return c
+
+
+def home_kitchen_field(span=FIELD_SPAN):
+    """Kitchen vinyl.
+
+    Deliberately NOT a tiled floor. A tile grid at this scale can only land on
+    the game's own tile boundaries — 128 divides by 32 and by nothing useful in
+    between — and drawing the grid back onto the ground is the one thing the
+    ground is not allowed to do. Speckled sheet vinyl reads as a kitchen from
+    across the room and has no grid in it at all.
+    """
+    size = TILE * span
+    c = Canvas(size, size, 'plaster', scale=TILE_SCALE)
+    px = size * TILE_SCALE
+    _mottle_raw(c, 'belly', 0.60, 0.020, 163, px, px, cell=3)
+    for y in range(px):
+        for x in range(px):
+            n = hsh(x, y, 167)
+            if n > 0.935:
+                c._set(x, y, 'belly', 0.78)
+            elif n < 0.065:
+                c._set(x, y, 'belly', 0.46)
+            elif n > 0.885:
+                c._set(x, y, 'accent', 0.42)      # the odd fleck of warmth
+    light_pool(c, 0.14)
     return c
 
 
@@ -3154,6 +3233,107 @@ def prop_counter():
     c.rect(5, 7, 10, 9, 'body', 0.22)
     c.put(7, 5, 'belly', 0.70); c.put(8, 5, 'belly', 0.70)   # tap
     c.rect(0, 12, 15, 13, 'body', 0.16)                      # kick board
+    return c
+
+
+def prop_worktop():
+    """Plain counter run.
+
+    The kitchen was four counters side by side and every one of them had a sink
+    in it. A worktop is mostly worktop; exactly one of them is the sink.
+    """
+    c = _prop('couch')
+    c.rect(0, 3, 15, 12, 'body', 0.30)                       # cabinet
+    c.rect(0, 3, 15, 4, 'belly', 0.90)                       # worktop
+    c.rect(0, 3, 15, 3, 'belly', 1.0)                        # lit front lip
+    c.rect(0, 7, 15, 7, 'body', 0.20)                        # door line
+    c.rect(3, 8, 5, 8, 'belly', 0.60)                        # handles
+    c.rect(10, 8, 12, 8, 'belly', 0.60)
+    c.rect(0, 12, 15, 13, 'body', 0.16)                      # kick board in shadow
+    return c
+
+
+def prop_oven():
+    """Cooker: hob on the top, door and handle on the front."""
+    c = _prop('rock')
+    c.rect(0, 3, 15, 13, 'body', 0.36)                       # body
+    c.rect(0, 3, 15, 4, 'belly', 0.70)                       # hob
+    c.rect(0, 3, 15, 3, 'belly', 0.90)
+    for cx in (4, 11):
+        c.sphere(cx, 4, 2.2, 1.2, 'body', ambient=0.16)      # rings
+    c.rect(1, 6, 14, 11, 'body', 0.20)                       # oven door
+    c.rect(2, 7, 13, 10, 'belly', 0.28)                      # its glass
+    c.rect(1, 6, 14, 6, 'belly', 0.62)                       # handle
+    c.rect(0, 14, 15, 14, 'ink', 0)
+    return c
+
+
+def prop_chair():
+    """A dining chair from above: back rail, seat, legs."""
+    c = _prop('couch')
+    c.rect(4, 2, 11, 4, 'body', 0.24)                        # back rail
+    c.rect(4, 2, 11, 2, 'body', 0.52)
+    c.rect(3, 5, 12, 12, 'leaf', 0.44)                       # seat
+    c.rect(3, 5, 12, 5, 'leaf', 0.68)                        # lit front edge
+    c.rect(12, 6, 12, 12, 'leaf', 0.26)                      # shaded side
+    c.put(3, 13, 'body', 0.20); c.put(12, 13, 'body', 0.20)  # legs
+    c.rect(3, 14, 12, 14, 'ink', 0)
+    return c
+
+
+def prop_coffee_table():
+    """Low table, with the things that live on one."""
+    c = _prop('couch')
+    c.rect(1, 4, 14, 11, 'leaf', 0.50)                       # top
+    c.rect(1, 4, 14, 4, 'leaf', 0.74)                        # lit edge
+    c.rect(14, 5, 14, 11, 'leaf', 0.30)
+    c.rect(1, 11, 14, 12, 'body', 0.22)                      # apron in shadow
+    c.rect(2, 13, 3, 14, 'body', 0.26); c.rect(12, 13, 13, 14, 'body', 0.26)
+    c.rect(3, 6, 7, 9, 'belly', 0.88)                        # a book, face up
+    c.rect(3, 6, 7, 6, 'belly', 1.0)
+    c.sphere(11, 8, 1.9, 1.9, 'belly', ambient=0.58)         # and a mug
+    c.rect(1, 15, 14, 15, 'ink', 0)
+    return c
+
+
+def prop_lamp():
+    """Floor lamp — the only thing in the room that explains the light."""
+    c = _prop('couch')
+    c.rect(7, 9, 8, 13, 'body', 0.32)                        # stem
+    c.rect(5, 13, 10, 14, 'body', 0.24)                      # base
+    c.poly([(3, 8), (12, 8), (10, 1), (5, 1)], 'belly', 0.92)   # shade
+    c.poly([(4, 7), (11, 7), (9, 2), (6, 2)], 'belly', 1.0)     # lit face
+    c.rect(3, 8, 12, 8, 'belly', 0.60)                          # shaded underside
+    c.rect(4, 15, 11, 15, 'ink', 0)
+    return c
+
+
+def prop_wardrobe():
+    """Tall cupboard: two doors, two handles."""
+    c = _prop('couch')
+    c.rect(0, 0, 15, 14, 'body', 0.30)                       # carcass
+    c.rect(0, 0, 15, 1, 'body', 0.56)                        # lit top
+    c.rect(0, 0, 0, 14, 'body', 0.48)
+    c.rect(15, 1, 15, 14, 'body', 0.18)                      # shaded side
+    c.rect(1, 2, 7, 13, 'leaf', 0.42)                        # left door
+    c.rect(8, 2, 14, 13, 'leaf', 0.36)                       # right door
+    c.rect(1, 2, 7, 2, 'leaf', 0.60); c.rect(8, 2, 14, 2, 'leaf', 0.54)
+    c.rect(6, 7, 6, 9, 'belly', 0.74); c.rect(9, 7, 9, 9, 'belly', 0.74)  # handles
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_nightstand():
+    """Bedside table, with a lamp on it and a book you did not finish."""
+    c = _prop('couch')
+    c.rect(2, 6, 13, 13, 'body', 0.34)                       # body
+    c.rect(2, 6, 13, 7, 'leaf', 0.58)                        # top
+    c.rect(2, 6, 13, 6, 'leaf', 0.78)
+    c.rect(3, 9, 12, 9, 'body', 0.20)                        # drawer line
+    c.rect(6, 11, 9, 11, 'belly', 0.66)                      # handle
+    c.poly([(4, 5), (10, 5), (9, 1), (5, 1)], 'belly', 0.96)  # the little lamp
+    c.rect(6, 5, 7, 6, 'body', 0.30)
+    c.rect(2, 14, 13, 14, 'ink', 0)
     return c
 
 
@@ -3798,6 +3978,8 @@ def build_all():
 
     add_canvas_field('tile_home_floor', home_floor_field())
     add_canvas_field('tile_home_wall', home_wall_field())
+    add_canvas_field('tile_home_rug', home_rug_field())
+    add_canvas_field('tile_home_kitchen', home_kitchen_field())
     add_canvas_field('tile_gym_floor', gym_floor_field())
     add_canvas_field('tile_gym_block', gym_wall_field())
     add_canvas_field('tile_gym_platform', gym_platform_field())
@@ -3855,6 +4037,10 @@ def build_all():
     add('prop_table', prop_table()); add('prop_counter', prop_counter())
     add('prop_fridge', prop_fridge()); add('prop_stairs', prop_stairs())
     add('prop_plant', prop_plant()); add('prop_bookshelf', prop_bookshelf())
+    add('prop_worktop', prop_worktop()); add('prop_oven', prop_oven())
+    add('prop_chair', prop_chair()); add('prop_coffee_table', prop_coffee_table())
+    add('prop_lamp', prop_lamp()); add('prop_wardrobe', prop_wardrobe())
+    add('prop_nightstand', prop_nightstand())
     add('prop_flowers', prop_flowers()); add('prop_eave', prop_eave())
     add('prop_lockers', prop_lockers()); add('prop_pullup_bar', prop_pullup_bar())
     add('prop_kettlebells', prop_kettlebells()); add('prop_rower', prop_rower())

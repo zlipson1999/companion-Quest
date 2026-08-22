@@ -548,6 +548,54 @@ chopped off at every boundary), scattered by `variantFor` so a long wall is
 neither seamed nor dead flat. Ten of the seventeen are reachable; the rest have
 a dumbbell rack in front of them, which is also true of a real one.
 
+## Phase 9 — DONE: the house, brought up to the gym's standard
+
+The gym got replanned and lit; the house had not moved since it was first
+furnished, and beside the gym it looked like a brown box with things in it.
+
+**The walls and the floor were the same brown.** Both came off the furniture
+ramp, so a room had no visible corners — that was most of it. Interior plaster
+has its own `plaster` palette now: a cool, pale painted wall against a honey
+board floor, and that difference IS the edge of the room.
+
+**The floorboards read as brickwork.** Every course the same depth, every plank
+the same tone to within a rounding error, and the butt joints coming round
+twice per field. Regular short rectangles all one colour is a wall, whatever
+you meant by it. What makes wood read as wood is that no two boards match: each
+plank is cut at its own value now, the grain runs the length of it hard enough
+to see, each board crowns slightly so its middle catches the light, and a joint
+is RARE.
+
+**The rug was six bright squares dropped in the middle of both rooms** — the
+same mistake as the training mats in the gym, and just as visible from arm's
+length. A rug is a SURFACE: `tile_home_rug` is woven wool with a cream motif,
+and it is a zone, so it gets the same inlay joint the platform and the turf do.
+The kitchen gained a floor of its own the same way. Its vinyl is deliberately
+NOT tiled — a tile grid at this scale can only land on the game's own tile
+boundaries, and drawing the grid back onto the ground is the one thing the
+ground is not allowed to do.
+
+**Both rooms were declared twice**, once in `HomeIntroScreen` and once in
+`HomeRestScreen`, and the two copies had already drifted apart. `BEDROOM` and
+`DOWNSTAIRS` live in `data/maps.js` now; each screen brings only what is its
+own — where you come in, where you leave, and what you are there to do.
+
+**Furnished and re-planned.** Downstairs is 13x15: a counter run along the
+north wall (worktop, sink, worktop, cooker, fridge — it used to be four
+counters side by side and every one of them had a sink in it), a dining table
+and chairs on the kitchen vinyl, then a living room of sofa, coffee table,
+screen, shelf, lamp and plant around the rug. The bedroom is 11x13, narrower
+because a bedroom for one person that is as wide as a hall reads as a hall: bed
+and nightstand, wardrobe, screen, shelf, desk and chair, lamp, plant, rug.
+Seven new props — worktop, cooker, chair, coffee table, floor lamp, wardrobe,
+nightstand — and the house is lit by `light_pool` like everything else.
+
+Walked all twelve stations afterwards: sink, cooker, fridge and table log to
+Nourish, the shelf is the cookbook, the sofa is Stillness, both screens are
+your week, the desk is Habits, the bedroom shelf is the Index, the wardrobe is
+your Bag, and the bed sleeps. The downstairs spawn had to move — it sat
+directly under the sofa, so the first step into the room sat you down on it.
+
 ## Phase 6 — ideas, not committed
 
 Reading / chores / social check-in modules; per-movement progression charts off

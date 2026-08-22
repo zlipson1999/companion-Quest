@@ -4,60 +4,27 @@ import { Screen, WorldScreen, DialogueBox, CompanionStatus } from '../components
 import { palette, screen, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
-import { isWalkable, interactionForCode } from '../data/maps';
+import { BEDROOM, DOWNSTAIRS, isWalkable, interactionForCode } from '../data/maps';
 import { playSfx } from '../audio';
 
+// The rooms themselves live in data/maps.js — they were declared here AND in
+// HomeIntroScreen, and the two copies had already drifted. This screen brings
+// only what is its own: where you come in, and what you are here to do.
 const FLOORS = {
   downstairs: {
-    name: 'Home — Downstairs', id: 'home', cols: 11, rows: 11,
-    spawn: { x: 5, y: 9 }, stairs: { x: 9, y: 1 },
-    grid: [
-      'WWWWWWWWWWW',
-      'WccccF...sW',
-      'W.........W',
-      'W..a......W',
-      'W.........W',
-      'W...rrr...W',
-      'Wf..rrr..oW',
-      'W.........W',
-      'W.p.......W',
-      'W.........W',
-      'WWWWWWWWWWW',
-    ],
-    interactions: {
-      c: { screen: 'habit', params: { moduleId: 'diet' }, label: 'Counter — log a meal' },
-      F: { screen: 'habit', params: { moduleId: 'diet' }, label: 'Fridge — log a meal' },
-      a: { screen: 'habit', params: { moduleId: 'diet' }, label: 'Table — log a meal' },
-      o: { screen: 'cookbook', label: 'Shelf — the kitchen cookbook' },
-      f: { screen: 'habit', params: { moduleId: 'meditation' }, label: 'Sofa — sit and be still' },
-    },
+    ...DOWNSTAIRS,
+    name: 'Home — Downstairs',
+    // Not (6,13): that is directly under the sofa, so the first step into the
+    // room sat you down on it instead of walking.
+    spawn: { x: 7, y: 13 },
+    stairs: { x: 11, y: 1 },
     hint: 'Sleep is upstairs. Walk to the stairs.',
   },
   upstairs: {
-    name: 'Home — Bedroom', id: 'home', cols: 11, rows: 11,
-    spawn: { x: 9, y: 9 }, bed: { x: 1, y: 2 },
-    grid: [
-      'WWWWWWWWWWW',
-      'WHHHHHHHHHW',
-      'We...v...oW',
-      'WE.......pW',
-      'W.........W',
-      'W...rrr...W',
-      'W...rrr...W',
-      'W.........W',
-      'Wk........W',
-      'W........sW',
-      'WWWWWWWWWWW',
-    ],
-    // Furniture that does something. Same rule as Quest Fitness: the thing
-    // that does the job is the thing you walk up to.
-    interactions: {
-      e: { screen: 'habit', params: { moduleId: 'sleep' }, label: 'Bed — log last night' },
-      E: { screen: 'habit', params: { moduleId: 'sleep' }, label: 'Bed — log last night' },
-      k: { screen: 'habits', label: 'Desk — your daily habits' },
-      o: { screen: 'index', label: 'Shelf — your creature index' },
-      v: { screen: 'week', label: 'Screen — this week so far' },
-    },
+    ...BEDROOM,
+    name: 'Home — Bedroom',
+    spawn: { x: 9, y: 10 },
+    bed: { x: 1, y: 2 },
     hint: 'Walk to your bed and sleep.',
   },
 };

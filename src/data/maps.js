@@ -96,12 +96,94 @@ export const GYM = {
   ],
 };
 
+// Your house. Both rooms used to be declared TWICE — once in HomeIntroScreen
+// and once in HomeRestScreen — with the grids already drifted apart between
+// the two copies. One definition, and each screen brings its own spawn, exit
+// and hint.
+//
+//   W wall   H window   D front door   s stairs   . boards
+//   n worktop   c sink counter   u cooker   F fridge   a table   m chair
+//   f sofa   x coffee table   v screen   o shelf   l floor lamp   p plant
+//   e/E bed   g nightstand   P wardrobe   k desk
+//
+// Floors are ZONES here as well as in the gym: kitchen vinyl under the run and
+// a wool rug under the living room, each with the inlay joint that keeps a
+// material change from reading as a ruled line.
+export const DOWNSTAIRS = {
+  id: 'home',
+  cols: 13,
+  rows: 15,
+  grid: [
+      'WWWHHWWWHHWWW',
+      'WncnuF.....sW',
+      'W...........W',
+      'W.mam.......W',
+      'W..m........W',
+      'W...........W',
+      'W...........W',
+      'W.....v.....W',
+      'W...........W',
+      'W..........oW',
+      'W.....x.....W',
+      'W...........W',
+      'Wp...ff...l.W',
+      'W...........W',
+      'WWWWWWDWWWWWW',
+  ],
+  zones: [
+    { field: 'tile_home_kitchen', x0: 1, y0: 1, x1: 11, y1: 5 },
+    { field: 'tile_home_rug', x0: 3, y0: 8, x1: 9, y1: 11 },
+  ],
+  interactions: {
+    n: { screen: 'habit', params: { moduleId: 'diet' }, label: 'Worktop — log a meal' },
+    c: { screen: 'habit', params: { moduleId: 'diet' }, label: 'Sink — log a meal' },
+    u: { screen: 'habit', params: { moduleId: 'diet' }, label: 'Cooker — log a meal' },
+    F: { screen: 'habit', params: { moduleId: 'diet' }, label: 'Fridge — log a meal' },
+    a: { screen: 'habit', params: { moduleId: 'diet' }, label: 'Table — log a meal' },
+    o: { screen: 'cookbook', label: 'Shelf — the kitchen cookbook' },
+    f: { screen: 'habit', params: { moduleId: 'meditation' }, label: 'Sofa — sit and be still' },
+    v: { screen: 'week', label: 'Screen — this week so far' },
+  },
+};
+
+export const BEDROOM = {
+  id: 'home',
+  cols: 11,
+  rows: 13,
+  grid: [
+      'WWWHHWWHHWW',
+      'Weg..v..PPW',
+      'WE........W',
+      'W.........W',
+      'W.........W',
+      'W........oW',
+      'W.........W',
+      'W.........W',
+      'W........lW',
+      'W.........W',
+      'Wkm.......W',
+      'Wp.......sW',
+      'WWWWWWWWWWW',
+  ],
+  zones: [{ field: 'tile_home_rug', x0: 3, y0: 5, x1: 7, y1: 9 }],
+  interactions: {
+    e: { screen: 'habit', params: { moduleId: 'sleep' }, label: 'Bed — log last night' },
+    E: { screen: 'habit', params: { moduleId: 'sleep' }, label: 'Bed — log last night' },
+    k: { screen: 'habits', label: 'Desk — your daily habits' },
+    o: { screen: 'index', label: 'Shelf — your creature index' },
+    v: { screen: 'week', label: 'Screen — this week so far' },
+    P: { screen: 'bag', label: 'Wardrobe — your supplies' },
+  },
+};
+
 const BLOCKED = new Set([
   'T', '~', 'h', 'H', 'y', 'Y',
   'W', '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w', 'C', 'A', 'V', 'O', 'Z',
   // Furniture. A rug is walkable; everything else you walk around.
   'e', 'E', 'v', 'k', 'f', 'a', 'c', 'F', 'o', 'p',
   'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q', 'J', 'I',
+  // House furniture.
+  'n', 'u', 'm', 'x', 'l', 'P', 'g',
 ]);
 
 // Walking into a station is how you use it. A blocked tile that answers a bump
