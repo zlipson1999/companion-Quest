@@ -51,9 +51,10 @@ export function triggerForCode(code) {
 }
 
 export const TRIGGER_LABELS = {
-  rest: 'Rest Stop',
+  rest: 'Home',
   workout: 'Training Yard',
   route: 'Route 1',
 };
 
 export default HUB;
+
