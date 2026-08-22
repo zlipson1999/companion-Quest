@@ -46,7 +46,7 @@ function UnitPicker({ value, onPick }) {
 
 export default function OptionsScreen() {
   const { state, dispatch } = useGame();
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
   const [confirm, setConfirm] = useState(false);
 
   const sfxOn = !state.settings.muted;
@@ -122,7 +122,7 @@ export default function OptionsScreen() {
         ) : (
           <PixelButton label="Erase Save" tone="dark" sound="cancel" style={{ marginBottom: space.sm }} onPress={() => setConfirm(true)} />
         )}
-        <PixelButton label="Back to Town" tone="plain" sound="cancel" onPress={() => navigate('hub')} />
+        <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} />
       </View>
     </Screen>
   );

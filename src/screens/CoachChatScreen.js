@@ -44,7 +44,7 @@ function Bubble({ role, text, companion }) {
 export default function CoachChatScreen() {
   const { state } = useGame();
   const companion = useCompanion();
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
   const goal = getGoal(state.goalId);
   const scrollRef = useRef(null);
 
@@ -124,7 +124,7 @@ export default function CoachChatScreen() {
             <PixelText size="heading" color={palette.secondary} style={{ flex: 1 }}>
               Coach {companion.creature.name}
             </PixelText>
-            <PixelButton label="Back" tone="plain" size="small" sound="cancel" onPress={() => navigate('hub')} />
+            <PixelButton label={back.label} tone="plain" size="small" sound="cancel" onPress={goBack} />
           </View>
           <PixelText size="tiny" color={palette.windowTextDim} style={{ marginBottom: space.sm, lineHeight: 12 }}>
             {isCoachConfigured()

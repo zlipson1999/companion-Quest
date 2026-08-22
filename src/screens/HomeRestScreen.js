@@ -5,6 +5,7 @@ import { palette, screen, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { BEDROOM, DOWNSTAIRS, isWalkable, interactionForCode } from '../data/maps';
+import { forgetSpot, recallSpot, rememberSpot } from './placeMemory';
 import { playSfx } from '../audio';
 
 // The rooms themselves live in data/maps.js — they were declared here AND in
@@ -33,10 +34,15 @@ export default function HomeRestScreen() {
   const { state, dispatch } = useGame();
   const companion = useCompanion();
   const { navigate } = useNav();
-  const [floorId, setFloorId] = useState('downstairs');
+  // Which floor you were on is part of where you were standing: opening your
+  // habits from the bedroom desk and coming back downstairs is the same bug as
+  // coming back to the gym door.
+  const [floorId, setFloorId] = useState(() => recallSpot('home:floor', 'downstairs'));
   const [sleeping, setSleeping] = useState(false);
   const floor = FLOORS[floorId];
-  const [player, setPlayer] = useState({ ...floor.spawn, facing: 'up' });
+  const [player, setPlayer] = useState(() =>
+    recallSpot(`home:${floorId}`, { ...floor.spawn, facing: 'up' }, (s) => isWalkable(floor, s.x, s.y))
+  );
   const [facing, setFacing] = useState(null);
   const playerRef = useRef(player);
   const lines = useMemo(() => [
@@ -48,13 +54,20 @@ export default function HomeRestScreen() {
   const changeFloor = () => {
     playSfx('confirm');
     setFloorId('upstairs');
+    rememberSpot('home:floor', 'upstairs');
     playerRef.current = { ...FLOORS.upstairs.spawn, facing: 'left' };
     setPlayer(playerRef.current);
+    rememberSpot('home:upstairs', playerRef.current);
   };
   const sleep = () => {
     dispatch({ type: 'HEAL_FULL' });
     playSfx('heal');
     setSleeping(true);
+    // Sleeping ends the day. Coming home after it should start at the front
+    // door, not beside the bed you just got out of.
+    forgetSpot('home:floor');
+    forgetSpot('home:downstairs');
+    forgetSpot('home:upstairs');
   };
   const move = (dir) => {
     if (sleeping) return;
@@ -64,6 +77,7 @@ export default function HomeRestScreen() {
     const blocked = !isWalkable(floor, nx, ny);
     const next = blocked ? { x, y, facing: dir } : { x: nx, y: ny, facing: dir };
     playerRef.current = next; setPlayer(next);
+    rememberSpot(`home:${floorId}`, next);
     if (floorId === 'downstairs' && next.x === floor.stairs.x && next.y === floor.stairs.y) setTimeout(changeFloor, 120);
 
     // The bed is a solid prop, so you cannot stand on it — walking into it is

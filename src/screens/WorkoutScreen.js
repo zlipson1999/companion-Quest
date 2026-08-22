@@ -15,7 +15,7 @@ import { workoutComplete, levelUpLine } from '../coach';
 export default function WorkoutScreen({ params = {} }) {
   const { state, dispatch } = useGame();
   const companion = useCompanion();
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
 
   // A station can name the routine it IS. Walking onto the turf lane is
   // already a choice, so the turf opens the warm-up rather than the list of
@@ -56,7 +56,7 @@ export default function WorkoutScreen({ params = {} }) {
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={110} bob />
         </View>
-        <DialogueBox lines={resultLines} onComplete={() => navigate(pinned ? 'gym' : 'hub')} />
+        <DialogueBox lines={resultLines} onComplete={pinned ? goBack : () => navigate('hub')} />
       </Screen>
     );
   }
@@ -96,11 +96,11 @@ export default function WorkoutScreen({ params = {} }) {
         </ScrollView>
         <View style={{ flexDirection: 'row', marginTop: space.sm }}>
           <PixelButton
-            label={pinned ? 'Back to the gym' : 'Back'}
+            label={pinned ? back.label : 'Back'}
             tone="plain"
             sound="cancel"
             style={{ flex: 1, marginRight: 6 }}
-            onPress={() => (pinned ? navigate('gym') : setPhase('list'))}
+            onPress={() => (pinned ? goBack() : setPhase('list'))}
           />
           <PixelButton label="I Did It!" tone="gold" style={{ flex: 1, marginLeft: 6 }} onPress={complete} />
         </View>
@@ -148,7 +148,7 @@ export default function WorkoutScreen({ params = {} }) {
         onPress={() => navigate('forge')}
       />
 
-      <PixelButton label="Back to Town" tone="plain" sound="cancel" onPress={() => navigate('hub')} style={{ marginTop: space.sm }} />
+      <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
     </Screen>
   );
 }

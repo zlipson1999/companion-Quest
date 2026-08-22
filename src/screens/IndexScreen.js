@@ -68,7 +68,7 @@ function Entry({ id, status }) {
 
 export default function IndexScreen() {
   const { state } = useGame();
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
   const order = buildOrder();
   const owned = order.filter((id) => state.dex[id] === 'owned').length;
   const seen = order.filter((id) => state.dex[id] === 'seen').length;
@@ -86,7 +86,7 @@ export default function IndexScreen() {
           <Entry key={id} id={id} status={state.dex[id] || 'unknown'} />
         ))}
       </ScrollView>
-      <PixelButton label="Back to Town" tone="plain" sound="cancel" onPress={() => navigate('hub')} style={{ marginTop: space.sm }} />
+      <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
     </Screen>
   );
 }

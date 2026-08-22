@@ -27,7 +27,7 @@ function StatCell({ label, value, color }) {
 export default function SummaryScreen() {
   const { state } = useGame();
   const companion = useCompanion();
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
   const modules = useModules();
   const goal = getGoal(state.goalId);
   const evo = evolveProgress(companion, companion.creature, companion.level);
@@ -143,7 +143,7 @@ export default function SummaryScreen() {
         </Window>
       </ScrollView>
 
-      <PixelButton label="Back to Town" tone="plain" sound="cancel" onPress={() => navigate('hub')} style={{ marginTop: space.sm }} />
+      <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
     </Screen>
   );
 }

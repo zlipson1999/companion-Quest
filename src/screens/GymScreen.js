@@ -12,6 +12,7 @@ import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { GYM, isWalkable, tileAt, triggerForCode, interactionForCode } from '../data/maps';
+import { recallSpot, rememberSpot } from './placeMemory';
 
 const MENU = [
   { label: 'Back to Maple Lane', value: 'hub', sublabel: 'the lane outside' },
@@ -26,13 +27,18 @@ export default function GymScreen() {
   const companion = useCompanion();
   const { navigate } = useNav();
 
-  const [player, setPlayer] = useState({ x: GYM.spawn.x, y: GYM.spawn.y, facing: 'up' });
+  // Walk into a rack, write a session, come back — and you were at the door
+  // again, halfway across the room from the thing you had just used.
+  const [player, setPlayer] = useState(() =>
+    recallSpot('gym', { x: GYM.spawn.x, y: GYM.spawn.y, facing: 'up' }, (s) => isWalkable(GYM, s.x, s.y))
+  );
   const [facingStation, setFacingStation] = useState(null);
   const playerRef = useRef(player);
 
   const apply = (np) => {
     playerRef.current = np;
     setPlayer(np);
+    rememberSpot('gym', np);
   };
 
   const move = (dir) => {

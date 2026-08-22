@@ -60,7 +60,7 @@ function StockLine({ line, owned, credits, onBuy }) {
 export default function SmoothieBarScreen() {
   const { state, dispatch } = useGame();
   const companion = useCompanion();
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
   const credits = state.credits || 0;
   const [toast, setToast] = useState(
     'Blended to order. Your companion drinks half of everything, which is the arrangement.'
@@ -138,7 +138,7 @@ export default function SmoothieBarScreen() {
         </PixelText>
       </View>
 
-      <TrailAction label="Back to the gym" tone="quiet" onPress={() => navigate('gym')} />
+      <TrailAction label={back.label} tone="quiet" onPress={goBack} />
     </Screen>
   );
 }

@@ -79,7 +79,7 @@ export default function HabitsScreen() {
   const modules = useModules();
   const companion = useCompanion();
   const recovery = useRecovery();
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
   const restedToday = dayIn(state.history, todayKey()).rested;
 
   // Self-heal if the app sat open past midnight — the reducer only rolls the
@@ -178,10 +178,10 @@ export default function HabitsScreen() {
       </ScrollView>
 
       <PixelButton
-        label="Back to Town"
+        label={back.label}
         tone="plain"
         sound="cancel"
-        onPress={() => navigate('hub')}
+        onPress={goBack}
         style={{ marginTop: space.sm }}
       />
     </Screen>

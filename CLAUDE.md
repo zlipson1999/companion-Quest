@@ -607,6 +607,43 @@ your week, the desk is Habits, the bedroom shelf is the Index, the wardrobe is
 your Bag, and the bed sleeps. The downstairs spawn had to move — it sat
 directly under the sofa, so the first step into the room sat you down on it.
 
+## Phase 10 — DONE: Back goes where you came from, and a place remembers you
+
+**Every screen hardcoded its own exit.** The Forge, the Bag, the Index, your
+Week, the Habits hub, the premade sessions and Options all said "Back to Town"
+and went to the hub, whether you had walked in from the gym, from your kitchen,
+or from the hub menu. The Forge had already grown its own one-off `from` param
+to paper over the worst case, which is the tell that the pattern was wrong
+rather than the screen.
+
+`Router` keeps the trail now. `navigate` pushes the current route, `goBack`
+pops, and `back.label` names the destination so a button can say "Back to the
+gym" without the screen knowing which place that is. Two rules keep the stack
+honest:
+- **Arriving somewhere you can WALK AROUND clears it.** A place is a fresh
+  context rather than a step deeper: what matters from inside the Forge is that
+  you came from the gym, not everywhere you had been before that.
+- **Returning to the screen you just left is a step BACK, not another step
+  deeper.** Without that, the Forge -> mirror -> Forge round trip left the
+  mirror on the stack and the Forge's own Back button returned to it.
+
+Screens that genuinely end somewhere — blacking out in a challenge, sleeping,
+Continue on the title — still name the hub, because those are not "back".
+
+**A place remembers where you were standing** (`src/screens/placeMemory.js`).
+The router unmounts a screen when you leave, so walking into a rack, writing a
+session and coming back put you at the door, halfway across the room from the
+thing you had just used. That was survivable while Back always went to Town;
+the moment Back returned you to the right room it became the change being undone
+on arrival. The gym remembers your square and facing, and the house remembers
+which FLOOR you were on as well — opening your habits from the bedroom desk used
+to drop you back downstairs.
+
+Deliberately in memory rather than in the save: where you happened to be
+standing is a fact about the last ten seconds, not about your training, and it
+should not survive closing the app. Sleeping clears it too, since the day is
+over and coming home should start at the front door.
+
 ## Phase 6 — ideas, not committed
 
 Reading / chores / social check-in modules; per-movement progression charts off

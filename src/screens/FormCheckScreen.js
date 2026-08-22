@@ -21,17 +21,18 @@ import { playSfx } from '../audio';
 const CUE_SECONDS = 5;
 
 export default function FormCheckScreen({ params }) {
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
   const movement = getMovement(params.movementId);
   // Return to the session we came from, carrying its progress back with us.
-  const goBack = () =>
+  // Named `leave` rather than `goBack` because the router now owns that name.
+  const leave = () =>
     // `actual` rides along with `checked`: leaving for the mirror mid-set must
     // not discard the weights you have already typed in.
     params.planId
-      ? navigate('forge', { resume: { planId: params.planId, checked: params.checked || {}, actual: params.actual || {}, from: params.from } })
+      ? navigate('forge', { resume: { planId: params.planId, checked: params.checked || {}, actual: params.actual || {} } })
       // No plan means you walked into the mirror on the gym wall, so back is
-      // the gym — not the Forge you were never in.
-      : navigate('gym');
+      // wherever you came from — not the Forge you were never in.
+      : goBack();
   const [permission, requestPermission] = useCameraPermissions();
   const [mirror, setMirror] = useState(false);
   const [cue, setCue] = useState(0);
@@ -139,11 +140,11 @@ export default function FormCheckScreen({ params }) {
 
       <View style={{ flexDirection: 'row', marginTop: space.sm }}>
         <PixelButton
-          label={params.planId ? 'Back to Set' : 'Back to the gym'}
+          label={params.planId ? 'Back to Set' : back.label}
           tone="plain"
           sound="cancel"
           style={{ flex: 1, marginRight: 6 }}
-          onPress={goBack}
+          onPress={leave}
         />
         <PixelButton
           label={running ? 'Pause' : 'Start Set'}

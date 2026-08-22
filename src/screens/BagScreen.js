@@ -13,7 +13,7 @@ import { ITEMS, getItem } from '../data/items';
 export default function BagScreen() {
   const { state, dispatch } = useGame();
   const companion = useCompanion();
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
   const [toast, setToast] = useState('Pick an item to use it.');
 
   const owned = Object.keys(ITEMS).filter((id) => (state.bag[id] || 0) > 0);
@@ -100,7 +100,7 @@ export default function BagScreen() {
         )}
       </ScrollView>
 
-      <PixelButton label="Back to Town" tone="plain" sound="cancel" onPress={() => navigate('hub')} style={{ marginTop: space.sm }} />
+      <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
     </Screen>
   );
 }

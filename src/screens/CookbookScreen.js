@@ -132,7 +132,7 @@ function SearchField({ value, onChange }) {
 
 export default function CookbookScreen() {
   const { state, dispatch } = useGame();
-  const { navigate } = useNav();
+  const { navigate, goBack, back } = useNav();
   const [catId, setCatId] = useState(null);
   const [query, setQuery] = useState('');
   const [openId, setOpenId] = useState(null);
@@ -291,7 +291,7 @@ export default function CookbookScreen() {
         ))}
       </ScrollView>
 
-      <TrailAction label="Back to the kitchen" tone="quiet" onPress={() => navigate('rest')} />
+      <TrailAction label={back.label} tone="quiet" onPress={goBack} />
     </Screen>
   );
 }
