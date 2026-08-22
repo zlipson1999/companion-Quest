@@ -169,6 +169,43 @@ app.post('/chat', async (req, res) => {
   }
 });
 
+// Refuse to run in a configuration that would quietly be unsafe.
+//
+// Every one of these is a thing that works fine on a laptop and is a hole on a
+// public host, which is exactly the sort of thing that survives to production
+// because nothing complains. The test sign-in stub is a hard stop; the rest
+// warn, loudly, at the moment somebody would see it.
+function preflight() {
+  const production = process.env.NODE_ENV === 'production';
+  const providers = [
+    process.env.APPLE_CLIENT_ID && 'apple',
+    process.env.GOOGLE_CLIENT_IDS && 'google',
+  ].filter(Boolean);
+  const origins = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const problems = [];
+
+  if (production && process.env.FRIENDS_TEST_AUTH === '1') {
+    problems.push('FATAL: FRIENDS_TEST_AUTH=1 in production. It signs in ANY caller as anyone.');
+  }
+  if (production && origins.includes('*')) {
+    problems.push('WARNING: ALLOWED_ORIGINS includes "*" — any website can call this API.');
+  }
+  if (production && !providers.length) {
+    problems.push('WARNING: no APPLE_CLIENT_ID or GOOGLE_CLIENT_IDS — nobody can sign in, so friends and boards are off.');
+  }
+  if (!production && !providers.length) {
+    console.log('note: no sign-in provider configured; friends and boards are off. See docs/ACCOUNTS.md.');
+  }
+
+  problems.forEach((p) => console.warn(p));
+  if (problems.some((p) => p.startsWith('FATAL'))) {
+    console.error('Refusing to start. Fix the above, or unset NODE_ENV=production.');
+    process.exit(1);
+  }
+}
+
+preflight();
+
 app.listen(PORT, () => {
   console.log(`Companion Quest coach proxy listening on http://localhost:${PORT} (model: ${MODEL})`);
   if (!process.env.ANTHROPIC_API_KEY) {
