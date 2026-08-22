@@ -1,11 +1,6 @@
-// The battle status plate — the single most recognisable piece of furniture in
-// a creature-battle screen: name and level on the top line, a tagged HP bar
-// under it, and, for YOUR side only, a thin experience bar pinned along the
-// bottom edge.
-//
-// Rebuilt as its own component rather than a generic Window so the proportions
-// stay right: the bar is the widest thing on the plate, the level sits hard
-// right, and the EXP strip runs the full width with no padding around it.
+// A field instrument for an exercise challenge. Both sides use the same
+// centered composition; Resolve is current capacity and Growth is long-term
+// progress. Avoid franchise-signature status-card geometry and vocabulary.
 
 import React, { useEffect, useRef } from 'react';
 import { Animated, View } from 'react-native';
@@ -62,7 +57,7 @@ export default function StatusPlate({
 
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 7 }}>
             <PixelText size="tiny" color={palette.secondary} style={{ marginRight: 5 }}>
-              HP
+              RESOLVE
             </PixelText>
             <Bar ratio={ratio} color={hpColor} height={9} track={palette.barTrack} />
           </View>
@@ -74,11 +69,11 @@ export default function StatusPlate({
           ) : null}
         </View>
 
-          {/* the EXP strip — your side only, flush to the bottom edge */}
+          {/* Growth is shown only for the bonded companion. */}
           {mine ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 8, paddingRight: 3, paddingBottom: 3 }}>
               <PixelText size="tiny" color={palette.xp} style={{ marginRight: 5 }}>
-                EXP
+                GROWTH
               </PixelText>
               <Bar ratio={xpNeeded > 0 ? Math.max(0, Math.min(1, xpInto / xpNeeded)) : 0} color={palette.xp} height={6} track={palette.ink} />
             </View>
@@ -88,3 +83,4 @@ export default function StatusPlate({
     </View>
   );
 }
+
