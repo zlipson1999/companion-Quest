@@ -30,7 +30,7 @@ export const WORKOUTS = [
     steps: ['Jumping jacks — 30', 'High knees — 30 seconds', 'Burpees — 8', 'Rest — 30 seconds, then repeat once'],
     reward: { xp: 60, bond: 14 },
   },
-  // The Hall's turf lane opens straight into this one. Walking stretches are
+  // The gym's turf lane opens straight into this one. Walking stretches are
   // what a turf lane is FOR — you need the length to do them, which is why the
   // lane is a lane and not a mat.
   {

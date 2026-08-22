@@ -1,7 +1,7 @@
 // The kitchen shelf, opened.
 //
 // Reached by walking up to the shelf in your own kitchen rather than from a
-// menu, which is the same rule the Training Hall runs on: the thing that does
+// menu, which is the same rule Quest Fitness runs on: the thing that does
 // the job is the thing you walk to.
 //
 // A shelf with six books on it can be a list. This one holds seventy-odd

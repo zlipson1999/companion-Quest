@@ -19,7 +19,7 @@ const TONES = {
   grass: { sky: '#4a6ea8', far: '#7fa8d8', disc: palette.grassTall, field: 'grass' },
   trail: { sky: '#5f7fb4', far: '#9fc0e0', disc: palette.sand, field: 'path' },
   dusk: { sky: '#3a2c52', far: '#8a6a9e', disc: '#6b5d7a', field: 'grass' },
-  // Indoors. Coach's push-up contest happens on the Hall floor, not on a
+  // Indoors. Coach's push-up contest happens on the gym floor, not on a
   // hillside — a sparring match staged in a meadow reads as a different game.
   hall: { sky: '#232833', far: '#39404d', disc: '#4f8a7e', field: 'gym_floor' },
 };

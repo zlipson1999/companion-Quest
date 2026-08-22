@@ -30,7 +30,7 @@ const AREAS = {
       'W........sW',
       'WWWWWWWWWWW',
     ],
-    // Furniture that does something. Same rule as the Training Hall: the thing
+    // Furniture that does something. Same rule as Quest Fitness: the thing
     // that does the job is the thing you walk up to.
     interactions: {
       e: { screen: 'habit', params: { moduleId: 'sleep' }, label: 'Bed — log last night' },
@@ -69,7 +69,7 @@ const AREAS = {
   outside: {
     name: 'Maple Lane', cols: 9, rows: 7, spawn: { x: 2, y: 5 }, exit: { x: 6, y: 2 },
     grid: ['TTTTTTTTT', 'ThhhTyyyT', 'THDHTYdYT', 'T.####..T', 'T.#..#..T', 'T.####..T', 'TTTTTTTTT'],
-    hint: 'The Training Hall is next door. Find its entrance.', next: 'coachTutorial',
+    hint: 'Quest Fitness is next door. Find its entrance.', next: 'coachTutorial',
   },
 };
 
@@ -101,7 +101,7 @@ export default function HomeIntroScreen() {
     playerRef.current = next;
     setPlayer(next);
 
-    // Walking into your own furniture uses it, the same way the Hall's
+    // Walking into your own furniture uses it, the same way the gym's
     // equipment works. The bed logs last night, the desk opens your habits,
     // the kitchen shelf is the cookbook.
     if (blocked) {

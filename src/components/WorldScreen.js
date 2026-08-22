@@ -21,7 +21,7 @@ import { palette, space, screen, tokens, scale } from '../theme';
 
 // You should be able to see the whole place you are standing in.
 //
-// Rooms, the Hall and the town all CONTAIN: the tile size is whatever makes the
+// Rooms, the gym and the town all CONTAIN: the tile size is whatever makes the
 // entire map fit across the phone, and nothing is ever cropped or scrolled out
 // of view. Covering the screen instead meant a camera swinging around a space
 // you could not see the shape of, which is disorienting in a room you cross in

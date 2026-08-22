@@ -2,7 +2,7 @@
 // ribbon, the menu button and the stick sit on top of it.
 //
 // This used to be a map in the top half with fourteen destinations listed
-// underneath, which made the Training Hall decoration — everything the room
+// underneath, which made the gym decoration — everything the room
 // stands for was one tap away down there. What is left in the menu is places
 // you go and the two lines that are not places at all.
 
@@ -17,7 +17,7 @@ import { HUB, isWalkable, tileAt, triggerForCode } from '../data/maps';
 
 const MENU = [
   { label: 'Route 1', value: 'route', sublabel: 'real miles, encounters' },
-  { label: 'The Hall', value: 'gym', sublabel: 'train, cardio, coach' },
+  { label: 'Quest Fitness', value: 'gym', sublabel: 'train, cardio, coach' },
   { label: 'Go Home', value: 'rest', sublabel: 'sleep upstairs' },
   { label: 'Team', value: 'party', sublabel: 'companions' },
   { label: 'Options', value: 'options', sublabel: 'settings' },
@@ -53,10 +53,10 @@ export default function HubScreen() {
   };
 
   const objective = !companion
-    ? 'Meet Coach Maple inside the Training Hall'
+    ? 'Meet Coach Maple inside Quest Fitness'
     : state.stats.distanceMi < 0.1
       ? 'Head out through the north gate and walk Route 1'
-      : 'Train at the Hall, or walk Route 1 for more distance';
+      : 'Train at the gym, or walk Route 1 for more distance';
 
   return (
     <WorldScreen

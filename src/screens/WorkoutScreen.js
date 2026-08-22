@@ -96,7 +96,7 @@ export default function WorkoutScreen({ params = {} }) {
         </ScrollView>
         <View style={{ flexDirection: 'row', marginTop: space.sm }}>
           <PixelButton
-            label={pinned ? 'Back to the Hall' : 'Back'}
+            label={pinned ? 'Back to the gym' : 'Back'}
             tone="plain"
             sound="cancel"
             style={{ flex: 1, marginRight: 6 }}

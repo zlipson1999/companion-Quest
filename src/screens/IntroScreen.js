@@ -1,5 +1,5 @@
 // A brief product introduction before the player enters the world at home.
-// Companion discovery belongs to Coach Maple's in-world lesson at the Hall.
+// Companion discovery belongs to Coach Maple's in-world lesson at the gym.
 
 import React from 'react';
 import { View } from 'react-native';

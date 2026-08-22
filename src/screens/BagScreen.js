@@ -44,6 +44,11 @@ export default function BagScreen() {
           <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={36} />
           <View style={{ flex: 1, marginLeft: space.sm }}>
             <HPBar hp={companion.hp} maxHp={companion.maxHp} width={180} label="HP" />
+            {/* Your tab, where you keep your things. The bar is the only place
+                it is spent, so this is the only place it needs to be read. */}
+            <PixelText size="tiny" color={palette.secondary} style={{ marginTop: 6 }}>
+              {`${state.credits || 0} Trail Credit`}
+            </PixelText>
           </View>
         </View>
       </Window>

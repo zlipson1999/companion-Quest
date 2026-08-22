@@ -6,7 +6,7 @@
 //   route      Route 1. Trail markers reveal encounters — companions to meet
 //              and bad habits to work through — so distance out here is where
 //              the game happens to you.
-//   treadmill  The Hall's cardio deck. Identical credit: the same miles, the
+//   treadmill  The gym's cardio deck. Identical credit: the same miles, the
 //              same milestones, the same progression. What it does not have is
 //              anything that stops you — no encounters, no challenges. It is
 //              for the days you want to put the miles in and be left alone.
@@ -47,7 +47,7 @@ function routeRow(r, cols, treadmill) {
   for (let x = 0; x < cols; x += 1) {
     const n = ((h ^ (x * 2246822519)) >>> 0) % 100;
     if (treadmill) {
-      // Indoors: plain Hall floor. The running lane itself is a ZONE declared
+      // Indoors: plain gym floor. The running lane itself is a ZONE declared
       // on the scene map below, not a code per square — the belt used to be a
       // row of mat props and so it had a hard sawn edge down each side.
       row += '.';
@@ -104,7 +104,7 @@ function ScrollingScene({ width, height, moving, treadmill }) {
       rows: rows * 2,
       grid,
       // The deck's running surface, as a zone: it gets the same joint and lip
-      // the Hall's own matting has, so it reads as a lane let into the floor
+      // the gym's own matting has, so it reads as a lane let into the floor
       // rather than as a strip laid on top of it.
       zones: treadmill
         ? [{ field: 'tile_gym_mats', x0: lane0, y0: 0, x1: lane0 + laneW - 1, y1: rows * 2 - 1 }]
@@ -229,7 +229,7 @@ export default function RouteScreen({ params = {} }) {
     <Window tone="dark" pad={8}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <PixelText size="tiny" color={palette.secondary}>
-          {treadmill ? 'Training Hall — cardio deck' : pacing.trail}
+          {treadmill ? 'Quest Fitness — cardio deck' : pacing.trail}
         </PixelText>
         {dist.running ? (
           <PixelText size="tiny" color={palette.hpHigh}>

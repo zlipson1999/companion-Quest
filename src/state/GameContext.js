@@ -9,6 +9,7 @@
 import React, { createContext, useContext, useEffect, useReducer, useRef } from 'react';
 import { getCreature } from '../data/creatures';
 import { getItem } from '../data/items';
+import { priceOf } from '../data/shop';
 import { pacingForGoal } from '../data/route';
 import { migrateGoalId } from '../data/goals';
 import { xpProgress, levelFromXp, maxHpFor } from './leveling';
@@ -16,6 +17,7 @@ import { loadGame, saveGame, clearGame } from './storage';
 import { stamp, trim } from './history';
 import { computeRecovery } from './recovery';
 import { XP_PER_MILE, pointsFor, xpFor } from './evolution';
+import { CREDIT_PER_GOAL, CREDIT_PER_MILE, CREDIT_PER_SESSION, CREDIT_PER_WIN, mint } from './economy';
 import {
   MODULES,
   getModule,
@@ -28,9 +30,9 @@ import {
 } from '../modules';
 
 const today = todayKey;
-const STARTING_TOKENS = 3;
+const STARTING_KNOTS = 3;
 const MAX_PARTY = 6;
-const SAVE_VERSION = 6;
+const SAVE_VERSION = 8;
 
 function daysBetween(a, b) {
   if (!a || !b) return 0;
@@ -47,11 +49,15 @@ const FRESH = {
   goalId: null,
   party: [],
   activeIndex: 0,
+  // Trail Credit. Starts at zero and is only ever minted by real effort — see
+  // economy.js for why there is no other way in.
+  credits: 0,
   stats: {
     totalSteps: 0,
     distanceMi: 0,
     routeMi: 0,
-    xpCarry: 0,   // fractional walking XP not yet paid out
+    xpCarry: 0,       // fractional walking XP not yet paid out
+    creditCarry: 0,   // ...and the same for credit
     milestonesReached: 0,
     battlesWon: 0,
     battlesLost: 0,
@@ -119,6 +125,50 @@ function applyEffect(member, effect) {
   return next;
 }
 
+// A module log, as a function rather than only a reducer case: a smoothie
+// bought at the bar records a Nourish check-in when you drink it, and it has to
+// go down the SAME path a tap on the log screen does. Two implementations of
+// "log a habit" is how a daily cap ends up applying on one of them.
+//
+// `mintCredit` is false when something you already paid for triggered the log.
+// The goal bonus is small and the drink costs more than it pays, so it was
+// never a real loop, but a shop that can refund part of its own price is a
+// thing to not have at all.
+function logModule(state, payload, { mintCredit = true } = {}) {
+  const { moduleId, actionId, capped } = payload || {};
+  const module = getModule(moduleId);
+  if (!module) return state;
+  const result = logModuleAction(module, moduleStateFor(state.modules, moduleId), actionId, today(), capped);
+  if (!result) return state;
+  const evo =
+    pointsFor(module.training ? 'session' : 'habit') +
+    (result.goalJustHit ? pointsFor('habit') : 0);
+  const next = updateActive(state, (m) => applyEffect(m, { ...result.reward, evo }));
+  const earned = mintCredit && result.goalJustHit ? mint(state, CREDIT_PER_GOAL) : null;
+  return {
+    ...next,
+    ...(earned ? { credits: earned.credits } : {}),
+    modules: { ...state.modules, [moduleId]: result.state },
+    history: remember(state, {
+      xp: result.reward.xp || 0,
+      bond: result.reward.bond || 0,
+      habitLogs: 1,
+      goalsMet: result.goalJustHit ? 1 : 0,
+      // `training` is a module flag, not a hardcoded id — the reducer still
+      // knows nothing about any specific module. Counted whether or not it
+      // paid: a second session on the same day still happened.
+      sessions: module.training ? 1 : 0,
+      load: payload.load || 0,
+    }),
+    stats: {
+      ...state.stats,
+      ...(earned ? { creditCarry: earned.creditCarry } : {}),
+      habitLogs: state.stats.habitLogs + 1,
+      habitGoalsHit: state.stats.habitGoalsHit + (result.goalJustHit ? 1 : 0),
+    },
+  };
+}
+
 function reducer(state, action) {
   switch (action.type) {
     case 'HYDRATE': {
@@ -156,6 +206,18 @@ function reducer(state, action) {
       merged.history = trim(saved.history || {}, today());
       // v6 adds one-time outfit and gender choices. Their null defaults keep
       // older saves in setup until both choices have been recorded.
+      // v7 adds Trail Credit. Older saves start at zero rather than being
+      // back-paid for the miles they walked: the app was not minting then, and
+      // handing someone a balance for work it never counted is exactly the kind
+      // of free currency this economy exists to not have.
+      merged.credits = saved.credits || 0;
+      // v8: the Bond Token became the Kinship Knot. Not a rename — a different
+      // object with a different mechanic — but somebody's count is somebody's
+      // earned work, so it carries across rather than being voided.
+      if (merged.bag.token) {
+        merged.bag.knot = (merged.bag.knot || 0) + merged.bag.token;
+        delete merged.bag.token;
+      }
       merged.version = SAVE_VERSION;
 
       // v3 also moved "today" from a UTC date to a LOCAL one. A pre-v3
@@ -188,7 +250,7 @@ function reducer(state, action) {
         party: [{ id: starterId, baseId: starterId, xp: 0, bond: 0, evo: 0, hp: maxHp }],
         activeIndex: 0,
         dex: { ...state.dex, [starterId]: 'owned' },
-        bag: { ...state.bag, token: (state.bag.token || 0) + STARTING_TOKENS },
+        bag: { ...state.bag, knot: (state.bag.knot || 0) + STARTING_KNOTS },
         modules: rollAllModules(state.modules, today()),
       };
     }
@@ -229,12 +291,17 @@ function reducer(state, action) {
           evo: hitMilestones ? pointsFor('milestone', hitMilestones) : 0,
         })
       );
+      // Walking is where credit comes from. Minted on the same fractional carry
+      // as the XP above, for the same reason.
+      const earned = mint(state, mi * CREDIT_PER_MILE);
       return {
         ...withEvo,
+        credits: earned.credits,
         history: remember(state, { distanceMi: mi, load: mi * LOAD_PER_MILE, xp: walkXp }),
         stats: {
           ...state.stats,
           xpCarry: carry - walkXp,
+          creditCarry: earned.creditCarry,
           totalSteps: state.stats.totalSteps + steps,
           distanceMi: state.stats.distanceMi + mi,
           routeMi,
@@ -257,8 +324,28 @@ function reducer(state, action) {
       if (!state.bag[itemId] || state.bag[itemId] <= 0) return state;
       const item = getItem(itemId);
       if (!item.effect) return state;
-      const next = updateActive(state, (m) => applyEffect(m, item.effect));
-      return { ...next, bag: { ...state.bag, [itemId]: state.bag[itemId] - 1 } };
+      let next = updateActive(state, (m) => applyEffect(m, item.effect));
+      next = { ...next, bag: { ...state.bag, [itemId]: state.bag[itemId] - 1 } };
+      // A smoothie is a two-part item: the blend does something for your
+      // companion, and drinking it is your own check-in. The log goes down the
+      // module's normal path, so the daily cap applies exactly as it would if
+      // you had tapped it on the habit screen.
+      return item.logAs ? logModule(next, item.logAs, { mintCredit: false }) : next;
+    }
+
+    // Buying is the ONLY way credit leaves the wallet, and the price is looked
+    // up here rather than passed in: a screen that could name its own price is
+    // one bug away from a free shop.
+    case 'BUY_ITEM': {
+      const { itemId } = action.payload;
+      const price = priceOf(itemId);
+      if (price == null || !getItem(itemId)) return state;
+      if ((state.credits || 0) < price) return state;
+      return {
+        ...state,
+        credits: state.credits - price,
+        bag: { ...state.bag, [itemId]: (state.bag[itemId] || 0) + 1 },
+      };
     }
 
     case 'CONSUME_ITEM': {
@@ -287,10 +374,16 @@ function reducer(state, action) {
         bond: m.bond + bond,
         hp: clamp(companionHp != null ? companionHp : (m.hp == null ? memberMaxHp(m) : m.hp), 0, memberMaxHp(m)),
       }));
+      const won = mint(state, CREDIT_PER_WIN);
       return {
         ...next,
+        credits: won.credits,
         history: remember(state, { xp, bond, battles: 1, load: LOAD_PER_BATTLE }),
-        stats: { ...state.stats, battlesWon: state.stats.battlesWon + 1 },
+        stats: {
+          ...state.stats,
+          creditCarry: won.creditCarry,
+          battlesWon: state.stats.battlesWon + 1,
+        },
         dex: { ...state.dex, [targetId]: state.dex[targetId] || 'seen' },
       };
     }
@@ -327,37 +420,8 @@ function reducer(state, action) {
     // A module log is just another way to earn. It updates state.modules[id]
     // and then hands its reward to the SAME xp/bond path a workout uses, so no
     // module ever needs to know how progression works.
-    case 'MODULE_LOG': {
-      const { moduleId, actionId, capped } = action.payload;
-      const module = getModule(moduleId);
-      if (!module) return state;
-      const result = logModuleAction(module, moduleStateFor(state.modules, moduleId), actionId, today(), capped);
-      if (!result) return state;
-      const evo =
-        pointsFor(module.training ? 'session' : 'habit') +
-        (result.goalJustHit ? pointsFor('habit') : 0);
-      const next = updateActive(state, (m) => applyEffect(m, { ...result.reward, evo }));
-      return {
-        ...next,
-        modules: { ...state.modules, [moduleId]: result.state },
-        history: remember(state, {
-          xp: result.reward.xp || 0,
-          bond: result.reward.bond || 0,
-          habitLogs: 1,
-          goalsMet: result.goalJustHit ? 1 : 0,
-          // `training` is a module flag, not a hardcoded id — the reducer still
-          // knows nothing about any specific module. Counted whether or not it
-          // paid: a second session on the same day still happened.
-          sessions: module.training ? 1 : 0,
-          load: action.payload.load || 0,
-        }),
-        stats: {
-          ...state.stats,
-          habitLogs: state.stats.habitLogs + 1,
-          habitGoalsHit: state.stats.habitGoalsHit + (result.goalJustHit ? 1 : 0),
-        },
-      };
-    }
+    case 'MODULE_LOG':
+      return logModule(state, action.payload);
 
     // Merge a module's OWN data (not the daily counters) — the Forge storing
     // the player's saved plans, for example. Generic on purpose: a module can
@@ -397,15 +461,21 @@ function reducer(state, action) {
       const next = updateActive(state, (m) =>
         applyEffect({ ...m, xp: m.xp + Math.round(xp * mult), bond: m.bond + bond }, { evo: pointsFor('session') })
       );
+      const paid = mint(state, CREDIT_PER_SESSION);
       return {
         ...next,
+        credits: paid.credits,
         history: remember(state, {
           xp: Math.round(xp * mult),
           bond,
           workouts: 1,
           load: Math.round(xp * mult * LOAD_PER_WORKOUT_XP * 10) / 10,
         }),
-        stats: { ...state.stats, workoutsDone: state.stats.workoutsDone + 1 },
+        stats: {
+          ...state.stats,
+          creditCarry: paid.creditCarry,
+          workoutsDone: state.stats.workoutsDone + 1,
+        },
       };
     }
 

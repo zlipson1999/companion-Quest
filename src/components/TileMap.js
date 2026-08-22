@@ -52,7 +52,7 @@ const TILE_SPRITES = {
   D: ['tile_door'],
   d: ['tile_door'],
   '^': ['tile_tallgrass'],
-  // Training Hall interior
+  // Quest Fitness interior
   W: ['tile_wall'],
   '=': ['tile_gym_wall'],
   '|': ['tile_gym_wall_side'],
@@ -88,6 +88,8 @@ const PROP_SPRITES = {
   z: 'prop_ez_bars',
   S: 'prop_stretch_rig',
   Q: 'prop_ball_rack',
+  J: 'prop_bar_counter',
+  I: 'prop_bar_blender',
   B: 'prop_bench',
   w: 'prop_water_station',
   V: 'prop_banner',
@@ -163,7 +165,7 @@ const SHADOW_CASTERS = new Set([
   'T', 'W', 'H', 'Y', 'h', 'y', 'D', 'd', 'G',
   '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w',
   'e', 'E', 'v', 'k', 'f', 'a', 'c', 'F', 'o',
-  'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q',
+  'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q', 'J', 'I',
 ]);
 
 function codeAt(map, x, y) {

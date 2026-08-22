@@ -78,7 +78,7 @@ export default function SparIntroScreen() {
         <DialogueBox
           lines={lines}
           onComplete={() => {
-            // Straight into the real battle screen, with the Hall to come back to.
+            // Straight into the real battle screen, with the gym to come back to.
             toBattle({ ...SPAR_PARAMS, sparIntro: true });
           }}
         />

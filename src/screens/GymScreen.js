@@ -1,4 +1,4 @@
-// The Maple Training Hall interior.
+// Quest Fitness — the gym interior.
 //
 // The gym door used to jump straight to the exercise list, so the building the
 // whole onboarding walks you toward had no inside. Here the equipment IS the
@@ -72,7 +72,7 @@ export default function GymScreen() {
       map={GYM}
       player={player}
       onMove={move}
-      place="Maple Training Hall"
+      place="Quest Fitness"
       objective={facingStation ? facingStation.label : 'Walk into any equipment to use it'}
       menu={MENU}
       onSelect={(item) => navigate(item.value)}

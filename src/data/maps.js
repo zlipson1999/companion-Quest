@@ -4,7 +4,7 @@
 //
 //   .  grass        #  path         T  tree (blocked)   ~  water (blocked)
 //   ,  flowers      h  rest roof    H  rest wall (blk)   D  rest door -> rest
-//   y  gym roof     Y  gym wall     d  gym door -> Training Hall interior
+//   y  gym roof     Y  gym wall     d  gym door -> Quest Fitness interior
 //   G  route gate -> route
 
 export const HUB = {
@@ -27,7 +27,7 @@ export const HUB = {
   ],
 };
 
-// The Training Hall interior.
+// Quest Fitness — the gym interior.
 //
 // Laid out the way a real fitness floor is laid out, because the first pass was
 // equipment scattered evenly over a rectangle and that reads as a warehouse.
@@ -46,13 +46,16 @@ export const HUB = {
 //     and a cross-aisle through the middle, which is how a circuit is walked.
 //   - The functional end at the SOUTH: turf lane on one side for dynamic
 //     stretching, matting on the other for bodyweight and core work.
-//   - Front of house at the door: lockers one side, reception the other.
+//   - Front of house at the door: lockers one side, then reception and the
+//     smoothie bar, which is where a juice counter sits in every gym that has
+//     one — you pass it on the way in and on the way out.
 //
-//   =  front wall     |  side wall      M  mirror       .  rubber floor
+//   =  front wall     |  side wall      M  mirrored wall panel   .  floor
 //   R  power rack     b  dumbbell run   z  EZ-bar cradle  B  bench
 //   K  machine        t  treadmill      q  rower        U  pull-up bar
 //   j  kettlebells    S  stretch rig    Q  medicine balls
 //   w  water station  L  lockers        N  reception
+//   J  bar counter     I  blender station
 //   V  banner         O  clock          Z  whiteboard
 //   C  Coach Maple    A  Rowan          X  exit -> hub
 //
@@ -75,15 +78,15 @@ export const GYM = {
     '|b.B...K.K.....t|',
     '|b.....K.K.....t|',
     '|b.z...........t|',
-    '|M.z...K.K.....q|',
-    '|M.....K.K.....q|',
-    '|M.............q|',
+    'M..z...K.K.....q|',
+    'M......K.K.....q|',
+    'M..............q|',
     '|S.............Q|',
     '|...............|',
     '|...............|',
     '|.........CA....|',
     '|...............|',
-    '|LLL.........NN.|',
+    '|LLL.NN...JIJ...|',
     '========X========',
   ],
   zones: [
@@ -98,13 +101,13 @@ const BLOCKED = new Set([
   'W', '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w', 'C', 'A', 'V', 'O', 'Z',
   // Furniture. A rug is walkable; everything else you walk around.
   'e', 'E', 'v', 'k', 'f', 'a', 'c', 'F', 'o', 'p',
-  'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q',
+  'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q', 'J', 'I',
 ]);
 
 // Walking into a station is how you use it. A blocked tile that answers a bump
-// gives the room its affordances: the equipment IS the menu, so the Hall does
+// gives the room its affordances: the equipment IS the menu, so the gym does
 // not need a wall of buttons explaining itself.
-// The Hall's equipment IS the menu. Each piece opens the system it stands for,
+// The gym's equipment IS the menu. Each piece opens the system it stands for,
 // so the room teaches by being walked around rather than by listing itself.
 //
 // The cardio deck is the one that needed a distinction rather than a link.
@@ -126,6 +129,10 @@ const INTERACTIONS = {
   Z: { screen: 'week', label: "Whiteboard — this week's work" },
   L: { screen: 'bag', label: 'Lockers — your supplies' },
   N: { screen: 'summary', label: 'Reception — your record so far' },
+  // Front of house. The bar is the one place credit is spent, and credit is
+  // only ever minted by real effort — see src/state/economy.js.
+  J: { screen: 'smoothiebar', label: 'Smoothie bar — blends, and Kinship Knots' },
+  I: { screen: 'smoothiebar', label: 'Smoothie bar — blends, and Kinship Knots' },
   B: { screen: 'rest', label: 'Bench — rest and recover' },
   w: { screen: 'habits', label: 'Water station — daily habits' },
   M: { screen: 'formcheck', label: 'Mirror — form check' },
@@ -180,7 +187,7 @@ export function triggerForCode(code) {
 
 export const TRIGGER_LABELS = {
   rest: 'Home',
-  gym: 'Maple Training Hall',
+  gym: 'Quest Fitness',
   route: 'Route 1',
   hub: 'Maple Lane',
 };

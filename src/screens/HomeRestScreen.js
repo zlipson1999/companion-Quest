@@ -49,7 +49,7 @@ const FLOORS = {
       'W........sW',
       'WWWWWWWWWWW',
     ],
-    // Furniture that does something. Same rule as the Training Hall: the thing
+    // Furniture that does something. Same rule as Quest Fitness: the thing
     // that does the job is the thing you walk up to.
     interactions: {
       e: { screen: 'habit', params: { moduleId: 'sleep' }, label: 'Bed — log last night' },

@@ -17,7 +17,7 @@ export default function CompanionStatus({ companion, stats, style }) {
     return (
       <View style={style}>
         <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ lineHeight: 14 }}>
-          No companion yet — Coach Maple is waiting in the Training Hall.
+          No companion yet — Coach Maple is waiting at Quest Fitness.
         </PixelText>
       </View>
     );

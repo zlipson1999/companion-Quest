@@ -1,5 +1,5 @@
 // Exercise challenge. Your active companion channels real exercises into
-// Resolve. Trail companions may accept a Bond Token after trust is built;
+// Resolve. Trail companions may tie a Kinship Knot with you after trust is built;
 // bad-habit obstacles are cleared. Rotate changes the Circle's lead.
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -90,7 +90,7 @@ export default function BattleScreen({ params }) {
   // A sparring partner is supplied whole; everything else is a creature.
   const wild = params.opponent || getCreature(target.targetId);
   const returnTo = params.from === 'route' ? 'route' : params.from === 'gym' ? 'gym' : 'hub';
-  const tokens = state.bag.token || 0;
+  const knots = state.bag.knot || 0;
   const teamFull = party.members.length >= 6;
 
   const [wildHp, setWildHp] = useState(target.hp);
@@ -284,19 +284,30 @@ export default function BattleScreen({ params }) {
   };
 
   const attemptCatch = () => {
-    if (tokens <= 0) {
+    if (knots <= 0) {
       say([{ speaker: 'Narration', text: noTokenLine() }], () => setPhase('menu'));
       return;
     }
     if (teamFull) {
-      dispatch({ type: 'CONSUME_ITEM', payload: { itemId: 'token' } });
+      dispatch({ type: 'CONSUME_ITEM', payload: { itemId: 'knot' } });
       dispatch({ type: 'CATCH', payload: { creatureId: target.targetId, xp: 60, bond: 5 } });
       say([{ speaker: 'Narration', text: catchFullLine(wild.name) }], finish);
       return;
     }
-    dispatch({ type: 'CONSUME_ITEM', payload: { itemId: 'token' } });
-    const hpRatio = wildHp / target.hp;
-    const chance = clamp(target.catchRate * (0.4 + 0.6 * (1 - hpRatio)) + Math.min(0.15, companion.bond / 300), 0.05, 0.95);
+    dispatch({ type: 'CONSUME_ITEM', payload: { itemId: 'knot' } });
+    // You do not wear a companion down and take it home. It ties the other
+    // loop when it has watched you do the work AND you are still going — so
+    // the chance rides on how far through the shared challenge you are and on
+    // YOUR OWN remaining Resolve, not on how weak it has become. That inverts
+    // the incentive on purpose: finishing strong is what earns the knot, where
+    // grinding something into the ground at any cost earns nothing.
+    const shared = 1 - wildHp / target.hp;
+    const standing = companionHp / companion.maxHp;
+    const chance = clamp(
+      target.catchRate * (0.25 + 0.45 * shared + 0.3 * standing) + Math.min(0.15, companion.bond / 300),
+      0.05,
+      0.95
+    );
     if (Math.random() < chance) {
       const beforeLevel = companion.level;
       const afterXp = companion.xp + target.xp;
@@ -419,7 +430,7 @@ export default function BattleScreen({ params }) {
 
   let bottom;
   if (phase === 'menu') {
-    const catchDisabled = tokens <= 0;
+    const bondDisabled = knots <= 0;
     bottom = (
       <View style={{ flex: 1, padding: space.md }}>
         <PixelText size="tiny" color={palette.windowTextDim} style={{ marginBottom: 6 }}>
@@ -441,7 +452,7 @@ export default function BattleScreen({ params }) {
             <PixelButton label="Rotate" tone="dark" sound="cursor" style={{ flex: 1, marginRight: 5 }} onPress={() => setPhase('swap')} />
           ) : null}
           {target.isCompanion ? (
-            <PixelButton label={`Offer Bond (${tokens})`} tone="gold" disabled={catchDisabled} style={{ flex: 1 }} onPress={attemptCatch} />
+            <PixelButton label={`Tie a Knot (${knots})`} tone="gold" disabled={bondDisabled} style={{ flex: 1 }} onPress={attemptCatch} />
           ) : null}
         </View>
       </View>

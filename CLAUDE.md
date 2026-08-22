@@ -311,13 +311,13 @@ narrowing the figure. Characters are sized by height now, since a traced figure
 is tall and slim rather than a square 24x32 block.
 
 **Furnished rooms.** The bedroom has a bed, TV, desk, shelf, rug and plant; the
-front room has a kitchen run, fridge, table and sofa; the Hall added a pull-up
+front room has a kitchen run, fridge, table and sofa; the gym added a pull-up
 bar, rower, kettlebells, lockers, reception and more racks. Props are
 transparent overlays over the room's floor — see `docs/ART_KIT.md`. The bed is
 solid, so `HomeRestScreen` sleeps when you walk *into* it rather than onto it.
 
 **You can always see the whole place you are standing in.** `WorldScreen`
-CONTAINS every map — room, Hall and town alike. Tile size is whatever makes the
+CONTAINS every map — room, gym and town alike. Tile size is whatever makes the
 map fit across the phone, and nothing is cropped or scrolled out of view.
 Covering the screen instead put a camera on a space you could not see the shape
 of, which is disorienting in a room you cross in six steps and no better in a
@@ -343,7 +343,7 @@ the phone's height outright instead of clamping at 68, which was letterboxing
 tall phones by about a hundred pixels.
 
 **The first battle is a push-up contest.** Coach Maple is mid-session with
-another trailkeeper, Rowan, when you walk into the Hall; once you have your
+another trailkeeper, Rowan, when you walk into the gym; once you have your
 companion she puts you against him. `SparIntroScreen` frames it and hands
 straight to the REAL `BattleScreen` — same moves, same Resolve, same victory
 path. `resolveTarget` gained a third case for it: a sparring partner is a
@@ -376,7 +376,7 @@ the shared one.
   cooking methods are common knowledge and dish styles belong to the cuisines
   that made them, but no phrasing is lifted from anyone's book or app, and that
   has to stay true of anything added. The sofa is a stillness check-in.
-- **Training Hall** — laid out on the ordinary commercial-gym convention rather
+- **Quest Fitness** (the gym) — laid out on the ordinary commercial-gym convention rather
   than as equipment spread evenly over a rectangle, which is a warehouse.
   Perimeter for the things that back onto a wall, centre for the things that do
   not: **power racks along the north wall** on the lifting platform (a rack is
@@ -406,7 +406,7 @@ the shared one.
   neither material does, so a zone is drawn as an INLAY — dark joint all round,
   north and west inner edges in the shadow of the lip, south and east catching
   the light. The treadmill deck's running lane uses the same machinery.
-- **The Hall is lit by fixtures, not evenly.** `light_pool()` bakes a pool of
+- **The gym is lit by fixtures, not evenly.** `light_pool()` bakes a pool of
   light into each gym floor field. A field is already exactly four tiles across,
   so the pools land on the fixture grid for free and the floor between them
   falls away. The first pass drew lighting as its own dithered layer, but a
@@ -421,16 +421,16 @@ the shared one.
   and core, nothing to load and nothing to queue for). A station names the
   routine it IS via `params.workoutId`, so it opens that routine rather than the
   list of every routine with it somewhere inside — you already said which one
-  you wanted by walking there — and backing out returns to the Hall.
+  you wanted by walking there — and backing out returns to the gym.
 
-**The Hall is the menu, and cardio has two forms.** The hub menu listed
-fourteen destinations, which made the Training Hall decoration — everything it
+**The gym is the menu, and cardio has two forms.** The hub menu listed
+fourteen destinations, which made the gym decoration — everything it
 stands for was one tap away. It lists six places now; training, the Forge,
 habits, bag, record and coach are reached by walking into the equipment that
 does them. The one distinction that needed more than a link is cardio:
 
 - `route` — Route 1, outdoors. Trail markers reveal encounters and challenges.
-- `treadmill` — the Hall's deck. Same `RouteScreen`, same miles, same
+- `treadmill` — the gym's deck. Same `RouteScreen`, same miles, same
   milestones, same progression, and **nothing that stops you**: no encounters,
   no companion alongside, no GPS toggle, and an indoor scene on the gym floor.
 
@@ -443,7 +443,7 @@ from `settings.control`. Crossing a map one deliberate tap per square was the
 most tiring thing about the overworld; the stick reports a direction and repeats
 it on a timer, so movement stays grid-stepped underneath.
 
-**Training Hall.** The gym door used to jump straight to the exercise list. It
+**Quest Fitness.** The gym door used to jump straight to the exercise list. It
 is a room now (`GYM` in `src/data/maps.js`, `src/screens/GymScreen.js`) with
 barbell and dumbbell racks, cable machines, a treadmill, bench, mirrors, water
 station and training mats. Walking into a station is how you use it — the
@@ -480,8 +480,65 @@ Extra ground and tree variants are flips of the painted originals. See
 grove, trail, sky, ember), a 4px spacing scale with a 44px touch minimum, and
 three motion speeds. `FieldCard`, `TrailAction` and `ObjectiveRibbon` are the
 shared primitives. This is **additive** — `palette` still works and still means
-what it did. Hub and the Hall are converted; the remaining screens still use
+what it did. Hub and the gym are converted; the remaining screens still use
 `Window`/`PixelButton` and are the next pass.
+
+## Phase 8 — DONE: the smoothie bar, Trail Credit, and the Kinship Knot
+
+**The gym is called Quest Fitness.** The building has a proper name; the room
+you are standing in is "the gym". Proper noun where it is being named, common
+noun where you are being pointed at it — so the hub menu says Quest Fitness and
+every back button says "Back to the gym".
+
+**Trail Credit (`src/state/economy.js`) cannot be bought.** A shop needs
+something to spend, and the moment a game has a shop it has a pressure to sell
+the currency. This one is minted by real effort and nothing else: **10 a mile,
+8 a session, 6 a challenge won, 4 for a habit goal you hit**, on the same
+fractional carry the walking XP uses (rounding each dispatch alone would floor
+every thousandth-of-a-mile to zero). There is no starting balance, no daily
+allowance, and older saves migrate at **zero** rather than being back-paid for
+miles the app was not counting. Rest days pay bond and healing but never credit,
+for the same reason they never pay XP. `mint()` is a pure helper; the four
+earning cases call it and nothing else does.
+
+**The smoothie bar** (`SmoothieBarScreen`, stock in `src/data/shop.js`) sits at
+the front of the gym beside reception — counter, blender, counter — because that
+is where a juice counter is in every gym that has one. Prices are written in
+MILES (`MILES(2.5)`) and converted through `CREDIT_PER_MILE`, so the whole board
+moves if the earn rate is ever retuned, and every price reads as "this much real
+walking". Rows you cannot afford are **not disabled**: a greyed-out row that will
+not answer a tap tells you nothing, so each one says how far short you are in the
+unit you close the gap with. The reducer looks the price up itself — a screen
+that could name its own price is one bug away from a free shop.
+
+**A smoothie is a two-part item.** The blend does something for your companion
+and `logAs` records the drink as your own Nourish check-in, through the module's
+normal path, so the daily-goal cap applies and buying one can never pay more
+than showing up would have. That needed `MODULE_LOG`'s body extracted into
+`logModule(state, payload, { mintCredit })` — two implementations of "log a
+habit" is how a cap ends up applying on only one of them.
+
+**The Bond Token is gone; the Kinship Knot replaces it.** The old item was a
+sphere with an equator band and a button in the middle, thrown at a weakened
+creature until it gave in. That is somebody else's object wearing somebody
+else's mechanic, and no amount of renaming fixes a silhouette — this is exactly
+the originality non-negotiable at the top of this file. A **Kinship Knot** is a
+braided cord with two loops: you offer one and keep the other, and it is worn
+rather than thrown.
+
+The mechanic changed with it. It used to be `catchRate * (0.4 + 0.6 * (1 -
+wildHp))` — wear it down and take it. Now the chance rides on how far through
+the shared challenge you are **and on YOUR OWN remaining Resolve**:
+`catchRate * (0.25 + 0.45 * shared + 0.30 * standing)`. That inverts the
+incentive deliberately: finishing strong earns the knot, where grinding
+something into the ground at any cost earns nothing. Save `version` **8**; an
+old save's Bond Tokens carry across as Knots rather than being voided.
+
+**Mirrors are wall.** They used to be front-wall panels standing on the floor
+squares beside the west wall, which made the room appear to bulge inward and
+made a mirror read as a piece of equipment. They are drawn on the SIDE wall now
+and they live in the wall column; the floor in front of one is where you stand
+to use it.
 
 ## Phase 6 — ideas, not committed
 

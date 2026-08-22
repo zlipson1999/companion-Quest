@@ -142,6 +142,9 @@ PALETTE_SPECS = {
     'ache':    {'body': ('#6b1730', '#ffb0c4'), 'leaf': ('#93253f', '#ffd0dc'), 'belly': ('#7d2038', '#ffc2d2')},
     'couch':   {'body': ('#3f2a17', '#d4a374'), 'leaf': ('#5a3d22', '#e8c49a'), 'belly': ('#4d3520', '#dcb387')},
     'item':    {'body': ('#7a1440', '#ff9dc0'), 'leaf': ('#a8801a', '#ffe486'), 'belly': ('#1d6b3a', '#8ef0a8')},
+    # The Kinship Knot: waxed cord and a wooden bead. Its own palette because
+    # the item ramps are candy-bright and a braided cord is not.
+    'cord':    {'body': ('#5c3418', '#e0a463'), 'leaf': ('#3a1f0c', '#b8763a'), 'belly': ('#6b4a2a', '#f4d9a8')},
     'rock':    {'body': ('#2f3040', '#c8ccdc'), 'leaf': ('#4a4d63', '#e2e6f2'), 'belly': ('#3a3c4f', '#d4d8e8')},
     'air':     {'body': ('#3f5f7a', '#e8f8ff'), 'leaf': ('#5c7f9c', '#ffffff'), 'belly': ('#4d6e8a', '#f4fcff')},
     'spore':   {'body': ('#6b1a2a', '#ff9c9c'), 'leaf': ('#8a2f24', '#ffd0b0'), 'belly': ('#8a5c48', '#ffe0c8')},
@@ -198,6 +201,25 @@ PALETTE_SPECS = {
         'leaf': ('#5c1418', '#f0574e'),      # red plates
         'belly': ('#10314f', '#4aa3e8'),     # blue plates
         'accent': ('#6b5210', '#ffd45e'),    # yellow plates and trim
+    },
+    # The Hall's smoothie bar. Wood and steel for the counter, and one palette
+    # per blend so a single cup drawing renders all three — the colour IS how
+    # they are told apart on a real counter.
+    'juicebar': {
+        'body': ('#3b2a1c', '#c9a071'), 'leaf': ('#1d4b2a', '#7fd08a'),
+        'belly': ('#2a3038', '#dfe6ee'), 'accent': ('#7a2a12', '#ff9d4d'),
+    },
+    'blend_green': {
+        'body': ('#1b4423', '#8fd66a'), 'leaf': ('#54381f', '#f2e4cc'),
+        'belly': ('#3a4a3c', '#e6f2df'), 'accent': ('#7a2a12', '#ff9d4d'),
+    },
+    'blend_berry': {
+        'body': ('#4a1030', '#e0629b'), 'leaf': ('#54381f', '#f2e4cc'),
+        'belly': ('#452c3d', '#f4e2ec'), 'accent': ('#123c44', '#5fbfae'),
+    },
+    'blend_gold': {
+        'body': ('#6b3a08', '#ffc25c'), 'leaf': ('#54381f', '#f2e4cc'),
+        'belly': ('#4a3a22', '#fff0d2'), 'accent': ('#7d2f4a', '#e8698f'),
     },
     'coach': {
         'body': ('#12301f', '#5b9a68'), 'leaf': ('#42423a', '#e2e0d2'),
@@ -2031,12 +2053,53 @@ def item_charm():
     c.rim('leaf'); c.outline(); return c
 
 
-def item_token():
-    c = Canvas(ITEM, ITEM, 'item')
-    c.sphere(12, 12, 10, 10, 'body')
-    c.rect(2, 11, 22, 12, 'leaf', 0.25)
-    c.sphere(12, 12, 4, 4, 'belly')
-    c.blob(12, 12, 2, 2, 'white', 1.0)
+def item_knot():
+    """The Kinship Knot: two braided loops, tied.
+
+    What this replaces was a sphere with an equator band and a button in the
+    middle, thrown at a weakened creature until it gave in. That is somebody
+    else's object wearing somebody else's mechanic, and no amount of renaming
+    fixes a silhouette. A knot is the opposite idea and it looks like it: worn
+    rather than thrown, one loop each, and nothing about it is a container.
+    """
+    c = Canvas(ITEM, ITEM, 'cord')
+
+    def loop(cx, cy, r, squash, phase):
+        # Braided, so the strand alternates which face catches the light as it
+        # twists. That twist is the whole reason it reads as cord and not wire.
+        for deg in range(0, 360, 2):
+            t = math.radians(deg)
+            x = int(round(cx + math.cos(t) * r))
+            y = int(round(cy + math.sin(t) * r * squash))
+            lit = ((deg // 26) + phase) % 2 == 0
+            c.put(x, y, 'body', 0.86 if lit else 0.44)
+            c.put(x, y + 1, 'leaf', 0.26)                # the strand's underside
+
+    loop(8, 9, 5.4, 0.92, 0)
+    loop(15, 14, 5.0, 0.92, 1)
+    # The two tails, falling away from where the loops cross.
+    for i, (bx, by) in enumerate(((10, 17), (13, 19))):
+        c.rect(bx, by, bx + 1, by + 3, 'body', 0.62 if i else 0.74)
+        c.rect(bx, by + 3, bx + 1, by + 3, 'leaf', 0.30)
+    c.blob(11, 12, 2.2, 2.0, 'belly', 0.90)              # the bead over the crossing
+    c.put(10, 11, 'belly', 1.0)
+    c.rim('leaf'); c.outline(); return c
+
+
+def item_smoothie(pal):
+    """A cup with a domed lid and a straw.
+
+    One drawing, three palettes. Naming a blend after its colour is not a
+    shortcut — it is how you order one, and it means adding a fourth is a
+    palette rather than another sprite.
+    """
+    c = Canvas(ITEM, ITEM, pal)
+    c.rect(13, 0, 15, 8, 'accent', 0.74)                     # straw
+    c.rect(13, 0, 13, 8, 'accent', 0.96)
+    c.sphere(12, 8, 7.5, 3.2, 'belly', ambient=0.62)         # domed lid
+    c.poly([(5, 9), (19, 9), (17, 22), (7, 22)], 'leaf', 0.90)    # the cup
+    c.poly([(7, 11), (17, 11), (15, 20), (9, 20)], 'body', 0.60)  # the blend
+    c.rect(6, 13, 18, 14, 'leaf', 1.0)                       # band around it
     c.rim('leaf'); c.outline(); return c
 
 
@@ -3248,14 +3311,25 @@ def tile_gym_wall_side():
     return c
 
 
+
+
 def tile_gym_mirror():
-    c = tile_gym_wall()
-    c.rect(1, 1, 14, 11, 'body', 0.18)                       # frame
-    c.rect(2, 2, 13, 10, 'body', 0.66)                       # glass
-    for k in range(6):                                        # diagonal glint
-        c.put(3 + k, 9 - k, 'body', 0.90)
-        c.put(4 + k, 9 - k, 'body', 0.78)
-    c.rect(2, 2, 13, 2, 'body', 0.80)
+    """A mirrored panel, mounted ON the wall.
+
+    It used to be built on the FRONT wall and then placed on the floor square
+    beside the west wall, which is two mistakes compounding: the room appeared
+    to bulge inward where the mirrors were, and a front-facing panel standing
+    in a side wall read as a piece of equipment rather than as a wall. It is
+    the side wall now, and it goes in the wall column.
+    """
+    c = tile_gym_wall_side()
+    c.rect(3, 0, 12, 15, 'body', 0.16)                       # frame
+    c.rect(4, 1, 11, 14, 'body', 0.68)                       # glass, floor to ceiling
+    for k in range(9):                                        # diagonal glint
+        c.put(5 + (k // 3), 12 - k, 'body', 0.92)
+        c.put(6 + (k // 3), 12 - k, 'body', 0.80)
+    c.rect(4, 1, 11, 1, 'body', 0.86)                        # lit top rail
+    c.rect(11, 2, 11, 14, 'body', 0.44)                      # shaded far edge
     return c
 
 
@@ -3358,6 +3432,42 @@ def prop_water_station():
     c.rect(6, 9, 9, 10, 'body', 0.12)                                        # spout recess
     c.put(7, 11, 'accent', 0.76); c.put(8, 11, 'accent', 0.76)               # taps
     c.rect(2, 15, 13, 15, 'ink', 0)
+    return c
+
+
+def _bar_top(c):
+    """The counter both bar tiles share: worktop, steel rail, shaded lip."""
+    c.rect(0, 3, 15, 12, 'body', 0.34)
+    c.rect(0, 3, 15, 4, 'body', 0.62)                        # lit worktop edge
+    c.rect(0, 5, 15, 5, 'belly', 0.58)                       # steel rail
+    c.rect(0, 12, 15, 13, 'body', 0.18)                      # shaded lip
+    c.rect(0, 15, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_bar_counter():
+    """The smoothie bar's counter run: cups poured and a bowl of fruit."""
+    c = _bar_top(_prop('juicebar'))
+    for cx in (3, 6):
+        c.rect(cx - 1, 6, cx + 1, 11, 'belly', 0.88)         # cup
+        c.rect(cx - 1, 6, cx - 1, 11, 'belly', 1.0)
+        c.rect(cx, 7, cx, 10, 'accent', 0.74)                # what is in it
+    c.sphere(11, 10, 3.6, 2.6, 'belly', ambient=0.38)        # fruit bowl
+    c.sphere(10, 8, 1.7, 1.5, 'leaf', ambient=0.46)
+    c.sphere(12, 8, 1.7, 1.5, 'accent', ambient=0.46)
+    return c
+
+
+def prop_bar_blender():
+    """The blender station. A bar with no machine on it is just a table."""
+    c = _bar_top(_prop('juicebar'))
+    c.rect(5, 9, 10, 12, 'belly', 0.28)                      # motor housing
+    c.rect(5, 9, 5, 12, 'belly', 0.50)
+    c.rect(6, 1, 10, 9, 'belly', 0.92)                       # glass jug
+    c.rect(6, 4, 10, 8, 'leaf', 0.54)                        # mid-blend
+    c.rect(6, 1, 6, 9, 'belly', 1.0)                         # lit glass edge
+    c.rect(10, 2, 10, 9, 'belly', 0.64)
+    c.put(11, 11, 'accent', 0.82)                            # the button
     return c
 
 
@@ -3621,7 +3731,9 @@ def build_all():
     # items + module icons
     add('item_apple', item_apple()); add('item_water', item_water())
     add('item_energybar', item_energybar()); add('item_charm', item_charm())
-    add('item_token', item_token())
+    add('item_knot', item_knot())
+    for _blend in ('green', 'berry', 'gold'):
+        add('item_smoothie_%s' % _blend, item_smoothie('blend_%s' % _blend))
     add('mod_droplet', mod_droplet()); add('mod_plate', mod_plate())
     add('mod_check', mod_check()); add('mod_barbell', mod_barbell())
     add('mod_moon', mod_moon()); add('mod_still', mod_still())
@@ -3749,6 +3861,7 @@ def build_all():
     add('prop_whiteboard', prop_whiteboard())
     add('prop_ez_bars', prop_ez_bars()); add('prop_stretch_rig', prop_stretch_rig())
     add('prop_ball_rack', prop_ball_rack())
+    add('prop_bar_counter', prop_bar_counter()); add('prop_bar_blender', prop_bar_blender())
     for _side in ('n', 'e', 's', 'w'):
         add('tile_zone_%s' % _side, zone_edge(_side))
     # Every committed piece of traced art must actually reach a sprite.

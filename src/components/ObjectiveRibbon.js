@@ -2,7 +2,7 @@
 //
 // The immediate objective was only ever communicated through hint text buried
 // in a lower pane, so a new player standing in Maple Lane had no way to know
-// that "meet Coach Maple inside the Training Hall" was the next thing. This
+// that "meet Coach Maple inside Quest Fitness" was the next thing. This
 // carries exactly one instruction; when there is nothing to do it says so
 // rather than inventing filler.
 
