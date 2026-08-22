@@ -106,7 +106,7 @@ export const GYM = {
     'M...............|',
     'M.........CA....|',
     'M...............|',
-    'MLLL.NN...JIJ...|',
+    'MLLL.NNG..JIJ...|',
     '========X========',
   ],
   zones: [
@@ -219,7 +219,7 @@ const BLOCKED = new Set([
   'W', '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w', 'C', 'A', 'V', 'O', 'Z',
   // Furniture. A rug is walkable; everything else you walk around.
   'e', 'E', 'v', 'k', 'f', 'a', 'c', 'F', 'o', 'p',
-  'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q', 'J', 'I',
+  'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q', 'J', 'I', 'G',
   // House furniture.
   'n', 'u', 'm', 'x', 'l', 'P', 'g',
   // Out on the lane.
@@ -256,6 +256,7 @@ const INTERACTIONS = {
   Z: { screen: 'week', label: "Whiteboard — this week's work" },
   L: { screen: 'bag', label: 'Lockers — your supplies' },
   N: { screen: 'summary', label: 'Reception — your record so far' },
+  G: { screen: 'board', label: 'Noticeboard — how your friends are doing' },
   // Front of house. The bar is the one place credit is spent, and credit is
   // only ever minted by real effort — see src/state/economy.js.
   J: { screen: 'smoothiebar', label: 'Smoothie bar — blends, and Kinship Knots' },

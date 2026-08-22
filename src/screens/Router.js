@@ -36,6 +36,8 @@ import ForgeEditScreen from './ForgeEditScreen';
 import FormCheckScreen from './FormCheckScreen';
 import WeekScreen from './WeekScreen';
 import CoachChatScreen from './CoachChatScreen';
+import FriendsScreen from './FriendsScreen';
+import BoardScreen from './BoardScreen';
 import OptionsScreen from './OptionsScreen';
 import LoadingScreen from './LoadingScreen';
 
@@ -67,6 +69,8 @@ const SCREENS = {
   formcheck: FormCheckScreen,
   week: WeekScreen,
   coach: CoachChatScreen,
+  friends: FriendsScreen,
+  board: BoardScreen,
   options: OptionsScreen,
 };
 
@@ -74,7 +78,7 @@ const SCREENS = {
 // fleeing a battle returns there, and without an entry here the battle music
 // just kept playing over the walk.
 const TOWN_BGM = new Set([
-  'title', 'intro', 'outfit', 'homeIntro', 'coachTutorial', 'goal', 'pairing', 'sparIntro', 'cookbook', 'smoothiebar', 'hub', 'gym', 'route', 'rest', 'workout', 'summary', 'index', 'bag',
+  'title', 'intro', 'outfit', 'homeIntro', 'coachTutorial', 'goal', 'pairing', 'sparIntro', 'cookbook', 'smoothiebar', 'hub', 'gym', 'route', 'rest', 'workout', 'summary', 'index', 'bag', 'friends', 'board',
   'party', 'coach', 'options', 'habits', 'habit', 'forge', 'forgeEdit', 'formcheck', 'week',
 ]);
 
