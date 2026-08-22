@@ -101,6 +101,7 @@ export default function HomeRestScreen() {
       onMove={move}
       place={floor.name}
       objective={floor.hint}
+      layout="half"
     />
   );
 }

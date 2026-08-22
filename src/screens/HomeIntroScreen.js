@@ -89,6 +89,11 @@ export default function HomeIntroScreen() {
       onMove={move}
       place={area.name}
       objective={area.hint}
+      // Half the screen here on purpose. These are small rooms crossed in a
+      // few steps; filling the phone with one means either enormous tiles or a
+      // camera swinging around a space you can already see all of. The open
+      // maps and Route 1 take the whole screen.
+      layout="half"
     />
   );
 }

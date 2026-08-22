@@ -316,6 +316,19 @@ bar, rower, kettlebells, lockers, reception and more racks. Props are
 transparent overlays over the room's floor — see `docs/ART_KIT.md`. The bed is
 solid, so `HomeRestScreen` sleeps when you walk *into* it rather than onto it.
 
+**Two presentations, chosen per screen.** `WorldScreen` takes `layout`:
+
+- `full` — the world IS the phone, interface floating over it. Maple Lane, the
+  Hall, Route 1. Tiles are sized to COVER the height; the width overflows and
+  the camera scrolls it.
+- `half` — the world in the upper 56% with a panel under it. The house. Tiles
+  are sized to CONTAIN, so you see the whole room at once: these are small
+  spaces crossed in six steps, and filling the phone with one meant either
+  enormous tiles or a camera swinging around a room already in view.
+
+Cover versus contain is the whole difference, and getting it backwards is what
+cropped the bedroom walls off the sides on the first attempt.
+
 **Route 1 is full-bleed too.** The trail was a window in the top 42% with a
 panel of step diagnostics under it. The scene is the screen now; the trail
 stats overlay the top, the message and the one action sit at the bottom, and

@@ -19,17 +19,34 @@ import PixelText from './PixelText';
 import Screen from './Screen';
 import { palette, space, screen, tokens, scale } from '../theme';
 
-// Scale so the map ALWAYS covers the phone's height. The width is free to
-// overflow — the camera scrolls it — but a short map must never leave a band of
-// nothing at the bottom of the screen.
+// How much of the phone the world takes.
 //
-// This was clamped at 68 before, which on a tall phone letterboxed the hub by
-// about a hundred pixels. Filling the height is the point; how many tiles that
-// leaves across the width is a consequence, and the camera makes it a
-// non-issue. The floor of 44 is only for a map tall enough that filling would
-// otherwise make the tiles unreadably small.
-export function worldTileFor(map) {
-  return Math.max(44, Math.ceil(screen.height / map.rows));
+//   'full'  the world IS the screen; the interface floats over it.
+//   'half'  the world sits in the upper portion with a panel under it.
+//
+// Not every space wants the same treatment. Route 1 and the open maps earn the
+// whole phone — that is where the game is looked at. The house is a short
+// scripted walk through small rooms, and filling the screen with it means
+// either enormous tiles or a camera swinging around a space you cross in six
+// steps; a calmer frame with the room's name under it reads better and keeps
+// the hint where the eye already is.
+export const HALF_SHARE = 0.56;
+
+export function worldTileFor(map, layout = 'full') {
+  if (layout === 'half') {
+    // CONTAIN, not cover. The whole point of the calmer frame is that you can
+    // see the room you are standing in; sizing it to fill the box cropped the
+    // walls off the sides and left the camera swinging around a space you
+    // cross in six steps.
+    const box = screen.height * HALF_SHARE;
+    return Math.max(24, Math.floor(Math.min(box / map.rows, screen.width / map.cols)));
+  }
+  // Full screen covers the height. The width is free to overflow — the camera
+  // scrolls it — but a short map must never leave a band of nothing under it.
+  // This was clamped at 68 before, which letterboxed tall phones by about a
+  // hundred pixels. The floor is only for a map tall enough that covering
+  // would otherwise make the tiles unreadably small.
+  return Math.max(40, Math.ceil(screen.height / map.rows));
 }
 
 // Where the map does not reach, show the world's own tone rather than black —
@@ -82,51 +99,126 @@ export default function WorldScreen({
   // hint). Kept to one line: the world is the thing being looked at.
   note,
   showControl = true,
+  layout = 'full',
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const viewport = { width: screen.width, height: screen.height };
-  const tile = worldTileFor(map);
+  const half = layout === 'half';
+  const worldH = half ? Math.round(screen.height * HALF_SHARE) : screen.height;
+  const viewport = { width: screen.width, height: worldH };
+  const tile = worldTileFor(map, layout);
   const voidColor = VOID_BY_MAP[map.id] || palette.grassDark;
+
+  const chrome = (
+    <>
+      {/* Top: where you are, what to do next, and the way into everything
+          else. One row, so the world keeps the screen. */}
+      <View
+        style={{
+          position: 'absolute',
+          top: TOP_INSET,
+          left: space.sm,
+          right: space.sm,
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          <ObjectiveRibbon place={place} objective={objective} />
+          {note ? (
+            <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 6, marginLeft: 4, lineHeight: 13 }}>
+              {note}
+            </PixelText>
+          ) : null}
+        </View>
+        {menu.length ? (
+          <View style={{ marginLeft: space.sm }}>
+            <MenuButton onPress={() => setMenuOpen(true)} />
+          </View>
+        ) : null}
+      </View>
+
+      {status ? (
+        <View style={{ position: 'absolute', top: TOP_INSET + 76, left: space.sm, right: space.sm }}>{status}</View>
+      ) : null}
+    </>
+  );
+
+  const sheet = (
+      <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
+      <Pressable style={{ flex: 1, backgroundColor: '#000000cc' }} onPress={() => setMenuOpen(false)}>
+        <Pressable
+          onPress={() => {}}
+          style={{
+            marginTop: 'auto',
+            backgroundColor: tokens.surface,
+            borderTopColor: tokens.line,
+            borderTopWidth: 3,
+            padding: space.md,
+            maxHeight: '72%',
+          }}
+        >
+          <PixelText size="small" color={tokens.textOnDark} style={{ marginBottom: space.sm }}>
+            MENU
+          </PixelText>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {menu.map((item) => (
+              <TrailAction
+                key={item.value}
+                label={item.label}
+                sublabel={item.sublabel}
+                tone="quiet"
+                style={{ marginBottom: space.sm }}
+                onPress={() => {
+                  setMenuOpen(false);
+                  onSelect(item);
+                }}
+              />
+            ))}
+          </ScrollView>
+          <TrailAction label="Close" tone="quiet" onPress={() => setMenuOpen(false)} />
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+
+  if (half) {
+    return (
+      <Screen padTop={false} style={{ padding: 0 }}>
+        <View style={{ height: worldH, backgroundColor: voidColor }}>
+          <TileMap map={map} player={player} tileSize={tile} viewport={viewport} />
+          {menu.length ? (
+            <View style={{ position: 'absolute', top: TOP_INSET, right: space.sm }}>
+              <MenuButton onPress={() => setMenuOpen(true)} />
+            </View>
+          ) : null}
+          {status ? (
+            <View style={{ position: 'absolute', top: TOP_INSET, left: space.sm, right: space.sm + 56 }}>{status}</View>
+          ) : null}
+        </View>
+        {/* The panel the world does not take. In a small room there is space
+            for the stick to sit beside the hint rather than over it. */}
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: space.md, backgroundColor: palette.bgAlt }}>
+          {showControl ? <MoveControl onMove={onMove} /> : null}
+          <View style={{ flex: 1, marginLeft: space.md }}>
+            <PixelText size="small" color={palette.secondary}>{place}</PixelText>
+            {objective ? (
+              <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 8, lineHeight: 15 }}>
+                {objective}
+              </PixelText>
+            ) : null}
+          </View>
+        </View>
+        {sheet}
+      </Screen>
+    );
+  }
 
   return (
     <Screen padTop={false} style={{ padding: 0 }}>
       <View style={{ flex: 1, backgroundColor: voidColor }}>
         <TileMap map={map} player={player} tileSize={tile} viewport={viewport} />
 
-        {/* Top: where you are, what to do next, and the way into everything
-            else. One row, so the world keeps the screen. */}
-        <View
-          style={{
-            position: 'absolute',
-            top: TOP_INSET,
-            left: space.sm,
-            right: space.sm,
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <ObjectiveRibbon place={place} objective={objective} />
-            {note ? (
-              <PixelText
-                size="tiny"
-                color={tokens.textOnDarkDim}
-                style={{ marginTop: 6, marginLeft: 4, lineHeight: 13 }}
-              >
-                {note}
-              </PixelText>
-            ) : null}
-          </View>
-          {menu.length ? (
-            <View style={{ marginLeft: space.sm }}>
-              <MenuButton onPress={() => setMenuOpen(true)} />
-            </View>
-          ) : null}
-        </View>
-
-        {status ? (
-          <View style={{ position: 'absolute', top: TOP_INSET + 76, left: space.sm, right: space.sm }}>{status}</View>
-        ) : null}
+        {chrome}
 
         {/* The stick lives in the thumb's corner, over the world rather than
             in a panel below it. */}
@@ -137,41 +229,7 @@ export default function WorldScreen({
         ) : null}
       </View>
 
-      <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: '#000000cc' }} onPress={() => setMenuOpen(false)}>
-          <Pressable
-            onPress={() => {}}
-            style={{
-              marginTop: 'auto',
-              backgroundColor: tokens.surface,
-              borderTopColor: tokens.line,
-              borderTopWidth: 3,
-              padding: space.md,
-              maxHeight: '72%',
-            }}
-          >
-            <PixelText size="small" color={tokens.textOnDark} style={{ marginBottom: space.sm }}>
-              MENU
-            </PixelText>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {menu.map((item) => (
-                <TrailAction
-                  key={item.value}
-                  label={item.label}
-                  sublabel={item.sublabel}
-                  tone="quiet"
-                  style={{ marginBottom: space.sm }}
-                  onPress={() => {
-                    setMenuOpen(false);
-                    onSelect(item);
-                  }}
-                />
-              ))}
-            </ScrollView>
-            <TrailAction label="Close" tone="quiet" onPress={() => setMenuOpen(false)} />
-          </Pressable>
-        </Pressable>
-      </Modal>
+      {sheet}
     </Screen>
   );
 }
