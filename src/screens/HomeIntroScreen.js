@@ -7,14 +7,40 @@ import { isWalkable } from '../data/maps';
 import { playSfx } from '../audio';
 
 const AREAS = {
+  // Real rooms, not four walls and a floor. Furniture is prop overlays on the
+  // room's own boards, and every piece is solid so the space has to be walked
+  // around — which is what makes it read as somewhere the player lives.
+  //
+  //   e/E bed   v TV   k desk   r rug   o shelf   p plant   s stairs
+  //   f sofa    a table   c counter   F fridge
   bedroom: {
-    name: 'Your Room — Upstairs', id: 'home', cols: 7, rows: 7, spawn: { x: 2, y: 4 }, exit: { x: 5, y: 5 },
-    grid: ['WWWWWWW', 'WHHHHHW', 'WH...HW', 'WH...HW', 'WH...HW', 'WH###DW', 'WWWWWWW'],
-    hint: 'Walk to the stairs by the door.', next: 'downstairs',
+    name: 'Your Room — Upstairs', id: 'home', cols: 9, rows: 8,
+    spawn: { x: 4, y: 5 }, exit: { x: 7, y: 6 },
+    grid: [
+      'WWWWWWWWW',
+      'WHHHHHHHW',
+      'We..v..oW',
+      'WE.....pW',
+      'W..rr...W',
+      'W..rr...W',
+      'Wk.....sW',
+      'WWWWWWWWW',
+    ],
+    hint: 'Your room. The stairs are in the far corner.', next: 'downstairs',
   },
   downstairs: {
-    name: 'Your Home — Downstairs', id: 'home', cols: 7, rows: 7, spawn: { x: 5, y: 4 }, exit: { x: 3, y: 5 },
-    grid: ['WWWWWWW', 'WHHHHHW', 'WH...HW', 'WH...HW', 'WH...HW', 'WH#D#HW', 'WWWWWWW'],
+    name: 'Your Home — Downstairs', id: 'home', cols: 9, rows: 8,
+    spawn: { x: 7, y: 2 }, exit: { x: 4, y: 6 },
+    grid: [
+      'WWWWWWWWW',
+      'WcccF..sW',
+      'W.......W',
+      'W.a....pW',
+      'W...rr..W',
+      'Wf..rr..W',
+      'W...D...W',
+      'WWWWWWWWW',
+    ],
     hint: 'Head through your front door.', next: 'outside',
   },
   outside: {

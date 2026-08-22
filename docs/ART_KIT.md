@@ -26,11 +26,19 @@ Two tiers, because one card cannot be both:
   straight off the committed cards at 64x128 (88x128 for Maple, whose gesturing
   arm widens her crop). These carry the face and are used anywhere the player is
   shown large and at rest: intro, character creation, the Hall welcome.
-- **Overworld** — authored in `hero()` at 24x32, four facings x three frames,
-  per character. These are *not* downscaled portraits. A realistic 1:3 standing
-  figure downsamples to roughly fifteen pixels of width, which cannot hold a
-  readable face or a walk cycle; what makes the overworld sprite the same person
-  is the palette and the hair silhouette, not a resample.
+- **Overworld** — `traced_walk_<name>.json`, the card traced at 26x48 (30x48 for
+  Maple), and the rest of the set derived from that one pose by `walk_set()`:
+  two stride frames per facing, a back view made by covering the face with the
+  hair colour sampled from the top of the head, and a side view made by
+  narrowing the figure toward its own centre line (`right` is the mirror). The
+  drawn `hero()` set stays as the fallback for a build with no cards.
+
+  This replaced an authored 24x32 set. The authored version was the right call
+  while the sprite had to be square and chunky, but it only ever *matched* the
+  card's colours; the traced walk set **is** the card. The cost is that the
+  figure is tall and slim, so `TileMap` sizes characters by the height they
+  should stand and lets width follow from the sprite's own aspect — sizing by
+  width made a 26x48 figure nearly twice the height of the old one.
 
 Each character has a palette spec whose ramps carry fixed roles — `body` is
 clothing, `leaf` is hair, `belly` is skin, `accent` is trim and shoes. Only
@@ -50,6 +58,15 @@ at the creature ramp length.
 which is how four character cards sat in `assets/characters/` for a release
 while the overworld kept drawing the old placeholder people — and every
 regeneration reported success. Art nothing consumes is now an error.
+
+## Props
+
+Furniture and equipment are **transparent overlays** stacked on whatever floor
+their room has, never tiles with a floor baked in. That keeps one sofa usable in
+any room, and it lets each prop pick the palette it actually needs — foliage
+green, appliance grey, terracotta bedding — without dragging a mismatched patch
+of floor in with it. A prop carrying its own floor is the same mistake that made
+the ground go patchy when the autotiles were generated procedurally.
 
 ## Autotiling
 

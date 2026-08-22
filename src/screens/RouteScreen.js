@@ -190,7 +190,7 @@ export default function RouteScreen() {
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: space.xl }}>
         {companion ? (
           <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-            <PixelSprite spriteKey={playerSprite(state.playerGender)} palette={outfitPalette(state.playerOutfit, state.playerGender)} size={56} bob={moving || dist.running} />
+            <PixelSprite spriteKey={playerSprite(state.playerGender)} palette={outfitPalette(state.playerOutfit, state.playerGender)} size={34} bob={moving || dist.running} />
             <View style={{ width: 8 }} />
             <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={52} bob={moving || dist.running} />
           </View>

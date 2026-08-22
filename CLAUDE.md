@@ -304,6 +304,18 @@ Two bugs fell out of it, both in `tools/make_sprites.py`:
 - `build_all()` now **fails** if any traced art reaches no sprite. The silent
   fallback in `add()` is what let the cards go unused for a release.
 
+**The overworld sprite IS the card.** `walk_set()` derives four facings x three
+frames from one traced standing pose — stride frames, a back view made by
+covering the face with the sampled hair colour, and a side view made by
+narrowing the figure. Characters are sized by height now, since a traced figure
+is tall and slim rather than a square 24x32 block.
+
+**Furnished rooms.** The bedroom has a bed, TV, desk, shelf, rug and plant; the
+front room has a kitchen run, fridge, table and sofa; the Hall added a pull-up
+bar, rower, kettlebells, lockers, reception and more racks. Props are
+transparent overlays over the room's floor — see `docs/ART_KIT.md`. The bed is
+solid, so `HomeRestScreen` sleeps when you walk *into* it rather than onto it.
+
 **Training Hall.** The gym door used to jump straight to the exercise list. It
 is a room now (`GYM` in `src/data/maps.js`, `src/screens/GymScreen.js`) with
 barbell and dumbbell racks, cable machines, a treadmill, bench, mirrors, water

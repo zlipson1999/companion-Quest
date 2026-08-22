@@ -9,13 +9,33 @@ import { playSfx } from '../audio';
 
 const FLOORS = {
   downstairs: {
-    name: 'Home — Downstairs', id: 'home', cols: 7, rows: 7, spawn: { x: 3, y: 5 }, stairs: { x: 5, y: 2 },
-    grid: ['WWWWWWW', 'WHHHHHW', 'WH...DW', 'WH...HW', 'WH...HW', 'WH###HW', 'WWWWWWW'],
-    hint: 'Sleep is upstairs. Walk to the stair door.',
+    name: 'Home — Downstairs', id: 'home', cols: 9, rows: 8,
+    spawn: { x: 4, y: 6 }, stairs: { x: 7, y: 1 },
+    grid: [
+      'WWWWWWWWW',
+      'WcccF..sW',
+      'W.......W',
+      'W.a....pW',
+      'W...rr..W',
+      'Wf..rr.oW',
+      'W.......W',
+      'WWWWWWWWW',
+    ],
+    hint: 'Sleep is upstairs. Walk to the stairs.',
   },
   upstairs: {
-    name: 'Home — Bedroom', id: 'home', cols: 7, rows: 7, spawn: { x: 5, y: 4 }, bed: { x: 2, y: 2 },
-    grid: ['WWWWWWW', 'WHHHHHW', 'WHD..HW', 'WH...HW', 'WH...HW', 'WH###HW', 'WWWWWWW'],
+    name: 'Home — Bedroom', id: 'home', cols: 9, rows: 8,
+    spawn: { x: 7, y: 6 }, bed: { x: 1, y: 2 },
+    grid: [
+      'WWWWWWWWW',
+      'WHHHHHHHW',
+      'We..v..oW',
+      'WE.....pW',
+      'W..rr...W',
+      'W..rr...W',
+      'Wk.....sW',
+      'WWWWWWWWW',
+    ],
     hint: 'Walk to your bed and sleep.',
   },
 };
@@ -54,7 +74,9 @@ export default function HomeRestScreen() {
     const next = isWalkable(floor, nx, ny) ? { x: nx, y: ny, facing: dir } : { x, y, facing: dir };
     playerRef.current = next; setPlayer(next);
     if (floorId === 'downstairs' && next.x === floor.stairs.x && next.y === floor.stairs.y) setTimeout(changeFloor, 120);
-    if (floorId === 'upstairs' && next.x === floor.bed.x && next.y === floor.bed.y) setTimeout(sleep, 120);
+    // The bed is a solid prop now, so you cannot stand on it — walking into it
+    // is what puts you to sleep. Test the attempted square, not the one landed on.
+    if (floorId === 'upstairs' && nx === floor.bed.x && ny === floor.bed.y) setTimeout(sleep, 120);
   };
   const tileSize = Math.floor(Math.min(screen.width - 20, screen.height * 0.45) / floor.cols);
   return (

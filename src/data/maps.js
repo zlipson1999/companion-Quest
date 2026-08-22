@@ -33,32 +33,38 @@ export const HUB = {
 // each piece standing for the system it teaches.
 //
 //   =  front wall     |  side wall      M  mirror       .  floor / , variant
-//   m  training mat   R  barbell rack   b  dumbbell rack
-//   K  cable machine  t  treadmill      B  bench        w  water station
-//   C  Coach Maple    X  exit -> hub
+//   m  training mat   R  barbell rack   b  dumbbell rack   U  pull-up bar
+//   K  cable machine  t  treadmill      q  rower           j  kettlebells
+//   B  bench          w  water station  L  lockers         N  reception
+//   p  plant          C  Coach Maple    X  exit -> hub
 export const GYM = {
   id: 'gym',
-  cols: 13,
-  rows: 11,
-  spawn: { x: 6, y: 9 },
+  cols: 15,
+  rows: 13,
+  spawn: { x: 7, y: 11 },
   grid: [
-    '=============',
-    '|MMM.....RRR|',
-    '|...........|',
-    '|.B.......b.|',
-    '|...........|',
-    '|..mmm..K...|',
-    '|..mmm..K...|',
-    '|.....C.....|',
-    '|.t.......w.|',
-    '|.....,.....|',
-    '=====X=======',
+    '===============',
+    '|MMMM....RRRRU|',
+    '|.............|',
+    '|.B.b.......b.|',
+    '|.............|',
+    '|.q..mmm..KK..|',
+    '|....mmm..KK..|',
+    '|.j.....C.....|',
+    '|.............|',
+    '|.t.t.......w.|',
+    '|...........p.|',
+    '|LLL.N...N....|',
+    '======X========',
   ],
 };
 
 const BLOCKED = new Set([
   'T', '~', 'h', 'H', 'y', 'Y',
   'W', '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w', 'C',
+  // Furniture. A rug is walkable; everything else you walk around.
+  'e', 'E', 'v', 'k', 'f', 'a', 'c', 'F', 'o', 'p',
+  'L', 'U', 'j', 'q', 'N',
 ]);
 
 // Walking into a station is how you use it. A blocked tile that answers a bump
@@ -66,6 +72,11 @@ const BLOCKED = new Set([
 // not need a wall of buttons explaining itself.
 const INTERACTIONS = {
   R: { screen: 'workout', label: 'Barbell rack — train Resolve' },
+  U: { screen: 'workout', label: 'Pull-up bar — train Resolve' },
+  j: { screen: 'workout', label: 'Kettlebells — train Resolve' },
+  q: { screen: 'route', label: 'Rower — log real distance' },
+  L: { screen: 'bag', label: 'Lockers — your supplies' },
+  N: { screen: 'summary', label: 'Reception — your record so far' },
   b: { screen: 'forge', label: 'Dumbbell rack — Workout Forge' },
   K: { screen: 'forge', label: 'Cable machine — build a plan' },
   t: { screen: 'route', label: 'Treadmill — head out on the trail' },

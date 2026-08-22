@@ -46,6 +46,29 @@ const TILE_SPRITES = {
   X: ['tile_gym_exit'],
 };
 
+// Props are transparent overlays stacked on the room's own floor, so the same
+// sofa works in any room and a prop never drags a mismatched patch of floor in
+// with it.
+const PROP_SPRITES = {
+  e: 'prop_bed_head',
+  E: 'prop_bed_foot',
+  v: 'prop_tv',
+  k: 'prop_desk',
+  r: 'prop_rug',
+  f: 'prop_sofa',
+  a: 'prop_table',
+  c: 'prop_counter',
+  F: 'prop_fridge',
+  s: 'prop_stairs',
+  p: 'prop_plant',
+  o: 'prop_bookshelf',
+  L: 'prop_lockers',
+  U: 'prop_pullup_bar',
+  j: 'prop_kettlebells',
+  q: 'prop_rower',
+  N: 'prop_reception',
+};
+
 // Interiors have their own ground tile, so a room does not fall back to grass
 // where it has no explicit code.
 const FLOOR_BY_MAP = {
@@ -77,6 +100,8 @@ const WATER_CODES = new Set(['~']);
 const SHADOW_CASTERS = new Set([
   'T', 'W', 'H', 'Y', 'h', 'y', 'D', 'd', 'G',
   '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w',
+  'e', 'E', 'v', 'k', 'f', 'a', 'c', 'F', 'o',
+  'L', 'U', 'j', 'q', 'N',
 ]);
 
 function codeAt(map, x, y) {
@@ -159,6 +184,8 @@ function layersFor(map, code, x, y, frame, floor) {
     ];
   } else if (isFloorCode) {
     layers = [{ key: ground[variantFor(x, y, ground.length)] }];
+  } else if (PROP_SPRITES[code]) {
+    layers = [{ key: ground[variantFor(x, y, ground.length)] }, { key: PROP_SPRITES[code] }];
   } else {
     const keys = TILE_SPRITES[code] || ground;
     layers = [{ key: keys[variantFor(x, y, keys.length)] }];
@@ -166,7 +193,8 @@ function layersFor(map, code, x, y, frame, floor) {
 
   // Contact shading, only onto ground the player can see past — a wall does not
   // need shade painted over its own face.
-  const shadable = isFloorCode || PATH_CODES.has(code) || WATER_CODES.has(code) || code === '^';
+  const shadable =
+    isFloorCode || PATH_CODES.has(code) || WATER_CODES.has(code) || code === '^' || !!PROP_SPRITES[code];
   if (shadable) {
     const north = SHADOW_CASTERS.has(codeAt(map, x, y - 1));
     const west = SHADOW_CASTERS.has(codeAt(map, x - 1, y));
@@ -201,12 +229,22 @@ export function Tile({ code, s, frame, x, y, floor, map }) {
   );
 }
 
+// Characters are traced from the cards now, so their sprites are tall and slim
+// rather than a square 24x32 block. Sizing by width would make a 26x48 figure
+// nearly twice the height of the old one; every character is placed by the
+// height it should stand, and its width follows from its own aspect.
+function widthForHeight(spriteKey, targetHeight) {
+  const sprite = SPRITES[spriteKey];
+  if (!sprite) return targetHeight;
+  return targetHeight * (sprite.grid[0].length / sprite.grid.length);
+}
+
 // A person standing in the room is drawn over the floor, not baked into a tile:
 // she has to be able to move or change sprite without the map being regenerated.
 function StandingSprite({ spriteKey, s }) {
   return (
     <View style={{ width: s, height: s, alignItems: 'center', justifyContent: 'flex-end' }}>
-      <PixelSprite spriteKey={spriteKey} size={s * 1.15} />
+      <PixelSprite spriteKey={spriteKey} size={widthForHeight(spriteKey, s * 1.85)} />
     </View>
   );
 }
@@ -274,7 +312,11 @@ export default function TileMap({ map, player, tileSize, style }) {
           transform: [{ translateX: pos.x }, { translateY: pos.y }],
         }}
       >
-        <PixelSprite spriteKey={spriteKey} palette={outfitPalette(state.playerOutfit, state.playerGender)} size={s * 1.25} />
+        <PixelSprite
+          spriteKey={spriteKey}
+          palette={outfitPalette(state.playerOutfit, state.playerGender)}
+          size={widthForHeight(spriteKey, s * 1.85)}
+        />
       </Animated.View>
     </View>
   );

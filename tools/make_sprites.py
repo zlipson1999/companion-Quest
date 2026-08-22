@@ -1667,6 +1667,163 @@ def achefang(pal='ache'):
 HERO_W, HERO_H = 24, 32
 
 
+# =========================================================================
+# WALK SETS
+#
+# The overworld sprite has to be the person on the character card, not a chunky
+# stand-in that merely shares its colours. The card is one front-facing pose,
+# so the rest of the set is derived from it rather than drawn again:
+#
+#   down   the traced pose, plus two stride frames
+#   up     the same silhouette with the face covered by hair
+#   left   the figure narrowed, which is what turning actually does to a
+#          silhouette; right is its mirror
+#
+# Working on the traced indices keeps every frame in the card's own palette, so
+# a facing can never drift away from the character.
+# =========================================================================
+def _walk_rows(blob):
+    """Traced rows as palette indices (0 = transparent)."""
+    return [[0 if ch == '.' else TRACE_INDEX[ch] for ch in row] for row in blob['rows']]
+
+
+def _figure_bounds(grid):
+    rows = [y for y, row in enumerate(grid) if any(row)]
+    if not rows:
+        return 0, len(grid) - 1
+    return min(rows), max(rows)
+
+
+def _blank(w, h):
+    return [[0] * w for _ in range(h)]
+
+
+def _stride(grid, phase):
+    """Swing the legs. The split is the figure's own centre line, so a leg goes
+    forward rather than the whole lower half sliding sideways."""
+    h = len(grid)
+    w = len(grid[0])
+    top, bottom = _figure_bounds(grid)
+    hip = top + int((bottom - top) * 0.62)
+    xs = [x for y in range(h) for x in range(w) if grid[y][x]]
+    mid = (min(xs) + max(xs)) // 2 if xs else w // 2
+
+    out = [row[:] for row in grid]
+    for y in range(hip, h):
+        for x in range(w):
+            out[y][x] = 0
+    for y in range(hip, h):
+        for x in range(w):
+            if not grid[y][x]:
+                continue
+            near = (x <= mid) if phase > 0 else (x > mid)
+            ny = y - 2 if near else y
+            if 0 <= ny < h:
+                out[ny][x] = grid[y][x]
+    return out
+
+
+def _back_view(grid, palette):
+    """Cover the face. Turning around should show hair, not a face on backwards."""
+    h = len(grid)
+    w = len(grid[0])
+    top, bottom = _figure_bounds(grid)
+    head_bottom = top + int((bottom - top) * 0.20)
+
+    # Take the first few rows of the head that are actually wide enough to hold
+    # hair. Scanning a fixed band instead picked up whatever the sparse crown
+    # rows happened to contain — skin on one character, jacket on another.
+    tally = {}
+    taken = 0
+    for y in range(top, head_bottom + 1):
+        run = [x for x in range(w) if grid[y][x]]
+        if len(run) < 5:
+            continue
+        for x in range(min(run) + 1, max(run)):
+            if grid[y][x]:
+                tally[grid[y][x]] = tally.get(grid[y][x], 0) + 1
+        taken += 1
+        # Only the very top of the head is reliably hair. One character's crop
+        # is two rows deep before the face begins, and four rows of tally handed
+        # back skin.
+        if taken >= 2:
+            break
+    if not tally:
+        return [row[:] for row in grid]
+    hair = max(tally, key=tally.get)
+
+    out = [row[:] for row in grid]
+    for y in range(top, head_bottom + 1):
+        run = [x for x in range(w) if grid[y][x]]
+        if len(run) < 3:
+            continue
+        # keep the outline column either side so the head keeps its edge
+        for x in range(min(run) + 1, max(run)):
+            if grid[y][x]:
+                out[y][x] = hair
+    return out
+
+
+def _narrow(grid, factor=0.68):
+    """Squeeze horizontally. A front view compressed toward its centre line is
+    what a turn looks like in silhouette, and it costs no new artwork."""
+    h = len(grid)
+    w = len(grid[0])
+    xs = [x for y in range(h) for x in range(w) if grid[y][x]]
+    if not xs:
+        return [row[:] for row in grid]
+    lo, hi = min(xs), max(xs)
+    span = hi - lo + 1
+    new_span = max(3, int(round(span * factor)))
+    start = lo + (span - new_span) // 2
+
+    out = _blank(w, h)
+    for y in range(h):
+        for i in range(new_span):
+            sx = lo + int(i / factor)
+            if sx > hi:
+                sx = hi
+            value = grid[y][sx]
+            if value:
+                out[y][start + i] = value
+    return out
+
+
+def _mirror(grid):
+    return [list(reversed(row)) for row in grid]
+
+
+def _encode(grid, palette):
+    colors = ['transparent'] + list(palette)
+    rows = [''.join(TRANSPARENT if v == 0 else DIGITS[v] for v in row) for row in grid]
+    return colors, rows
+
+
+def walk_set(name):
+    """{suffix: (palette, rows)} for one character, or None with no traced art."""
+    blob = _raw_traced('walk_%s' % name)
+    if not blob:
+        return None
+    base = _walk_rows(blob)
+    palette = blob['palette']
+
+    poses = {}
+    down = {'': base, '_a': _stride(base, 1), '_b': _stride(base, -1)}
+    back = _back_view(base, palette)
+    up = {'': back, '_a': _stride(back, 1), '_b': _stride(back, -1)}
+    side = _narrow(base)
+    left = {'': side, '_a': _stride(side, 1), '_b': _stride(side, -1)}
+
+    for suffix, grid in down.items():
+        poses['down' + suffix] = _encode(grid, palette)
+    for suffix, grid in up.items():
+        poses['up' + suffix] = _encode(grid, palette)
+    for suffix, grid in left.items():
+        poses['left' + suffix] = _encode(grid, palette)
+        poses['right' + suffix] = _encode(_mirror(grid), palette)
+    return poses
+
+
 def hero(facing='down', step=0, pal='hero', hair='short'):
     """One overworld sprite per facing, per character.
 
@@ -2464,6 +2621,237 @@ def tile_home_floor(variant=0):
     return c
 
 
+# -------------------------------------------------------------------------
+# PROPS
+#
+# The bedroom and the front room were four walls and a floor, which is why the
+# opening minutes felt like a corridor rather than somewhere the player lives.
+#
+# Every prop is a TRANSPARENT overlay drawn over whatever floor its room has,
+# not a tile with a floor baked in. That keeps a sofa usable in any room, and it
+# lets each prop choose the palette it actually needs — foliage green, appliance
+# grey, terracotta bedding — without dragging a mismatched patch of floor along
+# with it. Mixing art sources inside one tile is what made the ground go patchy
+# the first time, and a prop with its own baked floor is the same mistake.
+#
+# Same lit primitives as everything else: lit top-left face, darker lower-right,
+# contact shadow on the floor.
+# -------------------------------------------------------------------------
+def _prop(pal):
+    return tile(pal).clear()
+
+
+def prop_bed_head():
+    """Head of the bed — pillow and turned-down sheet."""
+    c = _prop('ember')
+    c.rect(1, 2, 14, 15, 'belly', 0.20)                      # frame
+    c.rect(2, 3, 13, 7, 'belly', 0.96)                       # pillow
+    c.rect(3, 4, 12, 6, 'belly', 1.0)
+    c.rect(2, 8, 13, 15, 'body', 0.54)                       # quilt
+    c.rect(2, 8, 13, 9, 'body', 0.74)                        # turned-down cuff
+    c.rect(13, 9, 13, 15, 'body', 0.30)                      # shaded side
+    c.rect(1, 15, 14, 15, 'ink', 0)
+    return c
+
+
+def prop_bed_foot():
+    """Foot of the bed, so a bed is two tiles and reads as furniture."""
+    c = _prop('ember')
+    c.rect(1, 0, 14, 12, 'body', 0.54)
+    c.rect(1, 0, 13, 1, 'body', 0.66)
+    c.rect(13, 0, 14, 12, 'body', 0.30)
+    c.rect(1, 12, 14, 15, 'belly', 0.24)                     # footboard
+    c.rect(1, 12, 14, 12, 'belly', 0.52)
+    c.rect(1, 15, 14, 15, 'ink', 0)
+    return c
+
+
+def prop_tv():
+    """Screen on a low stand, dark glass catching the window."""
+    c = _prop('rock')
+    c.rect(1, 2, 14, 11, 'ink', 0)                           # bezel
+    c.rect(2, 3, 13, 10, 'body', 0.16)                       # glass
+    for k in range(5):
+        c.put(3 + k, 8 - k, 'body', 0.52)                    # reflection
+        c.put(4 + k, 8 - k, 'body', 0.38)
+    c.rect(6, 12, 9, 13, 'ink', 0)                           # neck
+    c.rect(3, 13, 12, 15, 'body', 0.34)                      # stand
+    c.rect(3, 13, 12, 13, 'body', 0.58)
+    return c
+
+
+def prop_desk():
+    """Writing desk with a lamp — where the journal lives."""
+    c = _prop('couch')
+    c.rect(1, 5, 14, 8, 'body', 0.46)                        # top
+    c.rect(1, 5, 14, 5, 'body', 0.70)                        # lit front lip
+    c.rect(2, 9, 4, 15, 'body', 0.24)                        # legs
+    c.rect(11, 9, 13, 15, 'body', 0.24)
+    c.rect(10, 1, 12, 4, 'leaf', 0.86)                       # lamp shade
+    c.put(11, 5, 'body', 0.36)
+    c.rect(3, 2, 7, 4, 'belly', 0.94)                        # open journal
+    c.put(5, 3, 'body', 0.40)
+    c.rect(1, 15, 14, 15, 'ink', 0)
+    return c
+
+
+def prop_rug():
+    """A rug breaks the boards up and marks the middle of a room."""
+    c = _prop('ache')
+    c.rect(1, 2, 14, 13, 'body', 0.30)
+    c.rect(2, 3, 13, 12, 'body', 0.50)
+    c.rect(4, 5, 11, 10, 'leaf', 0.62)
+    c.rect(6, 7, 9, 8, 'body', 0.36)
+    c.rect(1, 2, 14, 2, 'body', 0.60)                        # lit top edge
+    c.rect(1, 13, 14, 13, 'body', 0.20)
+    return c
+
+
+def prop_sofa():
+    """Two-seat sofa, back to the wall."""
+    c = _prop('snooze')
+    c.rect(1, 2, 14, 6, 'body', 0.36)                        # back
+    c.rect(1, 2, 14, 2, 'body', 0.56)
+    c.rect(0, 4, 2, 13, 'body', 0.44)                        # arms
+    c.rect(13, 4, 15, 13, 'body', 0.26)
+    c.rect(3, 7, 12, 12, 'body', 0.62)                       # seat cushions
+    c.rect(7, 7, 8, 12, 'body', 0.46)                        # seam
+    c.rect(3, 7, 12, 7, 'body', 0.74)
+    c.rect(2, 13, 13, 15, 'ink', 0)                          # base in shadow
+    return c
+
+
+def prop_table():
+    """Kitchen table seen from above."""
+    c = _prop('couch')
+    c.rect(2, 3, 13, 11, 'body', 0.52)
+    c.rect(2, 3, 13, 3, 'body', 0.72)
+    c.rect(2, 11, 13, 11, 'body', 0.26)
+    c.rect(3, 12, 4, 14, 'body', 0.22)                       # legs
+    c.rect(11, 12, 12, 14, 'body', 0.22)
+    c.blob(8, 7, 2.2, 1.8, 'belly', 0.92)                    # a bowl on top
+    c.rect(2, 15, 13, 15, 'ink', 0)
+    return c
+
+
+def prop_counter():
+    """Kitchen counter with a sink."""
+    c = _prop('couch')
+    c.rect(0, 3, 15, 12, 'body', 0.30)                       # cabinet
+    c.rect(0, 3, 15, 4, 'belly', 0.90)                       # worktop
+    c.rect(0, 3, 15, 3, 'belly', 1.0)
+    c.rect(4, 6, 11, 10, 'body', 0.14)                       # sink basin
+    c.rect(5, 7, 10, 9, 'body', 0.22)
+    c.put(7, 5, 'belly', 0.70); c.put(8, 5, 'belly', 0.70)   # tap
+    c.rect(0, 12, 15, 13, 'body', 0.16)                      # kick board
+    return c
+
+
+def prop_fridge():
+    c = _prop('rock')
+    c.rect(2, 0, 13, 15, 'belly', 0.88)                      # body
+    c.rect(2, 0, 3, 15, 'belly', 1.0)                        # lit edge
+    c.rect(13, 0, 13, 15, 'belly', 0.54)
+    c.rect(2, 6, 13, 6, 'belly', 0.36)                       # door split
+    c.rect(11, 3, 12, 5, 'body', 0.30)                       # handles
+    c.rect(11, 8, 12, 10, 'body', 0.30)
+    return c
+
+
+def prop_stairs():
+    """Treads reading upward, so a staircase is obviously a staircase."""
+    c = _prop('couch')
+    for i, y in enumerate(range(1, 15, 3)):
+        w = 13 - i
+        c.rect(2, y, 2 + w, y + 1, 'body', 0.54 - i * 0.06)
+        c.rect(2, y, 2 + w, y, 'body', 0.76 - i * 0.06)
+        c.rect(2, y + 2, 2 + w, y + 2, 'body', 0.20)
+    return c
+
+
+def prop_plant():
+    """A pot plant. Every room needs one thing in it that is alive."""
+    c = _prop('terra')
+    c.rect(5, 10, 10, 15, 'leaf', 0.44)                      # pot
+    c.rect(5, 10, 10, 10, 'leaf', 0.66)
+    c.rect(10, 11, 10, 15, 'leaf', 0.24)
+    for cx, cy in ((8, 5), (5, 7), (11, 7), (7, 3), (10, 3)):
+        c.sphere(cx, cy, 2.6, 2.4, 'body', ambient=0.5)
+    c.rect(5, 15, 10, 15, 'ink', 0)
+    return c
+
+
+def prop_bookshelf():
+    c = _prop('couch')
+    c.rect(1, 0, 14, 15, 'body', 0.26)                       # carcass
+    c.rect(1, 0, 2, 15, 'body', 0.46)
+    for sy in (4, 9, 14):
+        c.rect(2, sy, 13, sy, 'body', 0.58)                  # shelves
+    for i, bx in enumerate(range(3, 13, 2)):
+        c.rect(bx, 1, bx + 1, 3, 'leaf', 0.32 + (i % 3) * 0.24)
+        c.rect(bx, 6, bx + 1, 8, 'leaf', 0.74 - (i % 3) * 0.20)
+    return c
+
+
+def prop_lockers():
+    """Changing lockers for the Hall."""
+    c = _prop('rock')
+    c.rect(0, 0, 15, 14, 'body', 0.32)
+    for bx in (0, 8):
+        c.rect(bx, 0, bx, 14, 'body', 0.52)                  # lit edge per door
+        c.rect(bx + 7, 0, bx + 7, 14, 'body', 0.18)
+        c.rect(bx + 1, 3, bx + 5, 4, 'body', 0.14)           # vent
+        c.put(bx + 6, 8, 'leaf', 0.70)                       # handle
+    c.rect(0, 14, 15, 15, 'ink', 0)
+    return c
+
+
+def prop_pullup_bar():
+    c = _prop('rock')
+    c.rect(1, 1, 3, 15, 'body', 0.36)                        # uprights
+    c.rect(12, 1, 14, 15, 'body', 0.36)
+    c.rect(1, 1, 1, 15, 'body', 0.54); c.rect(12, 1, 12, 15, 'body', 0.54)
+    c.rect(1, 2, 14, 3, 'body', 0.68)                        # the bar
+    c.rect(1, 2, 14, 2, 'body', 0.88)
+    c.rect(1, 15, 14, 15, 'ink', 0)
+    return c
+
+
+def prop_kettlebells():
+    c = _prop('rock')
+    for i, (cx, base) in enumerate(((4, 14), (8, 15), (12, 13))):
+        r = 2.6 - i * 0.2
+        c.sphere(cx, base - r, r, r, 'body', ambient=0.34)   # bell
+        c.rect(int(cx - 1), int(base - r * 2 - 3), int(cx + 1), int(base - r * 2), 'body', 0.52)
+        c.put(cx - 1, base - r * 2 - 3, 'body', 0.72)        # handle top
+    c.rect(2, 15, 13, 15, 'ink', 0)
+    return c
+
+
+def prop_rower():
+    c = _prop('rock')
+    c.rect(1, 6, 14, 9, 'body', 0.30)                        # rail
+    c.rect(1, 6, 14, 6, 'body', 0.52)
+    c.rect(9, 4, 13, 11, 'body', 0.40)                       # seat
+    c.rect(9, 4, 13, 4, 'body', 0.62)
+    c.sphere(4, 7.5, 3.4, 3.4, 'body', ambient=0.30)         # flywheel housing
+    c.rect(1, 12, 3, 15, 'body', 0.24); c.rect(12, 12, 14, 15, 'body', 0.24)
+    c.rect(1, 15, 14, 15, 'ink', 0)
+    return c
+
+
+def prop_reception():
+    """Front desk — the Hall should greet you."""
+    c = _prop('couch')
+    c.rect(0, 4, 15, 13, 'body', 0.34)                       # desk body
+    c.rect(0, 4, 15, 5, 'belly', 0.86)                       # counter top
+    c.rect(0, 4, 15, 4, 'belly', 0.98)
+    c.rect(2, 7, 6, 10, 'leaf', 0.72)                        # ledger
+    c.rect(10, 7, 13, 9, 'leaf', 0.44)                       # a cup and a stack
+    c.rect(0, 13, 15, 14, 'body', 0.18)
+    return c
+
+
 def tile_gym_wall_side():
     """Left/right wall. The dado rail is horizontal, so tiling the front wall
     down a column stacked it into a ladder; the side run gets a pilaster
@@ -2660,11 +3048,17 @@ def load_traced(name):
 def build_all():
     s = {}
     traced_palettes = {}
+    # Which traced files actually fed a sprite. Tracked by source name rather
+    # than by palette key, because art can reach the registry indirectly — a
+    # walk set derives twelve sprites from one traced pose, and a blended tile
+    # composites two sources into a third name.
+    used_traced = set()
 
     def add(name, canvas):
         # Reference artwork, where we have it, beats anything generated.
         t = load_traced(name)
         if t:
+            used_traced.add(name)
             key = 'art_' + name
             traced_palettes[key] = t['palette']
             s[name] = {'palette': key, 'grid': t['grid']}
@@ -2695,11 +3089,35 @@ def build_all():
         ('nonbinary', 'pc_nonbinary', 'swept'),
     ):
         prefix = 'hero' if who is None else 'hero_%s' % who
+        # The traced card art wins when it exists; the drawn set stays as the
+        # fallback for the unstyled 'hero' and for a build with no cards.
+        poses = walk_set(who) if who else None
+        if poses:
+            used_traced.add('walk_%s' % who)
         for facing in ('down', 'up', 'left', 'right'):
-            add('%s_%s' % (prefix, facing), hero(facing, 0, pal, hair))
-            add('%s_%s_a' % (prefix, facing), hero(facing, 1, pal, hair))
-            add('%s_%s_b' % (prefix, facing), hero(facing, 3, pal, hair))
-    add('coach_maple', coach_maple())
+            for suffix, step in (('', 0), ('_a', 1), ('_b', 3)):
+                key = '%s_%s%s' % (prefix, facing, suffix)
+                pose = poses.get(facing + suffix) if poses else None
+                if pose:
+                    colors, rows = pose
+                    pal_key = 'art_' + key
+                    traced_palettes[pal_key] = colors
+                    s[key] = {'palette': pal_key, 'grid': rows}
+                else:
+                    add(key, hero(facing, step, pal, hair))
+
+    # Coach Maple walks the same way she is drawn on her card.
+    maple = walk_set('maple')
+    if maple:
+        used_traced.add('walk_maple')
+        for key, (colors, rows) in (('coach_maple', maple['down']),) + tuple(
+            ('coach_maple_%s' % k, v) for k, v in maple.items()
+        ):
+            pal_key = 'art_' + key
+            traced_palettes[pal_key] = colors
+            s[key] = {'palette': pal_key, 'grid': rows}
+    else:
+        add('coach_maple', coach_maple())
 
     # Portraits traced straight off the character cards, for the screens that
     # show a face big enough to read one.
@@ -2707,6 +3125,7 @@ def build_all():
         traced = load_traced(name)
         if not traced:
             raise SystemExit('missing tools/traced_%s.json — run tools/convert_character.py' % name)
+        used_traced.add(name)
         key = 'art_' + name
         traced_palettes[key] = traced['palette']
         s[name] = {'palette': key, 'grid': traced['grid']}
@@ -2783,6 +3202,17 @@ def build_all():
     add('tile_gym_mat', tile_gym_mat()); add('tile_gym_wall', tile_gym_wall())
     add('tile_gym_wall_side', tile_gym_wall_side())
     add('tile_home_floor', tile_home_floor(0)); add('tile_home_floor_b', tile_home_floor(1))
+
+    # Props — transparent overlays stacked on whatever floor their room has.
+    add('prop_bed_head', prop_bed_head()); add('prop_bed_foot', prop_bed_foot())
+    add('prop_tv', prop_tv()); add('prop_desk', prop_desk())
+    add('prop_rug', prop_rug()); add('prop_sofa', prop_sofa())
+    add('prop_table', prop_table()); add('prop_counter', prop_counter())
+    add('prop_fridge', prop_fridge()); add('prop_stairs', prop_stairs())
+    add('prop_plant', prop_plant()); add('prop_bookshelf', prop_bookshelf())
+    add('prop_lockers', prop_lockers()); add('prop_pullup_bar', prop_pullup_bar())
+    add('prop_kettlebells', prop_kettlebells()); add('prop_rower', prop_rower())
+    add('prop_reception', prop_reception())
     add('tile_gym_mirror', tile_gym_mirror()); add('tile_gym_exit', tile_gym_exit())
     add('tile_rack_barbell', tile_rack_barbell()); add('tile_rack_dumbbell', tile_rack_dumbbell())
     add('tile_machine', tile_machine()); add('tile_treadmill', tile_treadmill())
@@ -2794,11 +3224,10 @@ def build_all():
     # in assets/characters/ for a release while the overworld kept rendering the
     # old placeholder people, and every regeneration reported success. Art that
     # nothing consumes is now a build failure rather than a surprise on a phone.
-    consumed = {p for p in traced_palettes}
     orphans = sorted(
         os.path.basename(path)
         for path in glob.glob(os.path.join(TRACED_DIR, 'traced_*.json'))
-        if 'art_' + os.path.basename(path)[len('traced_'):-len('.json')] not in consumed
+        if os.path.basename(path)[len('traced_'):-len('.json')] not in used_traced
     )
     if orphans:
         raise SystemExit(

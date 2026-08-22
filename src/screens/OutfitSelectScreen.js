@@ -39,7 +39,7 @@ export default function OutfitSelectScreen() {
             <PixelSprite
               spriteKey={playerSprite(gender)}
               palette={outfitPalette(selected, gender)}
-              size={72}
+              size={42}
               bob
             />
             <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6 }}>on the trail</PixelText>
