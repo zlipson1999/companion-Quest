@@ -250,8 +250,9 @@ const INTERACTIONS = {
   U: { screen: 'forge', label: 'Pull-up bar — build your own session' },
   z: { screen: 'forge', label: 'EZ-bar cradle — build your own session' },
   j: { screen: 'forge', label: 'Kettlebells — build your own session' },
-  t: { screen: 'treadmill', params: { mode: 'treadmill', station: 'treadmill' }, label: 'Treadmill — cardio, no interruptions' },
-  q: { screen: 'treadmill', params: { mode: 'treadmill', station: 'rower' }, label: 'Rower — cardio, no interruptions' },
+  // Not a screen: you step ONTO these and the room stays around you.
+  t: { cardio: 'treadmill', label: 'Treadmill — cardio, no interruptions' },
+  q: { cardio: 'rower', label: 'Rower — cardio, no interruptions' },
   Z: { screen: 'week', label: "Whiteboard — this week's work" },
   L: { screen: 'bag', label: 'Lockers — your supplies' },
   N: { screen: 'summary', label: 'Reception — your record so far' },

@@ -18,6 +18,7 @@ import { stamp, trim } from './history';
 import { computeRecovery } from './recovery';
 import { XP_PER_MILE, pointsFor, xpFor } from './evolution';
 import { CREDIT_PER_GOAL, CREDIT_PER_MILE, CREDIT_PER_SESSION, CREDIT_PER_WIN, mint } from './economy';
+import { DEFAULT_BODY_WEIGHT_LB } from './cardioMaths';
 import {
   MODULES,
   getModule,
@@ -75,7 +76,9 @@ const FRESH = {
   history: {},
   // 'stick' by default: crossing a map one deliberate tap per square is the
   // single most tiring thing about the overworld.
-  settings: { muted: false, bgmMuted: false, units: 'lb', control: 'stick' },
+  // bodyWeightLb is stored in pounds whatever the display unit is, so the
+  // number never has to be reinterpreted when someone switches units.
+  settings: { muted: false, bgmMuted: false, units: 'lb', control: 'stick', bodyWeightLb: DEFAULT_BODY_WEIGHT_LB },
   meta: { createdAt: today(), lastPlayedDate: today() },
 };
 

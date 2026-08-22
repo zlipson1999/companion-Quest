@@ -53,7 +53,6 @@ const SCREENS = {
   cookbook: CookbookScreen,
   smoothiebar: SmoothieBarScreen,
   route: RouteScreen,
-  treadmill: RouteScreen,
   battle: BattleScreen,
   workout: WorkoutScreen,
   rest: HomeRestScreen,
@@ -75,14 +74,14 @@ const SCREENS = {
 // fleeing a battle returns there, and without an entry here the battle music
 // just kept playing over the walk.
 const TOWN_BGM = new Set([
-  'title', 'intro', 'outfit', 'homeIntro', 'coachTutorial', 'goal', 'pairing', 'sparIntro', 'cookbook', 'smoothiebar', 'hub', 'gym', 'route', 'treadmill', 'rest', 'workout', 'summary', 'index', 'bag',
+  'title', 'intro', 'outfit', 'homeIntro', 'coachTutorial', 'goal', 'pairing', 'sparIntro', 'cookbook', 'smoothiebar', 'hub', 'gym', 'route', 'rest', 'workout', 'summary', 'index', 'bag',
   'party', 'coach', 'options', 'habits', 'habit', 'forge', 'forgeEdit', 'formcheck', 'week',
 ]);
 
 // Somewhere you can WALK AROUND. Arriving at one is a fresh context rather than
 // a step deeper, so it clears the trail behind it: what matters from inside the
 // Forge is that you came from the gym, not everywhere you had been before that.
-const PLACES = new Set(['hub', 'gym', 'rest', 'route', 'treadmill', 'title', 'homeIntro']);
+const PLACES = new Set(['hub', 'gym', 'rest', 'route', 'title', 'homeIntro']);
 
 // Only places get named on a back button. Anywhere else it is just "Back",
 // because "Back to the movement picker" is worse than saying nothing.
@@ -91,7 +90,6 @@ const PLACE_LABELS = {
   gym: 'the gym',
   rest: 'Home',
   route: 'Route 1',
-  treadmill: 'the deck',
 };
 
 export default function Router() {

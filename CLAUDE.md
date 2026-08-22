@@ -690,25 +690,44 @@ gym out of the file between two anchors, and nothing noticed until the door to
 it threw `undefined.spawn` at runtime. Every map's grid now has to match the
 cols and rows it claims.
 
-## Phase 12 — DONE: you climb onto the treadmill
+## Phase 12 — DONE: the cardio deck is a machine in the room, with a console
 
-Walking into the treadmill cut straight to a screen where you were already
-running on it, which is the one moment in the whole room where the equipment
-stopped being something you walk up to.
+Cardio was a whole separate screen that took over the phone — and it was
+rendered as the outdoor trail with its trees switched off, which is an odd way
+to draw a thing you use standing on one spot.
 
-`RouteScreen` holds a **mount phase** in treadmill mode: the figure rises into
-the deck from below over ~0.9s with its legs going and its back to you, and the
-belt does not start until it is standing on it. The message says "Stepping onto
-the deck..." while it happens, and the station names itself — `t` and `q` pass
-`station: 'treadmill' | 'rower'` so the rower does not call itself a deck.
+**You step onto the machine and stay in the room.** `t` and `q` are no longer
+destinations: they carry `{ cardio: 'treadmill' | 'rower' }`, and `GymScreen`
+moves you onto the tile. Walking onto it IS the animation — the same 120ms tween
+every other step in that room uses — so no bespoke mount was needed in the end.
+The stick hides, movement is disabled (the button is how you get off, the way
+the bar is on a real one), and the gym stays on screen above.
 
-**The runner's legs move now**, on Route 1 as well. `playerSprite` has always
-had walk frames (`_a`/`_b` per facing); the trail was calling it with the
-default standing frame and adding an idle bob, so a deck with a scrolling belt
-and a motionless figure on it read as a still image with a moving background.
-The stride cycles whenever you are actually moving and stops when you are not —
-it is driven by real distance, like everything else, so on the web build (no
-pedometer) the figure correctly stands still.
+**The console** (`components/CardioConsole.js`) is modelled on the real thing:
+a dark fascia, TIME and DISTANCE big across the top, then LAPS, PACE, KCAL and
+STEPS in a row under hard little labels, with a READY/RUNNING lamp.
+- **Laps** are quarter miles, the way a treadmill counts them.
+- **Pace** is distance over time, and prints `--:--` rather than dividing by
+  almost nothing before you have moved.
+- **Kcal is the only estimated number on the console, and it says so.** Roughly
+  0.53 kcal per pound per mile walking and 0.75 running, picked between by your
+  measured pace — about 82 and 116 a mile at 155 lb. A number printed in the
+  same style as three measurements reads as a fourth measurement unless you say
+  otherwise, so the console says otherwise.
+- That needed a body weight, which the app did not have. `settings.bodyWeightLb`
+  is stored in pounds whatever the display unit is, set in Options, and read by
+  nothing else.
+
+**`useCardio` is the one path real distance takes into the game.** The trail and
+the deck each had their own copy of "read the pedometer, dispatch the delta,
+notice a milestone", and two copies of *that* is the last thing this game can
+afford to let drift. Encounters stay with the trail — indoors there is nothing
+to meet — so the hook hands back the delta and the caller decides.
+
+`RouteScreen` is Route 1 and nothing else now; the `treadmill` route is gone
+from the router. The runner's legs move on the trail either way: `playerSprite`
+has always had walk frames per facing and the trail was drawing the standing
+one, so a scrolling scene carried a motionless figure across it.
 
 ## Phase 6 — ideas, not committed
 

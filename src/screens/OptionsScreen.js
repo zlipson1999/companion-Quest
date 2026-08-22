@@ -5,6 +5,7 @@ import { View } from 'react-native';
 import { Screen, Window, PixelText, PixelButton, CONTROL_MODES } from '../components';
 import { palette, space } from '../theme';
 import { useGame, wipeSave } from '../state';
+import { DEFAULT_BODY_WEIGHT_LB, displayWeight } from '../state/cardioMaths';
 import { useNav } from './navContext';
 import { setMuted, setBgmMuted, playSfx } from '../audio';
 
@@ -122,6 +123,41 @@ export default function OptionsScreen() {
         ) : (
           <PixelButton label="Erase Save" tone="dark" sound="cancel" style={{ marginBottom: space.sm }} onPress={() => setConfirm(true)} />
         )}
+        {/* The console's calorie readout is the only estimated number on it,
+            and body weight is most of what the estimate depends on. Asking for
+            it once beats printing a number computed for somebody else. */}
+        <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+          <PixelText size="small" color={palette.windowText}>Body weight</PixelText>
+          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 13 }}>
+            Used only to estimate calories on the cardio console. Nothing else reads it.
+          </PixelText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: space.sm }}>
+            <PixelButton
+              label="-"
+              tone="dark"
+              size="small"
+              style={{ width: 52 }}
+              onPress={() => dispatch({
+                type: 'SET_SETTING',
+                payload: { key: 'bodyWeightLb', value: Math.max(60, (state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB) - 5) },
+              })}
+            />
+            <PixelText size="body" color={palette.windowText} style={{ flex: 1, textAlign: 'center' }}>
+              {`${displayWeight(state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB, state.settings.units)} ${state.settings.units || 'lb'}`}
+            </PixelText>
+            <PixelButton
+              label="+"
+              tone="dark"
+              size="small"
+              style={{ width: 52 }}
+              onPress={() => dispatch({
+                type: 'SET_SETTING',
+                payload: { key: 'bodyWeightLb', value: Math.min(500, (state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB) + 5) },
+              })}
+            />
+          </View>
+        </Window>
+
         <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} />
       </View>
     </Screen>

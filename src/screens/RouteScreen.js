@@ -1,33 +1,31 @@
-// Real distance moves you. Steps become miles (or GPS on a run), your character
-// advances, and milestones drop items.
+// Route 1. Real distance moves you: steps become miles (or GPS on a run), your
+// character advances, milestones drop items, and trail markers reveal
+// encounters — companions to meet and bad habits to work through.
 //
-// TWO MODES, and the difference is the point:
+// This screen used to carry a second mode for the gym's cardio deck. That was
+// always a slightly odd fit — an indoor deck rendered as a scrolling outdoor
+// strip that happened to have its trees turned off — and it took over the whole
+// phone for something you do standing on one spot. The deck lives in the gym
+// now, on the machine, with a console (see CardioConsole). What the two share
+// is `useCardio`, which is the only path real distance takes into the game.
 //
-//   route      Route 1. Trail markers reveal encounters — companions to meet
-//              and bad habits to work through — so distance out here is where
-//              the game happens to you.
-//   treadmill  The gym's cardio deck. Identical credit: the same miles, the
-//              same milestones, the same progression. What it does not have is
-//              anything that stops you — no encounters, no challenges. It is
-//              for the days you want to put the miles in and be left alone.
-//
-// Both are real movement. Neither is a "walk" button.
+// Distance out here is where the game happens TO you. Neither is a walk button.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Modal, Pressable, ScrollView, View } from 'react-native';
+import { Animated, Modal, Pressable, ScrollView, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Screen, Window, ProgressBar, PixelText, PixelSprite, PixelButton, TrailAction, Tile, MenuButton, TOP_INSET } from '../components';
 import { palette, space, screen, tokens } from '../theme';
-import { useGame, useCompanion, useDistance } from '../state';
+import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { pacingForGoal, formatMiles } from '../data/route';
-import { PICKUP_POOL, getItem } from '../data/items';
 import { rollWildEncounter } from '../data/wild';
 import { getCreature } from '../data/creatures';
 import { outfitPalette } from '../data/outfits';
 import { playerSprite } from '../data/characters';
 import { routeCheer, pickupLine } from '../coach';
+import useCardio from './useCardio';
 
 // The trail itself.
 //
@@ -39,19 +37,14 @@ const ROUTE_TS = 22;
 
 // A deterministic strip, so the trail looks the same every time you walk it and
 // nothing reshuffles under you on a re-render.
-function routeRow(r, cols, treadmill) {
+function routeRow(r, cols) {
   const laneW = Math.max(3, Math.round(cols * 0.3));
   const lane0 = Math.floor((cols - laneW) / 2);
   const h = (r * 2654435761) >>> 0;
   let row = '';
   for (let x = 0; x < cols; x += 1) {
     const n = ((h ^ (x * 2246822519)) >>> 0) % 100;
-    if (treadmill) {
-      // Indoors: plain gym floor. The running lane itself is a ZONE declared
-      // on the scene map below, not a code per square — the belt used to be a
-      // row of mat props and so it had a hard sawn edge down each side.
-      row += '.';
-    } else if (x >= lane0 && x < lane0 + laneW) {
+    if (x >= lane0 && x < lane0 + laneW) {
       row += '#';
     } else if (x < 1 || x > cols - 2) {
       row += 'T';
@@ -64,7 +57,7 @@ function routeRow(r, cols, treadmill) {
   return row;
 }
 
-function ScrollingScene({ width, height, moving, treadmill }) {
+function ScrollingScene({ width, height, moving }) {
   const offset = useRef(new Animated.Value(0)).current;
   const cols = Math.ceil(width / ROUTE_TS);
   const rows = Math.ceil(height / ROUTE_TS) + 1;
@@ -95,22 +88,9 @@ function ScrollingScene({ width, height, moving, treadmill }) {
   // rather than loose codes. Handing it rows one at a time cost the trail its
   // autotiled edges and its trees — the scene came out as a field of grass.
   const sceneMap = useMemo(() => {
-    const grid = Array.from({ length: rows * 2 }, (_, r) => routeRow(r % rows, cols, treadmill));
-    const laneW = Math.max(3, Math.round(cols * 0.3));
-    const lane0 = Math.floor((cols - laneW) / 2);
-    return {
-      id: treadmill ? 'gym' : 'route',
-      cols,
-      rows: rows * 2,
-      grid,
-      // The deck's running surface, as a zone: it gets the same joint and lip
-      // the gym's own matting has, so it reads as a lane let into the floor
-      // rather than as a strip laid on top of it.
-      zones: treadmill
-        ? [{ field: 'tile_gym_mats', x0: lane0, y0: 0, x1: lane0 + laneW - 1, y1: rows * 2 - 1 }]
-        : undefined,
-    };
-  }, [rows, cols, treadmill]);
+    const grid = Array.from({ length: rows * 2 }, (_, r) => routeRow(r % rows, cols));
+    return { id: 'route', cols, rows: rows * 2, grid };
+  }, [rows, cols]);
 
   const strip = useMemo(
     () =>
@@ -125,7 +105,7 @@ function ScrollingScene({ width, height, moving, treadmill }) {
   );
 
   return (
-    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden', backgroundColor: treadmill ? palette.bgAlt : palette.grassDark }}>
+    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden', backgroundColor: palette.grassDark }}>
       <Animated.View style={{ position: 'absolute', top: -ROUTE_TS * rows, transform: [{ translateY: translate }] }}>
         {strip}
       </Animated.View>
@@ -135,125 +115,57 @@ function ScrollingScene({ width, height, moving, treadmill }) {
 
 export default function RouteScreen({ params = {} }) {
   useKeepAwake();
-  const treadmill = params.mode === 'treadmill';
-  const station = params.station === 'rower' ? 'rower' : 'deck';
   const { state, dispatch } = useGame();
   const companion = useCompanion();
   const { navigate, toBattle } = useNav();
-  const dist = useDistance();
   const pacing = pacingForGoal(state.goalId);
 
-  const [message, setMessage] = useState(
-    treadmill
-      ? `Stepping onto the ${station}...`
-      : 'The trail opens up ahead. Every real step carries you forward!'
-  );
+  const [message, setMessage] = useState('The trail opens up ahead. Every real step carries you forward!');
   const [encMeter, setEncMeter] = useState(0);
-  const [moving, setMoving] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  // Getting on. Walking into the treadmill used to cut straight to a screen
-  // where you were already running on it, which is the one moment in the room
-  // where the equipment stopped being something you walk up to. You climb on.
-  const [mounted, setMounted] = useState(!treadmill);
-  // Which walk frame the figure is on. A runner whose legs never move is what
-  // made the deck read as a still image with a moving background.
+  // The runner's legs. playerSprite has always had walk frames per facing; the
+  // trail was drawing the standing one, so a scrolling scene carried a
+  // motionless figure across it.
   const [stride, setStride] = useState(0);
-  const mountY = useRef(new Animated.Value(treadmill ? 1 : 0)).current;
 
-  useEffect(() => {
-    if (!treadmill) return undefined;
-    const legs = setInterval(() => setStride((s) => (s + 1) % 3), 120);
-    const climb = Animated.timing(mountY, {
-      toValue: 0,
-      duration: 880,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    });
-    climb.start(({ finished }) => finished && setMounted(true));
-    return () => {
-      clearInterval(legs);
-      climb.stop();
-    };
-  }, [treadmill, mountY]);
+  const encMiRef = useRef(0);
+  const encThreshRef = useRef(pacing.encMin + Math.random() * (pacing.encMax - pacing.encMin));
+  const busyRef = useRef(false);
+  const encTimer = useRef(null);
+
+  // Real distance becomes progress through the one shared path; the trail adds
+  // the only thing that is its own, which is having somebody to meet.
+  const { dist, moving } = useCardio({
+    onDelta: (dM) => {
+      if (dM <= 0 || busyRef.current) return;
+      encMiRef.current += dM;
+      setEncMeter(Math.min(1, encMiRef.current / encThreshRef.current));
+      if (encMiRef.current < encThreshRef.current) return;
+      busyRef.current = true;
+      const enc = rollWildEncounter(state.stats.milestonesReached + 1);
+      const c = getCreature(enc.creatureId);
+      dispatch({ type: 'SEE_CREATURE', payload: { id: enc.creatureId } });
+      playSfx('encounter');
+      setMessage(enc.isCompanion ? `${c.name} steps onto the trail and watches you.` : `${c.name} gathers across the path.`);
+      encTimer.current = setTimeout(() => toBattle({ ...enc, from: 'route' }), 550);
+    },
+    onMilestone: (item) => setMessage(`Milestone! ${pickupLine(item.name)} ${routeCheer()}`),
+  });
 
   const running = moving || dist.running;
 
-  // Once you are on, the legs follow whether you are actually moving.
   useEffect(() => {
-    if (!mounted) return undefined;
     if (!running) {
       setStride(0);
       return undefined;
     }
     const legs = setInterval(() => setStride((s) => (s + 1) % 3), 150);
     return () => clearInterval(legs);
-  }, [mounted, running]);
-
-  useEffect(() => {
-    if (treadmill && mounted) {
-      setMessage(`${station === 'rower' ? 'Rower' : 'Deck'} is running. Nothing out here but the miles — go at your own pace.`);
-    }
-  }, [treadmill, mounted, station]);
-
-  const lastMiles = useRef(0);
-  const lastSteps = useRef(0);
-  const prevMilestones = useRef(state.stats.milestonesReached);
-  const encMiRef = useRef(0);
-  const encThreshRef = useRef(pacing.encMin + Math.random() * (pacing.encMax - pacing.encMin));
-  const busyRef = useRef(false);
-  const moveTimer = useRef(null);
-  const encTimer = useRef(null);
-
-  // Feed real distance into the game; roll grass encounters as you move.
-  useEffect(() => {
-    const dM = dist.miles - lastMiles.current;
-    const dS = dist.steps - lastSteps.current;
-    if (dM <= 0 && dS <= 0) return;
-    lastMiles.current = dist.miles;
-    lastSteps.current = dist.steps;
-    dispatch({ type: 'ADD_DISTANCE', payload: { miles: dM, steps: dS } });
-
-    // visual "walking" pulse
-    setMoving(true);
-    if (moveTimer.current) clearTimeout(moveTimer.current);
-    moveTimer.current = setTimeout(() => setMoving(false), 900);
-
-    // Indoors there is nothing to meet, so the encounter meter never fills.
-    if (dM > 0 && !busyRef.current && !treadmill) {
-      encMiRef.current += dM;
-      setEncMeter(Math.min(1, encMiRef.current / encThreshRef.current));
-      if (encMiRef.current >= encThreshRef.current) {
-        busyRef.current = true;
-        const enc = rollWildEncounter(state.stats.milestonesReached + 1);
-        const c = getCreature(enc.creatureId);
-        dispatch({ type: 'SEE_CREATURE', payload: { id: enc.creatureId } });
-        playSfx('encounter');
-        setMessage(enc.isCompanion ? `${c.name} steps onto the trail and watches you.` : `${c.name} gathers across the path.`);
-        encTimer.current = setTimeout(() => toBattle({ ...enc, from: 'route' }), 550);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dist.miles, dist.steps]);
-
-  // Milestone pickups.
-  useEffect(() => {
-    const cur = state.stats.milestonesReached;
-    if (cur > prevMilestones.current) {
-      prevMilestones.current = cur;
-      playSfx('milestone');
-      const itemId = PICKUP_POOL[Math.floor(Math.random() * PICKUP_POOL.length)];
-      const item = getItem(itemId);
-      dispatch({ type: 'COLLECT_ITEM', payload: { itemId } });
-      playSfx('item');
-      setMessage(`Milestone! ${pickupLine(item.name)} ${routeCheer()}`);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.stats.milestonesReached]);
+  }, [running]);
 
   useEffect(
     () => () => {
-      if (moveTimer.current) clearTimeout(moveTimer.current);
       if (encTimer.current) clearTimeout(encTimer.current);
     },
     []
@@ -274,7 +186,7 @@ export default function RouteScreen({ params = {} }) {
     <Window tone="dark" pad={8}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <PixelText size="tiny" color={palette.secondary}>
-          {treadmill ? 'Quest Fitness — cardio deck' : pacing.trail}
+          {pacing.trail}
         </PixelText>
         {dist.running ? (
           <PixelText size="tiny" color={palette.hpHigh}>
@@ -283,7 +195,7 @@ export default function RouteScreen({ params = {} }) {
         ) : null}
       </View>
       <ProgressBar value={state.stats.routeMi} max={pacing.milestoneMi} color={palette.hpHigh} height={12} label="Next milestone" showText={false} style={{ marginTop: 6 }} />
-      {treadmill ? null : (
+      {(
         <ProgressBar value={encMeter} max={1} color={palette.accent} height={8} label="Trail signs" showText={false} style={{ marginTop: 6 }} />
       )}
       <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6 }}>
@@ -346,35 +258,24 @@ export default function RouteScreen({ params = {} }) {
 
   return (
     <Screen padTop={false} style={{ padding: 0 }}>
-      <View style={{ flex: 1, backgroundColor: treadmill ? palette.bgAlt : palette.grass }}>
+      <View style={{ flex: 1, backgroundColor: palette.grass }}>
         {/* The trail is the screen now, not a window at the top of it. */}
         <ScrollingScene
           width={screen.width}
           height={screen.height}
-          moving={running && mounted}
-          treadmill={treadmill}
+          moving={running}
         />
 
         {/* You and your companion, standing clear of the panel below. */}
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: screen.height * 0.30, alignItems: 'center' }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-            {/* Climbing on: the figure rises into the deck from below with its
-                legs going, facing away, and settles once it is standing on it. */}
-            <Animated.View
-              style={{
-                transform: [
-                  { translateY: mountY.interpolate({ inputRange: [0, 1], outputRange: [0, 74] }) },
-                ],
-              }}
-            >
-              <PixelSprite
-                spriteKey={playerSprite(state.playerGender, mounted ? 'down' : 'up', stride)}
-                palette={outfitPalette(state.playerOutfit, state.playerGender)}
-                size={40}
-                bob={mounted && running}
-              />
-            </Animated.View>
-            {companion && !treadmill ? (
+            <PixelSprite
+              spriteKey={playerSprite(state.playerGender, 'down', stride)}
+              palette={outfitPalette(state.playerOutfit, state.playerGender)}
+              size={40}
+              bob={running}
+            />
+            {companion ? (
               <>
                 <View style={{ width: 10 }} />
                 <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={60} bob={running} />
@@ -401,7 +302,7 @@ export default function RouteScreen({ params = {} }) {
               {dist.gpsError}
             </PixelText>
           ) : null}
-          {treadmill ? null : (
+          {(
             <PixelButton
               label={dist.running ? 'Stop Run' : 'Start Run (GPS)'}
               tone={dist.running ? 'danger' : 'primary'}
@@ -417,16 +318,16 @@ export default function RouteScreen({ params = {} }) {
         <Pressable style={{ flex: 1, backgroundColor: '#000000cc' }} onPress={() => setSheetOpen(false)}>
           <Pressable onPress={() => {}} style={{ marginTop: 'auto', backgroundColor: tokens.surface, borderTopColor: tokens.line, borderTopWidth: 3, padding: space.md, maxHeight: '78%' }}>
             <PixelText size="small" color={tokens.textOnDark} style={{ marginBottom: space.sm }}>
-              {treadmill ? 'CARDIO DECK' : 'ON THE TRAIL'}
+              ON THE TRAIL
             </PixelText>
             <ScrollView showsVerticalScrollIndicator={false}>{stepPanel}</ScrollView>
             <TrailAction
-              label={treadmill ? 'Step Off the Deck' : 'Back to Town'}
+              label="Back to Town"
               tone="quiet"
               onPress={() => {
                 setSheetOpen(false);
                 if (dist.running) dist.stopRun();
-                navigate(treadmill ? 'gym' : 'hub');
+                navigate('hub');
               }}
             />
             <TrailAction label="Close" tone="quiet" style={{ marginTop: space.sm }} onPress={() => setSheetOpen(false)} />

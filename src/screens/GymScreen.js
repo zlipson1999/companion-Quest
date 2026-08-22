@@ -6,13 +6,24 @@
 // the system that piece stands for. That replaces a screen of buttons
 // explaining the systems with a room that demonstrates them.
 
-import React, { useRef, useState } from 'react';
-import { WorldScreen, CompanionStatus } from '../components';
+import React, { useEffect, useRef, useState } from 'react';
+import { WorldScreen, CompanionStatus, CardioConsole } from '../components';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { GYM, isWalkable, tileAt, triggerForCode, interactionForCode } from '../data/maps';
 import { recallSpot, rememberSpot } from './placeMemory';
+import { useKeepAwake } from 'expo-keep-awake';
+import useCardio from './useCardio';
+import { DEFAULT_BODY_WEIGHT_LB } from '../state/cardioMaths';
+
+// Scoped to the session by being a component: expo's hook cannot be called
+// conditionally, and a phone that sleeps halfway through a run on the deck is
+// a phone that stops counting.
+function KeepAwakeOnDeck() {
+  useKeepAwake();
+  return null;
+}
 
 const MENU = [
   { label: 'Back to Maple Lane', value: 'hub', sublabel: 'the lane outside' },
@@ -33,6 +44,11 @@ export default function GymScreen() {
     recallSpot('gym', { x: GYM.spawn.x, y: GYM.spawn.y, facing: 'up' }, (s) => isWalkable(GYM, s.x, s.y))
   );
   const [facingStation, setFacingStation] = useState(null);
+  // Standing on a machine. Cardio used to be a whole separate screen that took
+  // over the phone; it is a thing you do in the room, standing on the thing.
+  const [cardio, setCardio] = useState(null);
+  const [seconds, setSeconds] = useState(0);
+  const [note, setNote] = useState(null);
   const playerRef = useRef(player);
 
   const apply = (np) => {
@@ -41,7 +57,44 @@ export default function GymScreen() {
     rememberSpot('gym', np);
   };
 
+  // The console's own clock. Only ticks while somebody is standing on the deck.
+  useEffect(() => {
+    if (!cardio) return undefined;
+    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [cardio]);
+
+  const { dist, moving } = useCardio({
+    active: !!cardio,
+    onMilestone: (item) => setNote(`Milestone — you picked up ${item.name}.`),
+  });
+
+  const stepOn = (code, at, kind) => {
+    playSfx('confirm');
+    setNote(null);
+    setSeconds(0);
+    setCardio({
+      station: kind,
+      from: { ...playerRef.current },
+      base: { miles: dist.miles, steps: dist.steps },
+    });
+    // Walking onto the machine IS the animation: the same tween every other
+    // step in this room uses, so the character steps up rather than cutting to
+    // a screen where they are already running.
+    apply({ x: at.x, y: at.y, facing: 'up' });
+  };
+
+  const stepOff = () => {
+    playSfx('cancel');
+    if (cardio) apply({ ...cardio.from });
+    setCardio(null);
+    setNote(null);
+  };
+
   const move = (dir) => {
+    // On the deck you are on the deck. Getting off is the button, the way it is
+    // the bar on a real one.
+    if (cardio) return;
     const { x, y } = playerRef.current;
     const nx = dir === 'left' ? x - 1 : dir === 'right' ? x + 1 : x;
     const ny = dir === 'up' ? y - 1 : dir === 'down' ? y + 1 : y;
@@ -53,6 +106,10 @@ export default function GymScreen() {
       // answer. Anything else in the room is just a wall.
       const station = interactionForCode(code, GYM);
       setFacingStation(station);
+      if (station && station.cardio) {
+        stepOn(code, { x: nx, y: ny }, station.cardio);
+        return;
+      }
       if (station && station.screen) {
         playSfx('confirm');
         // Coach is the goal conversation until you have a companion, and the
@@ -73,16 +130,44 @@ export default function GymScreen() {
     }
   };
 
+  const sessionMiles = cardio ? Math.max(0, dist.miles - cardio.base.miles) : 0;
+  const sessionSteps = cardio ? Math.max(0, dist.steps - cardio.base.steps) : 0;
+
   return (
     <WorldScreen
       map={GYM}
       player={player}
       onMove={move}
       place="Quest Fitness"
-      objective={facingStation ? facingStation.label : 'Walk into any equipment to use it'}
-      menu={MENU}
+      objective={
+        cardio
+          ? `On the ${cardio.station === 'rower' ? 'rower' : 'deck'} — only real movement counts`
+          : facingStation
+            ? facingStation.label
+            : 'Walk into any equipment to use it'
+      }
+      menu={cardio ? [] : MENU}
       onSelect={(item) => navigate(item.value)}
-      status={<CompanionStatus companion={companion} stats={state.stats} />}
+      showControl={!cardio}
+      status={
+        cardio ? (
+          <>
+            <KeepAwakeOnDeck />
+            <CardioConsole
+            station={cardio.station}
+            seconds={seconds}
+            miles={sessionMiles}
+            steps={sessionSteps}
+            bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}
+            moving={moving}
+            note={note}
+              onStop={stepOff}
+            />
+          </>
+        ) : (
+          <CompanionStatus companion={companion} stats={state.stats} />
+        )
+      }
     />
   );
 }
