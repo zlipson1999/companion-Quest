@@ -16,6 +16,16 @@ import { outfitPalette } from '../data/outfits';
 import { playerSprite, COACH_SPRITE } from '../data/characters';
 import { useGame } from '../state';
 
+// Codes whose material is large enough to show its repeat get the same field
+// treatment as the ground: a canopy or a roof reads as one mass rather than the
+// same bush stamped in a row.
+const FIELD_CODES = {
+  T: 'tile_tree',
+  W: 'tile_wall',
+  h: 'tile_roof_rest',
+  y: 'tile_roof_gym',
+};
+
 // Tile code -> sprite key. Animated tiles list their frames.
 const TILE_SPRITES = {
   '.': ['tile_grass', 'tile_grass_b'],
@@ -69,12 +79,20 @@ const PROP_SPRITES = {
   N: 'prop_reception',
 };
 
-// Interiors have their own ground tile, so a room does not fall back to grass
-// where it has no explicit code.
-const FLOOR_BY_MAP = {
-  gym: ['tile_gym_floor', 'tile_gym_floor_b'],
-  home: ['tile_home_floor', 'tile_home_floor_b'],
-};
+// Ground is a FIELD, not a tile: one texture windowed across a FIELD_SPAN block
+// so it runs continuously and its repeat is four tiles apart instead of one.
+// A 16x16 tile stamped everywhere puts a seam on every square, which is what
+// makes a floor read as a grid of chunks however good the tile itself is.
+const FIELD_SPAN = 4;
+
+const GROUND_FIELD = 'tile_grass';
+const FIELD_BY_MAP = { gym: 'tile_gym_floor', home: 'tile_home_floor' };
+
+function groundKey(prefix, x, y) {
+  const col = ((x % FIELD_SPAN) + FIELD_SPAN) % FIELD_SPAN;
+  const row = ((y % FIELD_SPAN) + FIELD_SPAN) % FIELD_SPAN;
+  return `${prefix}_f${row * FIELD_SPAN + col}`;
+}
 
 const WATER_FRAME_MS = 620;
 
@@ -168,7 +186,8 @@ function variantFor(x, y, count) {
 
 // The full stack for one cell: ground, material, diagonal notches, shading.
 function layersFor(map, code, x, y, frame, floor) {
-  const ground = floor || ['tile_grass', 'tile_grass_b', 'tile_grass_c', 'tile_grass_d'];
+  const field = floor || GROUND_FIELD;
+  const ground = groundKey(field, x, y);
   const isFloorCode = code === '.' || code === ',' || (floor && code === '#');
 
   let layers;
@@ -183,12 +202,17 @@ function layersFor(map, code, x, y, frame, floor) {
       ...innerCorners(map, x, y, WATER_CODES, 'tile_water'),
     ];
   } else if (isFloorCode) {
-    layers = [{ key: ground[variantFor(x, y, ground.length)] }];
+    // Flowers are an overlay now, so the ground runs on underneath them.
+    layers = code === ',' && !floor
+      ? [{ key: ground }, { key: 'prop_flowers' }]
+      : [{ key: ground }];
   } else if (PROP_SPRITES[code]) {
-    layers = [{ key: ground[variantFor(x, y, ground.length)] }, { key: PROP_SPRITES[code] }];
+    layers = [{ key: ground }, { key: PROP_SPRITES[code] }];
+  } else if (FIELD_CODES[code]) {
+    layers = [{ key: groundKey(FIELD_CODES[code], x, y) }];
   } else {
-    const keys = TILE_SPRITES[code] || ground;
-    layers = [{ key: keys[variantFor(x, y, keys.length)] }];
+    const keys = TILE_SPRITES[code];
+    layers = [{ key: keys ? keys[variantFor(x, y, keys.length)] : ground }];
   }
 
   // Contact shading, only onto ground the player can see past — a wall does not
@@ -207,7 +231,7 @@ function layersFor(map, code, x, y, frame, floor) {
 export function Tile({ code, s, frame, x, y, floor, map }) {
   const layers = map
     ? layersFor(map, code, x, y, frame, floor)
-    : [{ key: (floor || ['tile_grass'])[0] }];
+    : [{ key: groundKey(floor || GROUND_FIELD, x, y) }];
   const base = SPRITES[layers[0] && layers[0].key];
   if (!base) return <View style={{ width: s, height: s, backgroundColor: palette.grass }} />;
   const cell = s / base.grid[0].length;
@@ -274,7 +298,7 @@ export default function TileMap({ map, player, tileSize, style }) {
   }, [player.x, player.y, s, pos]);
 
   // Rows are static once the map is set; only the player and water move.
-  const floor = FLOOR_BY_MAP[map.id];
+  const floor = FIELD_BY_MAP[map.id];
   const rows = useMemo(
     () =>
       map.grid.map((row, y) => (

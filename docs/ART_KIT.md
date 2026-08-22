@@ -68,6 +68,38 @@ green, appliance grey, terracotta bedding — without dragging a mismatched patc
 of floor in with it. A prop carrying its own floor is the same mistake that made
 the ground go patchy when the autotiles were generated procedurally.
 
+## Fields — why the grid stopped showing
+
+Autotiling fixed the joins *between* materials. It did nothing about the repeat
+*within* one: a 16x16 grass tile stamped across a field puts an identical
+16-pixel patch on every square, and the eye reads that as chunks however good
+the tile is.
+
+Large materials are **fields** instead. `convert_texture_atlas.py` resolves the
+same atlas cell at 64x64, and `field_slices()` cuts it into a 4x4 block of
+tiles that line up edge to edge. `TileMap` picks the window by world position
+(`groundKey`), so the texture runs continuously across four tiles and its repeat
+is four times further apart, with no seam inside the block at all. Grass, path,
+water, canopy, walls and roofs all work this way; the indoor floors are the same
+idea drawn procedurally (`home_floor_field`, `gym_floor_field`).
+
+Two details matter:
+
+- **The field has to actually tile.** The atlas cells are inset a few pixels to
+  keep the separator lines out of the game, and that inset breaks whatever
+  tiling the painted swatch had — invisible over 16px, a clear seam every four
+  tiles at 64px. `make_seamless()` cross-fades the cell with its own half-roll
+  so every border pixel comes from the middle of the original.
+- **Nothing drawn per tile may land on a tile edge.** The indoor floors drew
+  their board and panel seams at fixed positions, which drew the grid for us.
+  Across a field the boards run for four tiles and the butt joints stagger
+  course by course, and the gym's panel joints sit two tiles apart at low
+  contrast.
+
+Decoration follows the same rule: flowers are a transparent overlay
+(`prop_flowers`), not a tile, because a solid 16x16 square of different texture
+in the middle of continuous grass is exactly the chunk being removed.
+
 ## Autotiling
 
 A path drawn as one sprite per square butts a hard edge against the grass, and

@@ -2100,6 +2100,16 @@ def hsh(x, y, seed=0):
     return ((n ^ (n >> 16)) & 0xffff) / 65536.0
 
 
+def mottle_field(c, ramp_name, base, spread, seed, size, cell=2):
+    """mottle() over an arbitrary extent, for textures larger than one tile."""
+    for y in range(0, size, cell):
+        for x in range(0, size, cell):
+            v = base + (hsh(x // cell, y // cell, seed) - 0.5) * 2 * spread
+            for dy in range(cell):
+                for dx in range(cell):
+                    c.put(x + dx, y + dy, ramp_name, v)
+
+
 def mottle(c, ramp_name, base, spread, seed, cell=2):
     """Low-frequency value noise in CLUSTERS.
 
@@ -2274,6 +2284,50 @@ def blended_tile(ground, over, mask, seed, rim_mul=0.72):
                 row += DIGITS[g_off + gi]
         rows.append(row)
     return colors, rows
+
+
+FIELD_SPAN = 4          # tiles across one field texture
+
+
+def field_slices(name, span=FIELD_SPAN):
+    """Cut one large texture into span x span tiles that line up edge to edge.
+
+    A 16x16 ground tile repeated across a field shows its seam every square, and
+    that is what makes a floor read as a grid of chunks however good the tile
+    is. Windowing one 64x64 texture instead makes the ground continuous across
+    a 4x4 block, so the repeat is four times further apart and there is no seam
+    inside it at all.
+    """
+    blob = _raw_traced(name)
+    if not blob:
+        return None
+    rows = blob['rows']
+    size = len(rows)
+    step = size // span
+    colors = ['transparent'] + list(blob['palette'])
+    out = []
+    for ty in range(span):
+        for tx in range(span):
+            tile_rows = [
+                ''.join(
+                    DIGITS[TRACE_INDEX[rows[ty * step + y][tx * step + x]]]
+                    for x in range(step)
+                )
+                for y in range(step)
+            ]
+            out.append((colors, tile_rows))
+    return out
+
+
+def field_from_canvas(canvas, span=FIELD_SPAN):
+    """Same idea for a procedurally drawn field."""
+    rows = canvas.resolve()
+    step = len(rows) // span
+    out = []
+    for ty in range(span):
+        for tx in range(span):
+            out.append([row[tx * step:(tx + 1) * step] for row in rows[ty * step:(ty + 1) * step]])
+    return out
 
 
 def flipped_traced(name, horizontal=False, vertical=False):
@@ -2621,6 +2675,46 @@ def tile_home_floor(variant=0):
     return c
 
 
+def home_floor_field(span=FIELD_SPAN):
+    """Floorboards laid across a whole 4x4 block of tiles.
+
+    Drawn per tile, the board seams landed on every tile edge and drew the grid
+    for us. Across a field the boards run for four tiles, the butt joints
+    stagger course by course, and no seam coincides with a tile boundary except
+    by accident.
+    """
+    size = TILE * span
+    c = Canvas(size, size, 'couch')
+    mottle_field(c, 'body', 0.56, 0.05, 61, size, cell=2)
+    course = 0
+    for by in range(0, size, 6):
+        c.rect(0, by, size - 1, by, 'body', 0.34)            # board seam
+        c.rect(0, by + 1, size - 1, by + 1, 'body', 0.72)    # lit lip below it
+        # Joints move along by a third of a board each course, the way boards
+        # are actually laid, so no two courses break in the same place.
+        offset = (course * 11) % 21
+        for bx in range(offset, size, 21):
+            c.rect(bx, by + 1, bx, by + 5, 'body', 0.40)
+        course += 1
+    return c
+
+
+def gym_floor_field(span=FIELD_SPAN):
+    """Rubber matting in panels several tiles across."""
+    size = TILE * span
+    c = Canvas(size, size, 'gym')
+    mottle_field(c, 'belly', 0.52, 0.05, 41, size, cell=2)
+    # Panels two tiles across and barely there. At one-and-a-bit tiles with a
+    # hard value step they read as a grid drawn over the floor, which is the
+    # thing being got rid of — matting has joints, but you should have to look.
+    for k in range(0, size, 32):
+        c.rect(k, 0, k, size - 1, 'belly', 0.47)
+        c.rect(k + 1, 0, k + 1, size - 1, 'belly', 0.56)
+        c.rect(0, k, size - 1, k, 'belly', 0.47)
+        c.rect(0, k + 1, size - 1, k + 1, 'belly', 0.56)
+    return c
+
+
 # -------------------------------------------------------------------------
 # PROPS
 #
@@ -2778,6 +2872,27 @@ def prop_plant():
     for cx, cy in ((8, 5), (5, 7), (11, 7), (7, 3), (10, 3)):
         c.sphere(cx, cy, 2.6, 2.4, 'body', ambient=0.5)
     c.rect(5, 15, 10, 15, 'ink', 0)
+    return c
+
+
+def prop_flowers():
+    """Blossoms scattered over whatever ground they sit on.
+
+    The flower TILE was a solid 16x16 square of a different texture, which in
+    the middle of continuous grass is exactly the chunk we are trying to get rid
+    of. As an overlay the ground runs underneath it unbroken.
+    """
+    c = _prop('bloom')
+    for cx, cy, ramp in (
+        (3, 5, 'leaf'), (9, 3, 'belly'), (13, 8, 'leaf'),
+        (6, 11, 'belly'), (11, 13, 'leaf'), (2, 12, 'belly'),
+    ):
+        c.put(cx, cy, ramp, 0.92)
+        c.put(cx - 1, cy, ramp, 0.74)
+        c.put(cx + 1, cy, ramp, 0.74)
+        c.put(cx, cy - 1, ramp, 0.80)
+        c.put(cx, cy + 1, ramp, 0.46)
+        c.put(cx, cy + 2, 'body', 0.40)      # a short stem
     return c
 
 
@@ -3159,6 +3274,40 @@ def build_all():
         traced_palettes[pal_key] = colors
         s[key] = {'palette': pal_key, 'grid': rows}
 
+    # Ground fields: one texture windowed across a 4x4 block of tiles, so the
+    # ground has no seam on any tile edge and its repeat is four tiles apart
+    # rather than one. This is what stops a floor reading as a grid of chunks.
+    def add_field(prefix, slices):
+        if not slices:
+            return False
+        for i, (colors, rows) in enumerate(slices):
+            key = '%s_f%d' % (prefix, i)
+            pal_key = 'art_' + key
+            traced_palettes[pal_key] = colors
+            s[key] = {'palette': pal_key, 'grid': rows}
+        return True
+
+    def add_canvas_field(prefix, canvas):
+        pal = canvas.palette
+        for i, rows in enumerate(field_from_canvas(canvas)):
+            s['%s_f%d' % (prefix, i)] = {'palette': pal, 'grid': rows}
+
+    for _field, _prefix in (
+        ('field_grass', 'tile_grass'),
+        ('field_path', 'tile_path'),
+        ('field_water', 'tile_water'),
+        ('field_water_b', 'tile_waterb'),
+        ('field_tree', 'tile_tree'),
+        ('field_wall', 'tile_wall'),
+        ('field_roof_rest', 'tile_roof_rest'),
+        ('field_roof_gym', 'tile_roof_gym'),
+    ):
+        if add_field(_prefix, field_slices(_field)):
+            used_traced.add(_field)
+
+    add_canvas_field('tile_home_floor', home_floor_field())
+    add_canvas_field('tile_gym_floor', gym_floor_field())
+
     # Two more ground variants, as flips of the painted originals.
     add_blended('tile_grass_c', flipped_traced('tile_grass', horizontal=True),
                 lambda: tile_grass(2))
@@ -3210,6 +3359,7 @@ def build_all():
     add('prop_table', prop_table()); add('prop_counter', prop_counter())
     add('prop_fridge', prop_fridge()); add('prop_stairs', prop_stairs())
     add('prop_plant', prop_plant()); add('prop_bookshelf', prop_bookshelf())
+    add('prop_flowers', prop_flowers())
     add('prop_lockers', prop_lockers()); add('prop_pullup_bar', prop_pullup_bar())
     add('prop_kettlebells', prop_kettlebells()); add('prop_rower', prop_rower())
     add('prop_reception', prop_reception())

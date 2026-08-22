@@ -324,6 +324,14 @@ equipment *is* the menu, so the room demonstrates the systems the tutorial used
 to explain in a wall of text. Interiors also stopped being carpeted in lawn:
 maps declare an `id` and `FLOOR_BY_MAP` gives them floorboards or rubber matting.
 
+**Ground is a field, not a tile.** A 16x16 tile stamped everywhere puts an
+identical patch on every square, which reads as chunks however good the tile is.
+Grass, path, water, canopy, walls, roofs and both indoor floors are 64x64
+textures windowed across a 4x4 block by world position, so they run continuously
+and repeat four tiles apart. The atlas cells are made tileable first
+(`make_seamless`), and nothing drawn per tile is allowed to land on a tile edge.
+See `docs/ART_KIT.md`.
+
 **Autotiling.** Paths and water pick a sprite from which cardinal neighbours
 share their material, so edges pull back and feather only where the material
 actually ends, with diagonal notch overlays and contact shading south/east of
