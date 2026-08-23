@@ -16,6 +16,8 @@ are landed where they already existed (Brineling, Dusthorn, Mireblink,
 Pinepuff, Clinket, Glintfoal, Propfin, Zapram, Nectlet, Chipmagma,
 Bellbun, Mumblewool — magenta keyed out, never matted into the body).
 Bellbun's green leaves, purple blush, and bluebell flowers stay.
+Propfin's teal eyes stay; Clinket's verdigris stays;
+Glintfoal's purple mane and energy-flame legs stay. Magenta is chroma only.
 Nectlet's golden honeycomb and amber stay. Chipmagma's lava orange
 stays. Magenta is chroma only.
 Families still waiting on a plate use an interim isolated drawing from

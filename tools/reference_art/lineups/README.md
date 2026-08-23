@@ -15,6 +15,9 @@ is the three attached Create Your Companion faces, isolated from magenta.
 | `gale.png` | Gale | Whistlet, Kitefin, Loftburr | Scenic sky — lineup only |
 | `canopy.png` | Canopy | Fernap, Dapple, Stillcup | Scenic forest — lineup only |
 | `stillcup_family.png` | Stillcup family | Stillcup, Dewbasin, Rainhold | Ground strip — lineup only |
+| `propfin_family.png` | Propfin family | Propfin, Mangrusk, Rootback | Magenta field — lineup only |
+| `clinket_family.png` | Clinket family | Clinket, Bellstride, Canyonchime | Magenta field — lineup only |
+| `glintfoal_family.png` | Glintfoal family | Glintfoal, Astramare, Cometmane | Magenta field — lineup only |
 
 The locked prompt that produced them is `tools/CHARACTER_PROMPT.md`.
 A lineup is three **species**. Each species still owes a family plate

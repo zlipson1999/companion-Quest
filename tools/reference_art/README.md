@@ -50,6 +50,31 @@ sun-rune stone golem (named masters `dusthorn` / `mesaquill` /
 `suncerast`; magenta chroma keyed, yellow runes stay). Do not
 loosen the check. The skill is `tools/CHARACTER_PROMPT.md`.
 
+
+**Propfin family (Mangrove Maze / Rootwater Boardwalk).** Named
+masters `propfin` / `mangrusk` / `rootback`. Magenta chroma keyed;
+teal eyes and cream throats stay. Stage 1 is a kawaii frog-spider
+(six stubby legs; far-right leg wears the green+olive spots).
+Stage 2 is an elongated coral gecko with tan staghorn branches —
+not a recolor of the frog-head. Stage 3 is a forest tortoise
+carrying a miniature grove. Approval plate: `lineups/propfin_family.png`.
+
+**Clinket family (Copper Canyon / Echo Rail).** Named masters
+`clinket` / `bellstride` / `canyonchime`. Magenta chroma keyed;
+verdigris on bronze stays. Stage 1 is a sitting pup whose ears
+are bells with clappers. Stage 2 is an upright biped with a
+hollow bell tail — not a larger pup. Stage 3 is a bronze armor
+golem (bell helmet, yellow slit eyes, bell pauldrons). Approval
+plate: `lineups/clinket_family.png`.
+
+**Glintfoal family (Starfall Prairie / Cometgrass Run).** Named
+masters `glintfoal` / `astramare` / `cometmane`. Magenta chroma
+keyed; purple manes, hooves, and energy-flame legs stay. Stage 1
+is a navy kid with white stars and a galaxy tuft. Stage 2 is a
+slender constellation horse (mane swept left). Stage 3 is a
+midnight steed whose lower legs are purple flames ending in
+white stars. Approval plate: `lineups/glintfoal_family.png`.
+
 **Bellbun family (Bluebell Downs / Petalwind Path).** Named masters
 `bellbun` / `chimehare` / `bloomrunner`. Magenta chroma keyed; green
 leaves, purple blush, and bluebell flowers stay. Stage 1 is a plump
