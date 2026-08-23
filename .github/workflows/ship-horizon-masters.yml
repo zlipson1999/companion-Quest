@@ -1,9 +1,9 @@
-name: Ship Horizon first-pass masters
+name: Ship Horizon concept masters
 
 on:
   workflow_dispatch:
   push:
-    branches: [horizon-pipeline-masters]
+    branches: [horizon-concept-masters]
 
 permissions:
   contents: write
@@ -14,27 +14,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: horizon-pipeline-masters
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install Pillow
         run: pip install pillow
 
-      - name: Generate, convert, rebuild sprites
+      - name: Generate convert rebuild validate
         run: bash tools/ship_horizon_masters.sh
 
-      - name: Commit generated masters
+      - name: Commit all generated assets
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A tools/reference_art tools/traced_*.json tools/make_sprites.py src/data/sprites.js src/data/h*.js src/data/horizonSprites.js src/components/PixelSprite.js docs/ tools/check_docs.py tools/check_art.py || true
+          git add tools/reference_art/
+          git add tools/make_sprites.py src/data/sprites.js docs/ tools/ship_horizon_masters.sh tools/gen_horizon_masters.py || true
+          git add tools/lineups/ 2>/dev/null || true
+          find tools -maxdepth 1 -name 'traced_*.json' -print0 | xargs -0 -r git add
+          git status --short | head -40
           if git diff --staged --quiet; then
             echo "No asset changes to commit"
           else
-            git commit -m "Horizon first-pass masters: 120 unique stage plates (CI ship)"
-            git push origin HEAD:horizon-pipeline-masters
+            git commit -m "Horizon concept masters: 120 forms into sprites.js"
+            git push origin HEAD:horizon-concept-masters
           fi
