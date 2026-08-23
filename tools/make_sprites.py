@@ -152,7 +152,7 @@ PALETTE_SPECS = {
     'rug':     {'body': ('#4a1f18', '#c96a4a'), 'leaf': ('#5c4a2a', '#ead8ae'),
                 'belly': ('#3a2418', '#a08060')},
     'item':    {'body': ('#7a1440', '#ff9dc0'), 'leaf': ('#a8801a', '#ffe486'), 'belly': ('#1d6b3a', '#8ef0a8')},
-    # The Kinship Knot: waxed cord and a wooden bead. Its own palette because
+    # The Kinship Knot: waxed cord and a leather hitch. Its own palette because
     # the item ramps are candy-bright and a braided cord is not.
     'cord':    {'body': ('#5c3418', '#e0a463'), 'leaf': ('#3a1f0c', '#b8763a'), 'belly': ('#6b4a2a', '#f4d9a8')},
     'rock':    {'body': ('#2f3040', '#c8ccdc'), 'leaf': ('#4a4d63', '#e2e6f2'), 'belly': ('#3a3c4f', '#d4d8e8')},
@@ -2091,8 +2091,13 @@ def item_knot():
     for i, (bx, by) in enumerate(((10, 17), (13, 19))):
         c.rect(bx, by, bx + 1, by + 3, 'body', 0.62 if i else 0.74)
         c.rect(bx, by + 3, bx + 1, by + 3, 'leaf', 0.30)
-    c.blob(11, 12, 2.2, 2.0, 'belly', 0.90)              # the bead over the crossing
-    c.put(10, 11, 'belly', 1.0)
+    # Leather hitch at the crossing — a 4x3 band with two stitch marks.
+    # The old cream bead sat here; a knot is worn, never a thrown container.
+    c.rect(10, 11, 13, 13, 'leaf', 0.40)
+    c.rect(10, 11, 13, 11, 'body', 0.74)
+    c.rect(10, 13, 13, 13, 'leaf', 0.16)
+    c.put(11, 12, 'leaf', 0.06)
+    c.put(12, 12, 'leaf', 0.06)
     c.rim('leaf'); c.outline(); return c
 
 

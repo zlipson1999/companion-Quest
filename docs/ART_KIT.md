@@ -5,15 +5,11 @@ artwork — no companion falls back to a procedural stand-in, and `build_all()`
 fails if traced art reaches no sprite. Their indexed outputs live as
 `tools/traced_<name>.json`, which is what the generator reads.
 
-**15 of the 18 transparent masters are committed** in `tools/reference_art/`.
-The three first-bond BASE forms — `sproutle`, `emberkit`, `dewbble` — have
-traced JSON but no master in the repo, and none is in the history either. That
-is a **provenance gap, not a naming quirk**: this project's first
-non-negotiable is original expression *with documented provenance*, and for
-those three the committed chain starts at the indexed output rather than at a
-source image. Re-committing their masters (or re-tracing them from masters that
-are) is the fix; until then the gap is stated here rather than rounded up to
-"all 18", which is what this file used to say.
+**17 of the 18 transparent masters are committed** in `tools/reference_art/`.
+The first-bond bases `sproutle` and `emberkit`, and the signed KEEP evos, are
+traced from the pixel sheets. **`dewbble` still has no master** — stage 1 stays
+the shipped teardrop, and its chain starts at the indexed output. That remaining
+gap is stated here rather than rounded up to "all 18".
 
 The authored world-material atlas lives in `assets/textures/masters/`.
 `tools/convert_texture_atlas.py` turns its cells into indexed runtime tiles;

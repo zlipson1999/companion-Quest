@@ -65,12 +65,15 @@ export default function BoardScreen() {
     if (tab === 'records') {
       const out = await acc.run(() => api.records(acc.token));
       setRecords(out ? out.movements || [] : []);
+      if (out) playSfx('board_update');
     } else {
       const out = await acc.run(() => api.board(acc.token, tab));
       setBoard(out);
+      if (out) playSfx('board_update');
     }
   }, [acc, tab]);
 
+  useEffect(() => { playSfx('noticeboard'); }, []);
   useEffect(() => { load(); }, [tab, acc.signedIn]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!acc.signedIn) {
@@ -123,7 +126,7 @@ export default function BoardScreen() {
             label={b.tab}
             tone={tab === b.id ? 'primary' : 'paper'}
             selected={tab === b.id}
-            onPress={() => { playSfx('cursor'); setTab(b.id); }}
+            onPress={() => { playSfx('board_tab'); setTab(b.id); }}
             style={{ flex: 1, marginRight: i < BOARDS.length - 1 ? 4 : 0 }}
           />
         ))}

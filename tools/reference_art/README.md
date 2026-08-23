@@ -1,17 +1,14 @@
 # Companion-family reference art
 
 These transparent PNGs are the visible source files for the committed part of
-the companion roster: **15 of the 18**. The three first-bond BASE forms —
-`sproutle`, `emberkit`, `dewbble` — have `traced_<name>.json` but no master
-here, and none is in the history either, so for those three the committed chain
-starts at the indexed output rather than at a source image. That is a provenance
-gap to close, not a naming quirk; `docs/ART_KIT.md` states it too, and
+the companion roster: **17 of the 18**. `sproutle` and `emberkit` plus the
+signed KEEP evos (Bloomtail, Groveheart, Pyrelynx, Cindermane, Tidewade,
+Maelstride) are traced from the pixel sheets. **`dewbble` still has no master**
+— stage 1 stays the shipped teardrop. `docs/ART_KIT.md` states the gap, and
 `tools/check_docs.py` counts the files in this directory so the number cannot
-drift back to "all 18". The first-bond-family evolutions were isolated from concept
-images supplied by the project owner on 2026-08-22; `pyrelynx.png` was
-reconstructed from the family design after its original local attachment became
-unavailable. The Pebblepup, Wispurr and Sporelet families were generated as
-original project artwork and then given a separate alpha-extraction pass.
+drift back to "all 18". The Pebblepup, Wispurr and Sporelet families were
+generated as original project artwork and then given a separate alpha-extraction
+pass.
 
 Generate an indexed source with:
 
