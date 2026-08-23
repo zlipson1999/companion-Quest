@@ -16,3 +16,13 @@ export { loadGame, saveGame, clearGame } from './storage';
 export { blankDay, dayIn, stamp, trim, lastDays, weekOf, previousWeekOf, totals, isActive, weekStart } from './history';
 export { computeRecovery, loadOf, weeklyLoads } from './recovery';
 export { useDistance } from './useDistance';
+export {
+  encounterContext,
+  meetsEncounter,
+  eligibleCompanions,
+  encounterMeterScale,
+  personalityLine,
+  evolveChecklist,
+  bondMilestoneText,
+  liveOnMember,
+} from './companionLife';

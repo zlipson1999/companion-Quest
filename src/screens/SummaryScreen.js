@@ -5,6 +5,7 @@ import React from 'react';
 import { ScrollView, View } from 'react-native';
 import { Screen, Window, ProgressBar, HPBar, PixelText, PixelButton, PixelSprite } from '../components';
 import { EVO_SOURCES, evolveHint, evolveProgress } from '../state/evolution';
+import { evolveChecklist, bondMilestoneText } from '../state/companionLife';
 import { palette, space } from '../theme';
 import { useGame, useCompanion, useModules } from '../state';
 import { useNav } from './navContext';
@@ -38,6 +39,9 @@ export default function SummaryScreen() {
   // companion.creature at the top of the page, so this used to throw
   // the moment you walked into the desk.
   const evo = companion ? evolveProgress(companion, companion.creature, companion.level) : null;
+  const checks = companion ? evolveChecklist(companion, companion.creature, companion.level) : null;
+  const milestone = companion ? bondMilestoneText(companion.creature, companion.bond) : null;
+  const memories = (companion && companion.memories) || [];
   const s = state.stats;
   // The same diff the cardio console runs, against a zero baseline: the
   // console reports the walk you are on and forgets it when you go home, and
@@ -95,6 +99,30 @@ export default function SummaryScreen() {
                   <PixelText size="tiny" color={evo.ready ? palette.secondary : palette.windowBorderLight} style={{ marginTop: 5, lineHeight: 13 }}>
                     {evolveHint(companion, companion.creature, companion.level)}
                   </PixelText>
+                  {checks ? (
+                    <View style={{ marginTop: 8 }}>
+                      {checks.map((row) => (
+                        <PixelText
+                          key={row.key}
+                          size="tiny"
+                          color={row.ok ? palette.secondary : palette.windowBorderLight}
+                          style={{ marginTop: 3 }}
+                        >
+                          {row.label} {row.ok ? '✓' : `${Math.round(row.have * 10) / 10} / ${row.need}`}
+                        </PixelText>
+                      ))}
+                    </View>
+                  ) : null}
+                  {companion.creature.passive ? (
+                    <PixelText size="tiny" color={palette.windowBorderLight} style={{ marginTop: 8, lineHeight: 13 }}>
+                      {companion.creature.passive.name} — {companion.creature.passive.text}
+                    </PixelText>
+                  ) : null}
+                  {milestone ? (
+                    <PixelText size="tiny" color={palette.accent} style={{ marginTop: 6, lineHeight: 13 }}>
+                      {milestone}
+                    </PixelText>
+                  ) : null}
                   <PixelText size="tiny" color={palette.windowBorderLight} style={{ marginTop: 5, lineHeight: 13 }}>
                     Earned from {Object.values(EVO_SOURCES).map((s) => s.label).join(', ')}.
                   </PixelText>
@@ -172,6 +200,24 @@ export default function SummaryScreen() {
                   {/* A hold is measured in seconds and a routine in times done;
                       only a rep count is a count of repetitions. */}
                   {e.kind === 'hold' ? `${e.amount}s` : e.kind === 'workout' ? `x${e.amount}` : e.amount}
+                </PixelText>
+              </View>
+            ))}
+          </Window>
+        ) : null}
+
+        {memories.length ? (
+          <Window tone="cream" pad={12} style={{ marginTop: space.md }}>
+            <PixelText size="small" color={palette.accentDark} style={{ marginBottom: 6 }}>
+              Memories
+            </PixelText>
+            {memories.slice().reverse().map((m) => (
+              <View key={m.id} style={{ marginTop: 8 }}>
+                <PixelText size="tiny" color={palette.windowText}>
+                  {m.title}
+                </PixelText>
+                <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 3, lineHeight: 13 }}>
+                  {m.detail}{m.at ? `  ·  ${m.at}` : ''}
                 </PixelText>
               </View>
             ))}

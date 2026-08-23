@@ -17,6 +17,7 @@ import {
   awardPin,
   emptyTrails,
   setActiveTrail,
+  getRoute,
 } from '../data/routes';
 import { xpProgress, levelFromXp, maxHpFor } from './leveling';
 import { loadGame, saveGame, clearGame } from './storage';
@@ -25,6 +26,14 @@ import { computeRecovery } from './recovery';
 import { XP_PER_MILE, pointsFor, xpFor } from './evolution';
 import { CREDIT_PER_GOAL, CREDIT_PER_MILE, CREDIT_PER_SESSION, CREDIT_PER_WIN, mint } from './economy';
 import { FRESH, hydrateSave } from './hydrate';
+import {
+  liveOnMember,
+  applyHeartstone,
+  moduleEvent,
+  trailMilesForPassive,
+  encounterContext,
+  blankBehaviors,
+} from './companionLife';
 import {
   MODULES,
   getModule,
@@ -104,10 +113,22 @@ function logModule(state, payload, { mintCredit = true } = {}) {
   const evo =
     pointsFor(module.training ? 'session' : 'habit') +
     (result.goalJustHit ? pointsFor('habit') : 0);
-  const next = updateActive(state, (m) => applyEffect(m, { ...result.reward, evo }));
+  const ev = moduleEvent(moduleId);
+  const next = updateActive(state, (m) => {
+    let mem = applyEffect(m, { ...result.reward, evo });
+    if (ev) {
+      mem = liveOnMember(mem, ev, {
+        goalJustHit: result.goalJustHit,
+        amount: 1,
+        routeId: state.trails && state.trails.activeId,
+      }, state);
+    }
+    return mem;
+  });
   const earned = mintCredit && result.goalJustHit ? mint(state, CREDIT_PER_GOAL) : null;
+  const withHeart = applyHeartstone(next, (result.reward && result.reward.bond) || 0);
   return {
-    ...next,
+    ...withHeart,
     ...(earned ? { credits: earned.credits } : {}),
     modules: { ...state.modules, [moduleId]: result.state },
     history: remember(state, {
@@ -156,7 +177,7 @@ function reducer(state, action) {
         ...state,
         started: true,
         goalId,
-        party: [{ id: starterId, baseId: starterId, xp: 0, bond: 0, evo: 0, hp: maxHp }],
+        party: [{ id: starterId, baseId: starterId, xp: 0, bond: 0, evo: 0, hp: maxHp, behaviors: blankBehaviors(), memories: [] }],
         activeIndex: 0,
         dex: { ...state.dex, [starterId]: 'owned' },
         bag: { ...state.bag, knot: (state.bag.knot || 0) + STARTING_KNOTS },
@@ -190,18 +211,31 @@ function reducer(state, action) {
       // step's worth on its own would floor every one of them to zero.
       const carry = (state.stats.xpCarry || 0) + mi * XP_PER_MILE * (pacing.mileXpMult || 1);
       const walkXp = Math.floor(carry);
-      const withEvo = updateActive(state, (m) =>
-        applyEffect(m, {
+      const active = state.party[state.activeIndex];
+      const activeCreature = active ? getCreature(active.id) : null;
+      const lifeCtx = encounterContext(state, { trailId: action.payload.routeId, sessionMiles: mi });
+      const trailMi = trailMilesForPassive(activeCreature, mi, lifeCtx);
+      const todayMi = ((state.history && state.history[today()] && state.history[today()].distanceMi) || 0) + mi;
+      const withEvo = updateActive(state, (m) => {
+        let mem = applyEffect(m, {
           xp: walkXp,
           evo: hitMilestones ? pointsFor('milestone', hitMilestones) : 0,
-        })
-      );
+        });
+        mem = liveOnMember(mem, 'distance', {
+          miles: mi,
+          routeId: action.payload.routeId,
+          outdoor: !!action.payload.routeId,
+          milestone: hitMilestones > 0,
+          todayMiles: todayMi,
+        }, state);
+        return mem;
+      });
       // Walking is where credit comes from. Minted on the same fractional carry
       // as the XP above, for the same reason.
       const earned = mint(state, mi * CREDIT_PER_MILE);
       // Only outdoor trail distance fills a trail quota. The gym's deck
       // dispatches the same action without a routeId on purpose.
-      const trails = addTrailMiles(state.trails, action.payload.routeId, mi);
+      const trails = addTrailMiles(state.trails, action.payload.routeId, trailMi);
       return {
         ...withEvo,
         trails,
@@ -289,10 +323,17 @@ function reducer(state, action) {
         bond: m.bond + bond,
         hp: clamp(companionHp != null ? companionHp : (m.hp == null ? memberMaxHp(m) : m.hp), 0, memberMaxHp(m)),
       }));
+      const afterLife = warden && routeId
+        ? updateActive(next, (m) => liveOnMember(m, 'pin', {
+          routeId,
+          pinName: (getRoute(routeId) && getRoute(routeId).pinName) || routeId,
+        }, next))
+        : next;
+      const withHeart = applyHeartstone(afterLife, bond);
       const won = mint(state, CREDIT_PER_WIN);
       const pin = warden && routeId ? awardPin(state.trails, routeId) : { trails: state.trails, first: false };
       return {
-        ...next,
+        ...withHeart,
         trails: pin.trails,
         // First Warden win: the pin is on the trail record; a Knot is the
         // invitation that trail just opened.
@@ -323,7 +364,16 @@ function reducer(state, action) {
       if (state.party.length >= MAX_PARTY) return state;
       const dex = { ...state.dex, [creatureId]: 'owned' };
       const maxHp = maxHpFor(getCreature(creatureId), levelFromXp(xp));
-      const member = { id: creatureId, baseId: creatureId, xp, bond, evo: 0, hp: hp != null ? hp : maxHp };
+      const member = {
+        id: creatureId,
+        baseId: creatureId,
+        xp,
+        bond,
+        evo: 0,
+        hp: hp != null ? hp : maxHp,
+        behaviors: blankBehaviors(),
+        memories: [{ id: 'met', at: today(), title: 'Met', detail: `You met ${getCreature(creatureId).name}.` }],
+      };
       return { ...state, party: [...state.party, member], dex, stats: { ...state.stats, caught: state.stats.caught + 1 } };
     }
 
@@ -382,7 +432,11 @@ function reducer(state, action) {
     case 'REST_DAY': {
       const day = (state.history || {})[today()];
       if (day && day.rested) return state;
-      const next = updateActive(state, (m) => applyEffect(m, { bond: 6, heal: 40 }));
+      const next = updateActive(state, (m) => {
+        let mem = applyEffect(m, { bond: 6, heal: 40 });
+        mem = liveOnMember(mem, 'recovery', { amount: 1 }, state);
+        return mem;
+      });
       return { ...next, history: remember(state, { rested: true, bond: 6 }) };
     }
 
@@ -415,12 +469,18 @@ function reducer(state, action) {
     case 'COMPLETE_WORKOUT': {
       const { xp = 0, bond = 0 } = action.payload.reward || {};
       const mult = pacingForGoal(state.goalId).workoutXpMult || 1;
-      const next = updateActive(state, (m) =>
-        applyEffect({ ...m, xp: m.xp + Math.round(xp * mult), bond: m.bond + bond }, { evo: pointsFor('session') })
-      );
+      const next = updateActive(state, (m) => {
+        let mem = applyEffect(
+          { ...m, xp: m.xp + Math.round(xp * mult), bond: m.bond + bond },
+          { evo: pointsFor('session') }
+        );
+        mem = liveOnMember(mem, 'workout', { amount: 1 }, state);
+        return mem;
+      });
+      const withHeart = applyHeartstone(next, bond);
       const paid = mint(state, CREDIT_PER_SESSION);
       return {
-        ...next,
+        ...withHeart,
         credits: paid.credits,
         history: remember(state, {
           xp: Math.round(xp * mult),
@@ -450,15 +510,27 @@ function reducer(state, action) {
     case 'RECORD_PR': {
       const n = Math.max(0, action.payload.count || 0);
       if (!n) return state;
-      const next = updateActive(state, (m) =>
-        applyEffect(m, { xp: xpFor('pr', n), evo: pointsFor('pr', n) })
-      );
+      const next = updateActive(state, (m) => {
+        let mem = applyEffect(m, { xp: xpFor('pr', n), evo: pointsFor('pr', n) });
+        mem = liveOnMember(mem, 'pr', { count: n }, state);
+        return mem;
+      });
       return { ...next, history: remember(state, { xp: xpFor('pr', n) }) };
     }
 
     case 'EVOLVE': {
       const { newId } = action.payload;
-      const next = updateActive(state, (m) => ({ ...m, id: newId, hp: maxHpFor(getCreature(newId), levelFromXp(m.xp)) }));
+      const next = updateActive(state, (m) => {
+        const from = getCreature(m.id);
+        const to = getCreature(newId);
+        let mem = { ...m, id: newId, hp: maxHpFor(to, levelFromXp(m.xp)) };
+        mem = liveOnMember(mem, 'evolve', {
+          fromName: from && from.name,
+          toName: to && to.name,
+          toId: newId,
+        }, state);
+        return mem;
+      });
       return { ...next, dex: { ...state.dex, [newId]: 'owned' } };
     }
 
