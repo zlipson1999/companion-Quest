@@ -19,7 +19,7 @@ export const CONTROL_MODES = [
 
 export default function MoveControl({ onMove, hint, style }) {
   const { state } = useGame();
-  const mode = (state.settings && state.settings.control) || 'stick';
+  const mode = (state.settings && state.settings.control) || 'dpad';
 
   return (
     <View style={[{ alignItems: 'center' }, style]}>

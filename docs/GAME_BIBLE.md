@@ -325,7 +325,7 @@ are grown, never knotted.
   is nothing to meet — so the hook hands back the delta and the caller decides.
   **Gym cardio must not pass `routeId`.** Indoor miles still count as real
   walking (XP, credit, lifetime stats) but they do not fill a trail quota.
-- **Six trails** (`src/data/routes.js`), save `version: 9`. Maple Trail is
+- **Six trails** (`src/data/routes.js`), save `version: 10`. Maple Trail is
   unlocked from the start. Walk that trail's miles and confirm its reps in
   challenges, then Challenge the Warden. First win grants the Quest Pin, a
   Kinship Knot, and the next trail. Wild companion pick is random from that
@@ -763,10 +763,10 @@ board_update, friend_request, friend_accept + bgm_town / bgm_battle loops.
 `audio/sfx.js` wraps expo-av; every call degrades silently (web autoplay,
 early calls). BGM switching lives in Router via TOWN_BGM.
 
-## 12. Save format — `companionquest:save:v1` key, `version: 9`
+## 12. Save format — `companionquest:save:v1` key, `version: 10`
 
 ```js
-{ version: 9, started, goalId,                    // 'muscle'|'lean'|'root'
+{ version: 10, started, goalId,                    // 'muscle'|'lean'|'root'
   playerOutfit, playerGender,                     // one-time, v6
   party: [{ id, baseId, xp, bond, evo, hp }],     // ≤6
   activeIndex,

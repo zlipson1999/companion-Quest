@@ -7,7 +7,7 @@ import { rollAllModules, todayKey } from '../modules';
 import { DEFAULT_BODY_WEIGHT_LB } from './cardioMaths';
 import { trim } from './history';
 
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
@@ -59,11 +59,12 @@ export const FRESH = {
   dex: {},
   modules: {},
   history: {},
-  // 'stick' by default: crossing a map one deliberate tap per square is the
-  // single most tiring thing about the overworld.
+  // 'dpad' by default: a tap per square is precise on a phone screen, and the
+  // stick's hold-and-lean is easy to overshoot with. The stick stays one
+  // Options toggle away for anyone who prefers to glide.
   // bodyWeightLb is stored in pounds whatever the display unit is, so the
   // number never has to be reinterpreted when someone switches units.
-  settings: { muted: false, bgmMuted: false, units: 'lb', control: 'stick', bodyWeightLb: DEFAULT_BODY_WEIGHT_LB },
+  settings: { muted: false, bgmMuted: false, units: 'lb', control: 'dpad', bodyWeightLb: DEFAULT_BODY_WEIGHT_LB },
   // Rowan is only in the gym until the push-up contest is done.
   meta: { createdAt: todayKey(), lastPlayedDate: todayKey(), sparDone: false },
   // Per-trail miles, challenge reps, and Quest Pins. Gym miles never land here.
@@ -137,6 +138,13 @@ export function hydrateSave(saved) {
   // start Maple Trail at zero rather than being back-credited for miles
   // walked before trails existed — those miles were not trail-tagged.
   merged.trails = normalizeTrails(saved.trails);
+  // v10: the D-Pad became the default control. 'stick' in an older save was
+  // the shipped default, not a choice anyone made, so it migrates too —
+  // somebody who truly prefers the stick flips it back once in Options and
+  // that choice sticks from then on.
+  if ((saved.version || 1) < 10 && merged.settings.control === 'stick') {
+    merged.settings.control = 'dpad';
+  }
   merged.version = SAVE_VERSION;
 
   // v3 also moved "today" from a UTC date to a LOCAL one. A pre-v3

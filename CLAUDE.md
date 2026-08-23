@@ -139,7 +139,7 @@ counts steps off the accelerometer: peak detection with hysteresis and a
 refractory gap, foreground-only. See `docs/STEP_COUNTING.md`.
 
 **State shape** (persisted to AsyncStorage, auto-migrated by `version`, currently
-**9**): `{ started, goalId, playerOutfit, playerGender, party:[{id,baseId,xp,
+**10**): `{ started, goalId, playerOutfit, playerGender, party:[{id,baseId,xp,
 bond,evo,hp}], activeIndex, credits, stats, bag, dex, modules, history,
 settings, meta, trails }`. Companion XP is a lifetime total; level/HP are derived
 (`src/state/leveling.js`). `useCompanion()` returns the active party member;
