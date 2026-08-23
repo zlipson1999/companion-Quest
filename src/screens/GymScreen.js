@@ -64,6 +64,20 @@ export default function GymScreen() {
     rememberSpot('gym', np);
   };
 
+  // Rowan does not wait to be found. The moment you are on the floor with a
+  // companion of your own — first bond just made, or a returning save that
+  // never had the contest — he interrupts with his push-up challenge. Once
+  // per visit to the room, read at mount: listing live deps here re-armed
+  // the cleanup on every render and the timer never survived to fire.
+  useEffect(() => {
+    if (!companion || state.meta.sparDone) return undefined;
+    const t = setTimeout(() => {
+      playSfx('confirm');
+      toBattle({ ...SPAR_PARAMS });
+    }, 1400);
+    return () => clearTimeout(t);
+  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+
   // The console's own clock. Only ticks while somebody is standing on the deck.
   useEffect(() => {
     if (!cardio) return undefined;
@@ -137,11 +151,13 @@ export default function GymScreen() {
           setTimeout(() => toBattle({ ...SPAR_PARAMS }), 140);
           return;
         }
-        // Coach is the goal conversation until you have a companion, and the
-        // chat after that. Re-running the goal screen on a live save would
-        // dispatch START_GAME and replace the party. Bumping her is the talk;
-        // walking through the door is not.
-        const target = code === 'C' && !companion ? 'goal' : station.screen;
+        // Coach is the welcome lessons until you have a companion — the one
+        // conversation that explains how the room, the kitchen, the bed and
+        // the habits all connect — and it flows into the goal talk where the
+        // starter is chosen. After that she is the chat. Re-running the goal
+        // screen on a live save would dispatch START_GAME and replace the
+        // party, so the guard is the party itself.
+        const target = code === 'C' && !companion ? 'coachTutorial' : station.screen;
         setTimeout(() => navigate(target, station.params || {}), 140);
       }
       return;

@@ -187,8 +187,8 @@ export const BEDROOM = {
   ],
   zones: [{ field: 'tile_home_rug', x0: 3, y0: 5, x1: 7, y1: 9 }],
   interactions: {
-    e: { screen: 'habit', params: { moduleId: 'sleep' }, label: 'Bed — log last night' },
-    E: { screen: 'habit', params: { moduleId: 'sleep' }, label: 'Bed — log last night' },
+    e: { screen: 'habit', params: { moduleId: 'sleep' }, verb: 'Rest', label: 'Bed — log last night' },
+    E: { screen: 'habit', params: { moduleId: 'sleep' }, verb: 'Rest', label: 'Bed — log last night' },
     k: { screen: 'habits', label: 'Desk — your daily habits' },
     o: { screen: 'index', label: 'Shelf — your creature index' },
     v: { screen: 'week', label: 'Screen — this week so far' },
@@ -274,8 +274,8 @@ const INTERACTIONS = {
   // goal conversation. GymScreen resolves it, because sending a live save
   // to the goal screen would re-run START_GAME and replace the party.
   // Bumping her is how you talk. Shelf sessions live on the gym menu.
-  C: { screen: 'coach', label: 'Coach Maple — she will talk with you' },
-  A: { screen: 'sparIntro', label: 'Rowan — he wants a challenge with his companion' },
+  C: { screen: 'coach', verb: 'Talk', label: 'Coach Maple — she will talk with you' },
+  A: { screen: 'sparIntro', verb: 'Talk', label: 'Rowan — he wants a challenge with his companion' },
   // The two zones at the south end. Each opens the routine it is FOR rather
   // than the list of all of them: you walked to the turf, so you already
   // said which one you wanted.

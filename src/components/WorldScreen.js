@@ -20,6 +20,53 @@ import Screen from './Screen';
 import HorizonSky from './HorizonSky';
 import { palette, space, screen, tokens, scale } from '../theme';
 import { OUTDOOR_WORLD_TONE, sceneTone } from '../data/sceneSky';
+import { tileAt, isWalkable, interactionForCode } from '../data/maps';
+
+// What is within reach: the interactive thing on the tile the player faces,
+// falling back to any adjacent one. Walking into a thing still uses it — this
+// only makes the possibility VISIBLE, as a button, so nobody stands beside a
+// bed or a person wondering what to press.
+const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+
+function reachableThing(map, player) {
+  if (!player) return null;
+  const order = [player.facing, 'up', 'left', 'right', 'down'];
+  for (const dir of order) {
+    if (!DIRS[dir]) continue;
+    const x = player.x + DIRS[dir][0];
+    const y = player.y + DIRS[dir][1];
+    if (isWalkable(map, x, y)) continue;
+    const thing = interactionForCode(tileAt(map, x, y), map);
+    if (thing) return { dir, thing };
+  }
+  return null;
+}
+
+// The one button that touches the world. Gold, like every "do the thing"
+// button in the game, with the verb big and the thing named under it.
+function InteractButton({ verb, name, onPress }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${verb}: ${name}`}
+      style={({ pressed }) => ({
+        minHeight: scale.touchMin,
+        paddingHorizontal: space.lg,
+        paddingVertical: 8,
+        backgroundColor: pressed ? '#c79a2e' : palette.secondary,
+        borderWidth: 3,
+        borderColor: palette.ink,
+        alignItems: 'center',
+      })}
+    >
+      <PixelText size="small" color={palette.ink}>{verb.toUpperCase()}</PixelText>
+      <PixelText size="tiny" color={palette.inkSoft} style={{ marginTop: 2 }}>
+        {name}
+      </PixelText>
+    </Pressable>
+  );
+}
 
 // You should be able to see the whole place you are standing in.
 //
@@ -94,6 +141,7 @@ export default function WorldScreen({
   showControl = true,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const reach = showControl ? reachableThing(map, player) : null;
   const tile = worldTileFor(map);
   const worldW = map.cols * tile;
   const worldH = map.rows * tile;
@@ -158,6 +206,15 @@ export default function WorldScreen({
         <View style={{ width: worldW, height: worldH }}>
           <TileMap map={map} player={player} tileSize={tile} viewport={{ width: worldW, height: worldH }} />
         </View>
+        {reach && showControl ? (
+          <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: space.sm, alignItems: 'center' }}>
+            <InteractButton
+              verb={reach.thing.verb || 'Use'}
+              name={(reach.thing.label || '').split(' — ')[0]}
+              onPress={() => onMove(reach.dir)}
+            />
+          </View>
+        ) : null}
         {menu.length ? (
           <View style={{ position: 'absolute', top: TOP_INSET, right: space.sm }}>
             <MenuButton onPress={() => setMenuOpen(true)} />

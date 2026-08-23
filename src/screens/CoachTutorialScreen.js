@@ -1,32 +1,60 @@
-// Kept as copy, not as a route. HomeIntro used to dump onto this lecture;
-// reaching it called navigate('goal') and skipped Sunkist Lane. The walking
-// beat lives in the rooms (play-quality A18). Router no longer registers it.
+// Coach Maple's welcome: the one conversation that explains how the whole
+// game connects — the gym's iron, the kitchen at home, the bed, the habits —
+// before the goal talk where you meet your companion.
+//
+// Reached exactly once, by walking up to Maple with no companion yet. It ends
+// in the goal conversation (`goal`), which is where the starter is chosen, so
+// the order of the first morning is: lessons -> goal -> first bond -> and then
+// Rowan's push-up contest interrupts back on the gym floor (GymScreen).
+//
+// A live save with a party never lands here: re-running `goal` would dispatch
+// START_GAME over a real journey, so the complete guard stays in GymScreen.
 
 import React from 'react';
 import { View } from 'react-native';
 import { Screen, DualPane, DialogueBox, PixelText, PixelSprite, Window } from '../components';
 import { COACH_PORTRAIT } from '../data/characters';
 import { palette, space } from '../theme';
+import { useGame } from '../state';
 import { useNav } from './navContext';
 
 const lessons = [
-  { speaker: 'Coach Maple', text: 'You made it from home under your own power. That is the first rule here: real movement moves your journey.' },
-  { speaker: 'Coach Maple', text: 'I am Maple. I keep this gym, study how habits grow, and help trailkeepers listen to their companions.' },
-  { speaker: 'Coach Maple', text: 'Walking and running move you along trails. Real exercise builds Resolve during challenges. Water, food, sleep, stillness, and honest training logs all matter.' },
-  { speaker: 'Coach Maple', text: 'Growth records long-term progress. Effort earns Growth and bond; enough shared practice raises a companion’s level and can reveal a new form.' },
-  { speaker: 'Coach Maple', text: 'A Kinship Knot is an invitation, never a trap. You offer one loop and keep the other — the companion decides whether to pull it tight, and you can rotate who takes the lead.' },
-  { speaker: 'Coach Maple', text: 'Your Journal remembers progress. Supplies help on the trail. The Coach desk can answer wellness questions, but injuries and medical concerns belong with a qualified professional.' },
-  { speaker: 'Coach Maple', text: 'Recovery is part of training. When you need it, return home, go upstairs, and sleep. Rest restores Resolve; it is never something to feel guilty about.' },
-  { speaker: 'Coach Maple', text: 'There is no perfect season. The next plate is three companions — pick the one that recognizes you, the same way you picked your own face.' },
+  { speaker: 'Coach Maple', text: 'You made it here from your own front door. That is the first rule of this place: real movement is the only thing that moves your journey.' },
+  { speaker: 'Coach Maple', text: 'I am Maple. I keep Quest Fitness, and everything in this room works the same way — walk up to a thing to use it. The racks and iron build your own session. The mats run circuits. The deck and rower count only real movement.' },
+  { speaker: 'Coach Maple', text: 'The reception desk keeps your record, the whiteboard keeps your week, and the smoothie bar takes Trail Credit — which is minted by effort and nothing else. Nobody buys their way up here.' },
+  { speaker: 'Coach Maple', text: 'It does not stop at this door. Your kitchen at home logs what you actually ate. Your bed logs how you actually slept. Your desk keeps the habits. Water, food, sleep, stillness — they all feed the same journey the iron does.' },
+  { speaker: 'Coach Maple', text: 'And all of it lands in one place: your companion. Effort earns Growth and bond. Enough shared practice raises its level, and a life lived well enough can reveal a whole new form.' },
+  { speaker: 'Coach Maple', text: 'On the trails you will meet wild companions. A Kinship Knot is an invitation, never a trap — you offer one loop and keep the other, and the companion decides. Finishing strong is what convinces them.' },
+  { speaker: 'Coach Maple', text: 'Recovery is training too. When you are worn down, go home and sleep. Rest restores Resolve, and it is never something to feel guilty about.' },
+  { speaker: 'Coach Maple', text: 'So — before any of that, the real question. Walk with me a moment: what are you here to become? Answer honestly, because a companion is about to recognize you by it.' },
 ];
 
 export default function CoachTutorialScreen() {
+  const { dispatch } = useGame();
   const { navigate } = useNav();
   return (
     <Screen padTop={false}>
       <DualPane
-        top={<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.bgAlt }}><PixelText size="small" color={palette.secondary}>Quest Fitness</PixelText><PixelSprite spriteKey={COACH_PORTRAIT} size={166} accessibilityLabel="Coach Maple welcoming you to Quest Fitness" /><Window tone="dark" pad={7} style={{ marginTop: space.sm }}><PixelText size="tiny" color={palette.windowFill}>COACH MAPLE · TRAIL MENTOR</PixelText></Window></View>}
-        bottom={<View style={{ flex: 1, justifyContent: 'flex-end', padding: space.md }}><DialogueBox lines={lessons} onComplete={() => navigate('goal')} /></View>}
+        top={
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.bgAlt }}>
+            <PixelText size="small" color={palette.secondary}>Quest Fitness</PixelText>
+            <PixelSprite spriteKey={COACH_PORTRAIT} size={166} accessibilityLabel="Coach Maple welcoming you to Quest Fitness" />
+            <Window tone="dark" pad={7} style={{ marginTop: space.sm }}>
+              <PixelText size="tiny" color={palette.windowFill}>COACH MAPLE · TRAIL MENTOR</PixelText>
+            </Window>
+          </View>
+        }
+        bottom={
+          <View style={{ flex: 1, justifyContent: 'flex-end', padding: space.md }}>
+            <DialogueBox
+              lines={lessons}
+              onComplete={() => {
+                dispatch({ type: 'MARK_META', payload: { coachIntroDone: true } });
+                navigate('goal');
+              }}
+            />
+          </View>
+        }
       />
     </Screen>
   );
