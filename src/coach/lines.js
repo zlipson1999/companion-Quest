@@ -144,6 +144,13 @@ export function trainerSparLines(activeName, trainerName, companionName) {
   ];
 }
 
+export function wardenTrainerLines(activeName, trainerName, companionName, line) {
+  return [
+    { speaker: trainerName, text: line || `${companionName} stands with me. This trail is ours until you earn it.` },
+    { speaker: 'Coach Maple', text: `A Warden fight. ${activeName} carries the Resolve — you do the work. No Knot. Stay standing.` },
+  ];
+}
+
 export function wildIntro(activeName, wildName, isCompanion, grownForm) {
   if (isCompanion) {
     return [
@@ -185,7 +192,7 @@ export function noKnotLine() {
 
 export function pinLines(wardenName, pinName, nextTrail) {
   return [
-    { speaker: 'Narration', text: `${wardenName} yields. This trail is yours.` },
+    { speaker: 'Narration', text: `${wardenName} nods. The trail is yours.` },
     {
       speaker: 'Trail',
       text: nextTrail

@@ -383,6 +383,58 @@ export const CREATURES = {
     flavor: 'The grind that will not sit down. Hard days without recovery, given teeth.',
   },
 
+  // --- Horizon region Wardens' companions (cleared, not caught) ---
+  saltcramp: {
+    id: 'saltcramp', name: 'Saltcramp', sprite: 'brinegnash', palette: 'shore',
+    species: 'Skipped Water', kind: 'obstacle', type: 'tide', baseHp: 88, catchable: false,
+    flavor: 'A coastal cramp made of a dry bottle. Drink, then the blackwave yields.',
+  },
+  heatgrind: {
+    id: 'heatgrind', name: 'Heatgrind', sprite: 'cindergrind', palette: 'pyre',
+    species: 'Sun Overwork', kind: 'obstacle', type: 'ember', baseHp: 128, catchable: false,
+    flavor: 'Mesa heat with no pause. The plates remember the set you skipped resting.',
+  },
+  mirelurk: {
+    id: 'mirelurk', name: 'Mirelurk', sprite: 'couchlurk', palette: 'bloom',
+    species: 'Marsh Slump', kind: 'obstacle', type: 'rest', baseHp: 92, catchable: false,
+    flavor: 'The fen\'s couch. It sits in the reeds and will not float unless you rest honestly.',
+  },
+  nightsnooze: {
+    id: 'nightsnooze', name: 'Nightsnooze', sprite: 'snoozeghoul', palette: 'air',
+    species: 'Winter Snooze', kind: 'obstacle', type: 'rest', baseHp: 96, catchable: false,
+    flavor: 'Five more minutes in a snow cave. Night already did the work — you have to let it.',
+  },
+  muterail: {
+    id: 'muterail', name: 'Muterail', sprite: 'sludgewad', palette: 'chock',
+    species: 'Broken Streak', kind: 'obstacle', type: 'stone', baseHp: 100, catchable: false,
+    flavor: 'A copper bell that stopped ringing. Showing up unmutes it — skipping does not.',
+  },
+  stillhoof: {
+    id: 'stillhoof', name: 'Stillhoof', sprite: 'achefang', palette: 'samara',
+    species: 'Unwalked Mile', kind: 'obstacle', type: 'wind', baseHp: 104, catchable: false,
+    flavor: 'A prairie that never left the gate. The first honest mile is the fight.',
+  },
+  skipcomb: {
+    id: 'skipcomb', name: 'Skipcomb', sprite: 'sludgewad', palette: 'lantern',
+    species: 'Skipped Meal', kind: 'obstacle', type: 'grove', baseHp: 98, catchable: false,
+    flavor: 'A coffee-only day given a body. The orchard will not run on air.',
+  },
+  flathorn: {
+    id: 'flathorn', name: 'Flathorn', sprite: 'achefang', palette: 'spore',
+    species: 'Unmoved Heart', kind: 'obstacle', type: 'wind', baseHp: 110, catchable: false,
+    flavor: 'A ridge with no heartbeat. Cardio is the weather it cannot stand.',
+  },
+  rootrush: {
+    id: 'rootrush', name: 'Rootrush', sprite: 'cindergrind', palette: 'moss',
+    species: 'Skipped Recovery', kind: 'obstacle', type: 'tide', baseHp: 108, catchable: false,
+    flavor: 'A mangrove that will not stop. Rest is the training it refuses.',
+  },
+  voidglyph: {
+    id: 'voidglyph', name: 'Voidglyph', sprite: 'brinegnash', palette: 'quartz',
+    species: 'Erased Day', kind: 'obstacle', type: 'stone', baseHp: 132, catchable: false,
+    flavor: 'A ruin with the date scraped off. Kept days are the only thing that fills it.',
+  },
+
   // Horizon families (40 x 3). Reserved for named trails that are not
   // walkable yet. User plates still incoming — interim masters live in
   // tools/reference_art/ and were drawn by tools/horizon_kit.py.
@@ -402,6 +454,8 @@ export const WILD_COMPANION_IDS = [
 ];
 export const OBSTACLE_IDS = [
   'sludgewad', 'snoozeghoul', 'achefang', 'couchlurk', 'brinegnash', 'cindergrind',
+  'saltcramp', 'heatgrind', 'mirelurk', 'nightsnooze', 'muterail',
+  'stillhoof', 'skipcomb', 'flathorn', 'rootrush', 'voidglyph',
 ];
 export const ALL_CREATURE_IDS = Object.keys(CREATURES);
 
@@ -426,6 +480,14 @@ export function familyChain(rootId) {
   const chain = [];
   for (let id = rootId; id && !chain.includes(id); id = getCreature(id).evolvesTo) chain.push(id);
   return chain;
+}
+
+export function familyOf(creatureId) {
+  for (let i = 0; i < WILD_COMPANION_IDS.length; i += 1) {
+    const chain = familyChain(WILD_COMPANION_IDS[i]);
+    if (chain.includes(creatureId)) return chain;
+  }
+  return creatureId ? [creatureId] : [];
 }
 
 // The roster in the order a Creature Index should read: each companion family

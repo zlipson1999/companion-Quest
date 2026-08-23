@@ -13,12 +13,13 @@ import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { ENCOUNTERS } from '../data/obstacles';
 import { getCreature } from '../data/creatures';
+import { wardenSprite } from '../data/characters';
 import { isGrownForm } from '../data/wild';
 import { canEvolve } from '../state/evolution';
 import { battleMovesFor, movesLearnedBetween } from '../data/exercises';
 import {
   wildIntro,
-  sparIntro, trainerSparLines, movePrompt, moveLanded, victoryLines, defeatLines, levelUpLine, evolveLines,
+  sparIntro, trainerSparLines, wardenTrainerLines, movePrompt, moveLanded, victoryLines, defeatLines, levelUpLine, evolveLines,
   catchSuccessLines, catchFailLine, catchFullLine, noKnotLine, companionFledLines, swapLine,
   pinLines,
 } from '../coach';
@@ -100,7 +101,9 @@ export default function BattleScreen({ params }) {
     if (!companion) {
       return [{ speaker: 'Narration', text: 'Meet Coach Maple in the gym — then the trail has someone to stand with you.' }];
     }
-    return params.trainerBattle || params.trainer
+    return params.warden && params.trainerBattle
+      ? wardenTrainerLines(companion.creature.name, params.trainer || 'Warden', wild.name, params.trainerLine)
+      : params.trainerBattle || params.trainer
       ? trainerSparLines(companion.creature.name, params.trainer || 'Rowan', wild.name)
       : params.opponent
         ? sparIntro(companion.creature.name, wild.name)
@@ -254,11 +257,11 @@ export default function BattleScreen({ params }) {
           && state.trails.progress[params.routeId].pin
         );
         const firstPin = !!params.warden && !alreadyPinned;
-        dispatch({ type: 'WIN_BATTLE', payload: { xp: target.xp, bond: target.bond, targetId: target.targetId, companionHp, spar: !!(params.opponent || params.trainerBattle || params.sparIntro), warden: !!params.warden, routeId: params.routeId } });
+        dispatch({ type: 'WIN_BATTLE', payload: { xp: target.xp, bond: target.bond, targetId: target.targetId, companionHp, spar: !!(params.opponent || params.sparIntro || (params.trainerBattle && !params.warden)), warden: !!params.warden, routeId: params.routeId } });
         playSfx('victory');
         if (firstPin) {
           say(
-            pinLines(wild.name, params.pinName || 'Quest Pin', params.nextTrail),
+            pinLines(params.trainer || wild.name, params.pinName || 'Quest Pin', params.nextTrail),
             () => runLevelEvolveThen(beforeLevel, afterXp, finish)
           );
         } else {
@@ -361,7 +364,7 @@ export default function BattleScreen({ params }) {
   };
 
   const flee = () => {
-    if (params.sparIntro) return;
+    if (params.sparIntro || params.warden) return;
     playSfx('cancel');
     navigate(returnTo);
   };
@@ -390,18 +393,43 @@ export default function BattleScreen({ params }) {
             style={{ flex: 1, marginRight: space.lg }}
           />
           <Animated.View style={{ alignItems: 'center', marginTop: 2, transform: [{ translateX: wildEnter }] }}>
-            <PixelSprite
-              spriteKey={wild.sprite}
-              palette={wild.palette}
-              size={84}
-              bob={!wildFaint}
-              hitCount={wildHit}
-              lungeCount={wildLunge}
-              lungeDir={{ x: -0.9, y: 0.45 }}
-              fainting={wildFaint}
-            />
+            {params.warden && params.trainer ? (
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+                <PixelSprite
+                  spriteKey={wardenSprite(params.trainerKit || 'hero_man', 'down', 0)}
+                  palette={
+                    params.trainerKit === 'hero_woman' ? 'pc_woman'
+                      : params.trainerKit === 'hero_nonbinary' ? 'pc_nonbinary'
+                        : params.trainerKit === 'coach_maple' ? 'coach'
+                          : 'pc_man'
+                  }
+                  size={40}
+                />
+                <PixelSprite
+                  spriteKey={wild.sprite}
+                  palette={wild.palette}
+                  size={84}
+                  bob={!wildFaint}
+                  hitCount={wildHit}
+                  lungeCount={wildLunge}
+                  lungeDir={{ x: -0.9, y: 0.45 }}
+                  fainting={wildFaint}
+                />
+              </View>
+            ) : (
+              <PixelSprite
+                spriteKey={wild.sprite}
+                palette={wild.palette}
+                size={84}
+                bob={!wildFaint}
+                hitCount={wildHit}
+                lungeCount={wildLunge}
+                lungeDir={{ x: -0.9, y: 0.45 }}
+                fainting={wildFaint}
+              />
+            )}
             <DamagePop pop={wildPop} color={palette.secondary} />
-            <Platform width={92} tone={stageTone} />
+            <Platform width={params.warden && params.trainer ? 120 : 92} tone={stageTone} />
           </Animated.View>
         </View>
 
@@ -457,7 +485,7 @@ export default function BattleScreen({ params }) {
           onSelect={(opt) => startMove(opt.value)}
         />
         <View style={{ flexDirection: 'row', marginTop: space.sm }}>
-          {params.sparIntro ? null : (
+          {params.sparIntro || params.warden ? null : (
             <PixelButton label="Flee" tone="plain" sound="cancel" style={{ flex: 1, marginRight: 5 }} onPress={flee} />
           )}
           {party.members.length > 1 ? (

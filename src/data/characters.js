@@ -57,6 +57,11 @@ export function rowanSprite(facing = 'down', frame = 0) {
   return kitWalk('hero_man', facing, frame, ['hero_man_down', 'hero_down']);
 }
 
+export function wardenSprite(kit = 'hero_man', facing = 'down', frame = 0) {
+  const prefix = kit || 'hero_man';
+  return kitWalk(prefix, facing, frame, [`${prefix}_down`, 'hero_man_down', 'hero_down']);
+}
+
 export function playerPortrait(id) {
   const { portrait } = getCharacter(id);
   return SPRITES[portrait] ? portrait : 'portrait_woman';

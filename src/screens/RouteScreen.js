@@ -32,6 +32,7 @@ import {
   wardenBattle,
 } from '../data/routes';
 import { getCreature } from '../data/creatures';
+import { getWarden } from '../data/wardens';
 import { breakdownSince, formatBreakdown } from '../data/exercises';
 import { getWorkout } from '../data/workouts';
 import { outfitPalette } from '../data/outfits';
@@ -268,9 +269,14 @@ export default function RouteScreen({ params = {} }) {
     busyRef.current = true;
     const battle = wardenBattle(route);
     const c = getCreature(battle.creatureId);
+    const keeper = getWarden(route.id);
     dispatch({ type: 'SEE_CREATURE', payload: { id: battle.creatureId } });
     playSfx('encounter');
-    setMessage(`${c.name} — the Warden of ${route.name} — takes the path.`);
+    setMessage(
+      keeper
+        ? `${keeper.name} sends ${c.name} out. The Warden of ${route.name} takes the path.`
+        : `${c.name} — the Warden of ${route.name} — takes the path.`
+    );
     encTimer.current = setTimeout(() => toBattle(battle), 550);
   };
 

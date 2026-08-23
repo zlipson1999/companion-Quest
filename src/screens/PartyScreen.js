@@ -8,6 +8,7 @@ import { palette, space } from '../theme';
 import { useGame, useParty } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
+import { personalityOf, idleLine } from '../data/personality';
 
 export default function PartyScreen() {
   const { dispatch } = useGame();
@@ -67,6 +68,12 @@ export default function PartyScreen() {
                     <PixelText size="tiny" color={active ? palette.accent : palette.accentDark} style={{ marginTop: 6 }}>
                       {active ? 'ACTIVE' : 'tap to swap in'} · Bond {m.bond}
                     </PixelText>
+                    {personalityOf(m.creature) ? (
+                      <PixelText size="tiny" color={active ? palette.windowFill : palette.windowTextDim} style={{ marginTop: 4 }} numberOfLines={2}>
+                        {personalityOf(m.creature).tendency}
+                        {idleLine(m.creature) ? ` · ${idleLine(m.creature)}` : ''}
+                      </PixelText>
+                    ) : null}
                   </View>
                 </View>
               </Window>
