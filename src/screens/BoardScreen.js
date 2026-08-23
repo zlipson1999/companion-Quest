@@ -8,15 +8,19 @@
 // Personal bests are the exception and are not weekly, because a best is a
 // best. They are also the one board where being beaten is useful information
 // rather than just a position.
+//
+// One cork skin. Gym tile G opens this screen; Friends "See the boards" opens
+// the same one. Reception (N) stays Summary — not corked, not moved here.
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Screen, Window, PixelText, PixelButton, ProgressBar } from '../components';
-import { palette, space } from '../theme';
+import { Screen, PixelText, FieldCard, TrailAction, ObjectiveRibbon } from '../components';
+import { space, tokens, ramps } from '../theme';
 import { useAccount } from '../state/account';
 import { useNav } from './navContext';
 import api from '../net/api';
 import { getMovement } from '../data/movements';
+import { playSfx } from '../audio';
 
 const BOARDS = [
   { id: 'distance', tab: 'Miles' },
@@ -25,40 +29,28 @@ const BOARDS = [
   { id: 'records', tab: 'Bests' },
 ];
 
-function Row({ row, best }) {
-  const share = best > 0 ? Math.max(0.04, row.value / best) : 0;
-  return (
-    <View style={{ marginTop: 10 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <PixelText size="tiny" color={row.you ? palette.secondary : palette.windowText}>
-          {`${row.rank}. ${row.name}${row.you ? ' (you)' : ''}`}
-        </PixelText>
-        <PixelText size="tiny" color={row.you ? palette.secondary : palette.windowText}>
-          {row.display}
-        </PixelText>
-      </View>
-      <ProgressBar
-        value={share}
-        max={1}
-        height={8}
-        color={row.you ? palette.secondary : palette.primary}
-        style={{ marginTop: 4 }}
-      />
-      {/* Said out loud rather than folded in: a week a phone counted and a week
-          somebody typed are not the same claim. */}
-      {row.selfReported ? (
-        <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 3 }}>
-          includes self-reported days
-        </PixelText>
-      ) : null}
-    </View>
-  );
-}
+// Cork is the trail wood ramp — the same brown the noticeboard prop uses —
+// so pinned paper cards sit on a board, not on a stock ticker.
+const CORK = ramps.trail[0];
 
 function describeRecord(e) {
   if (e.kind === 'hold') return `${Math.round(e.amount)}s`;
   if (e.weight) return `${Math.round(e.weight)} lb x ${Math.round(e.amount)}`;
   return `${Math.round(e.amount)} reps`;
+}
+
+function WeekRow({ row }) {
+  return (
+    <FieldCard
+      tone="paper"
+      title={`${row.name}${row.you ? ' (you)' : ''}`}
+      caption={row.selfReported ? 'includes self-reported days' : undefined}
+      accent={row.you ? tokens.accent : undefined}
+      style={{ marginTop: space.sm }}
+    >
+      <PixelText size="small" color={tokens.textOnPaper}>{row.display}</PixelText>
+    </FieldCard>
+  );
 }
 
 export default function BoardScreen() {
@@ -83,106 +75,130 @@ export default function BoardScreen() {
 
   if (!acc.signedIn) {
     return (
-      <Screen style={{ padding: space.md }}>
-        <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
-          The Noticeboard
-        </PixelText>
-        <Window tone="cream" pad={12}>
-          <PixelText size="tiny" color={palette.windowText} style={{ lineHeight: 15 }}>
+      <Screen style={{ padding: space.md, backgroundColor: CORK }}>
+        <ObjectiveRibbon
+          place="The Noticeboard"
+          objective="this week among people you chose, resets Monday"
+          style={{ marginBottom: space.sm }}
+        />
+        <FieldCard tone="paper" title="Empty cork">
+          <PixelText size="tiny" color={tokens.textOnPaper} style={{ lineHeight: 15 }}>
             {acc.available
               ? 'Sign in and swap codes with a friend, and this board fills with the week you have both actually had.'
               : 'This copy has no server set up, so the noticeboard is empty. Everything else works as it always has.'}
           </PixelText>
-        </Window>
-        {acc.available ? (
-          <PixelButton label="Sign in" tone="primary" onPress={() => navigate('friends')} style={{ marginTop: space.md }} />
-        ) : null}
-        <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
+        </FieldCard>
+        <View style={{ marginTop: 'auto' }}>
+          {acc.available ? (
+            <TrailAction
+              label="Sign in"
+              tone="primary"
+              onPress={() => { playSfx('confirm'); navigate('friends'); }}
+              style={{ marginTop: space.md }}
+            />
+          ) : null}
+          <TrailAction
+            label={back.label}
+            tone="quiet"
+            onPress={() => { playSfx('cancel'); goBack(); }}
+            style={{ marginTop: space.sm }}
+          />
+        </View>
       </Screen>
     );
   }
 
-  const best = board && board.rows.length ? Math.max(...board.rows.map((r) => r.value)) : 0;
-
   return (
-    <Screen style={{ padding: space.md }}>
-      <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
-        The Noticeboard
-      </PixelText>
+    <Screen style={{ padding: space.md, backgroundColor: CORK }}>
+      <ObjectiveRibbon
+        place="The Noticeboard"
+        objective="this week among people you chose, resets Monday"
+        style={{ marginBottom: space.sm }}
+      />
 
       <View style={{ flexDirection: 'row', marginBottom: space.sm }}>
         {BOARDS.map((b, i) => (
-          <PixelButton
+          <TrailAction
             key={b.id}
             label={b.tab}
-            tone={tab === b.id ? 'primary' : 'plain'}
-            size="small"
-            sound="cursor"
-            onPress={() => setTab(b.id)}
-            style={{ flex: 1, marginRight: i < BOARDS.length - 1 ? 4 : 0, paddingHorizontal: 2 }}
+            tone={tab === b.id ? 'primary' : 'paper'}
+            selected={tab === b.id}
+            onPress={() => { playSfx('cursor'); setTab(b.id); }}
+            style={{ flex: 1, marginRight: i < BOARDS.length - 1 ? 4 : 0 }}
           />
         ))}
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {tab === 'records' ? (
-          <Window tone="cream" pad={12}>
-            <PixelText size="small" color={palette.accentDark}>Personal bests</PixelText>
-            <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4 }}>
-              Best single set — not the biggest day
-            </PixelText>
-            {(records || []).map((m) => (
-              <View key={m.movementId} style={{ marginTop: 12 }}>
-                <PixelText size="tiny" color={palette.windowText}>
-                  {(getMovement(m.movementId) || {}).name || m.movementId}
-                </PixelText>
-                {m.entries.map((e, i) => (
-                  <View key={e.id + i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-                    <PixelText size="tiny" color={e.you ? palette.secondary : palette.windowTextDim}>
-                      {`${e.name}${e.you ? ' (you)' : ''}`}
-                    </PixelText>
-                    <PixelText size="tiny" color={e.you ? palette.secondary : palette.windowText}>
-                      {describeRecord(e)}
-                    </PixelText>
-                  </View>
-                ))}
-              </View>
-            ))}
+          <>
+            <FieldCard tone="paper" title="Personal bests" caption="Best single set — not the biggest day">
+              <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ lineHeight: 15 }}>
+                One card per set. Being beaten here is useful information, not a position.
+              </PixelText>
+            </FieldCard>
+            {(records || []).flatMap((m) =>
+              m.entries.map((e, i) => (
+                <FieldCard
+                  key={`${m.movementId}-${e.id}-${i}`}
+                  tone="paper"
+                  title={(getMovement(m.movementId) || {}).name || m.movementId}
+                  caption={`${e.name}${e.you ? ' (you)' : ''}`}
+                  accent={e.you ? tokens.accent : undefined}
+                  style={{ marginTop: space.sm }}
+                >
+                  <PixelText size="small" color={tokens.textOnPaper}>{describeRecord(e)}</PixelText>
+                </FieldCard>
+              ))
+            )}
             {records && !records.length ? (
-              <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 10, lineHeight: 15 }}>
+              <PixelText size="tiny" color={tokens.textOnDark} style={{ marginTop: space.md, lineHeight: 15 }}>
                 No bests yet. Log a session in the Forge with the weight you actually lifted
                 and it lands here.
               </PixelText>
             ) : null}
-          </Window>
+          </>
         ) : (
-          <Window tone="cream" pad={12}>
-            <PixelText size="small" color={palette.accentDark}>{board ? board.label : 'Loading...'}</PixelText>
-            {board ? (
-              <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4 }}>
-                {`week of ${board.weekStart} · resets Monday`}
+          <>
+            <FieldCard
+              tone="paper"
+              title={board ? board.label : 'Loading...'}
+              caption={board ? `week of ${board.weekStart} · resets Monday` : undefined}
+            >
+              <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ lineHeight: 15 }}>
+                This week among people you chose. Miles, days and sessions only — no
+                lifetime total, no day-one score.
               </PixelText>
-            ) : null}
-            {board && board.rows.map((r) => <Row key={r.id} row={r} best={best} />)}
+            </FieldCard>
+            {board && board.rows.map((r) => <WeekRow key={r.id} row={r} />)}
             {board && board.rows.length === 1 ? (
-              <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 12, lineHeight: 15 }}>
+              <PixelText size="tiny" color={tokens.textOnDark} style={{ marginTop: space.md, lineHeight: 15 }}>
                 Just you so far. Swap trail codes with someone and you will both show up here.
               </PixelText>
             ) : null}
-          </Window>
+          </>
         )}
 
         {acc.error ? (
-          <PixelText size="tiny" color={palette.danger} style={{ marginTop: space.md, lineHeight: 14 }}>
+          <PixelText size="tiny" color={tokens.danger} style={{ marginTop: space.md, lineHeight: 14 }}>
             {acc.error}
           </PixelText>
         ) : null}
-
-        <PixelButton label="Friends and codes" tone="plain" size="small"
-          onPress={() => navigate('friends')} style={{ marginTop: space.md }} />
       </ScrollView>
 
-      <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
+      <View style={{ marginTop: space.sm }}>
+        <TrailAction
+          label="Friends and codes"
+          tone="paper"
+          onPress={() => { playSfx('confirm'); navigate('friends'); }}
+        />
+        <TrailAction
+          label={back.label}
+          tone="quiet"
+          onPress={() => { playSfx('cancel'); goBack(); }}
+          style={{ marginTop: space.sm }}
+        />
+      </View>
     </Screen>
   );
 }

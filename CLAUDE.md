@@ -912,8 +912,10 @@ boards, on the proxy that already existed for the Coach. Full design in
   your companion.
 - **Three of the four boards reset Monday.** An all-time board ranks seniority;
   a week gives everyone the same empty column. Bests are the exception.
-- The noticeboard hangs by reception (`G`). Cork and pinned cards, because a
-  board of your friends' weeks is notes somebody put up, not a stock ticker.
+- The noticeboard hangs by reception (`G`). One cork `BoardScreen` (paper
+  FieldCards, 44px TrailAction tabs, name + this week's amount; bests are
+  one-set cards, not a ladder). Reception `N` stays Summary. Friends "See the
+  boards" opens the same screen. Friends stays off the six-item hub menu.
 
 Two bugs found by driving it in a browser rather than reading it: `BarFill`
 wants an `Animated.Value` and took the board white when handed a number, and

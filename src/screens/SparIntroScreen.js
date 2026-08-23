@@ -16,12 +16,13 @@ import { Screen, DialogueBox, PixelSprite, PixelText, Window } from '../componen
 import { palette, space, tokens } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
-import { COACH_PORTRAIT } from '../data/characters';
+import { COACH_PORTRAIT, rowanSprite } from '../data/characters';
 
 // A training partner, not a creature. Named, so the contest has someone in it.
+// Sprite comes from the man kit walk_set — stand frame 0 while he is parked.
 export const SPAR_PARTNER = {
   name: 'Rowan',
-  sprite: 'hero_man_down',
+  sprite: rowanSprite('down', 0),
   palette: 'pc_man',
 };
 

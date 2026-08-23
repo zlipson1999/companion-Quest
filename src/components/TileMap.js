@@ -14,7 +14,7 @@ import PixelSprite from './PixelSprite';
 import { palette } from '../theme';
 import { SPRITES } from '../data/sprites';
 import { outfitPalette } from '../data/outfits';
-import { playerSprite, COACH_SPRITE } from '../data/characters';
+import { playerSprite, coachSprite, rowanSprite } from '../data/characters';
 import { useGame } from '../state';
 
 // Codes whose material is large enough to show its repeat get the same field
@@ -168,6 +168,10 @@ function groundKey(prefix, x, y) {
 }
 
 const WATER_FRAME_MS = 620;
+// Same duration as the step tween. After it the figure is parked and must
+// return to stand frame 0 — leaving them on a stride is what froze people
+// mid-step once they stopped walking.
+const STEP_MS = 120;
 
 // --- autotiling ----------------------------------------------------------
 //
@@ -395,22 +399,30 @@ export default function TileMap({ map, player, tileSize, style, viewport }) {
   };
   const cam = useRef(new Animated.ValueXY(cameraFor(player.x, player.y))).current;
   const [frame, setFrame] = useState(0);
-  const [stepFrame, setStepFrame] = useState(0);
+  const [walkFrame, setWalkFrame] = useState(0);
   const lastPos = useRef(`${player.x},${player.y}`);
+  const parkTimer = useRef(null);
 
   useEffect(() => {
     const t = setInterval(() => setFrame((f) => f + 1), WATER_FRAME_MS);
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => () => {
+    if (parkTimer.current) clearTimeout(parkTimer.current);
+  }, []);
+
   useEffect(() => {
-    Animated.timing(pos, { toValue: { x: player.x * s, y: player.y * s }, duration: 120, useNativeDriver: true }).start();
+    Animated.timing(pos, { toValue: { x: player.x * s, y: player.y * s }, duration: STEP_MS, useNativeDriver: true }).start();
     // Advance the walk cycle only on an actual move, so bumping a wall does not
-    // make the hero jog on the spot.
+    // make the hero jog on the spot. Once the tween finishes they are parked
+    // and the stand pose (frame 0) comes back.
     const key = `${player.x},${player.y}`;
     if (key !== lastPos.current) {
       lastPos.current = key;
-      setStepFrame((f) => (f + 1) % 2);
+      setWalkFrame((f) => (f === 1 ? 2 : 1));
+      if (parkTimer.current) clearTimeout(parkTimer.current);
+      parkTimer.current = setTimeout(() => setWalkFrame(0), STEP_MS);
     }
   }, [player.x, player.y, s, pos]);
 
@@ -418,7 +430,7 @@ export default function TileMap({ map, player, tileSize, style, viewport }) {
     if (!viewport) return;
     // Same duration as the step, so the world slides with the character rather
     // than chasing them.
-    Animated.timing(cam, { toValue: cameraFor(player.x, player.y), duration: 120, useNativeDriver: true }).start();
+    Animated.timing(cam, { toValue: cameraFor(player.x, player.y), duration: STEP_MS, useNativeDriver: true }).start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player.x, player.y, s, viewport && viewport.width, viewport && viewport.height]);
 
@@ -434,7 +446,10 @@ export default function TileMap({ map, player, tileSize, style, viewport }) {
               <View key={x} style={{ width: s, height: s }}>
                 <Tile code="." s={s} frame={frame} x={x} y={y} floor={floor} map={map} wallField={wallField} />
                 <View style={{ position: 'absolute', left: 0, top: 0 }}>
-                  <StandingSprite spriteKey={code === 'A' ? 'hero_man_down' : COACH_SPRITE} s={s} />
+                  <StandingSprite
+                    spriteKey={code === 'A' ? rowanSprite('down', 0) : coachSprite('down', 0)}
+                    s={s}
+                  />
                 </View>
               </View>
             ) : (
@@ -447,7 +462,7 @@ export default function TileMap({ map, player, tileSize, style, viewport }) {
   );
 
   const facing = player.facing || 'down';
-  const spriteKey = playerSprite(state.playerGender, facing, stepFrame === 0 ? 1 : 2);
+  const spriteKey = playerSprite(state.playerGender, facing, walkFrame);
 
   const world = (
     <Animated.View

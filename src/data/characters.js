@@ -29,16 +29,32 @@ export function getCharacter(id) {
 // facing is 'down' | 'up' | 'left' | 'right'; frame is 0 (idle) or 1/2 (steps).
 // Falls back a step at a time rather than to a literal, so a character that has
 // no art for a frame still draws that character rather than the placeholder.
-export function playerSprite(id, facing = 'down', frame = 0) {
-  const { prefix } = getCharacter(id);
+// Parked figures pass frame 0 — that is the stand pose from the kit walk_set.
+function kitWalk(prefix, facing, frame, fallbacks) {
   const suffix = frame === 1 ? '_a' : frame === 2 ? '_b' : '';
   const candidates = [
     `${prefix}_${facing}${suffix}`,
     `${prefix}_${facing}`,
-    `${prefix}_down`,
-    'hero_down',
+    ...fallbacks,
   ];
-  return candidates.find((key) => SPRITES[key]) || 'hero_down';
+  return candidates.find((key) => SPRITES[key]) || fallbacks[fallbacks.length - 1];
+}
+
+export function playerSprite(id, facing = 'down', frame = 0) {
+  const { prefix } = getCharacter(id);
+  return kitWalk(prefix, facing, frame, [`${prefix}_down`, 'hero_down']);
+}
+
+// Coach Maple's overworld set is walk_set('maple') off her kit card. Same
+// resolver as the player so a parked Maple is stand frame 0, not a one-off key.
+export function coachSprite(facing = 'down', frame = 0) {
+  return kitWalk('coach_maple', facing, frame, ['coach_maple']);
+}
+
+// Rowan uses the existing man kit walk (walk_set('man')), not a frozen
+// hero_man_down literal. There is no second Rowan card and no new walk pipeline.
+export function rowanSprite(facing = 'down', frame = 0) {
+  return kitWalk('hero_man', facing, frame, ['hero_man_down', 'hero_down']);
 }
 
 export function playerPortrait(id) {

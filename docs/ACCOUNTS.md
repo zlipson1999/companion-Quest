@@ -221,6 +221,9 @@ needed.
 | `src/screens/BoardScreen.js` | the four boards. |
 
 In the world: the noticeboard hangs on the front wall of Quest Fitness beside
-reception (`G` in the gym grid). Cork with pinned cards, because that is the
-honest object — a board of your friends' weeks is a few notes somebody put up,
-not a stock ticker.
+reception (`G` in the gym grid). `BoardScreen` is one cork skin — paper
+FieldCards pinned on the trail-wood ramp, 44px TrailAction tabs, name + this
+week's miles/days/sessions, bests as one-set cards. Reception (`N`) stays
+Summary. Friends "See the boards" opens this same screen. Cork with pinned
+cards, because that is the honest object — a board of your friends' weeks is a
+few notes somebody put up, not a stock ticker.
