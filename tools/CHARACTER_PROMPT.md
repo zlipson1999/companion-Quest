@@ -69,7 +69,7 @@ they have not read this file.
 
 - **Stillcup / Dewbasin / Rainhold** — was the same moss bowl
 - **Kitefin / Ribbonsail / Skysheet** — was the same kite; stage 3
-  snapped back
+  snapped back. Remade: diamond kite → swimming ray → living sky-sheet.
 - **Whistlet / Reedgale** — was an identical flute-bird
 - **Lanternbud line** — closed bud never opened
 - **Chockit / Crackwedge / Cliffchock** — was the same wedge plus an
@@ -89,6 +89,9 @@ of one prompt are not a family.
 - **Emberkit** (sitting cub) → **Pyrelynx** (standing flame-ear lynx)
   → **Cindermane** (fire-mane beast)
 - **Dewbble** (dewdrop) → **Tidewade** → **Maelstride**
+- **Kitefin** (diamond kite, hooded face, two ribbons) → **Ribbonsail**
+  (swimming manta/ray, four ribbons) → **Skysheet** (betta/manta sky
+  canvas). Never a bigger diamond or a snapback kite.
 - **Chockit** (conical banded chock) → **Crackwedge** (stood up,
   cracked into plates) → **Cliffchock** (cliff given limbs, diagonal
   strata). Not an outlined wedge.
