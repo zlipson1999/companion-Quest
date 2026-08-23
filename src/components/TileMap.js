@@ -79,7 +79,7 @@ const PROP_SPRITES = {
   j: 'prop_kettlebells',
   q: 'prop_rower',
   N: 'prop_reception',
-  G: 'prop_noticeboard',
+  r: 'prop_noticeboard',
   R: 'prop_rack_barbell',
   b: 'prop_rack_dumbbell',
   K: 'prop_machine',

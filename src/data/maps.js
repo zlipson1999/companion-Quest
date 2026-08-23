@@ -106,7 +106,7 @@ export const GYM = {
     'M...............|',
     'M.........CA....|',
     'M...............|',
-    'MLLL.NNG..JIJ...|',
+    'MLLL.NNr..JIJ...|',
     '========X========',
   ],
   zones: [
@@ -219,7 +219,7 @@ const BLOCKED = new Set([
   'W', '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w', 'C', 'A', 'V', 'O', 'Z',
   // Furniture. A rug is walkable; everything else you walk around.
   'e', 'E', 'v', 'k', 'f', 'a', 'c', 'F', 'o', 'p',
-  'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q', 'J', 'I', 'G',
+  'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q', 'J', 'I', 'r',
   // House furniture.
   'n', 'u', 'm', 'x', 'l', 'P', 'g',
   // Out on the lane.
@@ -259,7 +259,7 @@ const INTERACTIONS = {
   // same BoardScreen Friends opens. Do not cork Summary, and do not move the
   // boards onto N.
   N: { screen: 'summary', label: 'Reception — your record so far' },
-  G: { screen: 'board', label: 'Noticeboard — how your friends are doing' },
+  r: { screen: 'board', label: 'Noticeboard — how your friends are doing' },
   // Front of house. The bar is the one place credit is spent, and credit is
   // only ever minted by real effort — see src/state/economy.js.
   J: { screen: 'smoothiebar', label: 'Smoothie bar — blends, and Kinship Knots' },
@@ -333,6 +333,27 @@ export function triggerForCode(code) {
     default:
       return null;
   }
+}
+
+// A code that leads somewhere and a code that opens something must never be the
+// same letter.
+//
+// Every walking screen asks `interactionForCode` FIRST and falls through to
+// `triggerForCode`, so a shared interaction silently shadows a door. The
+// noticeboard was added on 'G' — which is the north gate — and Maple Lane's way
+// out to Route 1 became a noticeboard. Nothing complained: both codes were
+// valid, both tables were well formed, and the only symptom was a door that led
+// somewhere else.
+//
+// Picking the letter by checking the sprite tables is not enough; it has to be
+// free in the GRIDS and in every table that claims a code.
+const TRIGGER_CODES = ['D', 'd', 'G', 'X'];
+const shadowed = TRIGGER_CODES.filter((c) => INTERACTIONS[c]);
+if (shadowed.length) {
+  throw new Error(
+    `maps: ${shadowed.join(', ')} is both a trigger and a shared interaction — `
+    + 'the interaction wins and the door stops working.'
+  );
 }
 
 export const TRIGGER_LABELS = {
