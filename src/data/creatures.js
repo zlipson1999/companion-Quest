@@ -1,3 +1,5 @@
+import { HORIZON_CREATURES } from './horizonCreatures';
+
 // Original creature roster. Two kinds of wild creature:
 //  - befriendable COMPANIONS (catchable: starters + wild species), each of
 //    which can join your team; some evolve.
@@ -333,19 +335,19 @@ export const CREATURES = {
   stillcup: {
     id: 'stillcup', stage: 1, name: 'Stillcup', sprite: 'stillcup', palette: 'moss',
     species: 'Rain-Cup Companion', kind: 'wild', type: 'rest', baseHp: 58, catchable: true, catchRate: 0.52,
-    flavor: 'A moss cup that holds one bead of rain. Stillness is how it stays full.',
+    flavor: 'A moss-kid with a pearl of rain in a cabbage crown. Stillness is how it stays full.',
     evolvesTo: 'dewbasin', evolveLevel: 5, evolvePoints: 30,
   },
   dewbasin: {
     id: 'dewbasin', stage: 2, name: 'Dewbasin', sprite: 'dewbasin', palette: 'moss',
     species: 'Dew-Bowl Companion', kind: 'evolution', type: 'rest', baseHp: 100, scale: 1.18, catchable: false,
-    flavor: 'A wider bowl. The bead is a pool now.',
+    flavor: 'Bowl-shoulders hold the pool. A sleepy oblong head rises from the still water.',
     evolvesTo: 'rainhold', evolveLevel: 14, evolvePoints: 110,
   },
   rainhold: {
     id: 'rainhold', stage: 3, name: 'Rainhold', sprite: 'rainhold', palette: 'moss',
     species: 'Still-Basin Companion', kind: 'evolution', type: 'rest', baseHp: 154, scale: 1.32, catchable: false,
-    flavor: 'A basin that keeps the walk watered. You filled it by stopping.',
+    flavor: 'A walking basin. The face sits in the chest; the walk overflows because you stopped.',
     evolvesTo: null,
   },
 
@@ -380,6 +382,11 @@ export const CREATURES = {
     species: 'The Overwork', kind: 'obstacle', type: 'ember', baseHp: 120, catchable: false,
     flavor: 'The grind that will not sit down. Hard days without recovery, given teeth.',
   },
+
+  // Horizon families (40 x 3). Reserved for named trails that are not
+  // walkable yet. User plates still incoming — interim masters live in
+  // tools/reference_art/ and were drawn by tools/horizon_kit.py.
+  ...HORIZON_CREATURES,
 };
 
 export const STARTER_IDS = ['sproutle', 'emberkit', 'dewbble'];
@@ -391,6 +398,7 @@ export const TRAIL_COMPANION_IDS = [
 ];
 export const WILD_COMPANION_IDS = [
   ...STARTER_IDS, 'pebblepup', 'wispurr', 'sporelet', ...TRAIL_COMPANION_IDS,
+  ...HORIZON_COMPANION_IDS,
 ];
 export const OBSTACLE_IDS = [
   'sludgewad', 'snoozeghoul', 'achefang', 'couchlurk', 'brinegnash', 'cindergrind',

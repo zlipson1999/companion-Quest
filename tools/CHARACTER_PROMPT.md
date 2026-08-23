@@ -67,7 +67,10 @@ as baby / adolescent / adult. The gate still uses the same thresholds
 — do not loosen it. If the next agent ships three copies of one pose,
 they have not read this file.
 
-- **Stillcup / Dewbasin / Rainhold** — was the same moss bowl
+- **Stillcup / Dewbasin / Rainhold** — was the same moss bowl.
+  Remade: cabbage-crown moss-kid with a rain pearl → bowl-shouldered
+  sleeper (oblong head from the water) → walking basin, face in the
+  chest, overflowing water, pink rim flowers.
 - **Kitefin / Ribbonsail / Skysheet** — was the same kite; stage 3
   snapped back. Remade: diamond kite → swimming ray → living sky-sheet.
 - **Whistlet / Reedgale** — was an identical flute-bird
@@ -91,6 +94,10 @@ of one prompt are not a family.
 - **Emberkit** (sitting cub) → **Pyrelynx** (standing flame-ear lynx)
   → **Cindermane** (fire-mane beast)
 - **Dewbble** (dewdrop) → **Tidewade** → **Maelstride**
+- **Stillcup** (squat moss-kid, cabbage crown, rain pearl) →
+  **Dewbasin** (bowl-shouldered sleeper, oblong head from the pool,
+  six hovering droplets) → **Rainhold** (walking basin, face in the
+  chest, overflowing water, pink rim flowers). Never a tinted bowl.
 - **Dapple** (rotund kawaii moth, cream/chocolate split, camo scalloped
   wings) → **Glimmoth** (slender tattered-leaf flyer, pointed abdomen,
   glowing green eyes) → **Leaflight** (four serrated leaf-wings, banded
@@ -236,7 +243,7 @@ an isolated master.
 | Maple | Spinseed, Bramblet, Lanternbud | Seed between paper samara wings; walking thorn-knot; closed bud that holds sap-light. |
 | Cairn | Rubblet, Chockit, Facetel | Three stacked cairn stones; sedimentary climbing wedge; quartz cluster with a face in the heart facet. |
 | Gale | Whistlet, Kitefin, Loftburr | Reed-flute bird; diamond kite-ray with ribbon tails; seed-down parachute on thread legs. |
-| Canopy | Fernap, Dapple, Stillcup | Coiled fiddlehead; shade-moth with dappled wings; moss bowl holding still water. |
+| Canopy | Fernap, Dapple, Stillcup | Coiled fiddlehead; shade-moth with dappled wings; moss-kid holding a rain pearl. |
 
 Those are **stage-1 objects**. Their evolutions must become something
 else (see Worked passes). Several of the committed stage-2/3 masters

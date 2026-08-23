@@ -25,8 +25,10 @@ the species bar — look at them, do not ship them.
 **Each family is three different creatures that read as one life**
 (baby / adolescent / adult). A tint, scale, crop, or outline of the
 same pose is not a stage. The Gale/Canopy and Lanternbud/Chockit/Dapple
-lines were remade so `python3 tools/check_art.py` passes. Do not loosen
-the check. The skill is `tools/CHARACTER_PROMPT.md`.
+lines were remade so `python3 tools/check_art.py` passes. Stillcup is
+the moss-kid / bowl-sleeper / walking-basin line (named masters
+`stillcup` / `dewbasin` / `rainhold`; pink rim flowers stay). Do not
+loosen the check. The skill is `tools/CHARACTER_PROMPT.md`.
 
 - **Maple and Cairn** sit on a flat field. Split with
   `tools/split_lineup.py`, then convert. Stage-1 masters

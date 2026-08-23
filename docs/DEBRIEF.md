@@ -130,8 +130,16 @@ copy of hydrate/A1/A5/A10/A25/A32.
   golden key-wings and talons — not a bigger seed. Isolated masters
   and `traced_<id>.json` for those three ids. Family plate:
   `lineups/spinseed_family.png`.
-- **Stage bar remakes** for the other clone trail families (Stillcup,
-  Kitefin, Whistlet, Chockit, Dapple, Loftburr, and the rest of
+- **Stillcup family remade as moss-kid, bowl-sleeper, walking basin.**
+  `familyChain('stillcup')` is stillcup → dewbasin → rainhold.
+  Magenta is chroma; pink rim flowers on Rainhold stay. Stage 1 is a
+  squat cabbage-crown kid with a rain pearl — not a two-legged cup.
+  Stage 2 is bowl-shoulders and an oblong sleepy head rising from the
+  pool. Stage 3 is a walking basin with the face in the chest and
+  overflowing water — not a snap-back chibi. Isolated named masters
+  plus `lineups/stillcup_family.png`.
+- **Stage bar remakes** for the other clone trail families (Kitefin,
+  Whistlet, Chockit, Dapple, Loftburr, and the rest of
   Gale/Canopy). Each remade stage has its own isolated master and
   `traced_<id>.json`. Ids are permanent. `check_art.py` exits 0.
 

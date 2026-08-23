@@ -71,7 +71,9 @@ grown one" without being told.
 These used to fail the stage bar. They have been redrawn. The list
 stays so nobody ships the old pose three times again.
 
-- Stillcup / Dewbasin / Rainhold — same moss bowl, mouth tweak only
+- Stillcup / Dewbasin / Rainhold — same moss bowl, mouth tweak only;
+  remade as cabbage-crown moss-kid → bowl-shouldered sleeper →
+  walking basin (face in the chest, overflowing water, pink rim flowers)
 - Kitefin / Ribbonsail / Skysheet — same kite, stage 2 is bigger, stage 3 is stage 1
 - Whistlet / Reedgale — identical flute-bird
 - Lanternbud line — closed bud never opens
@@ -87,6 +89,9 @@ stays so nobody ships the old pose three times again.
 - Emberkit (sitting cub) → Pyrelynx (standing flame-ear lynx) →
   Cindermane (fire-mane beast)
 - Dewbble (dewdrop) → Tidewade → Maelstride
+- Stillcup (moss-kid, cabbage crown, rain pearl) → Dewbasin
+  (bowl-shoulders, oblong sleeper head) → Rainhold (walking basin,
+  face in the chest). Never a tinted bowl.
 - Dapple (rotund kawaii moth) → Glimmoth (slender tattered-leaf flyer) →
   Leaflight (four serrated leaf-wings, banded abdomen). Never the same round puff.
 - Spinseed (winged seed) → Whirlkey (same seed, walking legs) → Samaraile

@@ -351,7 +351,8 @@ the filenames. They must say "that's a kid, that's a teen, that's the
 grown one" without being told.
 
 Worked fails (historical — remade, thresholds unchanged): Stillcup line
-(same moss bowl); Kitefin line (same kite); Whistlet line (identical
+(same moss bowl — remade moss-kid / bowl-sleeper / walking basin);
+Kitefin line (same kite); Whistlet line (identical
 flute-bird); Lanternbud line (closed bud); Chockit line (same wedge);
 Dapple line (stage 3 snap-back — remade moth / camo flyer / four-leaf);
 Loftburr line (1024 regenerations).
