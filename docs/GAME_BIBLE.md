@@ -629,7 +629,7 @@ faint.
 4. `backlight()` (rim opposite the key light) and `spec()` (hotspots) are what
    read as "modern".
 
-### 8.3 Sprite inventory (139 runtime sprites + 416 atlas cells)
+### 8.3 Sprite inventory (259 runtime sprites + 416 atlas cells)
 
 - Creatures 48×48 authored @2× = 96 px: **54 companions — 18 families of 3
   stages**. The first six families are TRACED (sproutle→bloomtail→groveheart,
