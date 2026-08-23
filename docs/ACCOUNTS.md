@@ -101,6 +101,26 @@ database does not hand over live sessions. They last 90 days.
 is passed with the token or lost for good. After that the player renames
 themselves whenever they like.
 
+### The account carries the save
+
+Signing in is what makes a journey durable: the whole save blob rides to
+`PUT /save` (one row per player, ≤200 KB, last write wins) and comes back on a
+reinstall or a new phone. Two rules, no merge dialog:
+
+1. **A device with a started journey is the source of truth** — it uploads,
+   debounced off the ordinary save-to-disk path (`src/state/cloudSave.js`).
+2. **The cloud only ever fills an empty device.** It never overwrites progress
+   you can see in your hand, so a stale phone in a drawer cannot eat this
+   week's walks.
+
+The server never reads inside the blob, and the boards never rank anything from
+it — they still rank only the validated per-day rows in §1, so nothing a client
+writes into its own save can inflate anybody. Erase Save (Options) then playing
+on erases the cloud copy at the next push, because erase means erase; deleting
+the account deletes the blob row with everything else. The title screen has no
+start-over button — that is deliberate, and this is why: continuing is one tap,
+and erasing is a decision you walk to.
+
 ## 4. Running it
 
 The friends API lives on the **same** proxy as the Coach, so a player who has

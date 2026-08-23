@@ -115,6 +115,21 @@ const say = (ok, label, extra = '') =>
   b = await call('GET', '/board/distance', { token: who.Ada.token });
   say(b.json.rows.length === 1, 'unfriending hides them again');
 
+  // The game save rides on the account: put it up, get it back, byte for byte.
+  say((await call('GET', '/save')).status === 401, 'the save needs a token');
+  const ada = { version: 9, started: true, party: [{ id: 'sproutle', xp: 340 }], credits: 12 };
+  const put = await call('PUT', '/save', { token: who.Ada.token, body: { save: ada } });
+  const got = await call('GET', '/save', { token: who.Ada.token });
+  say(put.status === 200 && JSON.stringify(got.json.save) === JSON.stringify(ada),
+      'a save round-trips through the account');
+  say((await call('PUT', '/save', { token: who.Ada.token, body: { save: { started: true } } })).status === 400,
+      'a blob with no version number is refused');
+  const huge = { version: 9, pad: 'x'.repeat(210 * 1024) };
+  say((await call('PUT', '/save', { token: who.Ada.token, body: { save: huge } })).status === 413,
+      'an oversized save is refused');
+  const empty = await call('GET', '/save', { token: who.Rowan.token });
+  say(empty.status === 200 && empty.json.save === null, 'no save yet reads as null, not an error');
+
   // Account deletion really deletes.
   await call('DELETE', '/me', { token: who.Stranger.token });
   say((await call('GET', '/me', { token: who.Stranger.token })).status === 401, 'deleted account cannot sign back in with the old token');

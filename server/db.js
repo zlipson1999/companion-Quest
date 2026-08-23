@@ -96,6 +96,17 @@ CREATE TABLE IF NOT EXISTS friendship (
   CHECK (a_id < b_id)
 );
 CREATE INDEX IF NOT EXISTS friendship_b ON friendship(b_id);
+
+-- The whole game, one blob per player. Signing in is what makes a journey
+-- durable: reinstall the app, sign back in, and your companion is where you
+-- left it. The server never reads inside the blob — boards still rank only
+-- the checked per-day rows above, never anything a client claims in here.
+CREATE TABLE IF NOT EXISTS game_save (
+  player_id  TEXT PRIMARY KEY REFERENCES player(id) ON DELETE CASCADE,
+  blob       TEXT NOT NULL,
+  version    INTEGER NOT NULL,
+  updated_at TEXT NOT NULL
+);
 `;
 
 const db = new Database(FILE);

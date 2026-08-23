@@ -151,6 +151,42 @@ router.post('/sync', requireAuth, writeLimit, (req, res) => {
   res.json({ ok: true, days: days.length - rejected.length, rejected, flagged });
 });
 
+// --- game save --------------------------------------------------------------
+
+// One blob per player, whole-save, last write wins. The blob is opaque to the
+// server on purpose: boards rank only the validated day rows, so nothing a
+// client writes in here can inflate anybody. Express already caps bodies at
+// 256kb; this cap is tighter so the error names the real problem.
+const MAX_SAVE_BYTES = 200 * 1024;
+
+router.put('/save', requireAuth, writeLimit, (req, res) => {
+  const { save } = req.body || {};
+  if (!save || typeof save !== 'object' || typeof save.version !== 'number') {
+    return res.status(400).json({ error: 'bad_save' });
+  }
+  const blob = JSON.stringify(save);
+  if (Buffer.byteLength(blob, 'utf8') > MAX_SAVE_BYTES) {
+    return res.status(413).json({ error: 'save_too_large' });
+  }
+  db.prepare(
+    `INSERT INTO game_save (player_id, blob, version, updated_at)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(player_id) DO UPDATE SET
+       blob = excluded.blob, version = excluded.version, updated_at = excluded.updated_at`
+  ).run(req.player.id, blob, save.version, now());
+  res.json({ ok: true });
+});
+
+router.get('/save', requireAuth, (req, res) => {
+  const row = db.prepare('SELECT blob, updated_at FROM game_save WHERE player_id = ?').get(req.player.id);
+  if (!row) return res.json({ save: null });
+  try {
+    res.json({ save: JSON.parse(row.blob), updatedAt: row.updated_at });
+  } catch (e) {
+    res.json({ save: null });
+  }
+});
+
 // --- friends ----------------------------------------------------------------
 
 router.get('/friends', requireAuth, (req, res) => {
