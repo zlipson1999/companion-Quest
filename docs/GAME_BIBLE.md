@@ -625,18 +625,21 @@ faint.
   stages**. The first six families are TRACED (sproutle→bloomtail→groveheart,
   emberkit→pyrelynx→cindermane, dewbble→tidewade→maelstride,
   pebblepup→cairnhound→monolithound, wispurr→galegait→skywhorl,
-  sporelet→mycobloom→canopore). Twelve trail families are procedural, each
-  with the same evolve gates as the first six (stage 1 catchable → stage 2 at
-  Lv 5 / 30 pts → stage 3 at Lv 14 / 110 pts):
-  spinseed→whirlkey→samaraile, bramblet→briarthicket→hedgeroot,
+  sporelet→mycobloom→canopore). Twelve trail families use the same evolve
+  gates (stage 1 catchable → stage 2 at Lv 5 / 30 pts → stage 3 at Lv 14 /
+  110 pts): spinseed→whirlkey→samaraile, bramblet→briarthicket→hedgeroot,
   lanternbud→gleambud→grovelamp, rubblet→cairnstack→dolmenhold,
   chockit→crackwedge→cliffchock, facetel→prismore→quartzspire,
   whistlet→reedgale→stormflute, kitefin→ribbonsail→skysheet,
   loftburr→driftpuff→cloudburr, fernap→fiddlefrond→frondrest,
   dapple→glimmoth→leaflight, stillcup→dewbasin→rainhold — plus 6 obstacles
   (sludgewad, snoozeghoul, achefang, couchlurk, brinegnash, cindergrind).
-  Trail-family faces and the two new Wardens are procedural. An evolution is
-  its OWN drawn sprite, never a tinted copy of the base.
+  Maple and Cairn stage-1s are traced from the approved lineups
+  (spinseed, bramblet, lanternbud, rubblet, chockit, facetel). Gale/Canopy
+  stay lineup-only — their plates are scenic (sky, forest) and must be
+  re-generated isolated, not split. Trail evolutions and the two new
+  Wardens remain first-rendition drawings until each has its own isolated
+  master. An evolution is its OWN sprite, never a tinted copy of the base.
   The first three families are the ones offered at first bond
   (each goal names its own via `GOALS[].companionId`; `STARTER_IDS` is a
   convenience list the running game does not read); all six are met on the
@@ -676,14 +679,19 @@ faint.
 
 ### 8.4 The traced kit (docs/ART_KIT.md)
 
-Reference art (generated externally to a strict style prompt: cel shading,
-upper-left light, dark self-coloured outline, 2:3 proportions, transparent
-background) → converter keys alpha/magenta, downsamples to 96², quantises to a
-hand-ordered palette (`tools/traced_<id>.json`), drops <12-px specks (bigger
-detached blobs are art — Dewbble's droplets). `load_traced()` beats the
-generated sprite of the same name in `build_all`. Palette gotcha: tiny features
-(Dewbble's pink mouth) need a hand-added palette entry or they quantise away.
-**Every new creature should go through this kit**; procedural is the fallback.
+HQ concept (the locked prompt in `tools/CHARACTER_PROMPT.md`) → isolated
+ship master → `convert_reference.py` → `tools/traced_<id>.json` →
+`make_sprites.py` (traced wins). Approval lineups live in
+`tools/reference_art/lineups/` and are for looking at: Maple/Cairn sit on
+a flat field and split with `tools/split_lineup.py`; Gale/Canopy are
+scenic plates and must be re-generated isolated, not split. The converter
+keys a light checkerboard if the PNG is fully opaque, downsamples to 96²,
+quantises to a compact palette. `load_traced()` beats the generated sprite
+of the same name in `build_all`. Palette gotcha: tiny features (Dewbble's
+pink mouth) need a hand-added palette entry or they quantise away.
+**Every new creature goes through this kit.** `sphere()` / `Drawn` is the
+playable stand-in when a master does not exist yet — not how a new face
+is designed.
 
 ## 9. UI components (28)
 
@@ -971,9 +979,12 @@ A change is done only when all applicable items are true:
 
 ### Product/content debt
 
-9. **All six obstacle creatures and the twelve trail families remain procedural.**
-   The original 18 companion forms (six traced families) and 14 world materials
-   derive from authored art.
+9. **The six obstacle creatures, the Gale/Canopy families, and the
+   Maple/Cairn evolutions remain first-rendition drawings.** Maple and
+   Cairn stage-1s are traced from the approved lineups. Gale/Canopy stay
+   lineup-only until each face is re-generated isolated (scenic plates
+   must not be split). The original 18 companion forms (17 masters;
+   `dewbble` still missing) and 14 world materials derive from authored art.
 10. `state/usePedometer.js` is gone (deleted in Phase 14).
 11. Evolution ceremony is a strobe + swap; it needs both a stronger scene and a
     reduced-motion alternative.

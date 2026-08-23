@@ -2299,7 +2299,6 @@ def rainhold(pal='moss'):
     c.outline()
     return c
 
-
 def brinegnash(pal='brine'):
     """Salt-cramp obstacle — a crusted, dripping mass."""
     c = new_creature(pal)
@@ -4680,8 +4679,10 @@ def build_all():
     # composites two sources into a third name.
     used_traced = set()
 
-    def add(name, canvas):
-        # Reference artwork, where we have it, beats anything generated.
+    def add(name, canvas=None):
+        # Isolated masters win. A missing master may still have a first-
+        # rendition drawing so the roster stays playable — do not *design*
+        # a new face on that path. See tools/CHARACTER_PROMPT.md.
         t = load_traced(name)
         if t:
             used_traced.add(name)
@@ -4689,6 +4690,10 @@ def build_all():
             traced_palettes[key] = t['palette']
             s[name] = {'palette': key, 'grid': t['grid']}
             return
+        if canvas is None:
+            raise SystemExit(
+                'missing tools/traced_%s.json — design the face '
+                '(tools/CHARACTER_PROMPT.md), do not draw a sphere' % name)
         s[name] = {'palette': canvas.palette, 'grid': canvas.resolve()}
 
     # creatures
@@ -4701,6 +4706,9 @@ def build_all():
     add('cairnhound', pebblepup()); add('monolithound', pebblepup())
     add('galegait', wispurr()); add('skywhorl', wispurr())
     add('mycobloom', sporelet()); add('canopore', sporelet())
+    # Maple/Cairn stage-1s have isolated masters (traced wins). Gale/Canopy
+    # and every trail evolution keep the first-rendition drawing until an
+    # isolated ship master exists — scenic approval plates must not be split.
     add('spinseed', spinseed()); add('whirlkey', whirlkey()); add('samaraile', samaraile())
     add('bramblet', bramblet()); add('briarthicket', briarthicket()); add('hedgeroot', hedgeroot())
     add('lanternbud', lanternbud()); add('gleambud', gleambud()); add('grovelamp', grovelamp())

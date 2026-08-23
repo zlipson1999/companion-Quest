@@ -1,27 +1,42 @@
 # Companion-family reference art
 
-These transparent PNGs are the visible source files for the committed part of
-the companion roster: **17 of the 18**. `sproutle` and `emberkit` plus the
-signed KEEP evos (Bloomtail, Groveheart, Pyrelynx, Cindermane, Tidewade,
-Maelstride) are traced from the pixel sheets. **`dewbble` still has no master**
-— stage 1 stays the shipped teardrop. `docs/ART_KIT.md` states the gap, and
-`tools/check_docs.py` counts the files in this directory so the number cannot
-drift back to "all 18". The Pebblepup, Wispurr and Sporelet families were
-generated as original project artwork and then given a separate alpha-extraction
-pass.
+Top-level `*.png` files are isolated **ship masters**.
+`python3 tools/check_docs.py` counts those files; approval lineups live
+in `lineups/` and are not in that count.
 
-Generate an indexed source with:
+**Original six families.** 17 of 18 forms have a master. `sproutle` and
+`emberkit` plus the signed KEEP evos are traced from the pixel sheets.
+**`dewbble` still has no master.** Pebblepup, Wispurr and Sporelet use
+`*_stage2.png` / `*_stage3.png` filenames mapped through the evolution
+chain in `check_art.py`.
+
+**Trail families.** Designed faces, not lit spheres. The approved
+lineups (`lineups/maple.png`, `cairn.png`, `gale.png`, `canopy.png`) are
+the quality bar — look at them, do not ship them.
+
+- **Maple and Cairn** sit on a flat field. Split with
+  `tools/split_lineup.py`, then convert. Stage-1 masters
+  (`spinseed`, `bramblet`, `lanternbud`, `rubblet`, `chockit`,
+  `facetel`) are committed here. Evolutions still need their own
+  isolated masters.
+- **Gale and Canopy are lineup-only.** Those plates are scenic (sky,
+  forest). `split_lineup.py` refuses them. Re-generate each face alone
+  with the Ship master prompt in `tools/CHARACTER_PROMPT.md` (flat
+  `#000000`, no ground). Do not commit a forest-matted sprite.
+
+Isolate one creature, then:
 
 ```bash
-python tools/convert_reference.py tools/reference_art/bloomtail.png tools/traced_bloomtail.json
-python tools/make_sprites.py
+python3 tools/convert_reference.py \
+  tools/reference_art/spinseed.png \
+  tools/traced_spinseed.json
+python3 tools/make_sprites.py
+python3 tools/check_art.py
+python3 tools/check_docs.py
 ```
 
-Stage filenames for the three trail families are the semantic ones —
-`pebblepup.png`, `pebblepup_stage2.png`, `pebblepup_stage3.png`, and the same
-for `wispurr` and `sporelet` — matching `WILD_COMPANION_IDS` in
-`src/data/creatures.js`. (They were meant to stay neutral pending name
-clearance; that is not what the directory does, so the sentence saying so has
-been removed rather than left describing a policy nothing follows.) Their
-`tools/traced_<name>.json` outputs are the runtime source. Keep provenance and commercial-use clearance for every source
-image with the release records; repository presence is not a rights determination.
+Do not add a `sphere()` function for a new face. The first-rendition
+drawing that already ships for a Gale/Canopy face or a trail evolution
+is a gap to close, not a template. Keep provenance and commercial-use
+clearance for every source image with the release records; repository
+presence is not a rights determination.
