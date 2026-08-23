@@ -77,7 +77,8 @@ they have not read this file.
   cliff-golem (diagonal bands)
 - **Dapple / Leaflight** — stage 3 snapped back to stage 1
 - **Loftburr / Driftpuff / Cloudburr** — was three 1024 regenerations
-  of one parachute
+  of one parachute; remade as brown-bulb seed → releasing seedlets →
+  lofted sky-burr (not a bigger 8-lobe puff)
 
 A tinted or scaled copy is not a stage. Three 1024×1024 regenerations
 of one prompt are not a family.
@@ -89,6 +90,10 @@ of one prompt are not a family.
 - **Emberkit** (sitting cub) → **Pyrelynx** (standing flame-ear lynx)
   → **Cindermane** (fire-mane beast)
 - **Dewbble** (dewdrop) → **Tidewade** → **Maelstride**
+- **Loftburr** (brown bulb, 8-lobe cotton boll, six root-tendrils) →
+  **Driftpuff** (pear body releasing seedlets) → **Cloudburr**
+  (sleepy brown teardrop under a seed-cloud, five floating tufts).
+  Not Dapple (shade-moth). Not a snap-back 8-lobe puff.
 - **Kitefin** (diamond kite, hooded face, two ribbons) → **Ribbonsail**
   (swimming manta/ray, four ribbons) → **Skysheet** (betta/manta sky
   canvas). Never a bigger diamond or a snapback kite.
