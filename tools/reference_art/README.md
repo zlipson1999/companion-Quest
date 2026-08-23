@@ -59,6 +59,22 @@ of the kit. Stage 3 is a fox-silhouette bloom guardian (fennec ears
 packed with petals, forehead rune, leaf wrist-guards, floral tail).
 Approval plate: `lineups/bellbun_family.png`.
 
+**Nectlet family (Amber Orchard / Honeyfall Lane).** Named masters
+`nectlet` / `combwing` / `apiarch`. Magenta chroma keyed; golden
+honeycomb and amber stay. Stage 1 is a chibi fawn with honeycomb
+inner ears and a raccoon-striped tail. Stage 2 is a slender buck
+with wooden antlers and four comb wings — not a recolor of the kid.
+Stage 3 is a standing deer-bee guardian (spaulders, split cape,
+amber-crystal polearm). Approval plate: `lineups/nectlet_family.png`.
+
+**Chipmagma family (Obsidian Hollow / Glassfire Descent).** Named
+masters `chipmagma` / `shardscale` / `obsidrake`. Magenta chroma
+keyed; lava orange stays. Stage 1 is a chubby obsidian gecko with
+magma in the cracks. Stage 2 is a spiked quadruped beast (slit
+pupils, throat vein) — not a smiling gecko. Stage 3 is a bipedal
+volcanic guardian (red brow rune, molten chest core, heated-glass
+claws). Approval plate: `lineups/chipmagma_family.png`.
+
 **Brineling family (Tideglass Coast / Saltglass Strand).** Named masters
 `brineling` / `shoregleam` / `tidecrown`. Magenta chroma keyed; pink
 coral limbs and lavender growths stay. Stage 2 is a standing pearl-plate

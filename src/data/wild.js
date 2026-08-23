@@ -31,6 +31,8 @@ export const WILD_COMPANIONS = {
   brineling: { hp: 42, xp: 36, bond: 8 },
   pinepuff: { hp: 44, xp: 36, bond: 8 },
   bellbun: { hp: 40, xp: 36, bond: 8 },
+  nectlet: { hp: 40, xp: 36, bond: 8 },
+  chipmagma: { hp: 46, xp: 36, bond: 8 },
   bloomtail: { hp: 70, xp: 44, bond: 10 },
   pyrelynx: { hp: 74, xp: 44, bond: 10 },
   tidewade: { hp: 68, xp: 44, bond: 10 },

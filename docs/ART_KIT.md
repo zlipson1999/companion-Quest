@@ -17,7 +17,12 @@ and white cloud-fur stay on the Thunderstep line. Bellbun / Chimehare
 bluebell flowers. Family plates:
 `lineups/dusthorn_family.png`, `lineups/brineling_family.png`,
 `lineups/pinepuff_family.png`, `lineups/mireblink_family.png`,
-`lineups/bellbun_family.png`, `lineups/zapram_family.png`.
+`lineups/bellbun_family.png`, `lineups/zapram_family.png`,
+`lineups/nectlet_family.png`, `lineups/chipmagma_family.png`.
+Nectlet → Combwing → Apiarch is the Amber Orchard / Honeyfall Lane
+line (magenta keyed; golden honeycomb and amber stay). Chipmagma →
+Shardscale → Obsidrake is the Obsidian Hollow / Glassfire Descent
+line (magenta keyed; lava orange stays).
 The three first-bond families are complete first-rendition lines
 (magenta keyed out, not a re-render of an old indexed grid):
 Sproutle → Bloomtail → Groveheart, Emberkit → Pyrelynx → Cindermane,

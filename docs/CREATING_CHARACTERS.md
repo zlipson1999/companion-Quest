@@ -99,6 +99,13 @@ stays so nobody ships the old pose three times again.
 - Bellbun (plump bluebell-ear kit) → Chimehare (lithe hare, three
   bells per stalk, leaf collar) → Bloomrunner (fox bloom guardian,
   rune marks, leaf wrist-guards, floral tail)
+- Nectlet (chibi honeycomb-ear fawn, raccoon tail) → Combwing
+  (slender buck, four comb wings) → Apiarch (standing guardian,
+  amber polearm). Never a larger kid.
+- Chipmagma (chubby obsidian gecko, lava cracks) → Shardscale
+  (spiked magma beast, slit pupils, throat vein) → Obsidrake
+  (bipedal volcanic guardian, red brow rune, molten chest core).
+  Never a smiling gecko.
 - Spinseed (winged seed) → Whirlkey (same seed, walking legs) → Samaraile
   (stacked key-sail stalk, no longer a hovering bulb)
 - Bramblet (vine knot) → Briarthicket (walking thicket, four roots) →
