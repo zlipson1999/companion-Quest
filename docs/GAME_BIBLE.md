@@ -290,10 +290,18 @@ Evolve points are **per companion** — earned by whoever is active.
 
 **Evolution gate** = level AND points, checked after battle level-ups
 (`canEvolve`): stage 1→2 at Lv 5 + 30 pts; stage 2→3 at Lv 14 + 110 pts.
-Six full lines: Sproutle→Bloomtail→Groveheart, Emberkit→Pyrelynx→Cindermane,
-Dewbble→Tidewade→Maelstride, Pebblepup→Cairnhound→Monolithound,
-Wispurr→Galegait→Skywhorl and Sporelet→Mycobloom→Canopore. Creatures carry
-explicit `stage: 1|2|3`. Wild-family evolution names remain clearance candidates.
+Eighteen full lines — the original six (Sproutle→Bloomtail→Groveheart,
+Emberkit→Pyrelynx→Cindermane, Dewbble→Tidewade→Maelstride,
+Pebblepup→Cairnhound→Monolithound, Wispurr→Galegait→Skywhorl,
+Sporelet→Mycobloom→Canopore) plus twelve trail families with the same
+gates (Spinseed→Whirlkey→Samaraile, Bramblet→Briarthicket→Hedgeroot,
+Lanternbud→Gleambud→Grovelamp, Rubblet→Cairnstack→Dolmenhold,
+Chockit→Crackwedge→Cliffchock, Facetel→Prismore→Quartzspire,
+Whistlet→Reedgale→Stormflute, Kitefin→Ribbonsail→Skysheet,
+Loftburr→Driftpuff→Cloudburr, Fernap→Fiddlefrond→Frondrest,
+Dapple→Glimmoth→Leaflight, Stillcup→Dewbasin→Rainhold). Creatures carry
+explicit `stage: 1|2|3`. Only the stage-1 form is catchable; later stages
+are grown, never knotted.
 
 ### 5.4 The Route & distance (`screens/RouteScreen.js`, `state/useDistance.js`)
 
@@ -611,18 +619,24 @@ faint.
 4. `backlight()` (rim opposite the key light) and `spec()` (hotspots) are what
    read as "modern".
 
-### 8.3 Sprite inventory (115 runtime sprites + 416 atlas cells)
+### 8.3 Sprite inventory (139 runtime sprites + 416 atlas cells)
 
-- Creatures 48×48 authored @2× = 96 px: **30 companions — 6 families of 3
-  stages, every one of them TRACED** (sproutle→bloomtail→groveheart,
+- Creatures 48×48 authored @2× = 96 px: **54 companions — 18 families of 3
+  stages**. The first six families are TRACED (sproutle→bloomtail→groveheart,
   emberkit→pyrelynx→cindermane, dewbble→tidewade→maelstride,
   pebblepup→cairnhound→monolithound, wispurr→galegait→skywhorl,
-  sporelet→mycobloom→canopore) plus twelve trail-only stage-1s (spinseed,
-  bramblet, lanternbud, rubblet, chockit, facetel, whistlet, kitefin,
-  loftburr, fernap, dapple, stillcup) — plus 6 obstacles (sludgewad, snoozeghoul,
-  achefang, couchlurk, brinegnash, cindergrind). Trail-only faces and the two
-  new Wardens are procedural. An evolution is its OWN drawn sprite, never a
-  tinted copy of the base.
+  sporelet→mycobloom→canopore). Twelve trail families are procedural, each
+  with the same evolve gates as the first six (stage 1 catchable → stage 2 at
+  Lv 5 / 30 pts → stage 3 at Lv 14 / 110 pts):
+  spinseed→whirlkey→samaraile, bramblet→briarthicket→hedgeroot,
+  lanternbud→gleambud→grovelamp, rubblet→cairnstack→dolmenhold,
+  chockit→crackwedge→cliffchock, facetel→prismore→quartzspire,
+  whistlet→reedgale→stormflute, kitefin→ribbonsail→skysheet,
+  loftburr→driftpuff→cloudburr, fernap→fiddlefrond→frondrest,
+  dapple→glimmoth→leaflight, stillcup→dewbasin→rainhold — plus 6 obstacles
+  (sludgewad, snoozeghoul, achefang, couchlurk, brinegnash, cindergrind).
+  Trail-family faces and the two new Wardens are procedural. An evolution is
+  its OWN drawn sprite, never a tinted copy of the base.
   The first three families are the ones offered at first bond
   (each goal names its own via `GOALS[].companionId`; `STARTER_IDS` is a
   convenience list the running game does not read); all six are met on the
@@ -791,7 +805,7 @@ Status labels:
 | What devices and OS versions are supported? | **OPEN.** Portrait is forced and tablets are allowed; minimum Android/iOS versions, screen sizes, low-end device floor and tablet UX are unspecified. |
 | Is the game free, paid, ad-supported or subscription-based? | **OPEN.** No monetization or entitlement code exists. |
 | Is an account required? Is there cloud sync or multi-device play? | **CURRENT: no.** One local save, no auth, no cloud backup, no export/import. Whether this is permanent is **OPEN**. |
-| What is the content target at launch? | **OPEN.** Current roster is 18 companion forms across 6 families plus 4 obstacles; roadmap expansion is aspiration, not a launch commitment. |
+| What is the content target at launch? | **OPEN.** Current roster is 54 companion forms across 18 families plus 6 obstacles; roadmap expansion is aspiration, not a launch commitment. |
 | What is the expected play cadence and session length? | **OPEN.** Daily modules and route pacing imply daily play, but retention, encounter-rate and time-to-evolution targets are not specified or validated. |
 | Are notifications/reminders part of the product? | **CURRENT: no.** Desired reminders, quiet hours, consent and notification copy are **OPEN**. |
 | What does “done” mean for a feature? | **DECIDED below in §13.7.** Code that merely renders in web is not sufficient for sensor, persistence, camera, GL or audio work. |
@@ -957,8 +971,9 @@ A change is done only when all applicable items are true:
 
 ### Product/content debt
 
-9. **Four obstacle creatures and a few structural tiles remain procedural.**
-   All 18 companion forms and 14 world materials now derive from authored art.
+9. **All six obstacle creatures and the twelve trail families remain procedural.**
+   The original 18 companion forms (six traced families) and 14 world materials
+   derive from authored art.
 10. `state/usePedometer.js` is gone (deleted in Phase 14).
 11. Evolution ceremony is a strobe + swap; it needs both a stronger scene and a
     reduced-motion alternative.
@@ -988,7 +1003,7 @@ A change is done only when all applicable items are true:
    catch economy, exercise volume and evolution pacing.
 7. Trace the wild/obstacle creatures; add a reduced-motion evolution ceremony.
 8. Add progression charts from PR/weight history.
-9. Expand toward 20 companion families only after the content validator,
+9. Expand past 18 companion families only after the content validator,
    rights/provenance record and balance targets exist.
 10. Then consider per-exercise battle animation, a richer obstacle roster and
     town growth.

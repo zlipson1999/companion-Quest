@@ -1870,6 +1870,436 @@ def stillcup(pal='moss'):
     return c
 
 
+def whirlkey(pal='samara'):
+    """Spinseed grown — longer wings, a thicker seed-body."""
+    c = new_creature(pal)
+    c.shadow(24, 45, 13, 3)
+    c.poly([(1, 20), (20, 6), (22, 30), (6, 34)], 'leaf', 0.70)
+    c.poly([(47, 20), (28, 6), (26, 30), (42, 34)], 'leaf', 0.80)
+    c.poly([(18, 8), (24, 2), (30, 8)], 'belly', 0.75)
+    c.sphere(24, 26, 10, 11, 'body')
+    c.sphere(24, 31, 6.2, 5.0, 'belly', ambient=0.55)
+    c.eye(19.5, 24, 2.8)
+    c.eye(28.5, 24, 2.8)
+    c.blob(24, 30, 1.8, 0.9, 'eye', 0.0)
+    c.occlude()
+    c.rim('leaf', 1.15)
+    c.outline()
+    return c
+
+
+def samaraile(pal='grove'):
+    """Final samara — a standing winged guardian."""
+    c = new_creature(pal)
+    c.shadow(24, 46, 14, 3)
+    c.limb(20, 34, 16, 45, 2.8, 2.2, 'body', ambient=0.26)
+    c.limb(28, 34, 32, 45, 2.8, 2.2, 'body', ambient=0.32)
+    c.poly([(0, 18), (18, 2), (22, 28)], 'leaf', 0.68)
+    c.poly([(48, 18), (30, 2), (26, 28)], 'leaf', 0.78)
+    c.sphere(24, 22, 11, 12, 'body')
+    c.sphere(24, 28, 7, 6, 'belly', ambient=0.52)
+    c.eye(19, 20, 3.0)
+    c.eye(29, 20, 3.0)
+    c.blob(24, 26, 2.0, 1.0, 'eye', 0.0)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def briarthicket(pal='bramble'):
+    """Bramblet thickened — a walking thicket."""
+    c = new_creature(pal)
+    c.shadow(24, 45, 13, 3)
+    c.poly([(10, 14), (14, 2), (22, 14)], 'leaf', 0.60)
+    c.poly([(38, 14), (34, 2), (26, 14)], 'leaf', 0.70)
+    c.sphere(24, 25, 15, 13, 'body')
+    c.sphere(24, 32, 8.5, 6, 'belly', ambient=0.48)
+    c.limb(14, 36, 10, 45, 2.6, 2.0, 'belly', ambient=0.26)
+    c.limb(34, 36, 38, 45, 2.6, 2.0, 'belly', ambient=0.32)
+    for sx, sy in ((12, 18), (36, 17), (16, 34), (33, 33), (24, 14)):
+        c.blob(sx, sy, 1.6, 1.2, 'leaf', 0.32)
+    c.eye(17.5, 22, 3.0)
+    c.eye(30.5, 22, 3.0)
+    c.blob(24, 28, 2.0, 1.0, 'eye', 0.0)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def hedgeroot(pal='grove'):
+    """Final bramble — a rooted hedge-guardian."""
+    c = new_creature(pal)
+    c.shadow(24, 46, 14, 3)
+    c.limb(16, 34, 12, 46, 3.0, 2.4, 'belly', ambient=0.24)
+    c.limb(32, 34, 36, 46, 3.0, 2.4, 'belly', ambient=0.30)
+    c.sphere(24, 24, 16, 14, 'body')
+    c.sphere(24, 32, 9, 7, 'belly', ambient=0.46)
+    c.poly([(8, 16), (16, 0), (24, 14)], 'leaf', 0.62)
+    c.poly([(40, 16), (32, 0), (24, 14)], 'leaf', 0.72)
+    c.eye(17, 21, 3.2)
+    c.eye(31, 21, 3.2)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def gleambud(pal='lantern'):
+    """Lanternbud opening — petals parting around the sap-light."""
+    c = new_creature(pal)
+    c.shadow(24, 45, 11, 3)
+    c.limb(19, 36, 16, 45, 2.6, 2.1, 'body', ambient=0.28)
+    c.limb(29, 36, 32, 45, 2.6, 2.1, 'body', ambient=0.34)
+    c.sphere(24, 34, 7.5, 6.5, 'body')
+    c.poly([(10, 26), (18, 6), (24, 22)], 'leaf', 0.74)
+    c.poly([(38, 26), (30, 6), (24, 22)], 'leaf', 0.82)
+    c.sphere(24, 20, 9.5, 10, 'leaf', ambient=0.40)
+    c.sphere(24, 22, 6.0, 6.5, 'belly', ambient=0.78)
+    c.spec(20, 16, 2.8, 'belly', strength=0.6)
+    c.eye(20, 27, 2.6)
+    c.eye(28, 27, 2.6)
+    c.occlude()
+    c.rim('belly')
+    c.outline()
+    return c
+
+
+def grovelamp(pal='grove'):
+    """Final lantern — a standing bloom that keeps the path lit."""
+    c = new_creature(pal)
+    c.shadow(24, 46, 13, 3)
+    c.limb(20, 36, 16, 46, 2.8, 2.3, 'body', ambient=0.26)
+    c.limb(28, 36, 32, 46, 2.8, 2.3, 'body', ambient=0.32)
+    c.sphere(24, 32, 8, 7, 'body')
+    for ang in range(0, 360, 60):
+        px = 24 + math.cos(math.radians(ang)) * 8.5
+        py = 16 + math.sin(math.radians(ang)) * 6.5
+        c.sphere(px, py, 4.2, 3.6, 'leaf', ambient=0.42)
+    c.sphere(24, 16, 8, 8, 'belly', ambient=0.70)
+    c.spec(21, 12, 3.0, 'belly', strength=0.55)
+    c.eye(20, 30, 2.6)
+    c.eye(28, 30, 2.6)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def cairnstack(pal='rock'):
+    """Rubblet grown — five stones, still one face."""
+    c = new_creature(pal)
+    c.shadow(24, 45, 13, 3)
+    c.sphere(24, 40, 12, 7, 'body', squash=0.7)
+    c.sphere(24, 32, 10, 7, 'leaf', ambient=0.38)
+    c.sphere(24, 24, 8, 6.5, 'body', ambient=0.42)
+    c.sphere(24, 16, 6, 5, 'belly', ambient=0.52)
+    c.eye(20, 31, 2.5)
+    c.eye(28, 31, 2.5)
+    c.blob(24, 35, 1.6, 0.8, 'eye', 0.0)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def dolmenhold(pal='rock'):
+    """Final cairn — a standing stone with a doorway-face."""
+    c = new_creature(pal)
+    c.shadow(24, 46, 14, 3)
+    c.rect(14, 18, 34, 42, 'body', 0.48)
+    c.sphere(24, 20, 12, 8, 'leaf', squash=0.7)
+    c.sphere(24, 32, 8, 7, 'belly', ambient=0.55)
+    c.eye(19, 30, 2.8)
+    c.eye(29, 30, 2.8)
+    c.rect(21, 36, 27, 40, 'eye', 0.0)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def crackwedge(pal='chock'):
+    """Chockit grown — a thicker wedge, clearer strata."""
+    c = new_creature(pal)
+    c.shadow(24, 45, 12, 3)
+    c.poly([(6, 38), (42, 10), (44, 40), (10, 44)], 'body', 0.56)
+    c.rect(12, 26, 36, 28, 'leaf', 0.68)
+    c.rect(14, 32, 38, 34, 'leaf', 0.72)
+    c.limb(15, 41, 11, 46, 2.2, 1.7, 'belly', ambient=0.28)
+    c.limb(32, 41, 36, 46, 2.2, 1.7, 'belly', ambient=0.34)
+    c.eye(26, 24, 2.7)
+    c.eye(35, 19, 2.7)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def cliffchock(pal='chock'):
+    """Final wedge — a cliff-sized hitch with a sure face."""
+    c = new_creature(pal)
+    c.shadow(24, 46, 14, 3)
+    c.poly([(4, 40), (44, 8), (46, 42), (8, 46)], 'body', 0.54)
+    c.rect(10, 24, 40, 26, 'leaf', 0.70)
+    c.rect(12, 32, 42, 34, 'leaf', 0.74)
+    c.limb(16, 42, 12, 47, 2.6, 2.0, 'belly', ambient=0.26)
+    c.limb(34, 42, 38, 47, 2.6, 2.0, 'belly', ambient=0.32)
+    c.eye(24, 22, 3.0)
+    c.eye(34, 16, 3.0)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def prismore(pal='quartz'):
+    """Facetel grown — more crystals, one clear face."""
+    c = new_creature(pal)
+    c.shadow(24, 45, 12, 3)
+    c.sphere(24, 36, 9, 7, 'body', squash=0.75)
+    c.poly([(14, 34), (20, 6), (30, 8), (32, 34)], 'leaf', 0.84)
+    c.poly([(28, 32), (36, 4), (44, 16), (38, 36)], 'belly', 0.72)
+    c.poly([(10, 32), (6, 12), (16, 10), (18, 34)], 'body', 0.52)
+    c.poly([(22, 30), (24, 10), (28, 30)], 'leaf', 0.90)
+    c.eye(21, 20, 2.4)
+    c.eye(28, 18, 2.4)
+    c.spec(22, 10, 2.2, 'leaf', strength=0.65)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def quartzspire(pal='quartz'):
+    """Final quartz — a standing spire with a face in the heart facet."""
+    c = new_creature(pal)
+    c.shadow(24, 46, 13, 3)
+    c.poly([(16, 42), (20, 4), (28, 4), (32, 42)], 'leaf', 0.80)
+    c.poly([(10, 38), (8, 16), (18, 14), (20, 40)], 'body', 0.50)
+    c.poly([(30, 38), (30, 12), (40, 14), (38, 40)], 'belly', 0.68)
+    c.sphere(24, 24, 7, 8, 'belly', ambient=0.62)
+    c.eye(21, 22, 2.6)
+    c.eye(27, 22, 2.6)
+    c.spec(23, 8, 2.4, 'leaf', strength=0.7)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def reedgale(pal='air'):
+    """Whistlet grown — longer reed, fuller crest."""
+    c = new_creature(pal)
+    c.shadow(24, 45, 11, 3)
+    c.limb(30, 22, 46, 16, 2.4, 1.2, 'leaf', ambient=0.48)
+    c.sphere(21, 25, 12, 10, 'body')
+    c.sphere(21, 30, 7, 5, 'belly', ambient=0.56)
+    c.poly([(14, 14), (20, 2), (28, 14)], 'leaf', 0.78)
+    c.poly([(18, 12), (24, 0), (26, 14)], 'belly', 0.70)
+    c.limb(16, 34, 14, 45, 1.8, 1.3, 'body', ambient=0.28)
+    c.limb(26, 34, 28, 45, 1.8, 1.3, 'body', ambient=0.34)
+    c.eye(16, 22, 2.8)
+    c.eye(24, 22, 2.8)
+    c.occlude()
+    c.rim('leaf', 1.2)
+    c.outline()
+    return c
+
+
+def stormflute(pal='air'):
+    """Final reed — a wind-instrument guardian."""
+    c = new_creature(pal)
+    c.shadow(24, 46, 13, 3)
+    c.limb(32, 20, 47, 12, 2.8, 1.4, 'leaf', ambient=0.46)
+    c.sphere(20, 24, 13, 12, 'body')
+    c.sphere(20, 30, 8, 6, 'belly', ambient=0.54)
+    c.poly([(10, 14), (18, 0), (28, 12)], 'leaf', 0.76)
+    c.limb(15, 34, 12, 46, 2.2, 1.6, 'body', ambient=0.26)
+    c.limb(26, 34, 30, 46, 2.2, 1.6, 'body', ambient=0.32)
+    c.eye(15, 21, 3.0)
+    c.eye(25, 21, 3.0)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def ribbonsail(pal='kite'):
+    """Kitefin grown — wider sail, longer ribbons."""
+    c = new_creature(pal)
+    c.shadow(24, 45, 13, 3)
+    c.poly([(24, 4), (46, 26), (24, 38), (2, 26)], 'body', 0.60)
+    c.poly([(24, 12), (38, 26), (24, 34), (10, 26)], 'belly', 0.76)
+    c.limb(20, 38, 14, 47, 1.5, 0.7, 'leaf', ambient=0.42)
+    c.limb(28, 38, 34, 47, 1.5, 0.7, 'leaf', ambient=0.48)
+    c.eye(20, 24, 2.4)
+    c.eye(28, 24, 2.4)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def skysheet(pal='kite'):
+    """Final kite — a broad sky-sheet with a calm face."""
+    c = new_creature(pal)
+    c.shadow(24, 46, 14, 3)
+    c.poly([(24, 2), (47, 24), (24, 40), (1, 24)], 'body', 0.58)
+    c.poly([(24, 10), (40, 24), (24, 36), (8, 24)], 'belly', 0.74)
+    c.limb(18, 40, 12, 47, 1.6, 0.8, 'leaf', ambient=0.40)
+    c.limb(30, 40, 36, 47, 1.6, 0.8, 'leaf', ambient=0.46)
+    c.eye(19, 22, 2.6)
+    c.eye(29, 22, 2.6)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def driftpuff(pal='puff'):
+    """Loftburr grown — a fuller parachute, longer threads."""
+    c = new_creature(pal)
+    c.shadow(24, 45, 11, 3)
+    c.sphere(24, 18, 15, 13, 'body', ambient=0.46)
+    c.sphere(24, 20, 9, 8, 'belly', ambient=0.68)
+    c.limb(19, 30, 14, 46, 1.2, 0.6, 'leaf', ambient=0.38)
+    c.limb(29, 30, 34, 46, 1.2, 0.6, 'leaf', ambient=0.44)
+    for sx, sy, sr in ((12, 12, 3.6), (36, 11, 3.4), (24, 7, 3.8), (16, 24, 3.0), (32, 23, 2.8)):
+        c.sphere(sx, sy, sr, sr * 0.9, 'leaf', ambient=0.60)
+    c.eye(19, 18, 2.6)
+    c.eye(29, 18, 2.6)
+    c.occlude()
+    c.rim('leaf', 1.2)
+    c.outline()
+    return c
+
+
+def cloudburr(pal='puff'):
+    """Final puff — a drifting cloud-seed with a sure face."""
+    c = new_creature(pal)
+    c.shadow(24, 46, 12, 3)
+    c.sphere(24, 18, 16, 14, 'body', ambient=0.44)
+    c.sphere(24, 20, 10, 8, 'belly', ambient=0.66)
+    c.limb(18, 30, 12, 47, 1.3, 0.7, 'leaf', ambient=0.36)
+    c.limb(30, 30, 36, 47, 1.3, 0.7, 'leaf', ambient=0.42)
+    for sx, sy, sr in ((10, 10, 4.0), (38, 9, 3.8), (24, 5, 4.2), (14, 24, 3.4), (34, 23, 3.2)):
+        c.sphere(sx, sy, sr, sr * 0.9, 'leaf', ambient=0.58)
+    c.eye(18, 17, 2.8)
+    c.eye(30, 17, 2.8)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def fiddlefrond(pal='fern'):
+    """Fernap unfurling — the spiral opening into a frond."""
+    c = new_creature(pal)
+    c.shadow(24, 45, 11, 3)
+    for i in range(12):
+        t = i / 11.0
+        ang = t * 3.4 * math.pi
+        rad = 3.0 + t * 12
+        x, y = 22 + math.cos(ang) * rad, 24 + math.sin(ang) * rad * 0.8
+        r = 2.2 + i * 0.16
+        c.sphere(x, y, r, r * 0.9, 'body' if i % 2 == 0 else 'leaf', ambient=0.32 + i * 0.02)
+    c.limb(28, 20, 40, 10, 2.4, 1.4, 'leaf', ambient=0.40)
+    c.sphere(24, 24, 6.5, 6, 'belly', ambient=0.52)
+    c.eye(21, 23, 2.4)
+    c.eye(27, 23, 2.4)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def frondrest(pal='grove'):
+    """Final fern — a sheltering frond you can sit under."""
+    c = new_creature(pal)
+    c.shadow(24, 46, 13, 3)
+    c.limb(24, 28, 24, 44, 3.2, 2.6, 'body', ambient=0.28)
+    for i, ang in enumerate(range(-70, 80, 18)):
+        px = 24 + math.cos(math.radians(ang)) * 16
+        py = 16 + math.sin(math.radians(ang)) * 8
+        c.sphere(px, py, 3.6, 2.8, 'leaf', ambient=0.40 + i * 0.02)
+    c.sphere(24, 18, 8, 7, 'belly', ambient=0.50)
+    c.eye(20, 17, 2.6)
+    c.eye(28, 17, 2.6)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def glimmoth(pal='dapple'):
+    """Dapple grown — broader wings, more light-spots."""
+    c = new_creature(pal)
+    c.shadow(24, 45, 13, 3)
+    c.poly([(1, 28), (6, 8), (22, 16), (20, 34)], 'body', 0.48)
+    c.poly([(47, 28), (42, 8), (26, 16), (28, 34)], 'body', 0.56)
+    for sx, sy in ((10, 16), (14, 24), (36, 15), (32, 24), (12, 28), (36, 27)):
+        c.blob(sx, sy, 2.0, 1.6, 'leaf', 0.86)
+    c.sphere(24, 26, 8, 8, 'belly')
+    c.eye(21, 25, 2.4)
+    c.eye(27, 25, 2.4)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def leaflight(pal='grove'):
+    """Final shade-moth — a canopy of wings."""
+    c = new_creature(pal)
+    c.shadow(24, 46, 14, 3)
+    c.poly([(0, 26), (4, 6), (22, 14), (20, 36)], 'body', 0.46)
+    c.poly([(48, 26), (44, 6), (26, 14), (28, 36)], 'body', 0.54)
+    c.poly([(8, 20), (24, 2), (40, 20)], 'leaf', 0.70)
+    c.sphere(24, 24, 8.5, 8, 'belly')
+    c.eye(20, 23, 2.6)
+    c.eye(28, 23, 2.6)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def dewbasin(pal='moss'):
+    """Stillcup grown — a wider bowl, a deeper bead."""
+    c = new_creature(pal)
+    c.shadow(24, 45, 12, 3)
+    c.limb(17, 36, 13, 45, 2.4, 2.0, 'body', ambient=0.26)
+    c.limb(31, 36, 35, 45, 2.4, 2.0, 'body', ambient=0.32)
+    c.sphere(24, 32, 14, 10, 'body', squash=0.62)
+    c.sphere(24, 27, 9.5, 6, 'leaf', ambient=0.72)
+    c.spec(20, 25, 2.6, 'leaf', strength=0.58)
+    c.eye(18, 34, 2.5)
+    c.eye(30, 34, 2.5)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def rainhold(pal='moss'):
+    """Final rain-cup — a still basin that keeps the walk watered."""
+    c = new_creature(pal)
+    c.shadow(24, 46, 13, 3)
+    c.limb(16, 36, 12, 46, 2.6, 2.1, 'body', ambient=0.24)
+    c.limb(32, 36, 36, 46, 2.6, 2.1, 'body', ambient=0.30)
+    c.sphere(24, 32, 16, 11, 'body', squash=0.60)
+    c.sphere(24, 26, 11, 7, 'leaf', ambient=0.74)
+    c.spec(19, 23, 3.0, 'leaf', strength=0.6)
+    c.eye(17, 34, 2.6)
+    c.eye(31, 34, 2.6)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
 def brinegnash(pal='brine'):
     """Salt-cramp obstacle — a crusted, dripping mass."""
     c = new_creature(pal)
@@ -4271,10 +4701,18 @@ def build_all():
     add('cairnhound', pebblepup()); add('monolithound', pebblepup())
     add('galegait', wispurr()); add('skywhorl', wispurr())
     add('mycobloom', sporelet()); add('canopore', sporelet())
-    add('spinseed', spinseed()); add('bramblet', bramblet()); add('lanternbud', lanternbud())
-    add('rubblet', rubblet()); add('chockit', chockit()); add('facetel', facetel())
-    add('whistlet', whistlet()); add('kitefin', kitefin()); add('loftburr', loftburr())
-    add('fernap', fernap()); add('dapple', dapple()); add('stillcup', stillcup())
+    add('spinseed', spinseed()); add('whirlkey', whirlkey()); add('samaraile', samaraile())
+    add('bramblet', bramblet()); add('briarthicket', briarthicket()); add('hedgeroot', hedgeroot())
+    add('lanternbud', lanternbud()); add('gleambud', gleambud()); add('grovelamp', grovelamp())
+    add('rubblet', rubblet()); add('cairnstack', cairnstack()); add('dolmenhold', dolmenhold())
+    add('chockit', chockit()); add('crackwedge', crackwedge()); add('cliffchock', cliffchock())
+    add('facetel', facetel()); add('prismore', prismore()); add('quartzspire', quartzspire())
+    add('whistlet', whistlet()); add('reedgale', reedgale()); add('stormflute', stormflute())
+    add('kitefin', kitefin()); add('ribbonsail', ribbonsail()); add('skysheet', skysheet())
+    add('loftburr', loftburr()); add('driftpuff', driftpuff()); add('cloudburr', cloudburr())
+    add('fernap', fernap()); add('fiddlefrond', fiddlefrond()); add('frondrest', frondrest())
+    add('dapple', dapple()); add('glimmoth', glimmoth()); add('leaflight', leaflight())
+    add('stillcup', stillcup()); add('dewbasin', dewbasin()); add('rainhold', rainhold())
     add('sludgewad', sludgewad()); add('snoozeghoul', snoozeghoul())
     add('couchlurk', couchlurk()); add('achefang', achefang())
     add('brinegnash', brinegnash()); add('cindergrind', cindergrind())
