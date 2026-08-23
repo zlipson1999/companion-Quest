@@ -76,7 +76,8 @@ stays so nobody ships the old pose three times again.
 - Whistlet / Reedgale — identical flute-bird
 - Lanternbud line — closed bud never opens
 - Chockit / Crackwedge / Cliffchock — same wedge plus an outline
-- Dapple / Leaflight — stage 3 is stage 1 again
+- Dapple / Glimmoth / Leaflight — stage 3 was stage 1 again; remade as
+  rotund kawaii moth → slender camo flyer → four-leaf moth
 - Loftburr / Driftpuff / Cloudburr — three 1024 regenerations of one parachute
 
 ### Worked passes
@@ -86,6 +87,8 @@ stays so nobody ships the old pose three times again.
 - Emberkit (sitting cub) → Pyrelynx (standing flame-ear lynx) →
   Cindermane (fire-mane beast)
 - Dewbble (dewdrop) → Tidewade → Maelstride
+- Dapple (rotund kawaii moth) → Glimmoth (slender tattered-leaf flyer) →
+  Leaflight (four serrated leaf-wings, banded abdomen). Never the same round puff.
 - Spinseed (winged seed) → Whirlkey (same seed, walking legs) → Samaraile
   (stacked key-sail stalk, no longer a hovering bulb)
 - Bramblet (vine knot) → Briarthicket (walking thicket, four roots) →

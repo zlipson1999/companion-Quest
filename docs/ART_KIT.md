@@ -353,7 +353,8 @@ grown one" without being told.
 Worked fails (historical — remade, thresholds unchanged): Stillcup line
 (same moss bowl); Kitefin line (same kite); Whistlet line (identical
 flute-bird); Lanternbud line (closed bud); Chockit line (same wedge);
-Dapple line (stage 3 snap-back); Loftburr line (1024 regenerations).
+Dapple line (stage 3 snap-back — remade moth / camo flyer / four-leaf);
+Loftburr line (1024 regenerations).
 
 Worked passes: Spinseed → Whirlkey → Samaraile; Bramblet → Briarthicket
 → Hedgeroot; Rubblet → Cairnstack → Dolmenhold; and the remade families

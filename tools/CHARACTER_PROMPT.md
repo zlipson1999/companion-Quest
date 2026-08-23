@@ -75,7 +75,8 @@ they have not read this file.
 - **Chockit / Crackwedge / Cliffchock** — was the same wedge plus an
   outline; remade as conical chock → standing plate-humanoid →
   cliff-golem (diagonal bands)
-- **Dapple / Leaflight** — stage 3 snapped back to stage 1
+- **Dapple / Glimmoth / Leaflight** — stage 3 snapped back to stage 1.
+  Remade: rotund kawaii moth → slender tattered flyer → four-leaf moth.
 - **Loftburr / Driftpuff / Cloudburr** — was three 1024 regenerations
   of one parachute; remade as brown-bulb seed → releasing seedlets →
   lofted sky-burr (not a bigger 8-lobe puff)
@@ -90,6 +91,10 @@ of one prompt are not a family.
 - **Emberkit** (sitting cub) → **Pyrelynx** (standing flame-ear lynx)
   → **Cindermane** (fire-mane beast)
 - **Dewbble** (dewdrop) → **Tidewade** → **Maelstride**
+- **Dapple** (rotund kawaii moth, cream/chocolate split, camo scalloped
+  wings) → **Glimmoth** (slender tattered-leaf flyer, pointed abdomen,
+  glowing green eyes) → **Leaflight** (four serrated leaf-wings, banded
+  abdomen, yellow eyes). Never the same round puff as stage 1.
 - **Fernap** (pear + cream belly + one tight fiddlehead stalk) →
   **Fiddlefrond** (unfurled plant humanoid, two-frond heart crest) →
   **Frondrest** (walking canopy / palm headdress). Not a taller coil.
