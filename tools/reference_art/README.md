@@ -13,8 +13,10 @@ approval plate is `lineups/firstbond.png`. Pebblepup is now a
 first-rendition family (magenta keyed out): sitting mosaic puppy →
 standing dry-stone cairnhound → jagged dolmen-beast monolithound.
 Filenames stay `pebblepup.png` / `pebblepup_stage2.png` /
-`pebblepup_stage3.png` (mapped through `check_art.py`). Wispurr and
-Sporelet still use that stage-filename pattern.
+`pebblepup_stage3.png` (mapped through `check_art.py`). Sporelet /
+Mycobloom / Canopore now ship as named masters (magenta keyed;
+stage-1 sparkles and stage-3 spore sparks stay). Wispurr still uses
+the stage-filename pattern.
 
 **Trail families.** Designed faces, not lit spheres. The approved
 lineups (`lineups/maple.png`, `cairn.png`, `gale.png`, `canopy.png`) are
