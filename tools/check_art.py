@@ -37,6 +37,27 @@ from PIL import Image
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ART = ROOT / 'tools' / 'reference_art'
 
+
+def roster_src():
+    """creatures.js + horizonCreatures.js. Horizon roots live in the latter.
+
+    Horizon is concatenated FIRST. Obstacle entries at the end of creatures.js
+    have no evolvesTo; if they came first the regex would swallow the next
+    family's evolvesTo (Brineling).
+    """
+    creatures = (ROOT / 'src' / 'data' / 'creatures.js').read_text(encoding='utf-8')
+    horizon = ROOT / 'src' / 'data' / 'horizonCreatures.js'
+    extra = horizon.read_text(encoding='utf-8') if horizon.exists() else ''
+    return extra + '\n' + creatures
+
+
+def horizon_ids():
+    src = roster_src()
+    try:
+        return set(_expand_id_array(src, 'HORIZON_COMPANION_IDS'))
+    except SystemExit:
+        return set()
+
 # Letterboxed crop compare. Tuned 2026-08-23 on the committed kit:
 #   PASS  spinseed max IoU ~0.66, bramblet ~0.75, sproutle ~0.73
 #   FAIL  stillcup/rainhold 0.96, kitefin/skysheet 0.94, lanternbud/gleambud
@@ -92,10 +113,10 @@ def _expand_id_array(src, name, seen=None):
 def family_chains():
     """root -> [stage ids], read out of creatures.js so it cannot drift.
 
-    WILD_COMPANION_IDS spreads STARTER_IDS and TRAIL_COMPANION_IDS. Reading
-    only the one array used to see three families and hide Dewbble.
+    WILD_COMPANION_IDS spreads STARTER_IDS, TRAIL_COMPANION_IDS, and
+    HORIZON_COMPANION_IDS (the last lives in horizonCreatures.js).
     """
-    src = (ROOT / 'src' / 'data' / 'creatures.js').read_text(encoding='utf-8')
+    src = roster_src()
     evolves = dict(re.findall(r"^  (\w+): \{$\n(?:.*\n)*?    evolvesTo: '?(\w+)'?,", src, re.M))
     roots = _expand_id_array(src, 'WILD_COMPANION_IDS')
     seen, uniq = set(), []
@@ -361,11 +382,20 @@ def main():
 
     # Which companions ship art with no committed source at all.
     covered = {expected_traced_for(p.stem, chains) for p in masters}
+    horizon = set()
+    for root in horizon_ids():
+        horizon.update(chains.get(root, [root]))
     everyone = [cid for chain in chains.values() for cid in chain]
-    sourceless = [c for c in everyone if c not in covered]
+    # Horizon plates are still incoming. Do not fail the shipped 18 families
+    # because 40 reserved lines have no master yet.
+    pending = [c for c in everyone if c in horizon and c not in covered]
+    everyone_shipped = [c for c in everyone if c not in horizon]
+    sourceless = [c for c in everyone_shipped if c not in covered]
+    if pending:
+        print(f'skip   {len(pending)} horizon form(s) waiting on user plates')
 
     missing_prov = []
-    for cid in everyone:
+    for cid in everyone_shipped:
         traced = ROOT / 'tools' / f'traced_{cid}.json'
         if not traced.exists():
             missing_prov.append(cid)
