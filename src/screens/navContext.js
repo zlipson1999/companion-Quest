@@ -4,9 +4,9 @@ export const NavContext = createContext(null);
 
 // What a place is CALLED, in one place. `back.label` is built from this, and a
 // screen that ends somewhere rather than going back still needs the name — the
-// Route's exit said "Back to Town" long after the town became Maple Lane.
+// Route's exit said "Back to Town" long after the town became Sunkist Lane.
 export const PLACE_LABELS = {
-  hub: 'Maple Lane',
+  hub: 'Sunkist Lane',
   gym: 'the gym',
   rest: 'Home',
   route: 'the trails',

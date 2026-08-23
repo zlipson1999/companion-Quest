@@ -10,6 +10,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { WorldScreen, CompanionStatus, CardioConsole } from '../components';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
+import { SPAR_PARAMS } from './SparIntroScreen';
 import { playSfx } from '../audio';
 import { GYM, mapWithout, isWalkable, tileAt, triggerForCode, interactionForCode } from '../data/maps';
 import { recallSpot, rememberSpot } from './placeMemory';
@@ -28,7 +29,7 @@ function KeepAwakeOnDeck() {
 }
 
 const MENU = [
-  { label: 'Back to Maple Lane', value: 'hub', sublabel: 'the lane outside' },
+  { label: 'Back to Sunkist Lane', value: 'hub', sublabel: 'the lane outside' },
   { label: 'Shelf sessions', value: 'workout', sublabel: 'take a session off the shelf' },
   { label: 'Trails', value: 'route', sublabel: 'real miles, Wardens' },
   { label: 'Team', value: 'party', sublabel: 'companions' },
@@ -37,11 +38,11 @@ const MENU = [
 
 export default function GymScreen() {
   const { state } = useGame();
-  // Rowan is here for the push-up contest and then he has done his session and
+  // Rowan is here for his challenge and then he has done his session and
   // gone. Coach stays — she keeps the place.
   const map = state.meta.sparDone ? mapWithout(GYM, ['A']) : GYM;
   const companion = useCompanion();
-  const { navigate } = useNav();
+  const { navigate, toBattle } = useNav();
 
   // Walk into a rack, write a session, come back — and you were at the door
   // again, halfway across the room from the thing you had just used.
@@ -125,9 +126,16 @@ export default function GymScreen() {
       if (station && station.screen) {
         if (code === 'A' && !companion) return;
         playSfx('confirm');
+        // Rowan challenges in the room, with his companion — not a lecture
+        // screen that fires the fight by itself.
+        if (code === 'A') {
+          setTimeout(() => toBattle({ ...SPAR_PARAMS }), 140);
+          return;
+        }
         // Coach is the goal conversation until you have a companion, and the
         // chat after that. Re-running the goal screen on a live save would
-        // dispatch START_GAME and replace the party.
+        // dispatch START_GAME and replace the party. Bumping her is the talk;
+        // walking through the door is not.
         const target = code === 'C' && !companion ? 'goal' : station.screen;
         setTimeout(() => navigate(target, station.params || {}), 140);
       }
@@ -164,7 +172,11 @@ export default function GymScreen() {
           ? `On the ${cardio.station === 'rower' ? 'rower' : 'deck'} — only real movement counts`
           : facingStation
             ? facingStation.label
-            : 'Walk into any equipment to use it'
+            : !companion
+              ? 'Walk up to Coach Maple — she is waiting on the floor'
+              : !state.meta.sparDone
+                ? 'Rowan wants a challenge — walk up to him'
+                : 'Walk into any equipment to use it'
       }
       menu={cardio ? [] : MENU}
       onSelect={(item) => navigate(item.value)}

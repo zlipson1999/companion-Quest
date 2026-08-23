@@ -113,7 +113,7 @@ def build_checks():
          first(r'SAVE_VERSION = (\d+)', game, 'SAVE_VERSION')),
     ]
 
-    for name, label in (('HUB', r'Maple Lane \(`HUB`\)'),
+    for name, label in (('HUB', r'Sunkist Lane \(`HUB`\)'),
                         ('GYM', r'Quest Fitness \(`GYM`\)'),
                         ('DOWNSTAIRS', r'Downstairs \(`DOWNSTAIRS`\)'),
                         ('BEDROOM', r'Bedroom \(`BEDROOM`\)')):

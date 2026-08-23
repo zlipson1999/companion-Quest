@@ -1,5 +1,5 @@
 // The first-bond ceremony. Reveals the companion whose temperament fits the
-// flourish while Coach introduces them, then heads to the hub.
+// flourish while Coach introduces them, then returns you to the gym.
 
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
@@ -9,6 +9,7 @@ import { useNav } from './navContext';
 import { getGoal } from '../data/goals';
 import { getCreature } from '../data/creatures';
 import { pairingLines } from '../coach';
+import { rememberSpot } from './placeMemory';
 
 export default function PairingScreen({ params }) {
   const { navigate } = useNav();
@@ -37,10 +38,12 @@ export default function PairingScreen({ params }) {
 
   const bottom = (
     <View style={{ flex: 1, justifyContent: 'flex-end', padding: space.md }}>
-      {/* Straight from meeting your companion into Coach's push-up contest:
-            the battle loop gets introduced by a person in a gym, not by a bad
-            habit ambushing you on a trail. */}
-      <DialogueBox lines={lines} onComplete={() => navigate('sparIntro')} />
+      {/* Back into the gym, facing Coach and Rowan. The first challenge
+            starts when you walk up to Rowan — he brings his companion. */}
+      <DialogueBox lines={lines} onComplete={() => {
+        rememberSpot('gym', { x: 8, y: 16, facing: 'up' });
+        navigate('gym');
+      }} />
     </View>
   );
 

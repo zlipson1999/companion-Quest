@@ -275,7 +275,7 @@ const INTERACTIONS = {
   // to the goal screen would re-run START_GAME and replace the party.
   // Bumping her is how you talk. Shelf sessions live on the gym menu.
   C: { screen: 'coach', label: 'Coach Maple — she will talk with you' },
-  A: { screen: 'sparIntro', label: 'Rowan — the push-up contest is still on' },
+  A: { screen: 'sparIntro', label: 'Rowan — he wants a challenge with his companion' },
   // The two zones at the south end. Each opens the routine it is FOR rather
   // than the list of all of them: you walked to the turf, so you already
   // said which one you wanted.
@@ -338,7 +338,7 @@ export function triggerForCode(code) {
 //
 // Every walking screen asks `interactionForCode` FIRST and falls through to
 // `triggerForCode`, so a shared interaction silently shadows a door. The
-// noticeboard was added on 'G' — which is the north gate — and Maple Lane's way
+// noticeboard was added on 'G' — which is the north gate — and Sunkist Lane's way
 // out to Route 1 became a noticeboard. Nothing complained: both codes were
 // valid, both tables were well formed, and the only symptom was a door that led
 // somewhere else.
@@ -358,7 +358,7 @@ export const TRIGGER_LABELS = {
   rest: 'Home',
   gym: 'Quest Fitness',
   route: 'the trails',
-  hub: 'Maple Lane',
+  hub: 'Sunkist Lane',
 };
 
 export default HUB;

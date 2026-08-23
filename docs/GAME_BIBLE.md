@@ -141,11 +141,11 @@ touches `.nojekyll` (Jekyll strips `_expo/`). Live at
 
 ## 3. The player journey
 
-Title → Intro → Outfit → the scripted walk through your house → Coach's
-tutorial at Quest Fitness → Choose Your Goal → Pairing → the push-up contest
-against Rowan → Maple Lane, then free roam.
+Title → Intro → Outfit → the scripted walk through your house → Sunkist Lane
+→ walk into Quest Fitness → walk up to Coach Maple (goal) → Pairing → walk
+up to Rowan, who challenges with his companion → free roam.
 
-**The room IS the menu, in all three places.** Maple Lane has walk-in triggers
+**The room IS the menu, in all three places.** Sunkist Lane has walk-in triggers
 (your front door, the gym door, the trail carrying on north) and a 6-entry menu;
 the other eight destinations it used to list are things you now WALK to.
 Quest Fitness: every piece of iron opens the Forge, Coach hands you a session
@@ -189,11 +189,11 @@ clears it.
 | `goal` | GoalSelectScreen | the three goals (§5.2) with **no starter previews** — the companion is a surprise at the ceremony; rows are `Pressable` |
 | `pairing` | PairingScreen | starter reveal + Coach lines |
 | `outfit` | OutfitSelectScreen | one-time character + outfit choice |
-| `homeIntro` | HomeIntroScreen | the scripted walk: bedroom → downstairs → the lane |
-| `coachTutorial` | CoachTutorialScreen | Coach Maple's welcome at Quest Fitness |
-| `hub` | HubScreen | Maple Lane (13×17). Walk-around town, bump-to-use, 6-entry menu — the other destinations are places you WALK to |
+| `homeIntro` | HomeIntroScreen | the scripted walk: bedroom → downstairs → Sunkist Lane (`HUB`, not a stub) |
+| `coachTutorial` | CoachTutorialScreen | unused leftover; the talk is bumping Coach in the gym |
+| `hub` | HubScreen | Sunkist Lane (13×17). Walk-around town, bump-to-use, 6-entry menu — the other destinations are places you WALK to |
 | `gym` | GymScreen | Quest Fitness (17×19). Equipment IS the menu; also runs the in-room cardio session (§5.7) |
-| `sparIntro` | SparIntroScreen | Coach's push-up contest against Rowan; hands to the real BattleScreen |
+| `sparIntro` | SparIntroScreen | safety redirect; live path is bumping Rowan, who sends Pebblepup |
 | `cookbook` | CookbookScreen | the kitchen shelf: 74 recipes, 18 categories, search over names/blurbs/tags/ingredients |
 | `smoothiebar` | SmoothieBarScreen | the gym's bar; spends Trail Credit (§5.6) |
 | `route` | RouteScreen | four trails — §5.4 |
@@ -226,7 +226,7 @@ material does.
 
 | place | size | zones | laid out as |
 |---|---|---|---|
-| Maple Lane (`HUB`) | 13×17 | — | a lane north to the trail, the two buildings facing each other across it, a green with a pond, bench and fenced plot |
+| Sunkist Lane (`HUB`) | 13×17 | — | a lane north to the trail, the two buildings facing each other across it, a green with a pond, bench and fenced plot |
 | Quest Fitness (`GYM`) | 17×19 | platform, turf, mats | the ordinary commercial convention: perimeter for what backs onto a wall, centre for what does not |
 | Downstairs (`DOWNSTAIRS`) | 13×15 | kitchen, rug | counter run on the north wall, dining on the vinyl, living room around the rug |
 | Bedroom (`BEDROOM`) | 11×13 | rug | narrower, because a one-person bedroom as wide as a hall reads as a hall |
@@ -444,7 +444,7 @@ meters) and no `onStop`, because outdoors there is no getting off a trail.
 **A session survives a challenge.** A battle unmounts the trail and
 `useDistance` restarts from zero with it, so the session baseline is taken from
 the LIFETIME stats (which persist) and parked in `placeMemory` across the round
-trip. "Back to Maple Lane" ends the walk.
+trip. "Back to Sunkist Lane" ends the walk.
 
 **THIS SESSION** breaks it down: "20 Push-ups · 20s Plank · 15 Squats".
 `stats.exercises` tallies per exercise id (routines under a `workout:` prefix,
@@ -501,11 +501,12 @@ milestone count) → `toBattle` flash → BattleScreen.
   used to pay its damage and then vanish — so nothing in the app could say how
   many push-ups you had ever done, which is the one number a fitness game must
   not lose.
-- **The spar is a person, not a creature.** `params.opponent` is passed whole
-  rather than looked up in the creature table, so Rowan never lands in the Index
-  and can never be befriended (`catchRate: 0`). Winning sets `meta.sparDone`,
-  and the gym then renders `mapWithout(GYM, ['A'])` — Rowan has finished his
-  session and gone home. Coach stays; she keeps the place.
+- **Rowan challenges with his companion.** Walking up to him (`A`) starts a
+  trainer battle against Pebblepup (`SPAR_PARAMS` in `SparIntroScreen.js`):
+  `trainerBattle`, `catchRate: 0`, no Knot, no Index stamp. Winning sets
+  `meta.sparDone`, and the gym then renders `mapWithout(GYM, ['A'])` — Rowan
+  has finished his session and gone home. Coach stays; she keeps the place.
+  The talk is bumping Coach (`C`) in the room, not `CoachTutorialScreen`.
 - **Choreography** (timings in ms): attacker lunge 0 → victim flinch + white
   flash + damage pop 140 → counter lunge 650 → counter flinch/pop 790 → faint
   (KO) at 430 after its flinch. Entry: wild slides in from +90 px right,
