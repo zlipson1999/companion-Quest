@@ -1,18 +1,23 @@
 // Title card. Coach Maple gives the first invitation before the player begins
-// at home; returning players can continue or erase their save.
+// at home; returning players continue, and a journey rides on the account.
+//
+// There is deliberately NO start-over button here. Your journey is the point
+// of the whole app, and the title screen is the one place a tired thumb finds
+// first — erasing lives behind Options, where nobody arrives by accident.
+// Signing in is what makes the save durable: the account carries it, so a new
+// phone or a reinstall comes back with one tap.
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Animated, View } from 'react-native';
 import { Screen, PixelText, PixelSprite, FieldCard, TrailAction, ObjectiveRibbon } from '../components';
 import { palette, space } from '../theme';
-import { useGame, wipeSave } from '../state';
+import { useGame } from '../state';
+import { configured } from '../net/api';
 import { useNav } from './navContext';
-import { forgetAll } from './placeMemory';
 
 export default function TitleScreen() {
-  const { state, dispatch } = useGame();
+  const { state } = useGame();
   const { navigate } = useNav();
-  const [confirmReset, setConfirmReset] = useState(false);
   const blink = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -44,25 +49,22 @@ export default function TitleScreen() {
       </View>
 
       <View style={{ width: '86%' }}>
-        {confirmReset ? (
-          <FieldCard tone="paper" title="Start over?" caption="Your current companion and progress will be erased.">
-            <TrailAction label="Cancel" tone="quiet" onPress={() => setConfirmReset(false)} />
-            <TrailAction
-              label="Erase"
-              tone="accent"
-              style={{ marginTop: space.sm }}
-              onPress={async () => { await wipeSave(); forgetAll(); dispatch({ type: 'RESET' }); navigate('intro'); }}
-            />
-          </FieldCard>
-        ) : hasSave ? (
-          <View>
-            <TrailAction label="Continue" tone="primary" onPress={() => navigate('hub')} />
-            <TrailAction label="Begin Again" tone="quiet" style={{ marginTop: space.md }} onPress={() => setConfirmReset(true)} />
-          </View>
+        {hasSave ? (
+          <TrailAction label="Continue" tone="primary" onPress={() => navigate('hub')} />
         ) : (
-          <Animated.View style={{ opacity: blink }}>
-            <TrailAction label="Enter the World" tone="primary" onPress={() => navigate('intro')} />
-          </Animated.View>
+          <View>
+            <Animated.View style={{ opacity: blink }}>
+              <TrailAction label="Enter the World" tone="primary" onPress={() => navigate('intro')} />
+            </Animated.View>
+            {configured() ? (
+              <TrailAction
+                label="Sign in — continue a journey"
+                tone="quiet"
+                style={{ marginTop: space.md }}
+                onPress={() => navigate('friends')}
+              />
+            ) : null}
+          </View>
         )}
       </View>
 

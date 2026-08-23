@@ -18,6 +18,7 @@ import { useAccount } from '../state/account';
 import { useNav } from './navContext';
 import api from '../net/api';
 import { syncPayload } from '../net/sync';
+import { pullCloudSave, pushCloudSaveNow } from '../state/cloudSave';
 import { appleAvailable, signInWithApple, googleConfigured, useGoogleAuth, googleConfig } from '../net/signin';
 import { playSfx } from '../audio';
 
@@ -58,7 +59,7 @@ function Line({ label, value }) {
 }
 
 export default function FriendsScreen() {
-  const { state } = useGame();
+  const { state, dispatch } = useGame();
   const { goBack, back, navigate } = useNav();
   const acc = useAccount();
   const [friends, setFriends] = useState([]);
@@ -77,11 +78,26 @@ export default function FriendsScreen() {
 
   useEffect(() => { refresh(); }, [acc.signedIn]);   // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Right after a sign-in the save and the account meet. A journey already on
+  // this phone rides up to the account; an empty phone gets the account's
+  // journey back. The cloud never overwrites progress you can see in hand.
+  const afterSignIn = async () => {
+    if (state.started) {
+      await pushCloudSaveNow(state);
+      return;
+    }
+    const cloud = await pullCloudSave();
+    if (cloud) {
+      dispatch({ type: 'HYDRATE', payload: cloud });
+      setNote('Welcome back — your journey is on this phone again.');
+    }
+  };
+
   const onApple = async () => {
     playSfx('confirm');
     try {
       const { idToken, displayName } = await signInWithApple();
-      if (idToken) await acc.signIn('apple', idToken, displayName);
+      if (idToken && (await acc.signIn('apple', idToken, displayName))) await afterSignIn();
     } catch (e) {
       // A cancelled sign-in is not an error worth shouting about.
       if (e && e.code !== 'ERR_REQUEST_CANCELED') setNote('That sign-in did not finish.');
@@ -153,13 +169,14 @@ export default function FriendsScreen() {
             caption="Sign in to compare. An account shares only the training you choose."
           >
             <PixelText size="tiny" color={tokens.textOnPaper} style={{ lineHeight: 15 }}>
-              An account shares your TRAINING with friends you choose: the days you were
-              active, the miles you walked, the sessions you did, and your personal bests.
+              An account keeps your JOURNEY: sign in on a new phone and your companion is
+              where you left it. It also shares your TRAINING with friends you choose —
+              the days you were active, the miles, the sessions, your personal bests.
             </PixelText>
             <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 8, lineHeight: 15 }}>
-              It does not share your companion, your goal, your bag or anything else, and
-              nobody sees any of it until you both agree. You can sign out or delete the
-              account here at any time — neither touches your game.
+              Friends never see your companion, your goal or your bag — only training, and
+              only after you both agree. You can sign out or delete the account here at
+              any time; the game on this phone keeps working either way.
             </PixelText>
             {!appleOk && !googleConfigured() ? (
               <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 8, lineHeight: 15 }}>
@@ -286,7 +303,10 @@ export default function FriendsScreen() {
           <TrailAction label="Sign in with Apple" tone="primary" onPress={onApple} />
         ) : null}
         {acc.available && !acc.signedIn && googleConfigured() ? (
-          <GoogleButton onToken={(idToken) => acc.signIn('google', idToken)} disabled={acc.busy} />
+          <GoogleButton
+            onToken={async (idToken) => { if (await acc.signIn('google', idToken)) await afterSignIn(); }}
+            disabled={acc.busy}
+          />
         ) : null}
         {acc.signedIn ? (
           <TrailAction

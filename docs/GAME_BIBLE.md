@@ -185,7 +185,7 @@ clears it.
 
 | route | file | what it is |
 |---|---|---|
-| `title` | TitleScreen | logo, Continue / Begin Again (Begin Again RESET then `intro`, so outfit/character creation runs) |
+| `title` | TitleScreen | logo, Continue, and (no save, server configured) "Sign in — continue a journey" → `friends`. Deliberately NO start-over here; erasing lives in Options (RESET then `title`, so outfit/character creation runs on Enter the World) |
 | `intro` | IntroScreen | Coach's typewriter welcome |
 | `goal` | GoalSelectScreen | companion creation — the first-rendition plate (Sproutle, Emberkit, Dewbble). Same type as character creation: three faces, pick one. The goal is that companion's temperament. |
 | `pairing` | PairingScreen | first-bond ceremony + Coach lines |

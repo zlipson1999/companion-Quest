@@ -146,8 +146,11 @@ settings, meta, trails }`. Companion XP is a lifetime total; level/HP are derive
 `useParty()` returns the whole team. Distance is in miles (`stats.distanceMi`).
 **Trail quotas** (miles + challenge reps) live in `state.trails` and only
 increment when `ADD_DISTANCE` / `LOG_EXERCISE` carry a `routeId` — gym cardio
-must not pass one. A full Circle (6) makes `CATCH` a no-op. Begin Again
-`RESET`s then navigates to `intro` so outfit/character creation runs.
+must not pass one. A full Circle (6) makes `CATCH` a no-op. The only start-over
+is Options → Erase Save (`RESET`); the title has no reset on purpose. Signing
+in makes the save durable: the account stores the whole blob (`server` `/save`,
+`src/state/cloudSave.js`) — a started device always wins, the cloud only fills
+an empty one.
 
 **Navigation:** a tiny custom router (`src/screens/Router.js` + `navContext`) —
 `navigate(name)` and `toBattle(params)`. Register new screens in `Router.js`

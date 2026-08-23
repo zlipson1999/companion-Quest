@@ -69,6 +69,7 @@ function messageFor(code, json) {
     case 'sign_in_failed': return (json && json.message) || 'That sign-in could not be verified.';
     case 'too_much': return 'That was more history than one sync can carry.';
     case 'bad_name': return 'That name will not work — try a shorter one.';
+    case 'save_too_large': return 'Your journey is too big to store — tell us, this should never happen.';
     default: return (json && json.message) || 'Something went wrong on the server.';
   }
 }
@@ -82,6 +83,9 @@ export const api = {
   deleteAccount: (token) => request('/me', { method: 'DELETE', token }),
 
   sync: (token, payload) => request('/sync', { method: 'POST', token, body: payload }),
+
+  getSave: (token) => request('/save', { token }),
+  putSave: (token, save) => request('/save', { method: 'PUT', token, body: { save } }),
 
   friends: (token) => request('/friends', { token }),
   lookup: (token, code) => request(`/friends/lookup/${encodeURIComponent(code)}`, { token }),

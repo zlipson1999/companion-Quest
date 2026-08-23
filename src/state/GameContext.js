@@ -21,6 +21,7 @@ import {
 } from '../data/routes';
 import { xpProgress, levelFromXp, maxHpFor } from './leveling';
 import { loadGame, saveGame, clearGame } from './storage';
+import { pullCloudSave, pushCloudSaveSoon } from './cloudSave';
 import { stamp, trim } from './history';
 import { computeRecovery } from './recovery';
 import { XP_PER_MILE, pointsFor, xpFor } from './evolution';
@@ -557,6 +558,13 @@ export function GameProvider({ children }) {
     (async () => {
       const saved = await loadGame();
       if (mounted && saved) dispatch({ type: 'HYDRATE', payload: saved });
+      // A phone with no journey but a remembered sign-in is a reinstall or a
+      // new device: the account carries the save, so bring it home. A started
+      // local save always wins — the cloud only ever fills an empty device.
+      if (!saved || !saved.started) {
+        const cloud = await pullCloudSave();
+        if (mounted && cloud) dispatch({ type: 'HYDRATE', payload: cloud });
+      }
       if (mounted) setHydrated(true);
     })();
     return () => {
@@ -570,6 +578,8 @@ export function GameProvider({ children }) {
     (async () => {
       const ok = await saveGame(state);
       if (!cancelled) setSaveError(ok ? null : 'Could not save your progress.');
+      // Signed in? The same save rides up to the account, debounced.
+      if (ok) pushCloudSaveSoon(state);
     })();
     return () => { cancelled = true; };
   }, [state, hydrated]);
