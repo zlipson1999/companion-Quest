@@ -1,20 +1,22 @@
 # Companion reference prompt
 
-This is the prompt that produced the approved trail lineups
-(Spinseed / Bramblet / Lanternbud, Rubblet / Chockit / Facetel,
-Whistlet / Kitefin / Loftburr, Fernap / Dapple / Stillcup). Use it
-for every new companion and every evolution.
+This is the same type as character creation. People start as a
+three-face lineup card (`player-selection-lineup-v1.png`) and are cut
+out with `convert_character.py --figure`. Companions start as a
+three-face plate and are cut out the same way. Sproutle / Emberkit /
+Dewbble are the first-bond plate. The approved trail lineups (Maple,
+Cairn, Gale, Canopy) are that type on the trail.
 
-Do **not** describe a chibi mascot, a lit sphere, a belly patch, or
-"enormous low-set eyes on a round body". That is the first-rendition
-recipe and it is how twelve different names came out as the same blob.
-The approved lineups are designed objects: a maple-key with paper wings,
-a thorn-knot, a glowing bud, a cairn, a climbing wedge, a crystal
-cluster, a reed-flute bird, a kite-ray, a seed-parachute, a fern coil,
-a shade-moth, a rain-bowl.
+The first rendition is the quality bar: designed objects, huge shiny
+eyes with two specular dots, a belly or material patch that belongs to
+THAT body, short thick limbs, hard-edged 16-bit shading, outline in the
+creature's own darkest colour. That is Sproutle's kit and the Maple
+plate. It is not a `sphere()` with two `eye()` calls — that copies the
+checklist and loses the face.
 
-People (Coach Maple, the player) do **not** use this prompt. They go
-through `tools/convert_character.py` from a painted character card.
+People (Coach Maple, the player) still go through
+`tools/convert_character.py` from the painted card. Companions use this
+prompt, then `split_lineup.py` / `convert_reference.py`.
 
 `make_sprites.py` will not invent a trail face. No master means the
 build fails.

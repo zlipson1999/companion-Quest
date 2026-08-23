@@ -13,7 +13,7 @@ const lessons = [
   { speaker: 'Coach Maple', text: 'A Kinship Knot is an invitation, never a trap. You offer one loop and keep the other — the companion decides whether to pull it tight, and you can rotate who takes the lead.' },
   { speaker: 'Coach Maple', text: 'Your Journal remembers progress. Supplies help on the trail. The Coach desk can answer wellness questions, but injuries and medical concerns belong with a qualified professional.' },
   { speaker: 'Coach Maple', text: 'Recovery is part of training. When you need it, return home, go upstairs, and sleep. Rest restores Resolve; it is never something to feel guilty about.' },
-  { speaker: 'Coach Maple', text: 'There is no perfect goal. Tell me what you want your next season of life to feel like. Your answer will help one companion recognize you.' },
+  { speaker: 'Coach Maple', text: 'There is no perfect season. The next plate is three companions — pick the one that recognizes you, the same way you picked your own face.' },
 ];
 
 export default function CoachTutorialScreen() {

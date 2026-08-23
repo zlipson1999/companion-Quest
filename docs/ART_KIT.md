@@ -23,6 +23,22 @@ The authored world-material atlas lives in `assets/textures/masters/`.
 `tools/convert_texture_atlas.py` turns its cells into indexed runtime tiles.
 Tiles and props may still fall back to a procedural drawing.
 
+## The first rendition type
+
+Character creation and companion creation are the same job. A plate of
+three designed faces, then one figure extracted and traced.
+
+- **People** — `assets/characters/player-selection-lineup-v1.png` through
+  `convert_character.py --figure N`. The Create Your Character screen
+  shows that plate.
+- **Companions** — Sproutle / Emberkit / Dewbble are the first-bond
+  plate (the original traced kit). Trail families use the approved
+  lineups in `tools/reference_art/lineups/`. The Create Your Companion
+  screen shows the starter plate the same way.
+
+`sphere()` + `eye()` is not this type. It copies the belly and the eyes
+and loses the design. A missing master fails the build.
+
 ## People
 
 Characters go through `tools/convert_character.py`, not the creature tracer. The

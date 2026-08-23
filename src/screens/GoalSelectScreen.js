@@ -1,68 +1,105 @@
-// Coach Maple's final tutorial question. The answer determines the first bond,
-// but the companion stays a surprise until the ceremony.
+// Companion creation — the same type as character creation.
+// Three first-rendition faces on one plate. The goal is their temperament,
+// not a menu that hides who you are bonding with.
 
 import React, { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import { Screen, Window, PixelText, PixelButton, Triangle } from '../components';
+import { Screen, Window, PixelText, PixelButton, PixelSprite } from '../components';
 import { palette, space } from '../theme';
 import { useGame } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { GOALS } from '../data/goals';
+import { STARTER_IDS, getCreature } from '../data/creatures';
 
 export default function GoalSelectScreen() {
   const { dispatch } = useGame();
   const { navigate } = useNav();
-  const [selected, setSelected] = useState(GOALS[0].id);
+  const starters = STARTER_IDS.map((id) => {
+    const companion = getCreature(id);
+    const goal = GOALS.find((g) => g.companionId === companion.id);
+    return { companion, goal };
+  });
+  const [selected, setSelected] = useState(STARTER_IDS[0]);
+  const current = starters.find((row) => row.companion.id === selected);
 
-  const goal = GOALS.find((g) => g.id === selected);
   const confirm = () => {
-    dispatch({ type: 'START_GAME', payload: { goalId: goal.id, starterId: goal.starterId } });
-    navigate('pairing', { goalId: goal.id, starterId: goal.starterId });
+    dispatch({
+      type: 'START_GAME',
+      payload: { goalId: current.goal.id, starterId: current.companion.id },
+    });
+    navigate('pairing', { goalId: current.goal.id, starterId: current.companion.id });
   };
 
   return (
     <Screen style={{ padding: space.md }}>
-      <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.md }}>
-        Choose Your Goal
+      <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
+        Create Your Companion
+      </PixelText>
+      <PixelText size="tiny" color={palette.windowFill} align="center" style={{ lineHeight: 15 }}>
+        Three faces on one plate. Same type as the character card.
       </PixelText>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {GOALS.map((g) => {
-          const isSel = g.id === selected;
-          return (
-            <View key={g.id} style={{ marginBottom: space.md }}>
-              <Window tone="cream" pad={12} style={{ borderColor: isSel ? palette.accent : palette.windowBorder }} innerStyle={isSel ? { borderColor: palette.accent } : null}>
-                <Pressable onPress={() => { playSfx('cursor'); setSelected(g.id); }} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <View style={{ flex: 1, marginLeft: space.md }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <View style={{ width: 14, justifyContent: 'center' }}>
-                        {isSel ? <Triangle direction="right" size={5} color={palette.accent} /> : null}
-                      </View>
-                      <PixelText size="body" color={palette.windowText}>
-                        {g.name}
-                      </PixelText>
-                    </View>
-                    <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 14 }}>
-                      {g.tagline}
-                    </PixelText>
+        <Window tone="dark" pad={14} style={{ marginTop: space.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around' }}>
+            {starters.map(({ companion }) => {
+              const isSel = selected === companion.id;
+              return (
+                <Pressable
+                  key={companion.id}
+                  onPress={() => { playSfx('cursor'); setSelected(companion.id); }}
+                  style={{ alignItems: 'center', minWidth: 44, paddingHorizontal: 2 }}
+                >
+                  <View style={{
+                    borderWidth: isSel ? 2 : 0,
+                    borderColor: palette.accent,
+                    padding: 4,
+                  }}>
+                    <PixelSprite
+                      spriteKey={companion.sprite}
+                      palette={companion.palette}
+                      size={isSel ? 72 : 56}
+                    />
                   </View>
+                  <PixelText
+                    size="tiny"
+                    color={isSel ? palette.secondary : palette.windowFill}
+                    style={{ marginTop: 6 }}
+                  >
+                    {companion.name}
+                  </PixelText>
                 </Pressable>
-              </Window>
-            </View>
-          );
-        })}
+              );
+            })}
+          </View>
 
-        <Window tone="dark" pad={12} style={{ marginBottom: space.md }}>
+          <PixelText size="small" color={palette.secondary} align="center" style={{ marginTop: space.md }}>
+            {current.companion.name} · {current.goal.name}
+          </PixelText>
+          <PixelText size="tiny" color={palette.windowFill} align="center" style={{ marginTop: 5, lineHeight: 14 }}>
+            {current.goal.tagline}
+          </PixelText>
+        </Window>
+
+        <Window tone="cream" pad={12} style={{ marginTop: space.md }}>
+          <PixelText size="tiny" color={palette.windowText} style={{ lineHeight: 16 }}>
+            {current.companion.flavor}
+          </PixelText>
+          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 8, lineHeight: 16 }}>
+            {current.goal.description}
+          </PixelText>
+        </Window>
+
+        <Window tone="dark" pad={12} style={{ marginTop: space.md, marginBottom: space.md }}>
           <PixelText size="small" color={palette.secondary}>Coach Maple listens...</PixelText>
           <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 8, lineHeight: 16 }}>
-            {goal.description}
+            {current.companion.name} recognized that season in you.
           </PixelText>
         </Window>
       </ScrollView>
 
-      <PixelButton label="Tell Coach Maple" tone="gold" onPress={confirm} style={{ marginTop: space.sm }} />
+      <PixelButton label="This Is My Companion" tone="gold" onPress={confirm} style={{ marginTop: space.sm }} />
     </Screen>
   );
 }
-

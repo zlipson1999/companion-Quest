@@ -87,17 +87,14 @@ thing this game is built not to have.
     creature art needed more than 35.) The script emits
     `SPRITE_PALETTES` into `src/data/sprites.js` alongside the art — **nothing is
     mirrored into `colors.js` by hand any more.**
-  - To add a creature: HQ reference first — the locked prompt in
-    `tools/CHARACTER_PROMPT.md` (approval lineup, then one isolated ship
-    master on a flat field). Split a flat-backdrop lineup with
-    `tools/split_lineup.py`; scenic plates (sky, forest) must be
-    re-generated alone. `python3 tools/convert_reference.py` writes
-    `tools/traced_<id>.json`. Register the id in `build_all()`, run
-    `python3 tools/make_sprites.py` (traced wins), **Read
-    `tools/sprite_preview.png`**, then point `src/data/creatures.js` at
-    the new key + palette. Evolutions get their own isolated master. A
-    tinted copy of the base reads as the same creature. There is no
-    `sphere()` fallback for a trail face — the build fails instead.
+  - To add a person or a companion: the first rendition type. Three
+    faces on one plate (the player card, Sproutle's family, the approved
+    trail lineups), then extract one figure and trace it. People:
+    `convert_character.py --figure N` from `assets/characters/`.
+    Companions: `tools/CHARACTER_PROMPT.md` + `split_lineup.py` /
+    `convert_reference.py`. Do not invent a `sphere()` stand-in. The
+    onboarding screens follow that type too — character creation and
+    companion creation are the same plate.
   - `<PixelArt>`/`<PixelSprite>` honour the requested `size` **exactly**
     (fractional cells). Rounding to whole pixels was harmless at 16×16 and
     snapped a 30px request up to 48px once sprites got bigger.

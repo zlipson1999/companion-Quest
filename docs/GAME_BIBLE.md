@@ -37,9 +37,10 @@ be independently authored and recognizably ours.
 Coach Maple is an original trail mentor, not a laboratory professor or a
 substitute for any franchise character. New players begin upstairs at home,
 walk downstairs and outside, cross to the neighbouring gym, Quest Fitness, and
-learn the systems from Maple before discussing their goals. No companion is
-previewed or selected at the start; the goal conversation leads to a surprise
-first-bond ceremony at the end of the tutorial. Recovery is spatial too: the
+learn the systems from Maple, then create a companion the same way they
+created their character: three first-rendition faces on one plate. The
+ceremony still names the bond; it is no longer a surprise reveal.
+Recovery is spatial too: the
 player returns home, walks upstairs, and sleeps to restore Resolve.
 
 The complete reference: every system, every screen, every number, every sprite.
@@ -186,9 +187,9 @@ clears it.
 |---|---|---|
 | `title` | TitleScreen | logo, Continue / Begin Again (Begin Again RESET then `intro`, so outfit/character creation runs) |
 | `intro` | IntroScreen | Coach's typewriter welcome |
-| `goal` | GoalSelectScreen | the three goals (§5.2) with **no starter previews** — the companion is a surprise at the ceremony; rows are `Pressable` |
-| `pairing` | PairingScreen | starter reveal + Coach lines |
-| `outfit` | OutfitSelectScreen | one-time character + outfit choice |
+| `goal` | GoalSelectScreen | companion creation — the first-rendition plate (Sproutle, Emberkit, Dewbble). Same type as character creation: three faces, pick one. The goal is that companion's temperament. |
+| `pairing` | PairingScreen | first-bond ceremony + Coach lines |
+| `outfit` | OutfitSelectScreen | character creation — the three-face player plate, then gym outfit |
 | `homeIntro` | HomeIntroScreen | the scripted walk: bedroom → downstairs → Sunkist Lane (`HUB`, not a stub) |
 | `coachTutorial` | CoachTutorialScreen | unused leftover; the talk is bumping Coach in the gym |
 | `hub` | HubScreen | Sunkist Lane (13×17). Walk-around town, bump-to-use, 6-entry menu — the other destinations are places you WALK to |
@@ -260,8 +261,10 @@ navigating.
 ### 5.2 Goals (`data/goals.js`, `data/route.js`)
 
 Three goals = the three reasons people open a fitness app, named for the game
-world. Old saves migrate ids in HYDRATE (`distance→lean`, `strength→muscle`,
-`balance→root`).
+world. The `goal` screen is companion creation: the three first-rendition
+starters on one plate, same type as character creation. Picking Emberkit
+is picking Forge Might. Old saves migrate ids in HYDRATE (`distance→lean`,
+`strength→muscle`, `balance→root`).
 
 | id | name | starter | milestoneMi | encounter roll | workoutXpMult | mileXpMult | trail |
 |---|---|---|---|---|---|---|---|
