@@ -65,8 +65,14 @@ copy of hydrate/A1/A5/A10/A25/A32.
 - **Emberkit family complete.** A third pair is Pyrelynx (standing
   flame-eared lynx) and Cindermane (fire-mane beast, black ear tufts,
   chevron stripes). Ids stay `emberkit` / `pyrelynx` / `cindermane`.
-- **Dewbble line.** Tidewade / Maelstride keep their own isolated
-  masters. Do not tint Dewbble to invent them.
+- **Dewbble family complete.** Ids stay `dewbble` / `tidewade` /
+  `maelstride`. Tidewade is the adolescent: pear/squishy biped, forward
+  wave-hook crest, sky-blue face+torso oval, 3-finger arms, 3-toe feet,
+  six floating bubbles — not a taller Dewbble drip. Maelstride is the
+  adult walking tide: athletic humanoid water, navy shadows, glowing
+  cyan chest, frothy wave crown, wave shoulders, four-finger+thumb
+  claws, water skirt, three-toed clawed feet. Magenta is backdrop
+  only, never body. Not a whirlpool and not a taller droplet.
 - **Bramblet family from attached plates.** Ids stay `bramblet` /
   `briarthicket` / `hedgeroot`. Magenta keyed out. Baby is a vine
   knot (berries, pink buds, leaf-hands). Adolescent is a walking
