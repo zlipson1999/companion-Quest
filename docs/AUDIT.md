@@ -146,6 +146,8 @@ Every current family is 3 stages. **`creatures.js` does not assert that.** A two
 
 **A10 — `check_art.py` reports sourceless companions but exits 0.** `tools/check_art.py:97-113`. Severity: **medium**. Status: **recommend** (Part 2 must fail on traced art with no provenance **and** on families shorter than 3; do not delete the existing master-reproduces-shipped-art check).
 
+**A25 — `check_art.py` `family_chains()` does not expand spreads.** `tools/check_art.py:38-39` reads `WILD_COMPANION_IDS = \[([^\]]+)\]` and then only the quoted ids inside that one array. The array is `[...STARTER_IDS, 'pebblepup', 'wispurr', 'sporelet', ...TRAIL_COMPANION_IDS]` (`creatures.js:390-392`), so the sourceless report only walks three families. A 2026-08-23 run printed “53 of 53 masters reproduce” and **did not mention Dewbble**. Severity: **high** (the provenance gap the script exists to show is invisible). Status: **recommend** (Part 2: parse `STARTER_IDS` + `TRAIL_COMPANION_IDS` + the three named wilds, or walk `CREATURES` for `catchable` roots).
+
 ### 2.2 Dewbble / starter masters
 
 `tools/reference_art/dewbble.png` **does not exist**. `traced_dewbble.json` does. `docs/ART_KIT.md:9-14` already states this.
