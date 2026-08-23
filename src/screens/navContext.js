@@ -10,6 +10,7 @@ export const PLACE_LABELS = {
   gym: 'the gym',
   rest: 'Home',
   route: 'the trails',
+  world: 'the world map',
 };
 
 export function useNav() {
