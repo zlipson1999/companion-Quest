@@ -395,6 +395,29 @@ export const CREATURES = {
     evolvesTo: null,
   },
 
+  // --- Spec expansion: Frostpine Reach / Needle-Snow Pass ---
+  pinepuff: {
+    id: 'pinepuff', stage: 1, name: 'Pinepuff', sprite: 'pinepuff', palette: 'pine',
+    species: 'Snowcap Cone Companion', kind: 'wild', type: 'grove',
+    baseHp: 60, catchable: true, catchRate: 0.50,
+    flavor: 'An egg-shaped pinecone kid in a snowcap. Blue eyes look up; twig talons hold the pass.',
+    evolvesTo: 'rimecone', evolveLevel: 5, evolvePoints: 30,
+  },
+  rimecone: {
+    id: 'rimecone', stage: 2, name: 'Rimecone', sprite: 'rimecone', palette: 'pine',
+    species: 'Spruce-Golem Companion', kind: 'evolution', type: 'grove',
+    baseHp: 102, scale: 1.18, catchable: false,
+    flavor: 'One conical spruce. Bark arms, trunk legs, snow on every plate — not a taller cone-kid.',
+    evolvesTo: 'frostbough', evolveLevel: 14, evolvePoints: 110,
+  },
+  frostbough: {
+    id: 'frostbough', stage: 3, name: 'Frostbough', sprite: 'frostbough', palette: 'pine',
+    species: 'Evergreen Guardian Companion', kind: 'evolution', type: 'grove',
+    baseHp: 158, scale: 1.32, catchable: false,
+    flavor: 'A winter treant. Snow-tipped antlers, a frost beard, chevron bark — the pass given a keeper.',
+    evolvesTo: null,
+  },
+
   // --- Obstacle creatures (bad habits — cleared, not caught) ---
   sludgewad: {
     id: 'sludgewad', name: 'Sludgewad', sprite: 'sludgewad', palette: 'sludge',
@@ -435,13 +458,16 @@ export const TRAIL_COMPANION_IDS = [
   'whistlet', 'kitefin', 'loftburr',
   'fernap', 'dapple', 'stillcup',
 ];
+// 40-family expansion roots. Index-visible; a later trail lists them
+// when that place exists as a walkable route. Ids are permanent.
 export const SPEC_FAMILY_IDS = [
   'dusthorn',
   'brineling',
+  'pinepuff',
 ];
 export const WILD_COMPANION_IDS = [
-  ...STARTER_IDS, 'pebblepup', 'wispurr', 'sporelet', ...TRAIL_COMPANION_IDS,
-  ...SPEC_FAMILY_IDS,
+  ...STARTER_IDS, 'pebblepup', 'wispurr', 'sporelet',
+  ...TRAIL_COMPANION_IDS, ...SPEC_FAMILY_IDS,
 ];
 export const OBSTACLE_IDS = [
   'sludgewad', 'snoozeghoul', 'achefang', 'couchlurk', 'brinegnash', 'cindergrind',

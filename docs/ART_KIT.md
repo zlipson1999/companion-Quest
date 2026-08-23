@@ -6,13 +6,15 @@ file over anything drawn; a `traced_*.json` that reaches no sprite fails
 the build. A trail face without a master fails the build. There is no
 `sphere()` stand-in.
 
-**60 transparent masters** are committed in `tools/reference_art/`
+**63 transparent masters** are committed in `tools/reference_art/`
 (top-level `*.png` only; approval lineups sit in `lineups/` and are not
 counted). That is all 18 original-six forms plus all 36 trail-family forms
-plus Dusthorn → Mesaquill → Suncerast and Brineling / Shoregleam /
-Tidecrown (Tideglass Coast). Magenta is chroma; coral limbs and
-lavender growths stay. Family plates: `lineups/dusthorn_family.png`,
-`lineups/brineling_family.png`.
+plus Dusthorn → Mesaquill → Suncerast, Brineling / Shoregleam /
+Tidecrown (Tideglass Coast), and Pinepuff / Rimecone / Frostbough
+(Frostpine Reach). Magenta is chroma; coral limbs, lavender growths,
+white snow and ice-blue eyes stay. Family plates:
+`lineups/dusthorn_family.png`, `lineups/brineling_family.png`,
+`lineups/pinepuff_family.png`.
 The three first-bond families are complete first-rendition lines
 (magenta keyed out, not a re-render of an old indexed grid):
 Sproutle → Bloomtail → Groveheart, Emberkit → Pyrelynx → Cindermane,
@@ -21,7 +23,10 @@ Monolithound is the next original-six family on that same path
 (sitting mosaic puppy / standing dry-stone hound / jagged
 dolmen-beast). Sporelet → Mycobloom → Canopore is the same kind of
 first-rendition line (magenta keyed; stage-1 sparkles and stage-3
-spore sparks stay). Ids are permanent.
+spore sparks stay). The Pinepuff family plate is
+`lineups/pinepuff_family.png`. First-rendition plates, magenta keyed
+out; white snow and ice-blue eyes stay (they are the creature, not
+the backdrop). Ids are permanent.
 `python3 tools/check_art.py` verifies that each master still REPRODUCES
 the art the game ships, and **fails a family whose stages are too
 similar** (silhouette IoU + colour difference). That second gate exists

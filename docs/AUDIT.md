@@ -291,14 +291,14 @@ Status: **noted** (keep declared; Pages `npm ci` needs the lockfile).
 
 | claim | code | docs |
 |---|---|---|
-| Companion forms | 60 (`CREATURES` minus 6 obstacles) | `GAME_BIBLE.md` **60 companions** |
-| Families | 20 × 3 (`STARTER_IDS` 3 + wild 3 + `TRAIL_COMPANION_IDS` 12 + `SPEC_FAMILY_IDS` 2) | 20 families |
+| Companion forms | 63 (`CREATURES` minus 6 obstacles) | `GAME_BIBLE.md` **63 companions** |
+| Families | 21 × 3 (`STARTER_IDS` 3 + wild 3 + `TRAIL_COMPANION_IDS` 12 + `SPEC_FAMILY_IDS` 3) | 21 families |
 | Obstacles | 6 (`OBSTACLE_IDS`, `creatures.js:393-395`) | plus 6 obstacles |
 | `INDEX_ORDER` | `WILD_COMPANION_IDS.flatMap(familyChain)` + obstacles (`creatures.js:428-431`) | lists every id; import throws if not (`creatures.js:436-439`) |
 | `evolvesTo` | every non-final companion points at a real id; finals `null` | ok |
 | Sprite keys | each `sprite:` exists in generated `sprites.js` | `make_sprites.py` prefers `traced_<id>.json` |
 | Palettes | 28 unique keys, all in `SPRITE_PALETTES` | ok |
-| Catchable roots | 19 (`catchable: true` only on family roots) | evos and obstacles are false |
+| Catchable roots | 21 (`catchable: true` only on family roots) | evos and obstacles are false |
 
 Every current family is 3 stages. **`creatures.js` does not assert that.**
 A two-stage family would still pass `INDEX_ORDER` if both ids are listed.
@@ -541,10 +541,10 @@ Ran on 2026-08-23 against this branch (`cursor/audit-findings-e7e6` = `main`
 
 - `python3 tools/check_docs.py` — **25/25 figures + both coach guardrail
   pairs agree.** Save 9, 30 screens, 30 components (HorizonSky + GrowthCeremony
-  both export), 416 atlas cells, 142
-  runtime sprites, kcal 0.53/0.75, pace 12, 57 companions, 6 obstacles, 74
+  both export), 416 atlas cells, 148
+  runtime sprites, kcal 0.53/0.75, pace 12, 63 companions, 6 obstacles, 74
   recipes, knot 2.5 mi, credit 10/8/6/4, map sizes 13×17 / 17×19 / 13×15 /
-  11×13, 57 masters, 9 perks, six hub menu entries, 5 modules.
+  11×13, 63 masters, 9 perks, six hub menu entries, 5 modules.
 - `python3 tools/check_art.py` — **53 of 53 masters reproduce.** Exit 0.
   Did **not** print Dewbble (A25). That is the finding, not a clean bill.
 - `node --check server/index.js` — syntax ok.

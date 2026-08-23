@@ -22,6 +22,10 @@ the stage-filename pattern.
 lineups (`lineups/maple.png`, `cairn.png`, `gale.png`, `canopy.png`) are
 the species bar — look at them, do not ship them.
 
+**Frostpine Reach.** Pinepuff → Rimecone → Frostbough. First-rendition
+plates, magenta keyed; white snow and ice-blue eyes stay. Family plate:
+`lineups/pinepuff_family.png`.
+
 **Each family is three different creatures that read as one life**
 (baby / adolescent / adult). A tint, scale, crop, or outline of the
 same pose is not a stage. The Gale/Canopy and Lanternbud/Chockit/Dapple
