@@ -48,11 +48,9 @@ export function xpFor(source, n = 1) {
 // diverge later; null when a creature is fully evolved.
 export function requirementFor(creature) {
   if (!creature || !creature.evolvesTo) return null;
-  const need = creature.evolveNeed || {};
   return {
-    level: need.level || creature.evolveLevel || 5,
-    points: need.points || creature.evolvePoints || 0,
-    behavior: need.behavior || null,
+    level: creature.evolveLevel || 5,
+    points: creature.evolvePoints || 0,
   };
 }
 
@@ -68,7 +66,6 @@ export function evolveProgress(member, creature, level) {
   return {
     points,
     level,
-    need,
     needPoints: need.points,
     needLevel: need.level,
     levelOk,
@@ -97,8 +94,6 @@ export function evolveHint(member, creature, level) {
   const bits = [];
   if (!p.levelOk) bits.push(`${p.needLevel - p.level} more level${p.needLevel - p.level === 1 ? '' : 's'}`);
   if (!p.pointsOk) bits.push(`${p.needPoints - p.points} more evolve points`);
-  const behave = p.need && p.need.behavior;
-  if (behave && behave.hint) bits.push(behave.hint);
   return `Needs ${bits.join(' and ')}.`;
 }
 

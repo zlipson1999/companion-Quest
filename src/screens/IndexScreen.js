@@ -53,31 +53,16 @@ function Entry({ id, status, locked }) {
           </View>
           {known ? (
             <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6 }}>
-              {c.species}{typeLabel ? ` · ${typeLabel}` : ''}{c.trail ? ` · ${c.trail}` : ''}
+              {c.species}{typeLabel ? ` · ${typeLabel}` : ''}
             </PixelText>
           ) : (
             <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6 }}>
-              {locked ? 'a later trail' : (c.encounter && c.encounter.hint) ? c.encounter.hint : 'not yet discovered'}
+              {locked ? 'a later trail' : 'not yet discovered'}
             </PixelText>
           )}
-          {known && c.evolvesTo ? (
-            <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4 }}>
-              {`grows into ${c.evolvesTo}`}
-            </PixelText>
-          ) : null}
-          {status === 'owned' && c.passive ? (
-            <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 14 }}>
-              {`${c.passive.name}. ${c.passive.text}`}
-            </PixelText>
-          ) : null}
           {status === 'owned' && c.flavor ? (
             <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 14 }}>
               {c.flavor}
-            </PixelText>
-          ) : null}
-          {status === 'owned' && c.personality ? (
-            <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 14 }}>
-              {c.personality.tendency}
             </PixelText>
           ) : null}
         </View>
