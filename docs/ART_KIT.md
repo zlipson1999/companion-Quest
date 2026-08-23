@@ -5,7 +5,14 @@ artwork — no companion falls back to a procedural stand-in, and `build_all()`
 fails if traced art reaches no sprite. Their indexed outputs live as
 `tools/traced_<name>.json`, which is what the generator reads.
 
-**17 of the 18 transparent masters are committed** in `tools/reference_art/`.
+**17 of the 18 transparent masters are committed** in `tools/reference_art/`,
+and `python3 tools/check_art.py` verifies that each one still REPRODUCES the art
+the game ships — it re-runs `convert_reference.py` and compares the result to the
+committed `traced_<id>.json`. Counting the files was the weaker claim: a count
+cannot tell a real source from a PNG rendered back out of the shipped indexed
+art, and it does not notice a master quietly desyncing from the sprite it is
+supposed to produce. 17 of 17 currently reproduce; the check fails on a single
+changed pixel.
 The first-bond bases `sproutle` and `emberkit`, and the signed KEEP evos, are
 traced from the pixel sheets. **`dewbble` still has no master** — stage 1 stays
 the shipped teardrop, and its chain starts at the indexed output. That remaining
