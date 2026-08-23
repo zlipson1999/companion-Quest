@@ -21,7 +21,8 @@ bluebell flowers. Family plates:
 `lineups/nectlet_family.png`, `lineups/chipmagma_family.png`,
 `lineups/propfin_family.png`, `lineups/clinket_family.png`,
 `lineups/glintfoal_family.png`,
-`lineups/burrcalf_family.png`.
+`lineups/burrcalf_family.png`,
+`lineups/plinkbat_family.png`.
 Burrcalf → Thistlebuck → Prairieguard is the Golden Steppe /
 Thistlehoof Way line (bur-stuck calf / thistle-crown deer /
 folk bison; magenta is chroma only). Purple thistles, sage
