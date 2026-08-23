@@ -23,7 +23,8 @@ check pass. Do not lift the `__DEV__` step injector.
 
 House stairs and the front door (A2/A3) were already on `main` via #28.
 Play-quality and Trailkeeper UI live on #31/#32 if those are still open.
-#35 is already merged on this branch.
+#35 is on `main`; this PR is the leftover art + debrief, not a second copy
+of hydrate/A1/A5/A10/A25/A32.
 
 ## Honest debt (still true after this PR unless named below)
 
@@ -39,38 +40,31 @@ Play-quality and Trailkeeper UI live on #31/#32 if those are still open.
 - **A18/A19** — first-run walking beat and on-scene web-trail copy live on
   the play-quality branch if it has not merged.
 - **Full Circle** is a designed no-op (A33), not a bug.
-- **Stage bar is closed on this branch.** `check_art.py` passes all 18
-  families. Do not loosen the gate.
 
 ## What this PR closes
 
-- **A11 Dewbble.** The player attached the missing first-rendition plate:
-  stout teardrop, medium blue, pale belly/face, pointed crown, glossy
-  dark-blue eyes with two highlights each, tiny smile, 3-finger arms,
-  4-toe feet, upper-left specular, magenta backdrop. That IS the Dewbble
-  master. Isolated from the magenta field (pink is backdrop, not body),
-  committed as `tools/reference_art/dewbble.png`, traced. This PR does
-  **not** re-render `traced_dewbble.json` back to a PNG.
-- **A12 first-bond approval lineup.** The same three attached plates —
-  Sproutle, Emberkit, Dewbble — are the Create Your Companion plate.
-  Isolated, then composed as `lineups/firstbond.png`. Same type as
-  Maple/Cairn and the player card. All three first-bond lines are
-  complete first-rendition families: Sproutle → Bloomtail → Groveheart,
-  Emberkit → Pyrelynx → Cindermane, Dewbble → Tidewade → Maelstride.
-  Ids are permanent. Stage 2/3 are their own creatures, not tints.
-- **Stage bar remakes** for the clone trail families (Stillcup, Kitefin,
-  Whistlet, Lanternbud, Chockit, Dapple, Loftburr, and the rest of
-  Gale/Canopy). Each remade stage has its own isolated master and
-  `traced_<id>.json`. Ids are permanent. `check_art.py` now passes all
-  18 families.
+- **A11 Dewbble.** No master existed in the repo, git history, or stashes.
+  The 2026-08-21 trace commit used a PNG that was never committed. This
+  PR does **not** re-render `traced_dewbble.json` back to a PNG. It ships
+  a new first-rendition isolated master matching the existing Dewbble
+  identity (living dewdrop, navy→cyan, pink mouth, satellite droplets),
+  then traces it. `check_art.py` reproduces the new JSON from that master.
+- **A12 first-bond approval lineup.** Sproutle / Emberkit / Dewbble as
+  `lineups/firstbond.png` — three designed faces, full body, 3/4 view,
+  same plate type as Maple/Cairn. Later stages stay their own isolated
+  masters, not tints.
+- **Stage bar remakes** for Stillcup, Kitefin, Whistlet, Lanternbud,
+  Chockit, Dapple, Loftburr, plus Fernap / Rubblet / Facetel. Each remade
+  stage has its own isolated master and `traced_<id>.json`. Ids are
+  permanent. `check_art.py` exits 0 on all 18 families. Thresholds were
+  not loosened.
 
-## What we searched before the plates arrived
+## What we searched before drawing Dewbble
 
 `tools/reference_art/`, `assets/`, `tools/traced_dewbble.json`, every git
 ref (`git log --all -- '*dewbble*'`), and twelve stashes. Result: JSON
-only for Dewbble; tiny pixel-sheet masters for Sproutle and Emberkit.
-The attached plates closed that gap. Do not invent a Dewbble PNG from
-the indexed grid.
+only. Sproutle, Emberkit, and the Dewbble evos already had masters. Do
+not invent a Dewbble PNG from the indexed grid.
 
 ## How to verify
 
@@ -82,12 +76,10 @@ node --check server/index.js
 EXPO_OFFLINE=1 CI=1 npx expo export --platform android --output-dir /tmp/cq
 ```
 
-Read `tools/sprite_preview.png` and `tools/reference_art/lineups/firstbond.png`.
-The checkers cannot see whether a face is good.
+Read `tools/sprite_preview.png`. The checkers cannot see whether a face
+is good.
 
 ## What this debrief is not
 
 A feature list. A licence to treat another franchise as a design spec.
-If a figure in the bible moves, it moved in the same commit as the
-code. The stage bar passing means the silhouettes differ — it does
-not mean every face is final.
+If a figure in the bible moves, it moved in the same commit as the code.
