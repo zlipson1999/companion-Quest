@@ -22,6 +22,8 @@ import { useNav, PLACE_LABELS } from './navContext';
 import { playSfx } from '../audio';
 import { pacingForGoal, formatMiles } from '../data/route';
 import { isGrownForm, rollWildEncounter } from '../data/wild';
+import { encounterContext, encounterMeterScale } from '../state/companionLife';
+import { encourageLine } from '../data/personality';
 import {
   ROUTES,
   getRoute,
@@ -183,17 +185,30 @@ export default function RouteScreen({ params = {} }) {
       // nobody to stand with you, and BattleScreen reads companion.creature.
       if (!companion) return;
       encMiRef.current += dM;
-      setEncMeter(Math.min(1, encMiRef.current / encThreshRef.current));
-      if (encMiRef.current < encThreshRef.current) return;
-      busyRef.current = true;
       const current = trailRef.current;
-      const enc = rollWildEncounter(state.stats.milestonesReached + 1, current.companions, current.warden);
+      const ctx = encounterContext(state, {
+        sessionMiles: encMiRef.current,
+        trailId: current.id,
+        bond: companion.bond,
+      });
+      const thresh = encThreshRef.current * encounterMeterScale(companion.creature, ctx);
+      setEncMeter(Math.min(1, encMiRef.current / thresh));
+      if (encMiRef.current < thresh) return;
+      busyRef.current = true;
+      const enc = rollWildEncounter(
+        state.stats.milestonesReached + 1,
+        current.companions,
+        current.warden,
+        ctx,
+        companion.creature
+      );
       const c = getCreature(enc.creatureId);
       dispatch({ type: 'SEE_CREATURE', payload: { id: enc.creatureId } });
       playSfx('encounter');
+      const voice = encourageLine(companion.creature);
       setMessage(
         enc.isCompanion
-          ? `${c.name} steps onto the trail and watches you.`
+          ? `${c.name} steps onto the trail and watches you.${voice ? ` ${voice}` : ''}`
           : isGrownForm(enc.creatureId)
             ? `${c.name} is a grown form you already know. This meeting is a challenge, not an invitation.`
             : `${c.name} gathers across the path.`

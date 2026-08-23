@@ -16,6 +16,7 @@ import { getCreature } from '../data/creatures';
 import { wardenSprite } from '../data/characters';
 import { isGrownForm } from '../data/wild';
 import { canEvolve } from '../state/evolution';
+import { evolveChecklist } from '../state/companionLife';
 import { battleMovesFor, movesLearnedBetween } from '../data/exercises';
 import {
   wildIntro,
@@ -188,7 +189,7 @@ export default function BattleScreen({ params }) {
       const evo = evolveLines(creature.name, evolved.name);
       say([evo[0], evo[1]], () => {
         playSfx('evolve');
-        setCeremony({ from: creature, to: evolved, lines: evo, after: done });
+        setCeremony({ from: creature, to: evolved, lines: evo, after: done, checks: evolveChecklist(companion, creature, level) });
         setPhase('morph');
       });
     } else {
@@ -542,6 +543,7 @@ export default function BattleScreen({ params }) {
           <GrowthCeremony
             fromCreature={ceremony.from}
             toCreature={ceremony.to}
+            checks={ceremony.checks}
             onDone={() => {
               dispatch({ type: 'EVOLVE', payload: { newId: ceremony.from.evolvesTo } });
               const after = ceremony.after;

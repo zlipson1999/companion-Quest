@@ -3,6 +3,7 @@
 
 import { WILD_COMPANION_IDS, getCreature } from './creatures';
 import { ENCOUNTERS, pickEncounter } from './obstacles';
+import { companionRate, eligibleCompanions, pickWeighted } from '../state/companionLife';
 
 // Encounter stats for trail companions (tuned so bonding is
 // realistic). xp/bond are the rewards for befriending (or defeating).
@@ -73,29 +74,32 @@ export const WILD_COMPANIONS = {
   tinkid: { hp: 40, xp: 32, bond: 8 },
 };
 
-// Roll a wild encounter. ~55% a befriendable companion, ~45% a bad-habit
-// obstacle whose pool grows as you get farther along (milestone index).
-export function rollWildEncounter(milestone = 1, companionIds, obstacleId) {
+// Roll a wild encounter. Companions on the trail still form the pool, but
+// wellness conditions on the creature decide who can actually step out —
+// hydration, sleep, a streak, morning miles. If nobody qualifies, the
+// trail still has its Warden-shaped obstacle rather than a random face.
+export function rollWildEncounter(milestone = 1, companionIds, obstacleId, ctx, companionCreature) {
   const pool = companionIds && companionIds.length ? companionIds : null;
-  // A trail names its own companions. Mixing the whole roster in would make
-  // four trails one shared pool with the sign swapped. The local Warden is
-  // the only obstacle that belongs here — the milestone pool would put
-  // Couchlurk on Maple Trail and leak a locked Index row.
-  const isCompanion = Math.random() < 0.55;
+  const isCompanion = Math.random() < companionRate(ctx, companionCreature);
   if (isCompanion) {
     const ids = pool || WILD_COMPANION_IDS;
-    const id = ids[Math.floor(Math.random() * ids.length)];
-    const c = getCreature(id);
-    const stats = WILD_COMPANIONS[id] || { hp: Math.floor((c.baseHp || 50) * 0.7), xp: 28, bond: 6 };
-    const canBond = !!c.catchable;
-    return {
-      creatureId: id,
-      isCompanion: canBond,
-      hp: stats.hp,
-      xp: stats.xp,
-      bond: stats.bond,
-      catchRate: canBond ? (c.catchRate || 0.5) : 0,
-    };
+    const eligible = ctx ? eligibleCompanions(ids, ctx) : ids;
+    const pickFrom = eligible.length ? eligible : null;
+    if (pickFrom) {
+      const id = pickWeighted(pickFrom);
+      const c = getCreature(id);
+      const stats = WILD_COMPANIONS[id] || { hp: Math.floor((c.baseHp || 50) * 0.7), xp: 28, bond: 6 };
+      const canBond = !!c.catchable;
+      return {
+        creatureId: id,
+        isCompanion: canBond,
+        hp: stats.hp,
+        xp: stats.xp,
+        bond: stats.bond,
+        catchRate: canBond ? (c.catchRate || 0.5) : 0,
+        gated: eligible.length !== ids.length,
+      };
+    }
   }
   const e = (obstacleId && ENCOUNTERS[obstacleId]) || pickEncounter(milestone);
   return { creatureId: e.creatureId, isCompanion: false, hp: e.hp, xp: e.xp, bond: e.bond, catchRate: 0 };

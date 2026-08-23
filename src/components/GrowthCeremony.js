@@ -10,7 +10,7 @@ import PixelSprite from './PixelSprite';
 import PixelText from './PixelText';
 import { motion, tokens, scale } from '../theme';
 
-export default function GrowthCeremony({ fromCreature, toCreature, onDone }) {
+export default function GrowthCeremony({ fromCreature, toCreature, checks, onDone }) {
   const fade = useRef(new Animated.Value(1)).current;
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
@@ -61,6 +61,15 @@ export default function GrowthCeremony({ fromCreature, toCreature, onDone }) {
   const creature = shown === 'to' ? toCreature : fromCreature;
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: 140 }} accessibilityRole="summary">
+      {checks && checks.length ? (
+        <View style={{ marginBottom: scale.gap.sm, alignItems: 'center' }}>
+          {checks.map((row) => (
+            <PixelText key={row.key} size="tiny" color={tokens.textOnDark} style={{ marginTop: 2 }}>
+              {row.label} {row.ok ? '✓' : `${row.have} / ${row.need}`}
+            </PixelText>
+          ))}
+        </View>
+      ) : null}
       <Animated.View style={{ opacity: fade }}>
         <PixelSprite spriteKey={creature.sprite} palette={creature.palette} size={96} />
       </Animated.View>

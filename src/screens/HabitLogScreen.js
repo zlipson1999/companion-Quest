@@ -22,6 +22,7 @@ import {
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { habitGoalLine, habitLogged, habitStreakLine, levelUpLine } from '../coach';
+import { encourageLine } from '../data/personality';
 
 // The label shows what pressing this ACTUALLY does right now — the real payout
 // after the daily cap or the top-up ledger, and "sets" rather than "+" for a
@@ -107,6 +108,8 @@ export default function HabitLogScreen({ params }) {
         playSfx('levelup');
         lines.push(levelUpLine(companion.creature.name, after));
       }
+      const voice = encourageLine(companion.creature);
+      if (voice) lines.push(voice);
     }
 
     setFeedback({ title: preview.goalJustHit ? 'Goal complete!' : habitLogged(), lines });

@@ -98,7 +98,16 @@ export function hydrateSave(saved) {
   // starting them at zero is the honest choice — the app was not recording
   // the work that would have earned them, and inventing a balance would
   // hand out an evolution nobody trained for.
-  merged.party = (party || []).map((m) => ({ ...m, evo: m.evo || 0 }));
+  merged.party = (party || []).map((m) => ({
+    ...m,
+    evo: m.evo || 0,
+    behaviors: {
+      hydrations: 0, workouts: 0, sleeps: 0, recoveries: 0,
+      miles: 0, meals: 0, cardio: 0, streak: 0,
+      ...(m.behaviors || {}),
+    },
+    memories: Array.isArray(m.memories) ? m.memories : [],
+  }));
   merged.activeIndex = clamp(saved.activeIndex || 0, 0, Math.max(0, merged.party.length - 1));
   delete merged.companion;
 

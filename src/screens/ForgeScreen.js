@@ -14,6 +14,7 @@ import { palette, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { levelFromXp } from '../state/leveling';
 import { canEvolve, pointsFor, xpFor } from '../state/evolution';
+import { evolveChecklist } from '../state/companionLife';
 import { getCreature } from '../data/creatures';
 import { evolveLines } from '../coach';
 import { moduleStateFor, getModule, todayKey, logModuleAction } from '../modules';
@@ -282,7 +283,7 @@ export default function ForgeScreen({ params }) {
         const evoLines = evolveLines(creature.name, next.name);
         lines.push(evoLines[0], evoLines[2]);
         playSfx('evolve');
-        setCeremony({ from: creature, to: next, newId: creature.evolvesTo });
+        setCeremony({ from: creature, to: next, newId: creature.evolvesTo, checks: evolveChecklist(projected, creature, after) });
         setResultLines(lines);
         setPhase('ceremony');
         return;
@@ -301,6 +302,7 @@ export default function ForgeScreen({ params }) {
         <GrowthCeremony
           fromCreature={ceremony.from}
           toCreature={ceremony.to}
+          checks={ceremony.checks}
           onDone={() => {
             dispatch({ type: 'EVOLVE', payload: { newId: ceremony.newId } });
             setCeremony(null);

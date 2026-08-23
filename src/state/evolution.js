@@ -65,6 +65,12 @@ export function evolveProgress(member, creature, level) {
   const points = (member && member.evo) || 0;
   const levelOk = level >= need.level;
   const pointsOk = points >= need.points;
+  const behave = need.behavior || null;
+  const behaviorHave = behave
+    ? ((member && member.behaviors && member.behaviors[behave.kind]) || 0)
+    : 0;
+  const behaviorNeed = behave ? behave.amount : 0;
+  const behaviorOk = !behave || behaviorHave >= behaviorNeed;
   return {
     points,
     level,
@@ -73,7 +79,11 @@ export function evolveProgress(member, creature, level) {
     needLevel: need.level,
     levelOk,
     pointsOk,
-    ready: levelOk && pointsOk,
+    behaviorHave,
+    behaviorNeed,
+    behaviorOk,
+    behavior: behave,
+    ready: levelOk && pointsOk && behaviorOk,
     // Fraction of the way there on the slower of the two axes, so the bar
     // reflects whatever is actually holding you back.
     pct: Math.min(
@@ -97,8 +107,14 @@ export function evolveHint(member, creature, level) {
   const bits = [];
   if (!p.levelOk) bits.push(`${p.needLevel - p.level} more level${p.needLevel - p.level === 1 ? '' : 's'}`);
   if (!p.pointsOk) bits.push(`${p.needPoints - p.points} more evolve points`);
-  const behave = p.need && p.need.behavior;
-  if (behave && behave.hint) bits.push(behave.hint);
+  const behave = p.behavior || (p.need && p.need.behavior);
+  if (behave) {
+    const have = p.behaviorHave || 0;
+    const amount = p.behaviorNeed || behave.amount;
+    if (have < amount) {
+      bits.push(behave.hint || `${have} / ${amount} ${behave.kind}`);
+    }
+  }
   return `Needs ${bits.join(' and ')}.`;
 }
 
