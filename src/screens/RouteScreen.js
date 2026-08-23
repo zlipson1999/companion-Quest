@@ -12,10 +12,11 @@
 // Distance out here is where the game happens TO you. Neither is a walk button.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Modal, Pressable, ScrollView, View } from 'react-native';
+import { Animated, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Screen, Window, ProgressBar, PixelText, PixelSprite, PixelButton, TrailAction, CardioConsole, Tile, MenuButton, TOP_INSET } from '../components';
+import { Screen, Window, ProgressBar, PixelText, PixelSprite, PixelButton, TrailAction, CardioConsole, Tile, MenuButton, TOP_INSET, HorizonSky } from '../components';
 import { palette, space, screen, tokens } from '../theme';
+import { sceneTone } from '../data/sceneSky';
 import { useGame, useCompanion } from '../state';
 import { useNav, PLACE_LABELS } from './navContext';
 import { playSfx } from '../audio';
@@ -48,30 +49,14 @@ import { DEFAULT_BODY_WEIGHT_LB } from '../state/cardioMaths';
 // path, tall grass and tree tiles the overworld uses, scrolling past you.
 const ROUTE_TS = 22;
 
-// Same sky and haze as BattleStage, so the walk and the challenge are one place.
-const SCENE_SKY = {
-  maple: '#4a6ea8',
-  cairn: '#5c5a52',
-  gale: '#6aa8dc',
-  canopy: '#1c2a1a',
-  rill: '#3a6a88',
-  ember: '#6a2a14',
-};
-const SCENE_HAZE = {
-  maple: '#7fa8d8',
-  cairn: '#b0a890',
-  gale: '#d0e8f8',
-  canopy: '#3a5a32',
-  rill: '#8ec8d8',
-  ember: '#d87838',
-};
-
 function ScrollingScene({ width, height, moving, trailId }) {
   const offset = useRef(new Animated.Value(0)).current;
   const route = getRoute(trailId);
-  // Tiles used to cover the whole phone, so SCENE_SKY never showed and the
+  const scene = sceneTone(route.stageTone || trailId);
+  // Tiles used to cover the whole phone, so the sky never showed and the
   // four trails read as one slab with the sign swapped. The ground starts at
   // the trail's own horizon — Gale is mostly sky, Canopy almost none.
+  // HorizonSky is the same painter the challenge stage uses.
   const skyH = Math.round(height * (route.horizon || 0.16));
   const groundH = Math.max(ROUTE_TS * 4, height - skyH);
   const cols = Math.ceil(width / ROUTE_TS);
@@ -115,8 +100,8 @@ function ScrollingScene({ width, height, moving, trailId }) {
   );
 
   return (
-    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden', backgroundColor: SCENE_SKY[trailId] || palette.grassDark }}>
-      <View style={{ position: 'absolute', left: 0, right: 0, top: skyH, height: 4, backgroundColor: SCENE_HAZE[trailId] || '#7fa8d8' }} />
+    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden', backgroundColor: scene.ground }}>
+      <HorizonSky tone={route.stageTone || trailId} horizon={route.horizon || 0.16} />
       <Animated.View style={{ position: 'absolute', top: skyH - ROUTE_TS, transform: [{ translateY: translate }] }}>
         {strip}
       </Animated.View>
@@ -133,7 +118,12 @@ export default function RouteScreen({ params = {} }) {
   const { route, progress } = trailOf(state.trails);
   const ready = trailReady(route, progress);
 
-  const [message, setMessage] = useState('The trail opens up ahead. Every real step carries you forward!');
+  const onWeb = Platform.OS === 'web';
+  const [message, setMessage] = useState(
+    Platform.OS === 'web'
+      ? 'A browser can show the trail. It cannot walk it. Open this on a phone — real steps are the only input.'
+      : 'The trail opens up ahead. Every real step carries you forward!'
+  );
   const [encMeter, setEncMeter] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -188,6 +178,9 @@ export default function RouteScreen({ params = {} }) {
     routeId: route.id,
     onDelta: (dM) => {
       if (dM <= 0 || busyRef.current) return;
+      // A trail encounter is a shared challenge. Before pairing there is
+      // nobody to stand with you, and BattleScreen reads companion.creature.
+      if (!companion) return;
       encMiRef.current += dM;
       setEncMeter(Math.min(1, encMiRef.current / encThreshRef.current));
       if (encMiRef.current < encThreshRef.current) return;
@@ -268,6 +261,10 @@ export default function RouteScreen({ params = {} }) {
 
   const challengeWarden = () => {
     if (!ready || busyRef.current) return;
+    if (!companion) {
+      setMessage('Meet Coach Maple in the gym — then the Warden has someone to meet.');
+      return;
+    }
     busyRef.current = true;
     const battle = wardenBattle(route);
     const c = getCreature(battle.creatureId);
@@ -398,6 +395,11 @@ export default function RouteScreen({ params = {} }) {
               {message}
             </PixelText>
           </Window>
+          {onWeb && dist.source === 'none' && !dist.running && !dist.showInjector ? (
+            <PixelText size="tiny" color={palette.secondary} style={{ marginTop: space.sm, lineHeight: 14 }}>
+              Published web cannot count steps, and there are no walk buttons. GPS on a desktop almost never works. The engine lives on a phone.
+            </PixelText>
+          ) : null}
           {dist.gpsError ? (
             <PixelText size="tiny" color={palette.danger} style={{ marginTop: space.sm }}>
               {dist.gpsError}

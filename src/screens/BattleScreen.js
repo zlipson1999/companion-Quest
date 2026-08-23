@@ -5,7 +5,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Screen, DualPane, Window, Menu, DialogueBox, BattleStage, Platform, StatusPlate, PixelText, PixelSprite, PixelButton } from '../components';
+import { Screen, DualPane, Window, Menu, DialogueBox, BattleStage, Platform, StatusPlate, PixelText, PixelSprite, PixelButton, GrowthCeremony } from '../components';
 import { palette, space } from '../theme';
 import { useGame, useCompanion, useParty } from '../state';
 import { levelFromXp } from '../state/leveling';
@@ -93,16 +93,19 @@ export default function BattleScreen({ params }) {
   const teamFull = party.members.length >= 6;
 
   const [wildHp, setWildHp] = useState(target.hp);
-  const [companionHp, setCompanionHp] = useState(Math.max(1, Math.round(companion.hp)));
+  const [companionHp, setCompanionHp] = useState(Math.max(1, Math.round((companion && companion.hp) || 1)));
 
   const [phase, setPhase] = useState('message');
-  const [lines, setLines] = useState(() =>
-    params.trainerBattle || params.trainer
+  const [lines, setLines] = useState(() => {
+    if (!companion) {
+      return [{ speaker: 'Narration', text: 'Meet Coach Maple in the gym — then the trail has someone to stand with you.' }];
+    }
+    return params.trainerBattle || params.trainer
       ? trainerSparLines(companion.creature.name, params.trainer || 'Rowan', wild.name)
       : params.opponent
         ? sparIntro(companion.creature.name, wild.name)
-        : wildIntro(companion.creature.name, wild.name, target.isCompanion, isGrownForm(wild.id))
-  );
+        : wildIntro(companion.creature.name, wild.name, target.isCompanion, isGrownForm(wild.id));
+  });
   const thenRef = useRef(() => setPhase('menu'));
 
   const [selectedMove, setSelectedMove] = useState(null);
@@ -111,7 +114,7 @@ export default function BattleScreen({ params }) {
   // Moves come from the companion's level and evolution stage, already
   // decorated with tier scaling — never from the raw exercise table, or a
   // Tier III companion would fight with Tier I numbers.
-  const battleMoves = battleMovesFor(companion.level, companion.creature.stage || 1);
+  const battleMoves = companion ? battleMovesFor(companion.level, companion.creature.stage || 1) : [];
   const getMove = (id) => battleMoves.find((m) => m.id === id) || null;
 
   const [wildHit, setWildHit] = useState(0);
@@ -139,8 +142,7 @@ export default function BattleScreen({ params }) {
   const [wildFaint, setWildFaint] = useState(false);
   const [companionFaint, setCompanionFaint] = useState(false);
 
-  const [evolving, setEvolving] = useState(false);
-  const evoFlash = useRef(new Animated.Value(0)).current;
+  const [ceremony, setCeremony] = useState(null);
 
   const say = (ls, then) => {
     setLines(ls);
@@ -156,25 +158,20 @@ export default function BattleScreen({ params }) {
   useEffect(() => {
     if (phase !== 'doing' || !selectedMove) return undefined;
     const move = getMove(selectedMove);
-    if (move.kind !== 'hold' || hold <= 0) return undefined;
+    if (!move || move.kind !== 'hold' || hold <= 0) return undefined;
     const id = setTimeout(() => setHold((h) => h - 1), 1000);
     return () => clearTimeout(id);
   }, [phase, selectedMove, hold]);
 
-  useEffect(() => {
-    if (!evolving) {
-      evoFlash.setValue(0);
-      return undefined;
-    }
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(evoFlash, { toValue: 1, duration: 120, useNativeDriver: true }),
-        Animated.timing(evoFlash, { toValue: 0, duration: 120, useNativeDriver: true }),
-      ])
+  // Route encounters and the gym spar both assume a party. If this screen
+  // is opened without one, do not read companion.creature.
+  if (!companion) {
+    return (
+      <Screen style={{ padding: space.md, justifyContent: 'flex-end' }}>
+        <DialogueBox lines={lines} onComplete={() => navigate(returnTo)} />
+      </Screen>
     );
-    loop.start();
-    return () => loop.stop();
-  }, [evolving, evoFlash]);
+  }
 
   const finish = () => navigate(returnTo);
 
@@ -188,13 +185,8 @@ export default function BattleScreen({ params }) {
       const evo = evolveLines(creature.name, evolved.name);
       say([evo[0], evo[1]], () => {
         playSfx('evolve');
-        setEvolving(true);
+        setCeremony({ from: creature, to: evolved, lines: evo, after: done });
         setPhase('morph');
-        setTimeout(() => {
-          dispatch({ type: 'EVOLVE', payload: { newId: creature.evolvesTo } });
-          setEvolving(false);
-          say([evo[2], evo[3]], done);
-        }, 1400);
       });
     } else {
       done();
@@ -427,7 +419,6 @@ export default function BattleScreen({ params }) {
                 fainting={companionFaint}
                 flip
               />
-              <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, backgroundColor: '#fff', opacity: evoFlash }} />
             </View>
             <DamagePop pop={compPop} color={palette.danger} />
             <Platform width={108} tone={stageTone} />
@@ -519,9 +510,23 @@ export default function BattleScreen({ params }) {
   } else if (phase === 'morph') {
     bottom = (
       <View style={{ flex: 1, padding: space.md, justifyContent: 'center', alignItems: 'center' }}>
-        <PixelText size="label" color={palette.secondary}>
-          . . .
-        </PixelText>
+        {ceremony ? (
+          <GrowthCeremony
+            fromCreature={ceremony.from}
+            toCreature={ceremony.to}
+            onDone={() => {
+              dispatch({ type: 'EVOLVE', payload: { newId: ceremony.from.evolvesTo } });
+              const after = ceremony.after;
+              const evo = ceremony.lines;
+              setCeremony(null);
+              say([evo[2], evo[3]], after);
+            }}
+          />
+        ) : (
+          <PixelText size="label" color={palette.secondary}>
+            . . .
+          </PixelText>
+        )}
       </View>
     );
   } else {

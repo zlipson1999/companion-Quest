@@ -17,7 +17,9 @@ import ObjectiveRibbon from './ObjectiveRibbon';
 import TrailAction from './TrailAction';
 import PixelText from './PixelText';
 import Screen from './Screen';
+import HorizonSky from './HorizonSky';
 import { palette, space, screen, tokens, scale } from '../theme';
+import { OUTDOOR_WORLD_TONE, sceneTone } from '../data/sceneSky';
 
 // You should be able to see the whole place you are standing in.
 //
@@ -39,9 +41,11 @@ export function worldTileFor(map) {
   )));
 }
 
-// Where the map does not reach, show the world's own tone rather than black —
-// a letterbox reads as a bug, a margin of ground reads as distance.
+// Interiors keep a flat void — a sky over a gym floor is a hole in the roof.
+// The lane is outdoor: the map sits on the ground band and the slack above
+// the tree line is sky, so grass meets air at a horizon.
 const VOID_BY_MAP = { gym: '#1b2126', home: '#241a12' };
+const OUTDOOR_MAPS = new Set(['hub']);
 
 // The overlay sits over a full-bleed world, so nothing else is holding it clear
 // of the status bar or the notch. On Android that is a measurable number; on
@@ -93,7 +97,8 @@ export default function WorldScreen({
   const tile = worldTileFor(map);
   const worldW = map.cols * tile;
   const worldH = map.rows * tile;
-  const voidColor = VOID_BY_MAP[map.id] || palette.grassDark;
+  const outdoor = OUTDOOR_MAPS.has(map.id);
+  const voidColor = VOID_BY_MAP[map.id] || (outdoor ? sceneTone(OUTDOOR_WORLD_TONE).ground : palette.grassDark);
 
   const sheet = (
     <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
@@ -135,10 +140,21 @@ export default function WorldScreen({
 
   return (
     <Screen padTop={false} style={{ padding: 0 }}>
-      {/* The world, whole. Centred in a band the width of the phone; the
-          margin either side of a narrow map takes the world's own tone rather
-          than black, so it reads as distance and not as a letterbox. */}
-      <View style={{ flex: 1, backgroundColor: voidColor, alignItems: 'center', justifyContent: 'center' }}>
+      {/* Outdoors the map sits on the ground and the slack above the trees
+          is sky. Indoors stay centred in the room's own tone. */}
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: voidColor,
+          alignItems: 'center',
+          justifyContent: outdoor ? 'flex-end' : 'center',
+        }}
+      >
+        {outdoor ? (
+          <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: worldH }}>
+            <HorizonSky tone={OUTDOOR_WORLD_TONE} horizon={0.82} fillBelow />
+          </View>
+        ) : null}
         <View style={{ width: worldW, height: worldH }}>
           <TileMap map={map} player={player} tileSize={tile} viewport={{ width: worldW, height: worldH }} />
         </View>

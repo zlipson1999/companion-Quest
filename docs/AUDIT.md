@@ -1,12 +1,10 @@
 # Companion Quest — full-repo audit
 
 Date: 2026-08-23. Against `main` at `40d8477` (trail companions + Sunkist Lane).
-Written on `cursor/audit-findings-e7e6` (#28). Statuses below were updated
-on `cursor/audit-fixes-e7e6` and `cursor/first-morning-guards-e7e6` (#33).
+Statuses updated after #30 and #33 landed on `main`.
 
-Status column: **fixed** (this branch), **done-on-branch** (another open PR
-already has it — do not redo), **recommend** (still open), **noted**
-(intentional / already documented).
+Status column: **fixed** (on `main` or this PR), **recommend** (still open),
+**noted** (intentional / already documented).
 
 Severity: **blocker** (wrong or unreachable content a player hits),
 **high** (broken loop or provenance hole), **medium** (play / docs / tooling),
@@ -19,18 +17,18 @@ Severity: **blocker** (wrong or unreachable content a player hits),
 | id | severity | status | one line |
 |---|---|---|---|
 | A1 | medium | **fixed** | `coachTutorial` unregistered; file kept (would skip the lane) |
-| A2 | high | done-on-branch #28 | Bedroom stairs did nothing on the rest screen |
-| A3 | high | done-on-branch #28 | Front door inside the house did not leave |
+| A2 | high | **fixed** | Bedroom stairs work on the rest screen |
+| A3 | high | **fixed** | Front door inside the house leaves |
 | A4 | n/a | noted | `GAIN_BOND` has no dispatcher (interface, keep) |
 | A5 | medium | **fixed** | v1 save fixture through `hydrateSave` |
 | A6 | low | **fixed** | unused `dusk` tone deleted |
 | A7 | low | noted | `expo-crypto` / `expo-asset` kept — Pages `npm ci` / auth-session |
 | A8 | n/a | noted | `expo-font` used via the Press Start package, not a direct import |
-| A9 | medium | done-on-branch #30 | No import-time "family is 3 stages" guard |
+| A9 | medium | **fixed** (#30) | import-time 3-stage family guard |
 | A10 | medium | **fixed** | sourceless companions fail `check_art.py` (Dewbble stays reported) |
 | A11 | high | recommend | Dewbble still has no master — do not re-render a PNG |
 | A12 | medium | recommend | Original six families have no approval lineup |
-| A13 | medium | done-on-branch #30 | Root `package.json` has no `test` script |
+| A13 | medium | **fixed** (#30) | Root `package.json` has `npm test` |
 | A14 | n/a | noted | `check_docs.py` still compares both coach guardrail copies |
 | A15 | n/a | noted | Companion count is `CREATURES` minus obstacles = 54 |
 | A16 | medium | done-on-branch #31 | Trailkeeper UI migration is unfinished |
@@ -40,14 +38,14 @@ Severity: **blocker** (wrong or unreachable content a player hits),
 | A20 | low | done-on-branch #32 | "Maple Lane" leftover comments |
 | A21 | medium | **fixed** + #33 | a11y labels on empty first-morning / party states |
 | A22 | low–medium | **fixed** + #32/#33 | empty states on crash-or-blank screens; web trail is #32 |
-| A23 | high | done-on-branch #30 | `CLAUDE.md` is 956 lines of changelog wearing a manual's name |
-| A24 | high | done-on-branch #30 | Working-memory file still describes procedural `sphere()`/`eye()` |
+| A23 | high | **fixed** (#30) | `CLAUDE.md` slimmed; history is `docs/HISTORY.md` |
+| A24 | high | **fixed** (#30) | Working-memory file no longer describes `sphere()`/`eye()` as the path |
 | A25 | high | **fixed** | `family_chains()` expands spreads so Dewbble is reported |
-| A26 | medium | done-on-branch #33 | Options Erase does not `forgetAll()` |
-| A27 | blocker | done-on-branch #33 | `BagScreen` crashes if opened before a companion |
-| A28 | blocker | done-on-branch #33 | `HomeRestScreen` crashes if opened before a companion |
-| A29 | blocker | done-on-branch #33 | `SummaryScreen` crashes if opened before a companion |
-| A30 | high | done-on-branch #33 | Forge / Workout finish paths assume a companion |
+| A26 | medium | **fixed** (#33) | Options Erase calls `forgetAll()` |
+| A27 | blocker | **fixed** (#33) | `BagScreen` empty-state before a companion |
+| A28 | blocker | **fixed** (#33) | `HomeRestScreen` empty-state before a companion |
+| A29 | blocker | **fixed** (#33) | `SummaryScreen` empty-state before a companion |
+| A30 | high | **fixed** (#33) | Forge / Workout finish no longer assume a companion |
 | A31 | low | noted | HomeIntro downstairs stairs are a no-op (one-way first walk) |
 | A32 | medium | **fixed** (copy only) | Grown-form meetings named; pool composition unchanged |
 | A33 | low | noted | GAME_BIBLE §14.17 lists designed Full Circle behavior as debt |
@@ -154,19 +152,19 @@ First walk is Title → Intro → Outfit → HomeIntro → Lane → gym → Coac
 The bedroom wardrobe is `P` → `bag` (`maps.js:195`). HomeIntro walks the
 bedroom *before* the gym talk, so bumping the wardrobe on the first morning
 throws. Gym lockers (`maps.js:257`) are the same crash after you reach the
-floor but before pairing. Severity: **blocker**. Status: **done-on-branch #33**.
+floor but before pairing. Severity: **blocker**. Status: ****fixed** (#33)**.
 
 **A28 — `HomeRestScreen` crashes if opened before a companion.**
 `src/screens/HomeRestScreen.js:56-58` builds sleep lines from
 `companion.creature.name` at render. Hub menu item "Go Home"
 (`HubScreen.js:22`) is available the moment you step onto the lane.
-Severity: **blocker**. Status: **done-on-branch #33**.
+Severity: **blocker**. Status: ****fixed** (#33)**.
 
 **A29 — `SummaryScreen` crashes if opened before a companion.**
 `src/screens/SummaryScreen.js:37` calls
 `evolveProgress(companion, companion.creature, companion.level)` at render.
 Gym reception `N` (`maps.js:261`) is reachable before pairing.
-Severity: **blocker**. Status: **done-on-branch #33**.
+Severity: **blocker**. Status: ****fixed** (#33)**.
 
 **A30 — Forge / Workout finish paths assume a companion.**
 `ForgeScreen.js:229,241-244,272` and `WorkoutScreen.js:37-53,62` dereference
@@ -174,7 +172,7 @@ Severity: **blocker**. Status: **done-on-branch #33**.
 iron station are reachable before pairing. The list UIs render; finishing
 throws. `WorkoutScreen.js:122` already has a ternary for the empty-state
 blurb, then the complete path does not. Severity: **high**.
-Status: **done-on-branch #33**.
+Status: ****fixed** (#33)**.
 
 `PartyScreen` is safe (empty list). `RouteScreen.js:373` guards the sprite.
 `IndexScreen` and `WeekScreen` do not need a companion. GymScreen already
@@ -265,7 +263,7 @@ square. Options erase leaves `gym`, `hub`, `route:session`, and house spots
 in the process Map. OutfitSelect clears only the `intro:*` keys
 (`OutfitSelectScreen.js:24-26`). After Erase → Enter the World, the first
 gym visit can drop you on last journey's square.
-Severity: **medium**. Status: **done-on-branch #33**.
+Severity: **medium**. Status: ****fixed** (#33)**.
 
 ### 1.6 Dead files / dead registrations
 
@@ -537,7 +535,8 @@ Ran on 2026-08-23 against this branch (`cursor/audit-findings-e7e6` = `main`
 + the two house fixes + this file):
 
 - `python3 tools/check_docs.py` — **25/25 figures + both coach guardrail
-  pairs agree.** Save 9, 30 screens, 28 components, 416 atlas cells, 139
+  pairs agree.** Save 9, 30 screens, 30 components (HorizonSky + GrowthCeremony
+  both export), 416 atlas cells, 139
   runtime sprites, kcal 0.53/0.75, pace 12, 54 companions, 6 obstacles, 74
   recipes, knot 2.5 mi, credit 10/8/6/4, map sizes 13×17 / 17×19 / 13×15 /
   11×13, 53 masters, 9 perks, six hub menu entries, 5 modules.

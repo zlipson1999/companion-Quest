@@ -14,7 +14,9 @@ import { classifyMessage } from '../coach/guardrail';
 import { greeting, refusal, JAILBREAK_LINE } from '../coach/persona';
 import { sendCoachMessage, isCoachConfigured } from '../coach/api';
 import { answerLocally, hasLocalAnswer } from '../coach/local';
-import { buildCoachContext, groundedGreeting } from '../coach/context';
+import { buildCoachContext, groundedGreeting, neglectedMuscles } from '../coach/context';
+import { suggestPlan } from '../modules/forge/suggest';
+import { moduleStateFor, todayKey } from '../modules';
 
 function Bubble({ role, text, companion }) {
   const mine = role === 'user';
@@ -42,9 +44,14 @@ function Bubble({ role, text, companion }) {
 }
 
 export default function CoachChatScreen() {
-  const { state } = useGame();
+  const { state, dispatch } = useGame();
   const companion = useCompanion();
   const { navigate, goBack, back } = useNav();
+  const forge = moduleStateFor(state.modules, 'forge');
+  const coachIdea = useMemo(() => {
+    const stale = neglectedMuscles(forge.log || [], todayKey());
+    return suggestPlan(stale, forge.plans || [], todayKey());
+  }, [forge.log, forge.plans]);
   const goal = getGoal(state.goalId);
   const scrollRef = useRef(null);
 
@@ -112,6 +119,27 @@ export default function CoachChatScreen() {
     push({ role: 'assistant', text: result.reply });
   };
 
+  // Gym Coach goes to the goal talk until you pair. If this screen is
+  // opened anyway, do not read companion.creature.
+  if (!companion) {
+    return (
+      <Screen style={{ padding: space.md, justifyContent: 'center' }}>
+        <Window tone="cream" pad={14}>
+          <PixelText
+            size="body"
+            color={palette.windowText}
+            style={{ lineHeight: 20 }}
+            accessibilityRole="text"
+            accessibilityLabel="Meet Coach Maple in the gym. She will introduce you to a companion — then this chat is theirs."
+          >
+            Meet Coach Maple in the gym. She will introduce you to a companion — then this chat is theirs.
+          </PixelText>
+        </Window>
+        <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
       <KeyboardAvoidingView
@@ -131,6 +159,28 @@ export default function CoachChatScreen() {
               ? 'Fitness, food, hydration & recovery only. Not medical advice.'
               : 'Answers come from what you have logged. Not medical advice.'}
           </PixelText>
+          <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
+            <PixelText size="tiny" color={palette.secondary}>COACH SESSION</PixelText>
+            <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6, lineHeight: 13 }}>
+              {coachIdea.plan.note}
+            </PixelText>
+            <PixelButton
+              label={coachIdea.already ? 'Open in the Forge' : 'Import into the Forge'}
+              tone="gold"
+              size="small"
+              style={{ marginTop: space.sm }}
+              onPress={() => {
+                playSfx('item');
+                if (!coachIdea.already) {
+                  dispatch({
+                    type: 'MODULE_PATCH',
+                    payload: { moduleId: 'forge', patch: { plans: [...(forge.plans || []), coachIdea.plan] } },
+                  });
+                }
+                navigate('forge');
+              }}
+            />
+          </Window>
 
           <ScrollView ref={scrollRef} style={{ flex: 1 }} showsVerticalScrollIndicator={false} onContentSizeChange={scrollDown}>
             {messages.map((m, i) => (

@@ -7,8 +7,8 @@
 
 import React, { useMemo } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Screen, Window, PixelText, PixelButton } from '../components';
-import { palette, space } from '../theme';
+import { Screen, PixelText, FieldCard, TrailAction, ObjectiveRibbon } from '../components';
+import { palette, space, tokens } from '../theme';
 import { useGame, useModules, useRecovery } from '../state';
 import { isActive, previousWeekOf, totals, weekOf } from '../state/history';
 import { todayKey } from '../modules';
@@ -53,12 +53,10 @@ export default function WeekScreen() {
 
   return (
     <Screen style={{ padding: space.md }}>
-      <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
-        Your Week
-      </PixelText>
+      <ObjectiveRibbon place="Your Week" objective="Seven columns. This week against last." />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Window tone="dark" pad={12}>
+      <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: space.md }}>
+        <FieldCard tone="ink" title="This week">
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: MAX_BAR + 34 }}>
             {days.map((d, i) => {
               const future = i >= elapsed;
@@ -89,17 +87,9 @@ export default function WeekScreen() {
             <PixelText size="tiny" color={palette.water}>rested</PixelText>
             <PixelText size="tiny" color={palette.windowBorderLight}>nothing logged</PixelText>
           </View>
-        </Window>
+        </FieldCard>
 
-        <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-            <PixelText size="small" color={palette.accentDark}>
-              {partWeek ? `This week so far` : 'This week'}
-            </PixelText>
-            <PixelText size="tiny" color={palette.windowTextDim}>
-              {partWeek ? `vs same ${elapsed} day${elapsed === 1 ? '' : 's'} last week` : 'vs last'}
-            </PixelText>
-          </View>
+        <FieldCard tone="paper" title={partWeek ? 'This week so far' : 'This week'} caption={partWeek ? `vs same ${elapsed} day${elapsed === 1 ? '' : 's'} last week` : 'vs last'} style={{ marginTop: space.sm }}>
           {[
             ['Active days', now.activeDays, before.activeDays, ''],
             ['Rest days', now.restDays, before.restDays, ''],
@@ -120,10 +110,9 @@ export default function WeekScreen() {
               </View>
             </View>
           ))}
-        </Window>
+        </FieldCard>
 
-        <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
-          <PixelText size="small" color={palette.accentDark}>Habits this week</PixelText>
+        <FieldCard tone="paper" title="Habits this week" style={{ marginTop: space.sm }}>
           {modules.map(({ module, state: modState }) => (
             <View key={module.id} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
               <PixelText size="tiny" color={palette.windowText} style={{ flex: 1 }}>{module.name}</PixelText>
@@ -135,24 +124,23 @@ export default function WeekScreen() {
               </PixelText>
             </View>
           ))}
-        </Window>
+        </FieldCard>
 
-        <Window tone="dark" pad={12} style={{ marginTop: space.sm }}>
-          <PixelText size="small" color={palette.secondary}>How it is going</PixelText>
+        <FieldCard tone="ink" title="How it is going" style={{ marginTop: space.sm }}>
           <PixelText
             size="tiny"
-            color={palette.windowFill}
-            style={{ marginTop: 8, lineHeight: 15 }}
+            color={tokens.textOnDark}
+            style={{ lineHeight: 15 }}
             accessibilityRole="text"
             accessibilityLabel={weekVerdict(now, before, recovery, partWeek, elapsed)}
           >
             {weekVerdict(now, before, recovery, partWeek, elapsed)}
           </PixelText>
-        </Window>
+        </FieldCard>
         <View style={{ height: space.sm }} />
       </ScrollView>
 
-      <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
+      <TrailAction label={back.label} tone="quiet" onPress={goBack} style={{ marginTop: space.sm }} />
     </Screen>
   );
 }

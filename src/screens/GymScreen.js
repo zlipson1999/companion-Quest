@@ -7,6 +7,7 @@
 // explaining the systems with a room that demonstrates them.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { WorldScreen, CompanionStatus, CardioConsole } from '../components';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
@@ -77,7 +78,11 @@ export default function GymScreen() {
 
   const stepOn = (code, at, kind) => {
     playSfx('confirm');
-    setNote(null);
+    setNote(
+      Platform.OS === 'web'
+        ? 'A browser cannot count steps on this deck. Use a phone — there are no walk buttons.'
+        : null
+    );
     setSeconds(0);
     setCardio({
       station: kind,
