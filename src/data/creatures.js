@@ -6,8 +6,10 @@
 //
 // `sprite` -> key in src/data/sprites.js (in-engine pixel art).
 // `palette` -> key in SPRITE_PALETTES (emitted by tools/make_sprites.py).
-//   Evolutions have their OWN drawn sprite now rather than a recolour of the
-//   base silhouette — a tinted copy read as the same creature on screen.
+//   Evolutions have their OWN drawn sprite — a new silhouette, not a
+//   recolour, scale, or outline of the base. Each family is baby /
+//   adolescent / adult or it is not a family. A tinted copy reads as
+//   the same creature on screen and fails tools/check_art.py.
 
 export const CREATURES = {
   // --- Starter line: Balance ---
@@ -436,6 +438,16 @@ export const INDEX_ORDER = [
 const unlisted = ALL_CREATURE_IDS.filter((id) => !INDEX_ORDER.includes(id));
 if (unlisted.length) {
   throw new Error(`creatures: ${unlisted.join(', ')} reach no Index entry`);
+}
+
+// Complete family or not at all. A one- or two-stage companion is how
+// an agent ships a baby and then tints it. Obstacles do not evolve.
+const shortFamily = WILD_COMPANION_IDS.filter((id) => familyChain(id).length !== 3);
+if (shortFamily.length) {
+  throw new Error(
+    `creatures: ${shortFamily.join(', ')} must be a complete 3-stage family `
+    + '(baby / adolescent / adult). Incomplete families are not allowed.',
+  );
 }
 
 export default CREATURES;

@@ -11,7 +11,11 @@ the build. A trail face without a master fails the build. There is no
 counted). That is the original 17 of 18 plus all 36 trail-family forms.
 **`dewbble` still has no master** — stage 1 stays the shipped teardrop.
 `python3 tools/check_art.py` verifies that each master still REPRODUCES
-the art the game ships.
+the art the game ships, and **fails a family whose stages are too
+similar** (silhouette IoU + colour difference). That second gate exists
+because a visual audit found seven trail families that were the same
+pose three times. The art is already wrong; the check refuses to
+accept it. Do not loosen the thresholds so the current blobs pass.
 
 The quality bar is the approved trail lineups in
 `tools/reference_art/lineups/` (Maple, Cairn, Gale, Canopy). Maple and
@@ -281,23 +285,67 @@ green balls.
 - Key light is upper-left. A thin rim sits on the lower-right silhouette.
 - Small scattered accent marks (veins, moss, flecks) break up large flats.
 
+## Quality bar for stages
+
+**Each companion family is three different creatures that read as one life.**
+
+- Stage 1 = **baby**: smaller, simpler, incomplete. A seed, a closed bud, a
+  three-stone stack, a coil. Cute is allowed. A finished adult shrunk down
+  is not a baby.
+- Stage 2 = **adolescent**: the form is becoming. New limbs, opened petals,
+  extra stones, longer reed, unfurling frond. You can name what grew. If
+  you cannot, it is not stage 2.
+- Stage 3 = **adult**: a new silhouette. A standing sail, a hedge, a
+  path-lamp, a dolmen, a cliff hitch, a wind instrument, a sky sheet, a
+  shelter-frond. Someone who never saw stage 1 should still know this is
+  the grown form of that creature — and should never mistake it for
+  stage 1.
+
+**Hard rejects (any one fails the family):** same pose, same silhouette,
+different name; stage 2 or 3 is a scale-up, crop, outline, or tint;
+stage 3 is simpler than stage 1 or snaps back to stage 1; all three are
+1024×1024 regenerations of one GenerateImage prompt; you need a
+difference map to tell them apart.
+
+**The one-line test:** show the three pictures to someone who cannot read
+the filenames. They must say "that's a kid, that's a teen, that's the
+grown one" without being told.
+
+Worked fails: Stillcup / Dewbasin / Rainhold (same moss bowl); Kitefin /
+Ribbonsail / Skysheet (same kite, stage 3 is stage 1); Whistlet /
+Reedgale (identical flute-bird); Lanternbud line (closed bud never
+opens); Chockit / Crackwedge / Cliffchock (same wedge plus an outline);
+Dapple / Leaflight (stage 3 is stage 1 again).
+
+Worked passes: Spinseed → Whirlkey → Samaraile; Bramblet → Briarthicket
+→ Hedgeroot; Rubblet → … → Dolmenhold (Cairnstack failed — still three
+stones).
+
+`creatures.js` requires a complete three-stage family or none at all.
+
 ## Adding another companion
 
 The quality bar is the approved trail lineups in
-`tools/reference_art/lineups/` (Maple, Cairn, Gale, Canopy). Each face is
-a designed object, not a lit primitive. The prompt that produced them —
-and the only prompt to use — is `tools/CHARACTER_PROMPT.md`.
+`tools/reference_art/lineups/` (Maple, Cairn, Gale, Canopy) **and** the
+stage bar above. Each face is a designed object, not a lit primitive.
+The prompt that produced them — and the only prompt to use — is
+`tools/CHARACTER_PROMPT.md`. How-to: `docs/CREATING_CHARACTERS.md`.
 
-1. Approval: a three-face lineup so the silhouettes can be compared.
+1. Approval: a three-face **species** lineup so the silhouettes can be
+   compared, then a **family** plate (baby / adolescent / adult) that
+   would pass the one-line test.
 2. Ship: one isolated master per id, flat `#000000` or transparent, no
    ground. Split a flat-backdrop lineup with `tools/split_lineup.py`;
    scenic plates (sky, forest) must be re-generated alone.
 3. `python3 tools/convert_reference.py tools/reference_art/<id>.png tools/traced_<id>.json`
 4. `python3 tools/make_sprites.py` and read `tools/sprite_preview.png`.
+5. `python3 tools/check_art.py` — fails provenance **and** same-pose
+   families.
 
 People (Coach Maple, the player) stay on `tools/convert_character.py`.
 This section is companion creatures only.
 
 If the ship master is missing, stop and make the master. There is no
-`sphere()` fallback. Evolutions get their own isolated master; a tinted
+`sphere()` fallback. Evolutions get their own isolated master that
+would fail a same-silhouette check against the earlier stages; a tinted
 copy of the base is the same mistake as the blob pass.
