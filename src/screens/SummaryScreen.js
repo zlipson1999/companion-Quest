@@ -119,7 +119,13 @@ export default function SummaryScreen() {
               ) : null}
             </View>
           ) : (
-            <PixelText size="tiny" color={palette.windowFill} style={{ lineHeight: 14 }}>
+            <PixelText
+              size="tiny"
+              color={palette.windowFill}
+              style={{ lineHeight: 14 }}
+              accessibilityRole="text"
+              accessibilityLabel="No companion yet. Meet Coach Maple in the gym — then this page is theirs."
+            >
               No companion yet. Meet Coach Maple in the gym — then this page is theirs.
             </PixelText>
           )}

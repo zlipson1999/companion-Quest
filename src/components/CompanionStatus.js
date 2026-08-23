@@ -15,7 +15,11 @@ import { palette, space, tokens } from '../theme';
 export default function CompanionStatus({ companion, stats, style }) {
   if (!companion) {
     return (
-      <View style={style}>
+      <View
+        style={style}
+        accessibilityRole="text"
+        accessibilityLabel="No companion yet — Coach Maple is waiting at Quest Fitness."
+      >
         <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ lineHeight: 14 }}>
           No companion yet — Coach Maple is waiting at Quest Fitness.
         </PixelText>

@@ -59,7 +59,7 @@ export default function BagScreen() {
             </View>
           </View>
         ) : (
-          <View>
+          <View accessibilityRole="text" accessibilityLabel="Meet Coach Maple in the gym. The bag is for the two of you.">
             <PixelText size="tiny" color={palette.windowFill} style={{ lineHeight: 14 }}>
               Meet Coach Maple in the gym. The bag is for the two of you.
             </PixelText>
@@ -79,7 +79,13 @@ export default function BagScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {owned.length === 0 ? (
           <Window tone="cream" pad={16}>
-            <PixelText size="small" color={palette.windowTextDim} align="center">
+            <PixelText
+              size="small"
+              color={palette.windowTextDim}
+              align="center"
+              accessibilityRole="text"
+              accessibilityLabel="Your bag is empty. Walk the Route to find items!"
+            >
               Your bag is empty. Walk the Route to find items!
             </PixelText>
           </Window>

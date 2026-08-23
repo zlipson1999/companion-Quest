@@ -71,7 +71,14 @@ export default function WorkoutScreen({ params = {} }) {
           {companion ? (
             <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={110} bob />
           ) : (
-            <PixelText size="tiny" color={palette.windowFill} align="center" style={{ lineHeight: 14 }}>
+            <PixelText
+              size="tiny"
+              color={palette.windowFill}
+              align="center"
+              style={{ lineHeight: 14 }}
+              accessibilityRole="text"
+              accessibilityLabel="Meet Coach Maple in the gym."
+            >
               Meet Coach Maple in the gym.
             </PixelText>
           )}
