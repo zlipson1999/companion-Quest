@@ -9,15 +9,20 @@ same creature in twelve palettes. They are forbidden. The quality bar is the
 extracted and traced. Look at `tools/reference_art/lineups/` (Maple, Cairn,
 Gale, Canopy) before you start.
 
+The executable generation prompt is `tools/CHARACTER_PROMPT.md`.
+`python3 tools/check_art.py` is the gate. Read the hard reject in the prompt
+**before** you draw or generate.
+
 ## Quality bar (enforced)
 
 1. **A companion ships as a complete 3-stage family or not at all.**
    `creatures.js` throws at import if a catchable root's `familyChain` is
    shorter than 3. `tools/check_art.py` fails the same way.
-2. **Each stage is its own professionally finished art.** A tinted copy of
-   the base is the blob pass in a different shirt. Evolutions get their own
-   isolated master, their own `traced_<id>.json`, and their own entry in
-   `CREATURES`.
+2. **Each stage is its own professionally finished art.** Baby / adolescent /
+   adult — three different creatures that read as one life. A tint, scale,
+   crop, or outline of the same pose is not a stage. Evolutions get their
+   own isolated master, their own `traced_<id>.json`, and their own entry
+   in `CREATURES`.
 3. **People ship a finished traced portrait plus a full 4×3 overworld set.**
    Portrait from the card. Walk set from `walk_set()` off one traced standing
    pose. Both go through `tools/convert_character.py`, not the creature tracer.
@@ -32,6 +37,56 @@ Gale, Canopy) before you start.
 
 `sphere()` + `eye()` is not this type. It copies the belly and the eyes and
 loses the design.
+
+## The stage bar (companions)
+
+**Each companion family is three different creatures that read as one life.**
+
+- Stage 1 = **baby**: smaller, simpler, incomplete. A seed, a closed bud, a
+  three-stone stack, a coil. Cute is allowed. A finished adult shrunk down
+  is not a baby.
+- Stage 2 = **adolescent**: the form is becoming. New limbs, opened petals,
+  extra stones, longer reed, unfurling frond. You can name what grew. If
+  you cannot, it is not stage 2.
+- Stage 3 = **adult**: a new silhouette. A standing sail, a hedge, a
+  path-lamp, a dolmen, a cliff hitch, a wind instrument, a sky sheet, a
+  shelter-frond. Someone who never saw stage 1 should still know this is
+  the grown form of that creature — and should never mistake it for
+  stage 1.
+
+**Hard rejects (any one fails the family):**
+
+- Same pose, same silhouette, different name
+- Stage 2 or 3 is a scale-up, crop, outline, or tint of an earlier stage
+- Stage 3 is simpler than stage 1 or snaps back to stage 1
+- All three are 1024×1024 regenerations of one GenerateImage prompt
+- You need a difference map to tell them apart
+
+**The one-line test:** show the three pictures to someone who cannot read
+the filenames. They must say "that's a kid, that's a teen, that's the
+grown one" without being told.
+
+### Worked fails
+
+- Stillcup / Dewbasin / Rainhold — same moss bowl, mouth tweak only
+- Kitefin / Ribbonsail / Skysheet — same kite, stage 2 is bigger, stage 3 is stage 1
+- Whistlet / Reedgale — identical flute-bird
+- Lanternbud line — closed bud never opens
+- Chockit / Crackwedge / Cliffchock — same wedge plus an outline
+- Dapple / Leaflight — stage 3 is stage 1 again
+
+### Worked passes
+
+- Spinseed (winged seed) → Whirlkey (same seed, walking legs) → Samaraile
+  (stacked key-sail stalk, no longer a hovering bulb)
+- Bramblet (vine knot) → Briarthicket (walking thicket, four roots) →
+  Hedgeroot (rooted hedge)
+- Rubblet (three stones) → … → Dolmenhold (walking doorway) — but note
+  Cairnstack failed because it was still three stones
+
+`check_art.py` fails a family whose masters or traced grids are
+near-identical (silhouette IoU + colour difference). If the check fails
+on committed art, the art is wrong; do not loosen the gate.
 
 ## Provenance block
 
@@ -84,7 +139,8 @@ Use the prompt in `tools/CHARACTER_PROMPT.md` (Approval lineup). Three faces,
 full body, 3/4 view, shared ground. **Look at it.** If you could swap two
 by changing the palette, start over.
 
-Commit the plate under `tools/reference_art/lineups/<trail>.png`.
+A trail lineup is three species. A family plate is baby / adolescent / adult
+of one species. Commit the plate under `tools/reference_art/lineups/<trail>.png`.
 
 ### 3. Make isolated ship masters
 
@@ -113,11 +169,6 @@ creature id (`whirlkey.png`) or `<root>_stageN.png` (see `check_art.py`
 python3 tools/convert_reference.py \
   tools/reference_art/spinseed.png \
   tools/traced_spinseed.json
-```
-
-Repeat for every stage. Then:
-
-```bash
 python3 tools/make_sprites.py
 python3 tools/check_art.py
 python3 tools/check_docs.py
@@ -139,7 +190,7 @@ own darkest colour, no shared ink, no ball.
 
 ### Checklist — companion family
 
-- [ ] Three stages, three names, three silhouettes
+- [ ] Three stages, three names, three silhouettes (baby / adolescent / adult)
 - [ ] Approval lineup committed under `lineups/`
 - [ ] Isolated master per stage (or a documented `provenance` gap)
 - [ ] `traced_<id>.json` per stage
@@ -257,3 +308,5 @@ EXPO_OFFLINE=1 CI=1 npx expo export --platform android --output-dir /tmp/cq
 | Preview | `tools/sprite_preview.png` |
 | Character cards | `assets/characters/` |
 | Prompts | `tools/CHARACTER_PROMPT.md` |
+
+See `docs/ART_KIT.md` for sizes, palettes, and why tracing exists.

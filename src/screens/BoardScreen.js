@@ -21,6 +21,8 @@ import { useNav } from './navContext';
 import api from '../net/api';
 import { getMovement } from '../data/movements';
 import { playSfx } from '../audio';
+import { weekChallenge } from '../state/weekChallenge';
+import { todayKey } from '../modules';
 
 const BOARDS = [
   { id: 'distance', tab: 'Miles' },
@@ -56,7 +58,8 @@ function WeekRow({ row }) {
 export default function BoardScreen() {
   const { goBack, back, navigate } = useNav();
   const acc = useAccount();
-  const [tab, setTab] = useState('distance');
+  const challenge = weekChallenge(todayKey());
+  const [tab, setTab] = useState(challenge.id);
   const [board, setBoard] = useState(null);
   const [records, setRecords] = useState(null);
 
@@ -81,7 +84,7 @@ export default function BoardScreen() {
       <Screen style={{ padding: space.md, backgroundColor: CORK }}>
         <ObjectiveRibbon
           place="The Noticeboard"
-          objective="this week among people you chose, resets Monday"
+          objective={challenge.line}
           style={{ marginBottom: space.sm }}
         />
         <FieldCard tone="paper" title="Empty cork">
@@ -115,7 +118,7 @@ export default function BoardScreen() {
     <Screen style={{ padding: space.md, backgroundColor: CORK }}>
       <ObjectiveRibbon
         place="The Noticeboard"
-        objective="this week among people you chose, resets Monday"
+        objective={weekChallenge(todayKey()).line}
         style={{ marginBottom: space.sm }}
       />
 
@@ -131,6 +134,12 @@ export default function BoardScreen() {
           />
         ))}
       </View>
+
+      <FieldCard tone="paper" title="This week's trail" caption={`week of ${challenge.weekStart} · resets Monday`} style={{ marginBottom: space.sm }}>
+        <PixelText size="tiny" color={tokens.textOnPaper} style={{ lineHeight: 15 }}>
+          {challenge.line} Display only — no extra XP, bond or Trail Credit. The {challenge.tab} column is the one that counts this week.
+        </PixelText>
+      </FieldCard>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {tab === 'records' ? (

@@ -12,6 +12,22 @@ checked is a change you report as unchecked, not a change you call done.
 3. If you are changing a map, you will walk the room after (below).
 4. Do not treat another franchise as a design specification.
 
+## Companions
+
+**Each companion family is three different creatures that read as one life.**
+Baby / adolescent / adult. A tint, scale, crop, or outline of the same
+pose is not a stage. Three 1024×1024 regenerations of one prompt are
+not a family.
+
+The executable skill is `tools/CHARACTER_PROMPT.md`. The how-to is
+`docs/CREATING_CHARACTERS.md`. The gate is `python3 tools/check_art.py`
+— it **fails** a family whose stages are too similar. If that check
+fails on art already in the repo, the art is already wrong; do not
+loosen the thresholds.
+
+Hard rejects and worked fail/pass examples live at the top of the
+prompt. Read them before you generate.
+
 ## Verification loop
 
 After every iteration of changes:
@@ -83,6 +99,7 @@ This repo fails at import rather than as a blank screen.
 | Traced art that reaches no sprite | `tools/make_sprites.py` `build_all()` |
 | Master still produces shipped art | `tools/check_art.py` |
 | Traced companion art has provenance | `tools/check_art.py` |
+| Family stages look different | `tools/check_art.py` |
 | Doc figures match code | `tools/check_docs.py` |
 | Client/server coach guardrail match | `tools/check_docs.py` |
 

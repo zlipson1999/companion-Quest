@@ -3,7 +3,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
-import { Screen, PixelText, PixelSprite, PixelButton, Window } from '../components';
+import { Screen, PixelText, PixelSprite, FieldCard, TrailAction, ObjectiveRibbon } from '../components';
 import { palette, space } from '../theme';
 import { useGame, wipeSave } from '../state';
 import { useNav } from './navContext';
@@ -30,50 +30,50 @@ export default function TitleScreen() {
 
   return (
     <Screen style={{ alignItems: 'center', justifyContent: 'space-between', paddingVertical: space.xl }}>
-      <View style={{ alignItems: 'center', marginTop: space.xl }}>
+      <View style={{ width: '92%' }}>
+        <ObjectiveRibbon place="Companion Quest" objective="real effort shapes a shared journey" />
+      </View>
+
+      <View style={{ alignItems: 'center' }}>
         <PixelText size="hero" color={palette.secondary} shadow shadowColor={palette.accentDark} align="center">
           COMPANION
         </PixelText>
         <PixelText size="hero" color={palette.primary} shadow shadowColor={palette.primaryDark} align="center" style={{ marginTop: 6 }}>
           QUEST
         </PixelText>
-        <PixelText size="small" color={palette.windowFill} align="center" style={{ marginTop: space.lg }}>
-          real effort shapes a shared journey
-        </PixelText>
       </View>
 
       <View style={{ width: '86%' }}>
         {confirmReset ? (
-          <Window pad={14}>
-            <PixelText size="body" color={palette.windowText} align="center" style={{ lineHeight: 22 }}>
-              Start over? Your current companion and progress will be erased.
-            </PixelText>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.lg }}>
-              <PixelButton label="Cancel" tone="plain" sound="cancel" style={{ flex: 1, marginRight: 6 }} onPress={() => setConfirmReset(false)} />
-              <PixelButton label="Erase" tone="danger" style={{ flex: 1, marginLeft: 6 }} onPress={async () => { await wipeSave(); forgetAll(); dispatch({ type: 'RESET' }); navigate('intro'); }} />
-            </View>
-          </Window>
+          <FieldCard tone="paper" title="Start over?" caption="Your current companion and progress will be erased.">
+            <TrailAction label="Cancel" tone="quiet" onPress={() => setConfirmReset(false)} />
+            <TrailAction
+              label="Erase"
+              tone="accent"
+              style={{ marginTop: space.sm }}
+              onPress={async () => { await wipeSave(); forgetAll(); dispatch({ type: 'RESET' }); navigate('intro'); }}
+            />
+          </FieldCard>
         ) : hasSave ? (
           <View>
-            <PixelButton label="Continue" tone="gold" onPress={() => navigate('hub')} />
-            <PixelButton label="Begin Again" tone="dark" sound="cancel" style={{ marginTop: space.md }} onPress={() => setConfirmReset(true)} />
+            <TrailAction label="Continue" tone="primary" onPress={() => navigate('hub')} />
+            <TrailAction label="Begin Again" tone="quiet" style={{ marginTop: space.md }} onPress={() => setConfirmReset(true)} />
           </View>
         ) : (
           <Animated.View style={{ opacity: blink }}>
-            <PixelButton label="Enter the World" tone="primary" onPress={() => navigate('intro')} />
+            <TrailAction label="Enter the World" tone="primary" onPress={() => navigate('intro')} />
           </Animated.View>
         )}
       </View>
 
-      <View style={{ alignItems: 'center', marginBottom: space.md }}>
-        <PixelSprite spriteKey="coach_maple" size={104} bob />
-        <Window tone="dark" pad={9} style={{ marginTop: 4, maxWidth: 320 }}>
+      <View style={{ alignItems: 'center', marginBottom: space.md, width: '86%' }}>
+        <PixelSprite spriteKey="coach_maple" size={104} bob accessibilityLabel="Coach Maple" />
+        <FieldCard tone="ink" style={{ marginTop: 8, width: '100%' }}>
           <PixelText size="tiny" color={palette.windowFill} align="center" style={{ lineHeight: 14 }}>
             "Your first lesson begins at your own front door." — Coach Maple
           </PixelText>
-        </Window>
+        </FieldCard>
       </View>
     </Screen>
   );
 }
-

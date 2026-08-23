@@ -11,6 +11,9 @@ These four plates are the quality bar for companion design. They are
 | `canopy.png` | Canopy | Fernap, Dapple, Stillcup | Scenic forest — lineup only |
 
 The locked prompt that produced them is `tools/CHARACTER_PROMPT.md`.
+A lineup is three **species**. Each species still owes a family plate
+— baby / adolescent / adult — that passes the hard reject in that
+file. Three regenerations of one pose are not a family.
 
 ```bash
 # Flat field only. Gale/Canopy will refuse without --force.

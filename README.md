@@ -45,7 +45,7 @@ src/
   state/       game reducer + context (auto-persist), leveling, evolution,
                history, recovery, economy (Trail Credit), cardio maths,
                distance (pedometer / accelerometer / GPS)
-  components/  28 blocks — WorldScreen, TileMap/TileImage, CardioConsole,
+  components/  29 blocks — WorldScreen, HorizonSky, TileMap/TileImage, CardioConsole,
                 CompanionStatus, Joystick, the Trailkeeper primitives, ...
   modules/     the life-module plugin system + 5 modules (the Forge is one)
   coach/       the companion/Coach's warm, in-character dialogue
@@ -77,6 +77,7 @@ python3 -m pip install -r tools/requirements.txt
 python3 tools/make_sprites.py
 python3 tools/make_audio.py
 python3 tools/check_docs.py      # docs still agree with the code
+python3 tools/check_art.py       # masters reproduce, and stages are not clones
 ```
 
 ## What's in this build

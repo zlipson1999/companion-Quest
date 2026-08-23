@@ -81,7 +81,8 @@ thing this game is built not to have.
 | `docs/ART_KIT.md` | Sizes, palettes, tiles, people vs creatures |
 | `docs/AGENTS.md` | Verification loop, honesty, import-time asserts |
 | `docs/HISTORY.md` | The thirteen phase write-ups, verbatim |
-| `docs/AUDIT.md` | Current repo findings (on the audit branch until merged) |
+| `docs/AUDIT.md` | Current repo findings |
+| `docs/UI_SYSTEM.md` | Trailkeeper surfaces (`FieldCard` / `TrailAction`) |
 | `docs/ACCOUNTS.md` | Friends, boards, day-sync, privacy |
 | `docs/STEP_COUNTING.md` | Pedometer vs accelerometer |
 | `tools/CHARACTER_PROMPT.md` | The approval-lineup and ship-master prompts |
@@ -95,9 +96,15 @@ a belly and two highlights and loses the face. The quality bar is the first
 rendition type: a plate of three designed objects, then one figure extracted
 and traced. See `docs/CREATING_CHARACTERS.md` and `tools/CHARACTER_PROMPT.md`.
 
-- **Companions** ship as a complete 3-stage family or not at all. Each stage
-  is its own professionally finished art — never a tint of the base.
-- **People** ship a finished traced portrait plus a full 4×3 overworld set.
+- **Companions** ship as a complete 3-stage family or not at all: baby /
+  adolescent / adult — three different creatures that read as one life.
+  A tint, scale, crop, or outline of the same pose is not a stage. Three
+  1024×1024 regenerations of one prompt are not a family.
+  `python3 tools/check_art.py` **fails** a family whose stages are too
+  similar. If that check fails on committed art, the art is already wrong;
+  do not loosen the gate.
+- **People** ship a finished traced portrait plus a full 4×3 overworld set
+  (`convert_character.py --figure N` from `assets/characters/`).
 - After generating, **read `tools/sprite_preview.png`**. The checkers cannot
   see whether a face is good.
 - **Audio** — `tools/make_audio.py` synthesizes SFX + town/battle loops to
@@ -108,6 +115,7 @@ and traced. See `docs/CREATING_CHARACTERS.md` and `tools/CHARACTER_PROMPT.md`.
 Rendered sizes: creatures 96×96, hero walks 26×48 (Coach 30×48) at 4 facings ×
 3 frames, items and module icons 24×24, tiles 32px (`TILE_SCALE = 2`). Palettes
 are ramp specs; `SPRITE_PALETTES` is emitted into `src/data/sprites.js`.
+`<PixelArt>` / `<PixelSprite>` honour the requested `size` exactly.
 
 ## Architecture (the important part)
 
@@ -135,6 +143,10 @@ bond,evo,hp}], activeIndex, credits, stats, bag, dex, modules, history,
 settings, meta, trails }`. Companion XP is a lifetime total; level/HP are derived
 (`src/state/leveling.js`). `useCompanion()` returns the active party member;
 `useParty()` returns the whole team. Distance is in miles (`stats.distanceMi`).
+**Trail quotas** (miles + challenge reps) live in `state.trails` and only
+increment when `ADD_DISTANCE` / `LOG_EXERCISE` carry a `routeId` — gym cardio
+must not pass one. A full Circle (6) makes `CATCH` a no-op. Begin Again
+`RESET`s then navigates to `intro` so outfit/character creation runs.
 
 **Navigation:** a tiny custom router (`src/screens/Router.js` + `navContext`) —
 `navigate(name)` and `toBattle(params)`. Register new screens in `Router.js`

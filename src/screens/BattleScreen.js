@@ -5,7 +5,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Screen, DualPane, Window, Menu, DialogueBox, BattleStage, Platform, StatusPlate, PixelText, PixelSprite, PixelButton } from '../components';
+import { Screen, DualPane, Window, Menu, DialogueBox, BattleStage, Platform, StatusPlate, PixelText, PixelSprite, PixelButton, GrowthCeremony } from '../components';
 import { palette, space } from '../theme';
 import { useGame, useCompanion, useParty } from '../state';
 import { levelFromXp } from '../state/leveling';
@@ -138,8 +138,7 @@ export default function BattleScreen({ params }) {
   const [wildFaint, setWildFaint] = useState(false);
   const [companionFaint, setCompanionFaint] = useState(false);
 
-  const [evolving, setEvolving] = useState(false);
-  const evoFlash = useRef(new Animated.Value(0)).current;
+  const [ceremony, setCeremony] = useState(null);
 
   const say = (ls, then) => {
     setLines(ls);
@@ -160,21 +159,6 @@ export default function BattleScreen({ params }) {
     return () => clearTimeout(id);
   }, [phase, selectedMove, hold]);
 
-  useEffect(() => {
-    if (!evolving) {
-      evoFlash.setValue(0);
-      return undefined;
-    }
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(evoFlash, { toValue: 1, duration: 120, useNativeDriver: true }),
-        Animated.timing(evoFlash, { toValue: 0, duration: 120, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [evolving, evoFlash]);
-
   const finish = () => navigate(returnTo);
 
   const maybeEvolve = (level, done) => {
@@ -187,13 +171,8 @@ export default function BattleScreen({ params }) {
       const evo = evolveLines(creature.name, evolved.name);
       say([evo[0], evo[1]], () => {
         playSfx('evolve');
-        setEvolving(true);
+        setCeremony({ from: creature, to: evolved, lines: evo, after: done });
         setPhase('morph');
-        setTimeout(() => {
-          dispatch({ type: 'EVOLVE', payload: { newId: creature.evolvesTo } });
-          setEvolving(false);
-          say([evo[2], evo[3]], done);
-        }, 1400);
       });
     } else {
       done();
@@ -426,7 +405,6 @@ export default function BattleScreen({ params }) {
                 fainting={companionFaint}
                 flip
               />
-              <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, backgroundColor: '#fff', opacity: evoFlash }} />
             </View>
             <DamagePop pop={compPop} color={palette.danger} />
             <Platform width={108} tone={stageTone} />
@@ -518,9 +496,23 @@ export default function BattleScreen({ params }) {
   } else if (phase === 'morph') {
     bottom = (
       <View style={{ flex: 1, padding: space.md, justifyContent: 'center', alignItems: 'center' }}>
-        <PixelText size="label" color={palette.secondary}>
-          . . .
-        </PixelText>
+        {ceremony ? (
+          <GrowthCeremony
+            fromCreature={ceremony.from}
+            toCreature={ceremony.to}
+            onDone={() => {
+              dispatch({ type: 'EVOLVE', payload: { newId: ceremony.from.evolvesTo } });
+              const after = ceremony.after;
+              const evo = ceremony.lines;
+              setCeremony(null);
+              say([evo[2], evo[3]], after);
+            }}
+          />
+        ) : (
+          <PixelText size="label" color={palette.secondary}>
+            . . .
+          </PixelText>
+        )}
       </View>
     );
   } else {

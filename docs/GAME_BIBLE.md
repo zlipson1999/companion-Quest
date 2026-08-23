@@ -101,7 +101,7 @@ src/
   screens/     Router + 30 screens (§4), plus useCardio (the one path real
                distance takes into the game) and placeMemory (where you were
                standing in each place)
-  components/  28 building blocks (§9)
+  components/  29 building blocks (§9)
   modules/     the life-module plugin system + 5 modules + forge/ (§7)
   coach/       persona, guardrail, lines, context, local (offline brain), api
   audio/       sfx.js (expo-av wrapper, degrades silently)
@@ -526,9 +526,12 @@ milestone count) → `toBattle` flash → BattleScreen.
   flash + damage pop 140 → counter lunge 650 → counter flinch/pop 790 → faint
   (KO) at 430 after its flinch. Entry: wild slides in from +90 px right,
   companion from −110 left, staggered 160. All timers cleared on unmount.
-- **Stage**: real zoomed grass/path tiles (3× overworld scale) under a single
-  sky colour + one haze line; horizon at 0.16 so BOTH combatants stand on
-  ground. Platforms are stacked-rect discs with lit top / shaded underside.
+- **Stage**: real zoomed grass/path tiles (3× overworld scale) under the
+  shared `HorizonSky` painter (`src/data/sceneSky.js` — zenith/sky/haze
+  scanlines + a haze feather on the join, not a flat hex and a 4px line);
+  horizon at 0.16 so BOTH combatants stand on ground. Platforms are
+  stacked-rect discs with lit top / shaded underside. The trail and the
+  stage share one tone table so they cannot drift.
 - Defeat → `LOSE_BATTLE`, hub. Swap preserves per-member HP. Evolution beat:
   white strobe, sprite morph, EVOLVE action.
 
@@ -639,8 +642,11 @@ faint.
   (sludgewad, snoozeghoul, achefang, couchlurk, brinegnash, cindergrind).
   All thirty-six trail forms are traced from isolated masters (approved
   lineups, then one creature per file). The two new Wardens remain
-  procedural. An evolution is its OWN master, never a tinted copy of the
-  base.
+  procedural. An evolution is its OWN master and a new silhouette —
+  baby / adolescent / adult, never a tinted, scaled, or outlined copy
+  of the base. `check_art.py` fails a family whose stages are too
+  similar. Several committed trail evos currently fail that gate;
+  the art is wrong, not the check.
   The first three families are the ones offered at first bond
   (each goal names its own via `GOALS[].companionId`; `STARTER_IDS` is a
   convenience list the running game does not read); all six are met on the
@@ -691,17 +697,21 @@ quantises to a compact palette. `load_traced()` beats the generated sprite
 of the same name in `build_all`. Palette gotcha: tiny features (Dewbble's
 pink mouth) need a hand-added palette entry or they quantise away.
 **Every new creature goes through this kit.** A missing trail master
-fails the build. The `sphere()` + `eye()` recipe is how the first trail
-pass came out as twelve interchangeable blobs and is not used again.
+fails the build. Each family is baby / adolescent / adult — three
+different creatures, not a tinted copy. `check_art.py` fails a family
+whose stages are too similar. The `sphere()` + `eye()` recipe is how
+the first trail pass came out as twelve interchangeable blobs and is
+not used again.
 
-## 9. UI components (28)
+## 9. UI components (29)
 
 Window (bevelled + corner studs + paper highlight), Menu (selection FILL +
 cursor + sfx), DialogueBox (typewriter, blip every 2 chars, bobbing advance
 arrow, tap-to-complete), PixelText (PressStart2P, sizes tiny→hero), PixelArt /
 PixelSprite, BarFill (tube-shaded meters; border thins ≤8 px) → HPBar /
 ProgressBar / StatusPlate (name/Lv/HP + EXP strip on YOUR plate only),
-BattleStage + Platform, BattleTransition (flash/wipe), TileMap (+exported
+BattleStage + Platform + HorizonSky (shared zenith/haze painter; sceneSky.js),
+BattleTransition (flash/wipe), TileMap (+exported
 Tile; fractional cells — rounding once clipped ¼ of every tile), DualPane,
 Dpad, Screen, Triangle (the font has no arrow glyphs — never rely on unicode
 arrows/hearts).
@@ -713,7 +723,8 @@ condition, on every walkable screen rather than only the one that remembered to
 draw it), **CardioConsole** (§5.7), **Joystick** / **MoveControl** (thumb stick
 by default; crossing a map one deliberate tap per square was the most tiring
 thing about the overworld), **FieldCard** / **TrailAction** / **ObjectiveRibbon**
-(the Trailkeeper primitives), **BodyMap3D**.
+(the Trailkeeper primitives), **BodyMap3D**, **GrowthCeremony** (evolution
+held at `motion.ceremony`, with a reduced-motion text path — not a strobe).
 
 ## 10. Coach
 

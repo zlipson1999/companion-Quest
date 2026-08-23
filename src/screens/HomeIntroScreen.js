@@ -16,7 +16,7 @@ const AREAS = {
     name: 'Your Room — Upstairs',
     spawn: { x: 5, y: 8 },
     exit: { x: 9, y: 11 },
-    hint: 'Your room. The stairs are in the far corner.',
+    hint: 'Use the stick to walk — that is how you move in every room. Stairs are in the far corner.',
     next: 'downstairs',
   },
   downstairs: {
@@ -24,7 +24,7 @@ const AREAS = {
     name: 'Your Home — Downstairs',
     spawn: { x: 11, y: 2 },
     exit: { x: 6, y: 14 },
-    hint: 'Head through your front door onto Sunkist Lane.',
+    hint: 'The stick walks you through the door onto Sunkist Lane. On the trail later, only real walking counts.',
     next: 'hub',
   },
 };
