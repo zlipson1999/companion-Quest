@@ -34,7 +34,10 @@ export default function SummaryScreen() {
   const modules = useModules();
   const goal = getGoal(state.goalId);
   const trails = normalizeTrails(state.trails);
-  const evo = evolveProgress(companion, companion.creature, companion.level);
+  // Reception is reachable before pairing. evolveProgress reads
+  // companion.creature at the top of the page, so this used to throw
+  // the moment you walked into the desk.
+  const evo = companion ? evolveProgress(companion, companion.creature, companion.level) : null;
   const s = state.stats;
   // The same diff the cardio console runs, against a zero baseline: the
   // console reports the walk you are on and forgets it when you go home, and
@@ -52,66 +55,80 @@ export default function SummaryScreen() {
       </PixelText>
       <ScrollView showsVerticalScrollIndicator={false}>
         <Window tone="dark" pad={14}>
-          <View style={{ flexDirection: 'row' }}>
-            <View style={{ alignItems: 'center', marginRight: space.md }}>
-              <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={88} bob />
-            </View>
-            <View style={{ flex: 1, justifyContent: 'center' }}>
-              <PixelText size="label" color={palette.secondary}>
-                {companion.creature.name}
-              </PixelText>
-              <PixelText size="tiny" color={palette.windowBorderLight} style={{ marginTop: 6 }}>
-                {companion.creature.species}
-              </PixelText>
-              <PixelText size="small" color={palette.windowFill} style={{ marginTop: 10 }}>
-                Lv. {companion.level}
-              </PixelText>
-            </View>
-          </View>
-          <View style={{ marginTop: space.md }}>
-            <HPBar hp={companion.hp} maxHp={companion.maxHp} width={200} label="HP" />
-          </View>
-          <View style={{ marginTop: space.sm }}>
-            <ProgressBar value={companion.xpInto} max={companion.xpNeeded} color={palette.xp} height={12} label="XP to next level" />
-          </View>
-          {/* Evolve points: what the real-world work is actually building
-              toward. Shown next to XP because they are different things and the
-              difference matters — XP comes from playing, this comes from doing. */}
-          {evo ? (
-            <View style={{ marginTop: space.sm }}>
-              <ProgressBar
-                value={Math.min(evo.points, evo.needPoints)}
-                max={evo.needPoints}
-                color={palette.success}
-                height={12}
-                label={`Evolve points  ${evo.points}/${evo.needPoints}`}
-                showText={false}
-              />
-              <PixelText size="tiny" color={evo.ready ? palette.secondary : palette.windowBorderLight} style={{ marginTop: 5, lineHeight: 13 }}>
-                {evolveHint(companion, companion.creature, companion.level)}
-              </PixelText>
-              <PixelText size="tiny" color={palette.windowBorderLight} style={{ marginTop: 5, lineHeight: 13 }}>
-                Earned from {Object.values(EVO_SOURCES).map((s) => s.label).join(', ')}.
-              </PixelText>
+          {companion ? (
+            <View>
+              <View style={{ flexDirection: 'row' }}>
+                <View style={{ alignItems: 'center', marginRight: space.md }}>
+                  <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={88} bob />
+                </View>
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                  <PixelText size="label" color={palette.secondary}>
+                    {companion.creature.name}
+                  </PixelText>
+                  <PixelText size="tiny" color={palette.windowBorderLight} style={{ marginTop: 6 }}>
+                    {companion.creature.species}
+                  </PixelText>
+                  <PixelText size="small" color={palette.windowFill} style={{ marginTop: 10 }}>
+                    Lv. {companion.level}
+                  </PixelText>
+                </View>
+              </View>
+              <View style={{ marginTop: space.md }}>
+                <HPBar hp={companion.hp} maxHp={companion.maxHp} width={200} label="HP" />
+              </View>
+              <View style={{ marginTop: space.sm }}>
+                <ProgressBar value={companion.xpInto} max={companion.xpNeeded} color={palette.xp} height={12} label="XP to next level" />
+              </View>
+              {/* Evolve points: what the real-world work is actually building
+                  toward. Shown next to XP because they are different things and the
+                  difference matters — XP comes from playing, this comes from doing. */}
+              {evo ? (
+                <View style={{ marginTop: space.sm }}>
+                  <ProgressBar
+                    value={Math.min(evo.points, evo.needPoints)}
+                    max={evo.needPoints}
+                    color={palette.success}
+                    height={12}
+                    label={`Evolve points  ${evo.points}/${evo.needPoints}`}
+                    showText={false}
+                  />
+                  <PixelText size="tiny" color={evo.ready ? palette.secondary : palette.windowBorderLight} style={{ marginTop: 5, lineHeight: 13 }}>
+                    {evolveHint(companion, companion.creature, companion.level)}
+                  </PixelText>
+                  <PixelText size="tiny" color={palette.windowBorderLight} style={{ marginTop: 5, lineHeight: 13 }}>
+                    Earned from {Object.values(EVO_SOURCES).map((s) => s.label).join(', ')}.
+                  </PixelText>
+                </View>
+              ) : (
+                <PixelText size="tiny" color={palette.secondary} style={{ marginTop: space.sm }}>
+                  Final form — nothing left to grow into.
+                </PixelText>
+              )}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.sm }}>
+                <PixelText size="tiny" color={palette.accent}>
+                  Bond {companion.bond}
+                </PixelText>
+                <PixelText size="tiny" color={palette.windowBorderLight}>
+                  Goal: {goal ? goal.name : '-'}
+                </PixelText>
+              </View>
+              {companion.creature.flavor ? (
+                <PixelText size="tiny" color={palette.windowBorderLight} style={{ marginTop: space.sm, lineHeight: 14 }}>
+                  {companion.creature.flavor}
+                </PixelText>
+              ) : null}
             </View>
           ) : (
-            <PixelText size="tiny" color={palette.secondary} style={{ marginTop: space.sm }}>
-              Final form — nothing left to grow into.
+            <PixelText
+              size="tiny"
+              color={palette.windowFill}
+              style={{ lineHeight: 14 }}
+              accessibilityRole="text"
+              accessibilityLabel="No companion yet. Meet Coach Maple in the gym — then this page is theirs."
+            >
+              No companion yet. Meet Coach Maple in the gym — then this page is theirs.
             </PixelText>
           )}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.sm }}>
-            <PixelText size="tiny" color={palette.accent}>
-              Bond {companion.bond}
-            </PixelText>
-            <PixelText size="tiny" color={palette.windowBorderLight}>
-              Goal: {goal ? goal.name : '-'}
-            </PixelText>
-          </View>
-          {companion.creature.flavor ? (
-            <PixelText size="tiny" color={palette.windowBorderLight} style={{ marginTop: space.sm, lineHeight: 14 }}>
-              {companion.creature.flavor}
-            </PixelText>
-          ) : null}
         </Window>
 
         <Window tone="cream" pad={12} style={{ marginTop: space.md }}>

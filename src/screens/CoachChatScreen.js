@@ -119,6 +119,27 @@ export default function CoachChatScreen() {
     push({ role: 'assistant', text: result.reply });
   };
 
+  // Gym Coach goes to the goal talk until you pair. If this screen is
+  // opened anyway, do not read companion.creature.
+  if (!companion) {
+    return (
+      <Screen style={{ padding: space.md, justifyContent: 'center' }}>
+        <Window tone="cream" pad={14}>
+          <PixelText
+            size="body"
+            color={palette.windowText}
+            style={{ lineHeight: 20 }}
+            accessibilityRole="text"
+            accessibilityLabel="Meet Coach Maple in the gym. She will introduce you to a companion — then this chat is theirs."
+          >
+            Meet Coach Maple in the gym. She will introduce you to a companion — then this chat is theirs.
+          </PixelText>
+        </Window>
+        <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
       <KeyboardAvoidingView

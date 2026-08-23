@@ -178,6 +178,9 @@ export default function RouteScreen({ params = {} }) {
     routeId: route.id,
     onDelta: (dM) => {
       if (dM <= 0 || busyRef.current) return;
+      // A trail encounter is a shared challenge. Before pairing there is
+      // nobody to stand with you, and BattleScreen reads companion.creature.
+      if (!companion) return;
       encMiRef.current += dM;
       setEncMeter(Math.min(1, encMiRef.current / encThreshRef.current));
       if (encMiRef.current < encThreshRef.current) return;
@@ -252,6 +255,10 @@ export default function RouteScreen({ params = {} }) {
 
   const challengeWarden = () => {
     if (!ready || busyRef.current) return;
+    if (!companion) {
+      setMessage('Meet Coach Maple in the gym — then the Warden has someone to meet.');
+      return;
+    }
     busyRef.current = true;
     const battle = wardenBattle(route);
     const c = getCreature(battle.creatureId);

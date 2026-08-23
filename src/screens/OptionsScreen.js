@@ -7,6 +7,7 @@ import { palette, space, tokens } from '../theme';
 import { useGame, wipeSave } from '../state';
 import { DEFAULT_BODY_WEIGHT_LB, displayWeight } from '../state/cardioMaths';
 import { useNav } from './navContext';
+import { forgetAll } from './placeMemory';
 import { setMuted, setBgmMuted, playSfx } from '../audio';
 
 export default function OptionsScreen() {
@@ -108,7 +109,7 @@ export default function OptionsScreen() {
               label="Erase"
               tone="accent"
               style={{ marginTop: space.sm }}
-              onPress={async () => { await wipeSave(); dispatch({ type: 'RESET' }); navigate('title'); }}
+              onPress={async () => { await wipeSave(); forgetAll(); dispatch({ type: 'RESET' }); navigate('title'); }}
             />
           </FieldCard>
         ) : (

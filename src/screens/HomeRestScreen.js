@@ -51,11 +51,19 @@ export default function HomeRestScreen() {
   );
   const [facing, setFacing] = useState(null);
   const playerRef = useRef(player);
-  const lines = useMemo(() => [
-    { speaker: 'Home', text: 'The lights soften. The day can end here.' },
-    { speaker: companion.creature.name, text: 'We did enough for today. Let’s sleep, then meet tomorrow together.' },
-    { speaker: 'Home', text: `${companion.creature.name}'s Resolve is fully restored.` },
-  ], [companion.creature.name]);
+  // Built at render, not only when you sleep — so a missing companion used
+  // to redbox the moment "Go Home" or the bed opened, before any line played.
+  const companionName = companion && companion.creature && companion.creature.name;
+  const lines = useMemo(() => {
+    const out = [{ speaker: 'Home', text: 'The lights soften. The day can end here.' }];
+    if (companionName) {
+      out.push({ speaker: companionName, text: 'We did enough for today. Let’s sleep, then meet tomorrow together.' });
+      out.push({ speaker: 'Home', text: `${companionName}'s Resolve is fully restored.` });
+    } else {
+      out.push({ speaker: 'Home', text: 'Meet Coach Maple in the gym when you are ready. Sleep first if you need it.' });
+    }
+    return out;
+  }, [companionName]);
 
   const changeFloor = (nextId) => {
     playSfx('confirm');
