@@ -91,7 +91,7 @@ src/
   theme/       colors (palette + shade()), typography (PressStart2P), metrics
   data/        creatures, goals, exercises(+learnset/tiers/breakdown), items,
                wild, obstacles, workouts(6), maps(4 places + zones),
-               movements(140), muscles(14), recipes(74), shop, characters,
+               movements(210), muscles(14), recipes(74), shop, characters,
                outfits, route(pacing), routes(six trails / Wardens / Quest Pins),
                sprites.js + tileAtlas.js
                (BOTH GENERATED — never edit by hand)
@@ -199,7 +199,7 @@ clears it.
 | `route` | RouteScreen | six trails — §5.4 |
 | `world` | WorldMapScreen | region journey journal: the 11 regions, pins and Wardens per trail. Opened from the hub menu's Trails entry |
 | `battle` | BattleScreen | §6 |
-| `workout` | WorkoutScreen | 6 preset routines (data/workouts.js), pay ×`workoutXpMult`; a station can pin one via `params.workoutId` |
+| `workout` | WorkoutScreen | 33 preset routines (data/workouts.js), pay ×`workoutXpMult`; a station can pin one via `params.workoutId` |
 | `rest` | HomeRestScreen | your house (13×15 downstairs, 11×13 bedroom); the bed sleeps (`HEAL_FULL`) |
 | `summary` | SummaryScreen | Status: companion, stats, daily habits block, recovery |
 | `index` | IndexScreen | Creature Index: owned/seen/silhouetted-unknown |
@@ -570,7 +570,7 @@ never learns how progression works.
 
 ### 7.4 Workout Forge (`modules/forge/`)
 
-- **Movements** (`data/movements.js`): 140 movements, 8 patterns (incl. carry),
+- **Movements** (`data/movements.js`): 210 movements, 8 patterns (incl. carry),
   8 equipment kinds, each with muscles (primary/secondary), relative `load`
   1–3, 3–4 cues. **Movement ids are permanent** (saved plans store them).
   `searchMovements(q, {pattern, equipment})` matches names, muscle display
