@@ -132,6 +132,7 @@ python3 tools/make_sprites.py                    # regenerate ALL art
 python3 tools/make_audio.py                      # regenerate ALL audio
 node --check server/index.js                     # server is outside Metro graph
 python3 tools/check_docs.py                      # this file still agrees with the code
+python3 tools/check_art.py                       # every master still produces its sprite
 ```
 
 Web deploy: `web.output: "single"` (SPA — `static` needs expo-router and
