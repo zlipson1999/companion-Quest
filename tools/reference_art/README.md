@@ -39,6 +39,15 @@ sun-rune stone golem (named masters `dusthorn` / `mesaquill` /
 `suncerast`; magenta chroma keyed, yellow runes stay). Do not
 loosen the check. The skill is `tools/CHARACTER_PROMPT.md`.
 
+**Bellbun family (Bluebell Downs / Petalwind Path).** Named masters
+`bellbun` / `chimehare` / `bloomrunner`. Magenta chroma keyed; green
+leaves, purple blush, and bluebell flowers stay. Stage 1 is a plump
+periwinkle kit whose ears are single bells. Stage 2 is a lithe hare
+with stalk-ears (three bells each) and a leaf collar — not a recolor
+of the kit. Stage 3 is a fox-silhouette bloom guardian (fennec ears
+packed with petals, forehead rune, leaf wrist-guards, floral tail).
+Approval plate: `lineups/bellbun_family.png`.
+
 **Brineling family (Tideglass Coast / Saltglass Strand).** Named masters
 `brineling` / `shoregleam` / `tidecrown`. Magenta chroma keyed; pink
 coral limbs and lavender growths stay. Stage 2 is a standing pearl-plate

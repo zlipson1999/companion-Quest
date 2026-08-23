@@ -96,6 +96,9 @@ stays so nobody ships the old pose three times again.
   Leaflight (four serrated leaf-wings, banded abdomen). Never the same round puff.
 - Brineling (crystal-shell hermit) → Shoregleam (pearl-plate walker) →
   Tidecrown (tall wave-armor guardian, white pupil-less eyes)
+- Bellbun (plump bluebell-ear kit) → Chimehare (lithe hare, three
+  bells per stalk, leaf collar) → Bloomrunner (fox bloom guardian,
+  rune marks, leaf wrist-guards, floral tail)
 - Spinseed (winged seed) → Whirlkey (same seed, walking legs) → Samaraile
   (stacked key-sail stalk, no longer a hovering bulb)
 - Bramblet (vine knot) → Briarthicket (walking thicket, four roots) →

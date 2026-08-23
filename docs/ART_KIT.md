@@ -11,9 +11,12 @@ the build. A trail face without a master fails the build. There is no
 counted). That is all 18 original-six and trail families (54 forms) plus
 all 40 horizon families (120 forms; see `docs/HORIZON_FAMILIES.md`).
 Dusthorn, Brineling, and Pinepuff landed first as first-rendition
-plates; magenta is chroma. Family plates:
+plates; magenta is chroma. Bellbun / Chimehare / Bloomrunner
+(Bluebell Downs / Petalwind Path) is the same kind of plate:
+magenta is chroma only; green leaves, purple blush, and bluebell
+flowers stay. Family plates:
 `lineups/dusthorn_family.png`, `lineups/brineling_family.png`,
-`lineups/pinepuff_family.png`.
+`lineups/pinepuff_family.png`, `lineups/bellbun_family.png`.
 The three first-bond families are complete first-rendition lines
 (magenta keyed out, not a re-render of an old indexed grid):
 Sproutle → Bloomtail → Groveheart, Emberkit → Pyrelynx → Cindermane,

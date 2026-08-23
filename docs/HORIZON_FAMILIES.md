@@ -15,6 +15,7 @@ Masters live in `tools/reference_art/<id>.png`. First-rendition plates
 are landed where they already existed (Brineling, Dusthorn, Mireblink,
 Pinepuff, Clinket, Glintfoal, Propfin, Zapram, Nectlet, Chipmagma,
 Bellbun, Mumblewool — magenta keyed out, never matted into the body).
+Bellbun's green leaves, purple blush, and bluebell flowers stay.
 Families still waiting on a plate use an interim isolated drawing from
 `tools/horizon_kit.py`. When a new plate arrives: replace the master,
 re-run `convert_reference.py`, then `make_sprites.py`. Do not invent a
