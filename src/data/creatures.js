@@ -231,13 +231,13 @@ export const CREATURES = {
   prismore: {
     id: 'prismore', stage: 2, name: 'Prismore', sprite: 'prismore', palette: 'quartz',
     species: 'Crystal Cluster Companion', kind: 'evolution', type: 'stone', baseHp: 108, scale: 1.18, catchable: false,
-    flavor: 'More facets, same face. The light has more ways in.',
+    flavor: 'A body grew around the heart-face. The head is still only crystal.',
     evolvesTo: 'quartzspire', evolveLevel: 14, evolvePoints: 110,
   },
   quartzspire: {
     id: 'quartzspire', stage: 3, name: 'Quartzspire', sprite: 'quartzspire', palette: 'quartz',
     species: 'Heart-Facet Companion', kind: 'evolution', type: 'stone', baseHp: 164, scale: 1.32, catchable: false,
-    flavor: 'A standing spire. The face is still in the heart facet.',
+    flavor: 'A standing prism. One face on the crown, one in the heart.',
     evolvesTo: null,
   },
   whistlet: {

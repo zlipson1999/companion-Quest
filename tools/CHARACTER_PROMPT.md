@@ -73,7 +73,8 @@ they have not read this file.
 - **Whistlet / Reedgale** — was an identical flute-bird
 - **Lanternbud line** — closed bud never opened
 - **Chockit / Crackwedge / Cliffchock** — was the same wedge plus an
-  outline
+  outline; remade as conical chock → standing plate-humanoid →
+  cliff-golem (diagonal bands)
 - **Dapple / Leaflight** — stage 3 snapped back to stage 1
 - **Loftburr / Driftpuff / Cloudburr** — was three 1024 regenerations
   of one parachute
@@ -88,6 +89,9 @@ of one prompt are not a family.
 - **Emberkit** (sitting cub) → **Pyrelynx** (standing flame-ear lynx)
   → **Cindermane** (fire-mane beast)
 - **Dewbble** (dewdrop) → **Tidewade** → **Maelstride**
+- **Chockit** (conical banded chock) → **Crackwedge** (stood up,
+  cracked into plates) → **Cliffchock** (cliff given limbs, diagonal
+  strata). Not an outlined wedge.
 - **Pebblepup** (sitting mosaic puppy) → **Cairnhound** (standing
   dry-stone wolf) → **Monolithound** (jagged dolmen-beast). Not the
   trail Rubblet / Dolmenhold line.
@@ -97,6 +101,10 @@ of one prompt are not a family.
 - **Spinseed** (tan ribbed seed-kid, fan samara crest) → **Whirlkey**
   (upright veined torso, leaf-wings, three vine legs) → **Samaraile**
   (leaf-armor standing sail, eight golden key-wings — not a bigger seed)
+- **Facetel** (incomplete geode, face in the largest crystal) →
+  **Prismore** (shard-humanoid, face only in the pink heart-chest) →
+  **Quartzspire** (standing prism, closed-eye face on the crown and
+  a second in the heart — not a simpler cluster than the baby)
 - **Bramblet** (vine knot: berries, pink buds, leaf-hands) →
   **Briarthicket** (walking thicket: humanoid, grapes, four roots) →
   **Hedgeroot** (rooted hedge golem: orange-dot eyes, antlers, bark arms)

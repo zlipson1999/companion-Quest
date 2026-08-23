@@ -73,6 +73,13 @@ copy of hydrate/A1/A5/A10/A25/A32.
   cyan chest, frothy wave crown, wave shoulders, four-finger+thumb
   claws, water skirt, three-toed clawed feet. Magenta is backdrop
   only, never body. Not a whirlpool and not a taller droplet.
+- **Facetel family remade.** Known miss: stage 3 used to be a simpler
+  cluster than the baby. Ids stay `facetel` / `prismore` / `quartzspire`.
+  Baby is an incomplete geode (kawaii face on the largest crystal,
+  three crystal feet). Adolescent is a tall shard-humanoid with the
+  face only in a pink heart-chest. Adult is a standing prism with
+  two closed-eye faces (crown + heart). Magenta is chroma. Max pair
+  IoU 0.465. Thresholds not loosened.
 - **Bramblet family from attached plates.** Ids stay `bramblet` /
   `briarthicket` / `hedgeroot`. Magenta keyed out. Baby is a vine
   knot (berries, pink buds, leaf-hands). Adolescent is a walking
@@ -104,6 +111,16 @@ copy of hydrate/A1/A5/A10/A25/A32.
   chroma; sparkles and spore sparks stay. Named masters replace the
   old `sporelet_stage2/3.png` mapping. Family plate
   `lineups/sporelet_family.png`.
+- **Whistlet family remade (flute-bird).** `familyChain('whistlet')`
+  is whistlet → reedgale → stormflute. Ids stay. Magenta is chroma.
+  Baby Whistlet is a plump egg-shaped fluffy bird with a short wooden
+  flute beak and a five-tube tail. Adolescent Reedgale is a slender
+  upright avian with a long recorder beak, peacock-marked wings, and
+  a ten-pipe tail (the reed lengthened). Adult Stormflute is a wide
+  phoenix-like wind-body: sharp dark beak (not a flute cylinder),
+  seven beige pipes on the bottom edge of each wing plus five in the
+  tail. Three different silhouettes. Isolated masters + traces.
+  `check_art.py` whistlet max pair IoU 0.590. Thresholds unchanged.
 - **Spinseed family remade from the attached maple-key plates.**
   `familyChain('spinseed')` is spinseed → whirlkey → samaraile.
   Not Wispurr. Magenta is chroma. The old hovering-bulb traces are
