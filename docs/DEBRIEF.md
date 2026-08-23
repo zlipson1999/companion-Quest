@@ -67,10 +67,32 @@ copy of hydrate/A1/A5/A10/A25/A32.
   chevron stripes). Ids stay `emberkit` / `pyrelynx` / `cindermane`.
 - **Dewbble line.** Tidewade / Maelstride keep their own isolated
   masters. Do not tint Dewbble to invent them.
-- **Stage bar remakes** for the clone trail families (Stillcup,
-  Kitefin, Whistlet, Lanternbud, Chockit, Dapple, Loftburr, and the
-  rest of Gale/Canopy). Each remade stage has its own isolated master
-  and `traced_<id>.json`. Ids are permanent. `check_art.py` exits 0.
+- **Bramblet family from attached plates.** Ids stay `bramblet` /
+  `briarthicket` / `hedgeroot`. Magenta keyed out. Baby is a vine
+  knot (berries, pink buds, leaf-hands). Adolescent is a walking
+  thicket — humanoid, grapes, four roots. Adult is a rooted hedge
+  golem — orange-dot eyes, antlers, huge bark arms. Not a taller
+  berry-ball. Family plate: `lineups/bramblet_family.png`.
+- **Original six.** Stage-1 masters exist for all six: Sproutle,
+  Emberkit, Dewbble, Pebblepup, Wispurr, Sporelet. Wispurr already
+  had an isolated master plus `wispurr_stage2` / `wispurr_stage3`.
+  The six babies sit on `lineups/originalsix.png`.
+- **Lanternbud family remade from attached plates.** Ids stay
+  `lanternbud` / `gleambud` / `grovelamp` — do not rename. Magenta
+  is chroma. Baby: spherical bright-green body, golden eyes, leaf-arms,
+  3-toe legs, dark-green bud on top PARTIALLY OPEN with a yellow orb.
+  Adolescent Gleambud: slender plant-reptile, opened yellow lotus on
+  the head, leaf-plate torso, braided-fiber limbs, tail still a bud.
+  Adult Grovelamp: walking path-lamp — lotus crown, six hanging
+  lantern-vines, leaf-plate armor. Not a bigger closed bud. Family
+  plate: `lineups/lanternbud_family.png`.
+- **Wispurr is not missing.** `wispurr` / `galegait` / `skywhorl`
+  already have isolated first-rendition masters (`wispurr.png`,
+  `wispurr_stage2.png`, `wispurr_stage3.png`) and pass the stage bar.
+- **Stage bar remakes** for the other clone trail families (Stillcup,
+  Kitefin, Whistlet, Chockit, Dapple, Loftburr, and the rest of
+  Gale/Canopy). Each remade stage has its own isolated master and
+  `traced_<id>.json`. Ids are permanent. `check_art.py` exits 0.
 
 ## What we searched before the plates arrived
 
