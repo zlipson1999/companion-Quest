@@ -1,7 +1,8 @@
 # Companion Quest — full-repo audit
 
 Date: 2026-08-23. Against `main` at `40d8477` (trail companions + Sunkist Lane).
-Statuses updated after #30 and #33 landed on `main`.
+Statuses updated after #30, #33, and #35 landed on `main`, and after
+the integrate PR closed A11/A12 and the stage bar.
 
 Status column: **fixed** (on `main` or this PR), **recommend** (still open),
 **noted** (intentional / already documented).
@@ -25,7 +26,7 @@ Severity: **blocker** (wrong or unreachable content a player hits),
 | A7 | low | noted | `expo-crypto` / `expo-asset` kept — Pages `npm ci` / auth-session |
 | A8 | n/a | noted | `expo-font` used via the Press Start package, not a direct import |
 | A9 | medium | **fixed** (#30) | import-time 3-stage family guard |
-| A10 | medium | **fixed** | sourceless companions fail `check_art.py` (Dewbble stays reported) |
+| A10 | medium | **fixed** | sourceless companions fail `check_art.py` (Dewbble now has a master) |
 | A11 | high | **fixed** | Dewbble isolated master + convert (not a JSON re-render) |
 | A12 | medium | **fixed** | First-bond approval lineup (Sproutle / Emberkit / Dewbble) |
 | A13 | medium | **fixed** (#30) | Root `package.json` has `npm test` |

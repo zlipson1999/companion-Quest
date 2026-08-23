@@ -23,6 +23,7 @@ check pass. Do not lift the `__DEV__` step injector.
 
 House stairs and the front door (A2/A3) were already on `main` via #28.
 Play-quality and Trailkeeper UI live on #31/#32 if those are still open.
+#35 is already merged on this branch.
 
 ## Honest debt (still true after this PR unless named below)
 
@@ -53,13 +54,15 @@ Play-quality and Trailkeeper UI live on #31/#32 if those are still open.
 - **A12 first-bond approval lineup.** The same three attached plates —
   Sproutle, Emberkit, Dewbble — are the Create Your Companion plate.
   Isolated, then composed as `lineups/firstbond.png`. Same type as
-  Maple/Cairn and the player card. Stage 2/3 of those lines
-  (Bloomtail/Groveheart, Pyrelynx/Cindermane, Tidewade/Maelstride) are
-  their own isolated masters: baby / adolescent / adult, not tints.
+  Maple/Cairn and the player card. All three first-bond lines are
+  complete first-rendition families: Sproutle → Bloomtail → Groveheart,
+  Emberkit → Pyrelynx → Cindermane, Dewbble → Tidewade → Maelstride.
+  Ids are permanent. Stage 2/3 are their own creatures, not tints.
 - **Stage bar remakes** for the clone trail families (Stillcup, Kitefin,
-  Whistlet, Lanternbud, Chockit, Dapple, and the rest of Gale/Canopy).
-  Each remade stage has its own isolated master and `traced_<id>.json`.
-  Ids are permanent. `check_art.py` now passes all 18 families.
+  Whistlet, Lanternbud, Chockit, Dapple, Loftburr, and the rest of
+  Gale/Canopy). Each remade stage has its own isolated master and
+  `traced_<id>.json`. Ids are permanent. `check_art.py` now passes all
+  18 families.
 
 ## What we searched before the plates arrived
 
@@ -79,11 +82,12 @@ node --check server/index.js
 EXPO_OFFLINE=1 CI=1 npx expo export --platform android --output-dir /tmp/cq
 ```
 
-Read `tools/sprite_preview.png`. The checkers cannot see whether a face
-is good.
+Read `tools/sprite_preview.png` and `tools/reference_art/lineups/firstbond.png`.
+The checkers cannot see whether a face is good.
 
 ## What this debrief is not
 
-A feature list. A promise that every family now passes. A licence to
-treat another franchise as a design spec. If a figure in the bible
-moves, it moved in the same commit as the code.
+A feature list. A licence to treat another franchise as a design spec.
+If a figure in the bible moves, it moved in the same commit as the
+code. The stage bar passing means the silhouettes differ — it does
+not mean every face is final.

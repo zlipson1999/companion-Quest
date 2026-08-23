@@ -66,7 +66,10 @@ loses the design.
 the filenames. They must say "that's a kid, that's a teen, that's the
 grown one" without being told.
 
-### Worked fails
+### Worked fails (historical — remade)
+
+These used to fail the stage bar. They have been redrawn. The list
+stays so nobody ships the old pose three times again.
 
 - Stillcup / Dewbasin / Rainhold — same moss bowl, mouth tweak only
 - Kitefin / Ribbonsail / Skysheet — same kite, stage 2 is bigger, stage 3 is stage 1
@@ -74,15 +77,20 @@ grown one" without being told.
 - Lanternbud line — closed bud never opens
 - Chockit / Crackwedge / Cliffchock — same wedge plus an outline
 - Dapple / Leaflight — stage 3 is stage 1 again
+- Loftburr / Driftpuff / Cloudburr — three 1024 regenerations of one parachute
 
 ### Worked passes
 
+- Sproutle (two-leaf baby) → Bloomtail (opened flower) → Groveheart
+  (standing grove)
+- Emberkit (sitting cub) → Pyrelynx (standing flame-ear lynx) →
+  Cindermane (fire-mane beast)
+- Dewbble (dewdrop) → Tidewade → Maelstride
 - Spinseed (winged seed) → Whirlkey (same seed, walking legs) → Samaraile
   (stacked key-sail stalk, no longer a hovering bulb)
 - Bramblet (vine knot) → Briarthicket (walking thicket, four roots) →
   Hedgeroot (rooted hedge)
-- Rubblet (three stones) → … → Dolmenhold (walking doorway) — but note
-  Cairnstack failed because it was still three stones
+- Rubblet (three stones) → … → Dolmenhold (walking doorway)
 
 `check_art.py` fails a family whose masters or traced grids are
 near-identical (silhouette IoU + colour difference). If the check fails

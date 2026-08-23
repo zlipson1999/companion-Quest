@@ -62,23 +62,32 @@ build fails.
 
 ## Worked fails (do not ship these)
 
-These families already exist in the repo and **fail the stage bar**.
-They are the reason this rule is a hard reject, not a suggestion.
+These were committed as the same pose three times. They were remade
+as baby / adolescent / adult. The gate still uses the same thresholds
+— do not loosen it. If the next agent ships three copies of one pose,
+they have not read this file.
 
-- **Stillcup / Dewbasin / Rainhold** — same moss bowl, mouth tweak only
-- **Kitefin / Ribbonsail / Skysheet** — same kite, stage 2 is bigger,
-  stage 3 is stage 1
-- **Whistlet / Reedgale** — identical flute-bird
-- **Lanternbud line** — closed bud never opens
-- **Chockit / Crackwedge / Cliffchock** — same wedge plus an outline
-- **Dapple / Leaflight** — stage 3 is stage 1 again
+- **Stillcup / Dewbasin / Rainhold** — was the same moss bowl
+- **Kitefin / Ribbonsail / Skysheet** — was the same kite; stage 3
+  snapped back
+- **Whistlet / Reedgale** — was an identical flute-bird
+- **Lanternbud line** — closed bud never opened
+- **Chockit / Crackwedge / Cliffchock** — was the same wedge plus an
+  outline
+- **Dapple / Leaflight** — stage 3 snapped back to stage 1
+- **Loftburr / Driftpuff / Cloudburr** — was three 1024 regenerations
+  of one parachute
 
 A tinted or scaled copy is not a stage. Three 1024×1024 regenerations
-of one prompt are not a family. If the next agent ships three copies
-of one pose, they have not read this file.
+of one prompt are not a family.
 
 ## Worked passes
 
+- **Sproutle** (two-leaf baby) → **Bloomtail** (opened flower) →
+  **Groveheart** (standing grove)
+- **Emberkit** (sitting cub) → **Pyrelynx** (standing flame-ear lynx)
+  → **Cindermane** (fire-mane beast)
+- **Dewbble** (dewdrop) → **Tidewade** → **Maelstride**
 - **Spinseed** (winged seed) → **Whirlkey** (same seed, walking legs)
   → **Samaraile** (stacked key-sail stalk, no longer a hovering bulb)
 - **Bramblet** (vine knot) → **Briarthicket** (walking thicket, four

@@ -9,15 +9,16 @@ the build. A trail face without a master fails the build. There is no
 **54 transparent masters** are committed in `tools/reference_art/`
 (top-level `*.png` only; approval lineups sit in `lineups/` and are not
 counted). That is all 18 original-six forms plus all 36 trail-family forms.
-**Dewbble has a first-rendition isolated master** from the attached
-Create Your Companion plate (magenta field keyed out) that reproduces
-`traced_dewbble.json` — not a re-render of the old indexed grid.
+The three first-bond families are complete first-rendition lines
+(magenta keyed out, not a re-render of an old indexed grid):
+Sproutle → Bloomtail → Groveheart, Emberkit → Pyrelynx → Cindermane,
+Dewbble → Tidewade → Maelstride. Ids are permanent.
 `python3 tools/check_art.py` verifies that each master still REPRODUCES
 the art the game ships, and **fails a family whose stages are too
 similar** (silhouette IoU + colour difference). That second gate exists
 because a visual audit found seven trail families that were the same
-pose three times. The art is already wrong; the check refuses to
-accept it. Do not loosen the thresholds so the current blobs pass.
+pose three times. Those families were remade as baby / adolescent /
+adult. The check still uses the same thresholds. Do not loosen them.
 
 The quality bar is the approved lineups in
 `tools/reference_art/lineups/` (first-bond, Maple, Cairn, Gale, Canopy).
@@ -343,15 +344,14 @@ difference map to tell them apart.
 the filenames. They must say "that's a kid, that's a teen, that's the
 grown one" without being told.
 
-Worked fails: Stillcup / Dewbasin / Rainhold (same moss bowl); Kitefin /
-Ribbonsail / Skysheet (same kite, stage 3 is stage 1); Whistlet /
-Reedgale (identical flute-bird); Lanternbud line (closed bud never
-opens); Chockit / Crackwedge / Cliffchock (same wedge plus an outline);
-Dapple / Leaflight (stage 3 is stage 1 again).
+Worked fails (historical — remade, thresholds unchanged): Stillcup line
+(same moss bowl); Kitefin line (same kite); Whistlet line (identical
+flute-bird); Lanternbud line (closed bud); Chockit line (same wedge);
+Dapple line (stage 3 snap-back); Loftburr line (1024 regenerations).
 
 Worked passes: Spinseed → Whirlkey → Samaraile; Bramblet → Briarthicket
-→ Hedgeroot; Rubblet → … → Dolmenhold (Cairnstack failed — still three
-stones).
+→ Hedgeroot; Rubblet → Cairnstack → Dolmenhold; and the remade families
+above.
 
 `creatures.js` requires a complete three-stage family or none at all.
 
