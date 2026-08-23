@@ -141,6 +141,20 @@ PALETTE_SPECS = {
     'snooze':  {'body': ('#2a2650', '#b9b6ee'), 'leaf': ('#413a72', '#d5d2ff'), 'belly': ('#38346a', '#c9c6f7')},
     'ache':    {'body': ('#6b1730', '#ffb0c4'), 'leaf': ('#93253f', '#ffd0dc'), 'belly': ('#7d2038', '#ffc2d2')},
     'couch':   {'body': ('#3f2a17', '#d4a374'), 'leaf': ('#5a3d22', '#e8c49a'), 'belly': ('#4d3520', '#dcb387')},
+    # Trail companions approved as original silhouettes — not recolours of the
+    # six families already in the roster.
+    'samara':  {'body': ('#1a4020', '#c8e878'), 'leaf': ('#6b5a18', '#ffe08a'), 'belly': ('#4a6b2a', '#f4ffd0')},
+    'bramble': {'body': ('#14280e', '#6a9a3a'), 'leaf': ('#2a4a16', '#c8e070'), 'belly': ('#3a2a14', '#b89050')},
+    'lantern': {'body': ('#1e3a16', '#8fc45a'), 'leaf': ('#7a4a08', '#ffd46a'), 'belly': ('#8a5a10', '#fff0b0')},
+    'chock':   {'body': ('#4a3420', '#d4b080'), 'leaf': ('#3a3028', '#a89878'), 'belly': ('#5c4830', '#ead8b0')},
+    'quartz':  {'body': ('#3a4a62', '#d8f0ff'), 'leaf': ('#6a88a8', '#ffffff'), 'belly': ('#4a6078', '#e8f4ff')},
+    'kite':    {'body': ('#5c4a28', '#f2e0b0'), 'leaf': ('#8a7a50', '#fff8e0'), 'belly': ('#6b5a38', '#fff4d0')},
+    'puff':    {'body': ('#6a6470', '#f4f0ea'), 'leaf': ('#8a9ab0', '#ffffff'), 'belly': ('#7a7468', '#fff8f0')},
+    'fern':    {'body': ('#0e3014', '#7ad060'), 'leaf': ('#1a4a20', '#c8f090'), 'belly': ('#2a4a24', '#d0e8a0')},
+    'dapple':  {'body': ('#1a2a14', '#6a8a40'), 'leaf': ('#6b5a18', '#f0d060'), 'belly': ('#2a3a20', '#a0c060')},
+    'moss':    {'body': ('#1a3020', '#6a9a58'), 'leaf': ('#0a3050', '#6ac8e0'), 'belly': ('#2a4030', '#c8e0a8')},
+    'brine':   {'body': ('#0a3040', '#7ad0d8'), 'leaf': ('#5a6a50', '#d0d0b0'), 'belly': ('#1a4048', '#a0e0e8')},
+    'scorch':  {'body': ('#4a1408', '#ff7a30'), 'leaf': ('#6b2a08', '#ffc040'), 'belly': ('#5c2010', '#ff9a50')},
     # Interior plaster. Its own palette because the wall and the floor were
     # both warm browns off the furniture ramp, so a room read as a brown box
     # with the corners missing. A painted wall is cooler and much paler than a
@@ -1631,6 +1645,39 @@ def sporelet(pal='spore'):
     c.eye(20, 33, 2.6)
     c.eye(29, 33, 2.6)
     c.blob(24.5, 38, 1.6, 1, 'eye', 0.0)
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def brinegnash(pal='brine'):
+    """Salt-cramp obstacle — a crusted, dripping mass."""
+    c = new_creature(pal)
+    c.shadow(24, 43, 15, 3)
+    c.sphere(24, 30, 17, 13, 'body', squash=0.75)
+    c.sphere(14, 22, 6, 5, 'leaf')
+    c.sphere(34, 24, 5.5, 5, 'leaf')
+    for dx, dy, r in ((11, 41, 2.2), (20, 43, 2.0), (29, 43, 2.1), (38, 40, 1.8)):
+        c.sphere(dx, dy, r, r * 1.2, 'belly', ambient=0.48)
+    c.eye(18, 28, 3.2)
+    c.eye(30, 28, 3.2)
+    c.rect(19, 34, 30, 36, 'eye', 0.0)
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def cindergrind(pal='scorch'):
+    """Overuse obstacle — a grinding ember that will not sit down."""
+    c = new_creature(pal)
+    c.shadow(24, 43, 15, 3)
+    c.sphere(24, 31, 16, 12, 'body', squash=0.8)
+    c.sphere(24, 24, 10, 8, 'leaf', ambient=0.40)
+    c.poly([(16, 16), (20, 6), (24, 16)], 'leaf', 0.85)
+    c.poly([(24, 16), (28, 5), (32, 16)], 'belly', 0.80)
+    c.eye(18, 30, 3.0)
+    c.eye(30, 30, 3.0)
+    c.rect(20, 36, 29, 37, 'eye', 0.0)
     c.rim('leaf')
     c.outline()
     return c
@@ -3983,8 +4030,8 @@ def build_all():
     # composites two sources into a third name.
     used_traced = set()
 
-    def add(name, canvas):
-        # Reference artwork, where we have it, beats anything generated.
+    def add(name, canvas=None):
+        # Isolated masters win. Trail faces have no sphere() fallback.
         t = load_traced(name)
         if t:
             used_traced.add(name)
@@ -3992,6 +4039,10 @@ def build_all():
             traced_palettes[key] = t['palette']
             s[name] = {'palette': key, 'grid': t['grid']}
             return
+        if canvas is None:
+            raise SystemExit(
+                'missing tools/traced_%s.json — design the face '
+                '(tools/CHARACTER_PROMPT.md), do not draw a sphere' % name)
         s[name] = {'palette': canvas.palette, 'grid': canvas.resolve()}
 
     # creatures
@@ -4004,8 +4055,24 @@ def build_all():
     add('cairnhound', pebblepup()); add('monolithound', pebblepup())
     add('galegait', wispurr()); add('skywhorl', wispurr())
     add('mycobloom', sporelet()); add('canopore', sporelet())
+    for trail_id in (
+        'spinseed', 'whirlkey', 'samaraile',
+        'bramblet', 'briarthicket', 'hedgeroot',
+        'lanternbud', 'gleambud', 'grovelamp',
+        'rubblet', 'cairnstack', 'dolmenhold',
+        'chockit', 'crackwedge', 'cliffchock',
+        'facetel', 'prismore', 'quartzspire',
+        'whistlet', 'reedgale', 'stormflute',
+        'kitefin', 'ribbonsail', 'skysheet',
+        'loftburr', 'driftpuff', 'cloudburr',
+        'fernap', 'fiddlefrond', 'frondrest',
+        'dapple', 'glimmoth', 'leaflight',
+        'stillcup', 'dewbasin', 'rainhold',
+    ):
+        add(trail_id)
     add('sludgewad', sludgewad()); add('snoozeghoul', snoozeghoul())
     add('couchlurk', couchlurk()); add('achefang', achefang())
+    add('brinegnash', brinegnash()); add('cindergrind', cindergrind())
 
     # People. Each player character gets its own four facings x three frames on
     # its own palette, so picking a character changes who walks around rather

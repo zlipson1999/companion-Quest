@@ -246,7 +246,7 @@ function reducer(state, action) {
         merged.bag.knot = (merged.bag.knot || 0) + merged.bag.token;
         delete merged.bag.token;
       }
-      // v9: four trails with per-trail miles/reps and Quest Pins. Older saves
+      // v9: trails with per-trail miles/reps and Quest Pins. Older saves
       // start Maple Trail at zero rather than being back-credited for miles
       // walked before trails existed — those miles were not trail-tagged.
       merged.trails = normalizeTrails(saved.trails);

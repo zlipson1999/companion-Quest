@@ -101,7 +101,7 @@ def build_checks():
     # Not every documented figure lives in the bible. These are checked against
     # the file that actually claims them.
     other = [
-        ('committed reference masters', art_kit, r'\*\*(\d+) of the 18', str(masters)),
+        ('committed reference masters', art_kit, r'\*\*(\d+) transparent masters', str(masters)),
         ('perks', claude, r'`forge/perks\.js` — (\d+) perks',
          str(len(re.findall(r"^    id: '", read('src/modules/forge/perks.js'), re.M)))),
         ('hub menu entries', claude, r'It lists (\w+) places now',

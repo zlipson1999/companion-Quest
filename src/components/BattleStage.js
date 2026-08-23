@@ -26,6 +26,8 @@ const TONES = {
   cairn: { sky: '#5c5a52', far: '#b0a890', disc: '#8a7a58', mapId: 'route_cairn', codes: 'earth' },
   gale: { sky: '#6aa8dc', far: '#d0e8f8', disc: palette.sand, mapId: 'route_gale', codes: 'open' },
   canopy: { sky: '#1c2a1a', far: '#3a5a32', disc: '#2e4a28', mapId: 'route_canopy', codes: 'shade' },
+  rill: { sky: '#3a6a88', far: '#8ec8d8', disc: '#4a8aa0', mapId: 'route_rill', codes: 'open' },
+  ember: { sky: '#6a2a14', far: '#d87838', disc: '#8a4a20', mapId: 'route_ember', codes: 'earth' },
 };
 
 // Battle tiles are drawn at 3x the overworld's usual scale — "zoomed in".

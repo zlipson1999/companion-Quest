@@ -1,26 +1,43 @@
 # The art kit
 
-All 18 members of the six companion families are traced from reference
-artwork — no companion falls back to a procedural stand-in, and `build_all()`
-fails if traced art reaches no sprite. Their indexed outputs live as
-`tools/traced_<name>.json`, which is what the generator reads.
+Companions are designed as reference art, isolated, and traced. Indexed
+outputs live as `tools/traced_<name>.json`. `build_all()` prefers a traced
+file over anything drawn; a `traced_*.json` that reaches no sprite fails
+the build. A trail face without a master fails the build. There is no
+`sphere()` stand-in.
 
-**17 of the 18 transparent masters are committed** in `tools/reference_art/`,
-and `python3 tools/check_art.py` verifies that each one still REPRODUCES the art
-the game ships — it re-runs `convert_reference.py` and compares the result to the
-committed `traced_<id>.json`. Counting the files was the weaker claim: a count
-cannot tell a real source from a PNG rendered back out of the shipped indexed
-art, and it does not notice a master quietly desyncing from the sprite it is
-supposed to produce. 17 of 17 currently reproduce; the check fails on a single
-changed pixel.
-The first-bond bases `sproutle` and `emberkit`, and the signed KEEP evos, are
-traced from the pixel sheets. **`dewbble` still has no master** — stage 1 stays
-the shipped teardrop, and its chain starts at the indexed output. That remaining
-gap is stated here rather than rounded up to "all 18".
+**53 transparent masters** are committed in `tools/reference_art/`
+(top-level `*.png` only; approval lineups sit in `lineups/` and are not
+counted). That is the original 17 of 18 plus all 36 trail-family forms.
+**`dewbble` still has no master** — stage 1 stays the shipped teardrop.
+`python3 tools/check_art.py` verifies that each master still REPRODUCES
+the art the game ships.
+
+The quality bar is the approved trail lineups in
+`tools/reference_art/lineups/` (Maple, Cairn, Gale, Canopy). Maple and
+Cairn sit on a flat field and split cleanly. Gale and Canopy are scenic
+plates — their ship masters were re-generated isolated, not split out of
+the forest/sky.
 
 The authored world-material atlas lives in `assets/textures/masters/`.
-`tools/convert_texture_atlas.py` turns its cells into indexed runtime tiles;
-`make_sprites.py` still provides procedural fallbacks if a traced asset is absent.
+`tools/convert_texture_atlas.py` turns its cells into indexed runtime tiles.
+Tiles and props may still fall back to a procedural drawing.
+
+## The first rendition type
+
+Character creation and companion creation are the same job. A plate of
+three designed faces, then one figure extracted and traced.
+
+- **People** — `assets/characters/player-selection-lineup-v1.png` through
+  `convert_character.py --figure N`. The Create Your Character screen
+  shows that plate.
+- **Companions** — Sproutle / Emberkit / Dewbble are the first-bond
+  plate (the original traced kit). Trail families use the approved
+  lineups in `tools/reference_art/lineups/`. The Create Your Companion
+  screen shows the starter plate the same way.
+
+`sphere()` + `eye()` is not this type. It copies the belly and the eyes
+and loses the design. A missing master fails the build.
 
 ## People
 
@@ -239,61 +256,48 @@ the rest.
 
 ## Why tracing at all
 
-The procedural pipeline (`Body`, `Drawn` in `tools/make_sprites.py`) can build a
-coherent lit form: one blended surface, one light, creases instead of seams. It
-got as far as it could. What it could not supply was **design** — proportion,
-where the weight sits, how a face is arranged — and that limit was never the
-engine's, it was whoever was driving it.
+`sphere()` + `eye()` can light a ball. It cannot design a face. The first
+trail pass used that path and shipped twelve blobs that could be swapped
+by palette name. That recipe is not how a new companion is made.
 
-A drawn reference solves that directly. The artwork is downsampled, quantised to
-a hand-ordered palette, and stored as data in `tools/traced_*.json`.
-`load_traced()` picks it up and it wins over anything generated for that name.
+A drawn reference is the art. The converter downsamples it, quantises it,
+and writes `tools/traced_*.json`. `load_traced()` wins over anything
+generated for that name.
 
-## The palette
+## The first six families (Sproutle kit)
 
-Three ramps, taken from the reference rather than invented. Note that the
-outline is **not black** — it is the darkest green, which is what stops a sprite
-reading as clip art.
+The original six families were traced from their own masters. Their
+shared look — tall-in-a-96, wide head, low eyes, belly patch — is a
+description of **those** sprites, not a template for the next one.
+Copying it is how a maple-key and a crystal cluster both come out as
+green balls.
 
-| role | dark → light |
-|---|---|
-| body green | `#1d3a24` `#25462b` `#2f5531` `#3b6535` `#487337` `#5c8a3a` `#79a435` `#96bd3e` |
-| accent / rim | `#b7cc4a` `#d4e35c` `#f2f56e` |
-| belly cream | `#a08a5e` `#c7ab7e` `#dbbd94` `#eddcb0` `#fbedc3` `#fefae0` |
-| contact ink | `#101a12` |
+## The style rules (lighting, not a body plan)
 
-Eleven steps across the greens is the useful number: enough to turn a form
-smoothly, few enough that the steps stay visible and it still reads as pixel art.
-
-## The proportions
-
-Measured off the traced sprite, in a 96-square:
-
-- **Creature occupies 64w × 96h** — noticeably taller than wide. Squat and wide
-  reads as a blob; this does not.
-- **Head is roughly 40% of total height** and is *wider than the torso*. That
-  ratio is most of what makes it read as young rather than as a small adult.
-- **Eyes are enormous** — each about a third of the head's width, set low on the
-  face, with two specular dots (a large one upper-left, a small one lower-right).
-- **Limbs are short and thick**, with visible toes. Thin limbs read as insectile.
-- **The belly patch runs most of the body's height**, not a small circular badge.
-
-## The style rules
-
-- Outline is the darkest ramp colour, never black, and varies in weight —
-  heavier where forms overlap, lighter along top edges.
-- Shadows are **hard-edged flat shapes**, not gradients. Two shadow tones and one
-  highlight per colour is the whole budget.
-- A bright rim light (`#d4e35c`–`#f2f56e`) runs along the lower-right silhouette.
-  The key light is upper-left, which is what the whole renderer assumes.
-- Small scattered accent marks (leaf freckles here) break up large flat areas.
+- Outline is the darkest colour of **that** creature's own ramp, never a
+  shared black ink, and varies in weight.
+- Shadows are **hard-edged flat shapes**, not gradients. Two shadow tones
+  and one highlight per colour is the whole budget.
+- Key light is upper-left. A thin rim sits on the lower-right silhouette.
+- Small scattered accent marks (veins, moss, flecks) break up large flats.
 
 ## Adding another companion
 
-Best result, and what the kit is for: generate reference artwork with the same
-prompt (see the session notes), then run the converter — it keys the background,
-quantises to this palette, drops stray components, and writes
-`tools/traced_<name>.json`.
+The quality bar is the approved trail lineups in
+`tools/reference_art/lineups/` (Maple, Cairn, Gale, Canopy). Each face is
+a designed object, not a lit primitive. The prompt that produced them —
+and the only prompt to use — is `tools/CHARACTER_PROMPT.md`.
 
-Failing that, build it procedurally with `Drawn`, but take the palette and the
-proportions above rather than inventing new ones.
+1. Approval: a three-face lineup so the silhouettes can be compared.
+2. Ship: one isolated master per id, flat `#000000` or transparent, no
+   ground. Split a flat-backdrop lineup with `tools/split_lineup.py`;
+   scenic plates (sky, forest) must be re-generated alone.
+3. `python3 tools/convert_reference.py tools/reference_art/<id>.png tools/traced_<id>.json`
+4. `python3 tools/make_sprites.py` and read `tools/sprite_preview.png`.
+
+People (Coach Maple, the player) stay on `tools/convert_character.py`.
+This section is companion creatures only.
+
+If the ship master is missing, stop and make the master. There is no
+`sphere()` fallback. Evolutions get their own isolated master; a tinted
+copy of the base is the same mistake as the blob pass.

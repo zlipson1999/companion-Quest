@@ -37,9 +37,10 @@ be independently authored and recognizably ours.
 Coach Maple is an original trail mentor, not a laboratory professor or a
 substitute for any franchise character. New players begin upstairs at home,
 walk downstairs and outside, cross to the neighbouring gym, Quest Fitness, and
-learn the systems from Maple before discussing their goals. No companion is
-previewed or selected at the start; the goal conversation leads to a surprise
-first-bond ceremony at the end of the tutorial. Recovery is spatial too: the
+learn the systems from Maple, then create a companion the same way they
+created their character: three first-rendition faces on one plate. The
+ceremony still names the bond; it is no longer a surprise reveal.
+Recovery is spatial too: the
 player returns home, walks upstairs, and sleeps to restore Resolve.
 
 The complete reference: every system, every screen, every number, every sprite.
@@ -91,7 +92,7 @@ src/
   data/        creatures, goals, exercises(+learnset/tiers/breakdown), items,
                wild, obstacles, workouts(6), maps(4 places + zones),
                movements(140), muscles(14), recipes(74), shop, characters,
-               outfits, route(pacing), routes(four trails / Wardens / Quest Pins),
+               outfits, route(pacing), routes(six trails / Wardens / Quest Pins),
                sprites.js + tileAtlas.js
                (BOTH GENERATED — never edit by hand)
   state/       GameContext (reducer, save), leveling, evolution, history,
@@ -186,9 +187,9 @@ clears it.
 |---|---|---|
 | `title` | TitleScreen | logo, Continue / Begin Again (Begin Again RESET then `intro`, so outfit/character creation runs) |
 | `intro` | IntroScreen | Coach's typewriter welcome |
-| `goal` | GoalSelectScreen | the three goals (§5.2) with **no starter previews** — the companion is a surprise at the ceremony; rows are `Pressable` |
-| `pairing` | PairingScreen | starter reveal + Coach lines |
-| `outfit` | OutfitSelectScreen | one-time character + outfit choice |
+| `goal` | GoalSelectScreen | companion creation — the first-rendition plate (Sproutle, Emberkit, Dewbble). Same type as character creation: three faces, pick one. The goal is that companion's temperament. |
+| `pairing` | PairingScreen | first-bond ceremony + Coach lines |
+| `outfit` | OutfitSelectScreen | character creation — the three-face player plate, then gym outfit |
 | `homeIntro` | HomeIntroScreen | the scripted walk: bedroom → downstairs → Sunkist Lane (`HUB`, not a stub) |
 | `coachTutorial` | CoachTutorialScreen | unused leftover; the talk is bumping Coach in the gym |
 | `hub` | HubScreen | Sunkist Lane (13×17). Walk-around town, bump-to-use, 6-entry menu — the other destinations are places you WALK to |
@@ -196,7 +197,7 @@ clears it.
 | `sparIntro` | SparIntroScreen | safety redirect; live path is bumping Rowan, who sends Pebblepup |
 | `cookbook` | CookbookScreen | the kitchen shelf: 74 recipes, 18 categories, search over names/blurbs/tags/ingredients |
 | `smoothiebar` | SmoothieBarScreen | the gym's bar; spends Trail Credit (§5.6) |
-| `route` | RouteScreen | four trails — §5.4 |
+| `route` | RouteScreen | six trails — §5.4 |
 | `battle` | BattleScreen | §6 |
 | `workout` | WorkoutScreen | 6 preset routines (data/workouts.js), pay ×`workoutXpMult`; a station can pin one via `params.workoutId` |
 | `rest` | HomeRestScreen | your house (13×15 downstairs, 11×13 bedroom); the bed sleeps (`HEAL_FULL`) |
@@ -260,8 +261,10 @@ navigating.
 ### 5.2 Goals (`data/goals.js`, `data/route.js`)
 
 Three goals = the three reasons people open a fitness app, named for the game
-world. Old saves migrate ids in HYDRATE (`distance→lean`, `strength→muscle`,
-`balance→root`).
+world. The `goal` screen is companion creation: the three first-rendition
+starters on one plate, same type as character creation. Picking Emberkit
+is picking Forge Might. Old saves migrate ids in HYDRATE (`distance→lean`,
+`strength→muscle`, `balance→root`).
 
 | id | name | starter | milestoneMi | encounter roll | workoutXpMult | mileXpMult | trail |
 |---|---|---|---|---|---|---|---|
@@ -290,10 +293,18 @@ Evolve points are **per companion** — earned by whoever is active.
 
 **Evolution gate** = level AND points, checked after battle level-ups
 (`canEvolve`): stage 1→2 at Lv 5 + 30 pts; stage 2→3 at Lv 14 + 110 pts.
-Six full lines: Sproutle→Bloomtail→Groveheart, Emberkit→Pyrelynx→Cindermane,
-Dewbble→Tidewade→Maelstride, Pebblepup→Cairnhound→Monolithound,
-Wispurr→Galegait→Skywhorl and Sporelet→Mycobloom→Canopore. Creatures carry
-explicit `stage: 1|2|3`. Wild-family evolution names remain clearance candidates.
+Eighteen full lines — the original six (Sproutle→Bloomtail→Groveheart,
+Emberkit→Pyrelynx→Cindermane, Dewbble→Tidewade→Maelstride,
+Pebblepup→Cairnhound→Monolithound, Wispurr→Galegait→Skywhorl,
+Sporelet→Mycobloom→Canopore) plus twelve trail families with the same
+gates (Spinseed→Whirlkey→Samaraile, Bramblet→Briarthicket→Hedgeroot,
+Lanternbud→Gleambud→Grovelamp, Rubblet→Cairnstack→Dolmenhold,
+Chockit→Crackwedge→Cliffchock, Facetel→Prismore→Quartzspire,
+Whistlet→Reedgale→Stormflute, Kitefin→Ribbonsail→Skysheet,
+Loftburr→Driftpuff→Cloudburr, Fernap→Fiddlefrond→Frondrest,
+Dapple→Glimmoth→Leaflight, Stillcup→Dewbasin→Rainhold). Creatures carry
+explicit `stage: 1|2|3`. Only the stage-1 form is catchable; later stages
+are grown, never knotted.
 
 ### 5.4 The Route & distance (`screens/RouteScreen.js`, `state/useDistance.js`)
 
@@ -310,25 +321,29 @@ explicit `stage: 1|2|3`. Wild-family evolution names remain clearance candidates
   is nothing to meet — so the hook hands back the delta and the caller decides.
   **Gym cardio must not pass `routeId`.** Indoor miles still count as real
   walking (XP, credit, lifetime stats) but they do not fill a trail quota.
-- **Four trails** (`src/data/routes.js`), save `version: 9`. Maple Trail is
+- **Six trails** (`src/data/routes.js`), save `version: 9`. Maple Trail is
   unlocked from the start. Walk that trail's miles and confirm its reps in
   challenges, then Challenge the Warden. First win grants the Quest Pin, a
-  Kinship Knot, and the next trail's companions.
+  Kinship Knot, and the next trail. Wild companion pick is random from that
+  trail's pool. Pools grow with the walk: 3, 6, 10, 15, 20, 24. Later pools
+  keep earlier faces and add new ones. Pin-path mileage is 1.5+3+5+8+12+18
+  = 47.5 miles.
 
-  | Trail | Miles | Reps | Companions | Warden | Pin |
+  | Trail | Miles | Reps | Pool | Warden | Pin |
   |---|---|---|---|---|---|
-  | Maple Trail | 1.5 | 30 | starters (Grove) | Sludgewad | Maple Pin |
-  | Cairn Cut | 3 | 60 | Pebblepup (Stone) | Snoozeghoul | Stone Pin |
-  | Gale Reach | 5 | 100 | Wispurr (Wind) | Achefang | Gale Pin |
-  | Canopy Run | 8 | 160 | Sporelet (Rest) | Couchlurk | Canopy Pin |
+  | Maple Trail | 1.5 | 30 | 3 | Sludgewad | Maple Pin |
+  | Cairn Cut | 3 | 60 | 6 | Snoozeghoul | Stone Pin |
+  | Gale Reach | 5 | 100 | 10 | Achefang | Gale Pin |
+  | Canopy Run | 8 | 160 | 15 | Couchlurk | Canopy Pin |
+  | Rill Crossing | 12 | 220 | 20 | Brinegnash | Tide Pin |
+  | Ember Grade | 18 | 320 | 24 | Cindergrind | Ember Pin |
 
-  Each trail is a different place (not one shared grass strip): Maple is a
-  green lane with trees; Cairn is packed earth and stone (`tile_gym_platform`);
-  Gale is open country with a thin track and more sky; Canopy is dense shade
-  on `tile_gym_turf`. BattleStage tones match. The Index silhouettes
-  locked-trail creatures. Status lists Quest Pins. The trail switcher shows
-  all four; locked ones are disabled. Original terms only: trail, Warden,
-  Quest Pin. `creatures.js` does not import `routes.js`.
+  Each trail is a different place: Maple trees and grass; Cairn packed earth
+  (`tile_gym_platform`); Gale open sky; Canopy shade on `tile_gym_turf`;
+  Rill water margins; Ember warm mats (`tile_gym_mats`). BattleStage tones
+  match. The Index silhouettes locked-trail creatures. Status lists Quest
+  Pins. Original terms only: trail, Warden, Quest Pin. `creatures.js` does
+  not import `routes.js`.
 - RouteScreen used to carry a second mode for the cardio deck, rendered as
   the outdoor trail with its trees switched off; the deck lives in the gym
   now (§5.7).
@@ -607,15 +622,25 @@ faint.
 4. `backlight()` (rim opposite the key light) and `spec()` (hotspots) are what
    read as "modern".
 
-### 8.3 Sprite inventory (101 runtime sprites + 416 atlas cells)
+### 8.3 Sprite inventory (139 runtime sprites + 416 atlas cells)
 
-- Creatures 48×48 authored @2× = 96 px: **18 companions — 6 families of 3
-  stages, every one of them TRACED** (sproutle→bloomtail→groveheart,
+- Creatures 48×48 authored @2× = 96 px: **54 companions — 18 families of 3
+  stages**. The first six families are TRACED (sproutle→bloomtail→groveheart,
   emberkit→pyrelynx→cindermane, dewbble→tidewade→maelstride,
   pebblepup→cairnhound→monolithound, wispurr→galegait→skywhorl,
-  sporelet→mycobloom→canopore) — plus 4 obstacles (sludgewad, snoozeghoul,
-  achefang, couchlurk), which are procedural. An evolution is its OWN drawn
-  sprite, never a tinted copy of the base.
+  sporelet→mycobloom→canopore). Twelve trail families use the same evolve
+  gates (stage 1 catchable → stage 2 at Lv 5 / 30 pts → stage 3 at Lv 14 /
+  110 pts): spinseed→whirlkey→samaraile, bramblet→briarthicket→hedgeroot,
+  lanternbud→gleambud→grovelamp, rubblet→cairnstack→dolmenhold,
+  chockit→crackwedge→cliffchock, facetel→prismore→quartzspire,
+  whistlet→reedgale→stormflute, kitefin→ribbonsail→skysheet,
+  loftburr→driftpuff→cloudburr, fernap→fiddlefrond→frondrest,
+  dapple→glimmoth→leaflight, stillcup→dewbasin→rainhold — plus 6 obstacles
+  (sludgewad, snoozeghoul, achefang, couchlurk, brinegnash, cindergrind).
+  All thirty-six trail forms are traced from isolated masters (approved
+  lineups, then one creature per file). The two new Wardens remain
+  procedural. An evolution is its OWN master, never a tinted copy of the
+  base.
   The first three families are the ones offered at first bond
   (each goal names its own via `GOALS[].companionId`; `STARTER_IDS` is a
   convenience list the running game does not read); all six are met on the
@@ -655,14 +680,19 @@ faint.
 
 ### 8.4 The traced kit (docs/ART_KIT.md)
 
-Reference art (generated externally to a strict style prompt: cel shading,
-upper-left light, dark self-coloured outline, 2:3 proportions, transparent
-background) → converter keys alpha/magenta, downsamples to 96², quantises to a
-hand-ordered palette (`tools/traced_<id>.json`), drops <12-px specks (bigger
-detached blobs are art — Dewbble's droplets). `load_traced()` beats the
-generated sprite of the same name in `build_all`. Palette gotcha: tiny features
-(Dewbble's pink mouth) need a hand-added palette entry or they quantise away.
-**Every new creature should go through this kit**; procedural is the fallback.
+HQ concept (the locked prompt in `tools/CHARACTER_PROMPT.md`) → isolated
+ship master → `convert_reference.py` → `tools/traced_<id>.json` →
+`make_sprites.py` (traced wins). Approval lineups live in
+`tools/reference_art/lineups/` and are for looking at: Maple/Cairn sit on
+a flat field and split with `tools/split_lineup.py`; Gale/Canopy are
+scenic plates and must be re-generated isolated, not split. The converter
+keys a light checkerboard if the PNG is fully opaque, downsamples to 96²,
+quantises to a compact palette. `load_traced()` beats the generated sprite
+of the same name in `build_all`. Palette gotcha: tiny features (Dewbble's
+pink mouth) need a hand-added palette entry or they quantise away.
+**Every new creature goes through this kit.** A missing trail master
+fails the build. The `sphere()` + `eye()` recipe is how the first trail
+pass came out as twelve interchangeable blobs and is not used again.
 
 ## 9. UI components (28)
 
@@ -784,7 +814,7 @@ Status labels:
 | What devices and OS versions are supported? | **OPEN.** Portrait is forced and tablets are allowed; minimum Android/iOS versions, screen sizes, low-end device floor and tablet UX are unspecified. |
 | Is the game free, paid, ad-supported or subscription-based? | **OPEN.** No monetization or entitlement code exists. |
 | Is an account required? Is there cloud sync or multi-device play? | **CURRENT: no.** One local save, no auth, no cloud backup, no export/import. Whether this is permanent is **OPEN**. |
-| What is the content target at launch? | **OPEN.** Current roster is 18 companion forms across 6 families plus 4 obstacles; roadmap expansion is aspiration, not a launch commitment. |
+| What is the content target at launch? | **OPEN.** Current roster is 54 companion forms across 18 families plus 6 obstacles; roadmap expansion is aspiration, not a launch commitment. |
 | What is the expected play cadence and session length? | **OPEN.** Daily modules and route pacing imply daily play, but retention, encounter-rate and time-to-evolution targets are not specified or validated. |
 | Are notifications/reminders part of the product? | **CURRENT: no.** Desired reminders, quiet hours, consent and notification copy are **OPEN**. |
 | What does “done” mean for a feature? | **DECIDED below in §13.7.** Code that merely renders in web is not sufficient for sensor, persistence, camera, GL or audio work. |
@@ -950,8 +980,10 @@ A change is done only when all applicable items are true:
 
 ### Product/content debt
 
-9. **Four obstacle creatures and a few structural tiles remain procedural.**
-   All 18 companion forms and 14 world materials now derive from authored art.
+9. **The six obstacle creatures remain procedural.** All thirty-six
+   trail forms are designed reference art. The original 18 companion
+   forms (17 masters; `dewbble` still missing) and 14 world materials
+   also derive from authored art.
 10. `state/usePedometer.js` is gone (deleted in Phase 14).
 11. Evolution ceremony is a strobe + swap; it needs both a stronger scene and a
     reduced-motion alternative.
@@ -981,7 +1013,7 @@ A change is done only when all applicable items are true:
    catch economy, exercise volume and evolution pacing.
 7. Trace the wild/obstacle creatures; add a reduced-motion evolution ceremony.
 8. Add progression charts from PR/weight history.
-9. Expand toward 20 companion families only after the content validator,
+9. Expand past 18 companion families only after the content validator,
    rights/provenance record and balance targets exist.
 10. Then consider per-exercise battle animation, a richer obstacle roster and
     town growth.
