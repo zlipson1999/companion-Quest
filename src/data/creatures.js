@@ -1,3 +1,5 @@
+import { HORIZON_CREATURES, HORIZON_COMPANION_IDS } from './horizonCreatures';
+
 // Original creature roster. Two kinds of wild creature:
 //  - befriendable COMPANIONS (catchable: starters + wild species), each of
 //    which can join your team; some evolve.
@@ -349,75 +351,6 @@ export const CREATURES = {
     evolvesTo: null,
   },
 
-  // --- Spec expansion: Red Mesa / Suncrack Trail ---
-  dusthorn: {
-    id: 'dusthorn', stage: 1, name: 'Dusthorn', sprite: 'dusthorn', palette: 'mesa',
-    species: 'Horned-Lizard Companion', kind: 'wild', type: 'stone',
-    baseHp: 64, catchable: true, catchRate: 0.48,
-    flavor: 'A sandstone toad with a fan for a tail. The hornlets catch the first heat of the day.',
-    evolvesTo: 'mesaquill', evolveLevel: 5, evolvePoints: 30,
-  },
-  mesaquill: {
-    id: 'mesaquill', stage: 2, name: 'Mesaquill', sprite: 'mesaquill', palette: 'mesa',
-    species: 'Sun-Quill Companion', kind: 'evolution', type: 'stone',
-    baseHp: 108, scale: 1.18, catchable: false,
-    flavor: 'The body lengthens. Layered scales and sunlit quills take the mesa at a run.',
-    evolvesTo: 'suncerast', evolveLevel: 14, evolvePoints: 110,
-  },
-  suncerast: {
-    id: 'suncerast', stage: 3, name: 'Suncerast', sprite: 'suncerast', palette: 'mesa',
-    species: 'Sun-Crest Guardian Companion', kind: 'evolution', type: 'stone',
-    baseHp: 166, scale: 1.32, catchable: false,
-    flavor: 'A mesa that learned to stand. The sun on its chest is the heat you walked through.',
-    evolvesTo: null,
-  },
-
-  // --- Spec expansion: Tideglass Coast / Saltglass Strand ---
-  brineling: {
-    id: 'brineling', stage: 1, name: 'Brineling', sprite: 'brineling', palette: 'seaglass',
-    species: 'Sea-Glass Hermit Companion', kind: 'wild', type: 'tide',
-    baseHp: 58, catchable: true, catchRate: 0.52,
-    flavor: 'A seafoam hermit in a teal crystal shell. Coral feet and a row of pearls — it peeks out when the tide is kind.',
-    evolvesTo: 'shoregleam', evolveLevel: 5, evolvePoints: 30,
-  },
-  shoregleam: {
-    id: 'shoregleam', stage: 2, name: 'Shoregleam', sprite: 'shoregleam', palette: 'seaglass',
-    species: 'Pearl-Plate Companion', kind: 'evolution', type: 'tide',
-    baseHp: 100, scale: 1.18, catchable: false,
-    flavor: 'The shell stands up. Four pearls down the chest, coral hands, mint ribbons from the tide.',
-    evolvesTo: 'tidecrown', evolveLevel: 14, evolvePoints: 110,
-  },
-  tidecrown: {
-    id: 'tidecrown', stage: 3, name: 'Tidecrown', sprite: 'tidecrown', palette: 'seaglass',
-    species: 'Tide-Crown Guardian Companion', kind: 'evolution', type: 'tide',
-    baseHp: 156, scale: 1.32, catchable: false,
-    flavor: 'A standing tide. White lamp-eyes, a pearl held in coral, wave-crest armor — the strand\u2019s keeper.',
-    evolvesTo: null,
-  },
-
-  // --- Spec expansion: Frostpine Reach / Needle-Snow Pass ---
-  pinepuff: {
-    id: 'pinepuff', stage: 1, name: 'Pinepuff', sprite: 'pinepuff', palette: 'pine',
-    species: 'Snowcap Cone Companion', kind: 'wild', type: 'grove',
-    baseHp: 60, catchable: true, catchRate: 0.50,
-    flavor: 'An egg-shaped pinecone kid in a snowcap. Blue eyes look up; twig talons hold the pass.',
-    evolvesTo: 'rimecone', evolveLevel: 5, evolvePoints: 30,
-  },
-  rimecone: {
-    id: 'rimecone', stage: 2, name: 'Rimecone', sprite: 'rimecone', palette: 'pine',
-    species: 'Spruce-Golem Companion', kind: 'evolution', type: 'grove',
-    baseHp: 102, scale: 1.18, catchable: false,
-    flavor: 'One conical spruce. Bark arms, trunk legs, snow on every plate — not a taller cone-kid.',
-    evolvesTo: 'frostbough', evolveLevel: 14, evolvePoints: 110,
-  },
-  frostbough: {
-    id: 'frostbough', stage: 3, name: 'Frostbough', sprite: 'frostbough', palette: 'pine',
-    species: 'Evergreen Guardian Companion', kind: 'evolution', type: 'grove',
-    baseHp: 158, scale: 1.32, catchable: false,
-    flavor: 'A winter treant. Snow-tipped antlers, a frost beard, chevron bark — the pass given a keeper.',
-    evolvesTo: null,
-  },
-
   // --- Obstacle creatures (bad habits — cleared, not caught) ---
   sludgewad: {
     id: 'sludgewad', name: 'Sludgewad', sprite: 'sludgewad', palette: 'sludge',
@@ -449,6 +382,11 @@ export const CREATURES = {
     species: 'The Overwork', kind: 'obstacle', type: 'ember', baseHp: 120, catchable: false,
     flavor: 'The grind that will not sit down. Hard days without recovery, given teeth.',
   },
+
+  // Horizon families (40 x 3). Reserved for named trails that are not
+  // walkable yet. User plates still incoming — interim masters live in
+  // tools/reference_art/ and were drawn by tools/horizon_kit.py.
+  ...HORIZON_CREATURES,
 };
 
 export const STARTER_IDS = ['sproutle', 'emberkit', 'dewbble'];
@@ -458,16 +396,9 @@ export const TRAIL_COMPANION_IDS = [
   'whistlet', 'kitefin', 'loftburr',
   'fernap', 'dapple', 'stillcup',
 ];
-// 40-family expansion roots. Index-visible; a later trail lists them
-// when that place exists as a walkable route. Ids are permanent.
-export const SPEC_FAMILY_IDS = [
-  'dusthorn',
-  'brineling',
-  'pinepuff',
-];
 export const WILD_COMPANION_IDS = [
-  ...STARTER_IDS, 'pebblepup', 'wispurr', 'sporelet',
-  ...TRAIL_COMPANION_IDS, ...SPEC_FAMILY_IDS,
+  ...STARTER_IDS, 'pebblepup', 'wispurr', 'sporelet', ...TRAIL_COMPANION_IDS,
+  ...HORIZON_COMPANION_IDS,
 ];
 export const OBSTACLE_IDS = [
   'sludgewad', 'snoozeghoul', 'achefang', 'couchlurk', 'brinegnash', 'cindergrind',

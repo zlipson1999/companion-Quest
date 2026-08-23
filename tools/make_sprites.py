@@ -153,13 +153,6 @@ PALETTE_SPECS = {
     'fern':    {'body': ('#0e3014', '#7ad060'), 'leaf': ('#1a4a20', '#c8f090'), 'belly': ('#2a4a24', '#d0e8a0')},
     'dapple':  {'body': ('#1a2a14', '#6a8a40'), 'leaf': ('#6b5a18', '#f0d060'), 'belly': ('#2a3a20', '#a0c060')},
     'moss':    {'body': ('#1a3020', '#6a9a58'), 'leaf': ('#0a3050', '#6ac8e0'), 'belly': ('#2a4030', '#c8e0a8')},
-    # Red Mesa horned-lizard family: ochre / rust scales, cream horns, sun-gold.
-    'mesa':    {'body': ('#5c2410', '#e8a050'), 'leaf': ('#8a4a14', '#f4d070'),
-                'belly': ('#8a6a38', '#f8ead0'), 'accent': ('#c47a08', '#ffe66a')},
-    'seaglass': {'body': ('#0a4a4a', '#7ee0d4'), 'leaf': ('#8a2048', '#ff8ab8'), 'belly': ('#d8e8e8', '#ffffff')},
-    # Frostpine cone family: forest-green scales, umber bark, snow, ice-blue.
-    'pine':    {'body': ('#0c2814', '#4a7a32'), 'leaf': ('#3a1c0c', '#8a5a30'),
-                'belly': ('#c8dce8', '#ffffff')},
     'brine':   {'body': ('#0a3040', '#7ad0d8'), 'leaf': ('#5a6a50', '#d0d0b0'), 'belly': ('#1a4048', '#a0e0e8')},
     'scorch':  {'body': ('#4a1408', '#ff7a30'), 'leaf': ('#6b2a08', '#ffc040'), 'belly': ('#5c2010', '#ff9a50')},
     # Interior plaster. Its own palette because the wall and the floor were
@@ -4075,11 +4068,51 @@ def build_all():
         'fernap', 'fiddlefrond', 'frondrest',
         'dapple', 'glimmoth', 'leaflight',
         'stillcup', 'dewbasin', 'rainhold',
-        'dusthorn', 'mesaquill', 'suncerast',
-        'brineling', 'shoregleam', 'tidecrown',
-        'pinepuff', 'rimecone', 'frostbough',
     ):
         add(trail_id)
+    for horizon_id in (
+        'brineling', 'shoregleam', 'tidecrown',
+        'dusthorn', 'mesaquill', 'suncerast',
+        'mireblink', 'lunareed', 'fenoracle',
+        'pinepuff', 'rimecone', 'frostbough',
+        'clinket', 'bellstride', 'canyonchime',
+        'glintfoal', 'astramare', 'cometmane',
+        'propfin', 'mangrusk', 'rootback',
+        'zapram', 'voltibex', 'stormhorn',
+        'nectlet', 'combwing', 'apiarch',
+        'chipmagma', 'shardscale', 'obsidrake',
+        'bellbun', 'chimehare', 'bloomrunner',
+        'nailnut', 'ferracorn', 'ironstag',
+        'pipolyp', 'reeframble', 'coralith',
+        'veilisk', 'duneshade', 'mirajinn',
+        'plinkbat', 'cavernwing', 'rainvault',
+        'burrcalf', 'thistlebuck', 'prairieguard',
+        'prismink', 'aurorermine', 'polarveil',
+        'kneebit', 'swampstride', 'cypressage',
+        'mumblewool', 'heatheram', 'moorwarden',
+        'skiprock', 'basalisk', 'breakwater',
+        'glimrice', 'paddyglow', 'terracelume',
+        'roseling', 'facetram', 'quartzibex',
+        'wicklet', 'willowisp', 'mereweaver',
+        'sootfinch', 'ashlark', 'emberchorus',
+        'budice', 'petalfloe', 'glacibloom',
+        'niblet', 'cacaocrest', 'canopycacao',
+        'siltip', 'marshcoil', 'estuaryn',
+        'mistyak', 'cloudyak', 'skyburden',
+        'twigglypt', 'ringback', 'chronotree',
+        'glyphish', 'runefin', 'tideglyph',
+        'knockit', 'bamboar', 'canebrute',
+        'pepkit', 'capsiclaw', 'scovlion',
+        'pebbloom', 'selencore', 'moonvault',
+        'lotuslet', 'bloomnewt', 'lotosaur',
+        'kernelit', 'millwing', 'harvestail',
+        'conecko', 'barkglide', 'redwoodrake',
+        'bloopot', 'vaportoise', 'geyshell',
+        'figbat', 'orchardusk', 'noctifera',
+        'ammonip', 'spiralisk', 'aeoncoil',
+        'tinkid', 'alpengait', 'summitbell',
+    ):
+        add(horizon_id)
     add('sludgewad', sludgewad()); add('snoozeghoul', snoozeghoul())
     add('couchlurk', couchlurk()); add('achefang', achefang())
     add('brinegnash', brinegnash()); add('cindergrind', cindergrind())

@@ -96,7 +96,18 @@ def family_chains():
     only the one array used to see three families and hide Dewbble.
     """
     src = (ROOT / 'src' / 'data' / 'creatures.js').read_text(encoding='utf-8')
-    evolves = dict(re.findall(r"^  (\w+): \{$\n(?:.*\n)*?    evolvesTo: '?(\w+)'?,", src, re.M))
+    extra = ROOT / 'src' / 'data' / 'horizonCreatures.js'
+    if extra.exists():
+        src = src + '\n' + extra.read_text(encoding='utf-8')
+    # One object at a time. A single non-greedy search across the file lets
+    # an obstacle with no evolvesTo steal the next companion's line — that
+    # is how Brineling looked like a 1-stage family after the horizon
+    # roster was concatenated after the Wardens.
+    evolves = {}
+    for m in re.finditer(r'^  (\w+): \{\n(.*?)^  \},', src, re.M | re.S):
+        em = re.search(r"evolvesTo: '?(\w+)'?,", m.group(2))
+        if em:
+            evolves[m.group(1)] = em.group(1)
     roots = _expand_id_array(src, 'WILD_COMPANION_IDS')
     seen, uniq = set(), []
     for root in roots:

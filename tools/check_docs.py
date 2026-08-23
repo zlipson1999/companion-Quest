@@ -51,7 +51,12 @@ def build_checks():
     creatures = read('src/data/creatures.js')
     obstacles = len(re.findall(r"'\w+'", first(r'OBSTACLE_IDS = \[([^\]]+)\]',
                                                creatures, 'OBSTACLE_IDS')))
-    companions = len(re.findall(r'^  \w+: \{$', creatures, re.M)) - obstacles
+    creature_ids = set(re.findall(r'^  (\w+): \{$', creatures, re.M))
+    horizon_path = ROOT / 'src/data/horizonCreatures.js'
+    if horizon_path.exists():
+        creature_ids.update(re.findall(r'^  (\w+): \{$',
+                                       horizon_path.read_text(encoding='utf-8'), re.M))
+    companions = len(creature_ids) - obstacles
 
     def map_dims(name):
         blk = maps[maps.index(f'export const {name} = {{'):]
