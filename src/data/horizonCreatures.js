@@ -132,19 +132,19 @@ export const HORIZON_CREATURES = {
   zapram: {
     id: 'zapram', stage: 1, name: 'Zapram', sprite: 'zapram', palette: 'art_zapram',
     species: 'Static Kid Companion', kind: 'wild', type: 'wind', baseHp: 62, catchable: true, catchRate: 0.48,
-    flavor: 'A woolly kid with two glowing horn buds. Ridges make it spark.',
+    flavor: 'A stocky kid in blue-gray tufts. Gold-and-electric horns and a gold chevron on the white V-ruff — Static Ridge weather, small.',
     evolvesTo: 'voltibex', evolveLevel: 5, evolvePoints: 30,
   },
   voltibex: {
     id: 'voltibex', stage: 2, name: 'Voltibex', sprite: 'voltibex', palette: 'art_voltibex',
     species: 'Zigzag Horn Companion', kind: 'evolution', type: 'wind', baseHp: 104, scale: 1.18, catchable: false,
-    flavor: 'Nimble ibex, zigzag horns. Height is a habit it already has.',
+    flavor: 'A slender ibex. Lightning-bolt horns, gold eyes, a blue-and-yellow strike for a collar. Not the kid grown larger.',
     evolvesTo: 'stormhorn', evolveLevel: 14, evolvePoints: 110,
   },
   stormhorn: {
     id: 'stormhorn', stage: 3, name: 'Stormhorn', sprite: 'stormhorn', palette: 'art_stormhorn',
     species: 'Storm-Horn Guardian Companion', kind: 'evolution', type: 'wind', baseHp: 162, scale: 1.32, catchable: false,
-    flavor: 'Branching lightning horns, storm-cloud wool. High country, kept.',
+    flavor: 'A navy stag. Cloud-fur mane, gold-framed gems, cyan-veined antlers. High country, kept.',
     evolvesTo: null,
   },
   nectlet: {

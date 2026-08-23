@@ -646,7 +646,9 @@ faint.
   loftburr→driftpuff→cloudburr, fernap→fiddlefrond→frondrest,
   dapple→glimmoth→leaflight, stillcup→dewbasin→rainhold, plus 40 horizon
   families (brineling→tidecrown through tinkid→summitbell; see
-  docs/HORIZON_FAMILIES.md) — plus 6 obstacles
+  docs/HORIZON_FAMILIES.md). Zapram→voltibex→stormhorn is the
+  Thunderstep / Static Ridge first-rendition line (magenta chroma;
+  electric blue, gold, and white cloud-fur stay) — plus 6 obstacles
   (sludgewad, snoozeghoul, achefang, couchlurk, brinegnash, cindergrind).
   All thirty-six trail forms plus the horizon masters are traced from
   isolated files (approved lineups, then one creature per file). The two new Wardens remain

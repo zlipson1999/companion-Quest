@@ -1,5 +1,3 @@
-**Horizon.** Mireblink → Lunareed → Fenoracle is the Moonfen / Silver Reed Walk line (marsh firefly-frog). Named masters, magenta keyed. Stage-1 reeds and the lime throat orb stay. Stage 2 is a four-legged leaf-stag; stage 3 is a moon-cape walker with six orbiting lights. The approval plate is `lineups/mireblink_family.png`.
-
 # Companion-family reference art
 
 Top-level `*.png` files are isolated **ship masters**.
@@ -27,6 +25,19 @@ the species bar — look at them, do not ship them.
 **Frostpine Reach.** Pinepuff → Rimecone → Frostbough. First-rendition
 plates, magenta keyed; white snow and ice-blue eyes stay. Family plate:
 `lineups/pinepuff_family.png`.
+
+**Thunderstep Highlands / Static Ridge.** Zapram → Voltibex → Stormhorn.
+First-rendition plates, magenta keyed; electric blue, gold, and white
+cloud-fur stay. Stocky kid → slender lightning-horn ibex → navy cloud-mane
+stag. Not the navy constellation horse (Glintfoal). Named masters
+`zapram` / `voltibex` / `stormhorn`. Family plate:
+`lineups/zapram_family.png`.
+
+**Horizon.** Mireblink → Lunareed → Fenoracle is the Moonfen / Silver Reed
+Walk line (marsh firefly-frog). Named masters, magenta keyed. Stage-1
+reeds and the lime throat orb stay. Stage 2 is a four-legged leaf-stag;
+stage 3 is a moon-cape walker with six orbiting lights. The approval
+plate is `lineups/mireblink_family.png`.
 
 **Each family is three different creatures that read as one life**
 (baby / adolescent / adult). A tint, scale, crop, or outline of the
