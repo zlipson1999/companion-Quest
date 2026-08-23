@@ -91,6 +91,9 @@ of one prompt are not a family.
 - **Pebblepup** (sitting mosaic puppy) → **Cairnhound** (standing
   dry-stone wolf) → **Monolithound** (jagged dolmen-beast). Not the
   trail Rubblet / Dolmenhold line.
+- **Sporelet** (toadstool kid + sparkles) → **Mycobloom** (plated
+  scout, cracked loaf-cap, shoulder fruiting) → **Canopore**
+  (rooted canopy, bark legs in moss — not a bigger spotted kid)
 - **Spinseed** (tan ribbed seed-kid, fan samara crest) → **Whirlkey**
   (upright veined torso, leaf-wings, three vine legs) → **Samaraile**
   (leaf-armor standing sail, eight golden key-wings — not a bigger seed)

@@ -15,7 +15,9 @@ Sproutle → Bloomtail → Groveheart, Emberkit → Pyrelynx → Cindermane,
 Dewbble → Tidewade → Maelstride. Pebblepup → Cairnhound →
 Monolithound is the next original-six family on that same path
 (sitting mosaic puppy / standing dry-stone hound / jagged
-dolmen-beast). Ids are permanent.
+dolmen-beast). Sporelet → Mycobloom → Canopore is the same kind of
+first-rendition line (magenta keyed; stage-1 sparkles and stage-3
+spore sparks stay). Ids are permanent.
 `python3 tools/check_art.py` verifies that each master still REPRODUCES
 the art the game ships, and **fails a family whose stages are too
 similar** (silhouette IoU + colour difference). That second gate exists
@@ -28,7 +30,8 @@ The quality bar is the approved lineups in
 Maple and Cairn sit on a flat field and split cleanly. Gale and Canopy
 are scenic plates — their ship masters were re-generated isolated, not
 split out of the forest/sky. The first-bond plate is Sproutle / Emberkit
-/ Dewbble.
+/ Dewbble. The original-six stage-1 plate is `lineups/originalsix.png`.
+The Sporelet family plate is `lineups/sporelet_family.png`.
 
 The authored world-material atlas lives in `assets/textures/masters/`.
 `tools/convert_texture_atlas.py` turns its cells into indexed runtime tiles.

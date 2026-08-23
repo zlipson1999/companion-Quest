@@ -31,8 +31,11 @@ the check. The skill is `tools/CHARACTER_PROMPT.md`.
 - **Maple and Cairn** sit on a flat field. Split with
   `tools/split_lineup.py`, then convert. Stage-1 masters
   (`spinseed`, `bramblet`, `lanternbud`, `rubblet`, `chockit`,
-  `facetel`) are committed here. Evolutions need their own isolated
-  masters that would fail a same-silhouette check against stage 1.
+  `facetel`) are committed here. The Spinseed line was remade from
+  attached family plates (`spinseed` / `whirlkey` / `samaraile`) —
+  do not split `maple.png` back over those three. Evolutions need
+  their own isolated masters that would fail a same-silhouette check
+  against stage 1.
 - **Gale and Canopy are lineup-only.** Those plates are scenic (sky,
   forest). `split_lineup.py` refuses them. Re-generate each face alone
   with the Ship master prompt in `tools/CHARACTER_PROMPT.md` (flat
