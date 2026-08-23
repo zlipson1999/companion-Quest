@@ -11,6 +11,7 @@
 // creatures.js; creatures.js must never import this file.
 
 import { familyChain, getCreature, STARTER_IDS } from './creatures';
+import { SCENE_TONES } from './sceneSky';
 
 // Cumulative pools. A longer walk can meet anyone you have already unlocked,
 // plus the new faces that trail introduces. Wild pick is random from this list.
@@ -35,6 +36,7 @@ export const ROUTES = [
     pinId: 'maple',
     pinName: 'Maple Pin',
     stageTone: 'maple',
+    // Horizon fraction is the trail's; sky colours live in sceneSky.js.
     horizon: 0.18,
     mapId: 'route_maple',
     // Green lane, trees, grass.
@@ -370,6 +372,9 @@ ROUTES.forEach((route) => {
   route.companions.forEach((id) => {
     if (!getCreature(id)) throw new Error(`routes: companion ${id} is not a creature`);
   });
+  if (!SCENE_TONES[route.stageTone]) {
+    throw new Error(`routes: ${route.id} stageTone '${route.stageTone}' has no sceneSky row`);
+  }
 });
 
 export default ROUTES;

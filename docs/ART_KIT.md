@@ -226,6 +226,35 @@ Decoration follows the same rule: flowers are a transparent overlay
 (`prop_flowers`), not a tile, because a solid 16x16 square of different texture
 in the middle of continuous grass is exactly the chunk being removed.
 
+
+## Horizons — grass meets sky in one place
+
+A field that stops against a flat hex is the same seam the field work removed
+on the ground, just turned sideways. The sky used to be invented three times
+(Route, BattleStage, the slack above Sunkist Lane) as one colour plus a 4px
+haze line. Those copies drifted, and the join read as a letterbox.
+
+`src/data/sceneSky.js` is the only atmosphere table. `HorizonSky` is the only
+painter. Do not add a fourth sky hex on a screen.
+
+| Place | What you see | What must not happen |
+| --- | --- | --- |
+| Maple / Cairn / Gale / Canopy / Rill / Ember trails | Sky steps from zenith to haze, then the trail's own tiles. Horizon fraction stays on the route (`0.18` Maple … `0.42` Gale). | Tiles covering the whole phone so the sky never shows. A local `SCENE_SKY` copy. |
+| Challenge stage | The same painter, same tone as the trail you came from. Ground is zoomed tiles. | A meadow behind a gym spar (`hall` is gym air). A CSS gradient. |
+| Sunkist Lane (hub) | Map sits on the ground band. Slack **above** the tree line is sky; haze sits on the join. | Centring the map in a green void so grass appears above the sky. |
+| Quest Fitness / the house | Flat void in the room's own tone (`VOID_BY_MAP`). | Sky over a floor. That is a hole in the roof. |
+| Title, menus, journal screens | Interface ramps. Not a landscape. | Do not put `HorizonSky` behind a Window. |
+
+The sky is **weighted scanlines** (more air at the zenith, compressed at the
+horizon), not equal stripes — equal stripes read as a gradient tool. The haze
+is five hard-edged mixes that sit **on** the join, half in the air and half
+over the first ground pixels, using `groundFar` from the same table so the
+air dissolves into a colour the tiles already own.
+
+If you add a trail, add its row to `SCENE_TONES` in the same commit. If you
+change a sky hex, change it there only — Route and BattleStage must not grow
+their own lists again.
+
 ## Autotiling
 
 A path drawn as one sprite per square butts a hard edge against the grass, and
