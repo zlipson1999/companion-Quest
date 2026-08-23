@@ -1,26 +1,26 @@
-# Horizon Cleaned Masters
+# Horizon cleaned masters
 
-Transparent, background-free, corner-alpha=0, bottom-aligned centered masters produced by `process_plate.py` (edge flood-fill keying with color_dist < 32 + corner trim for paper/sky).
+Transparent, centered, no-background masters for Horizon companions.
 
-These 59 forms are the cleaned Horizon line ready for PixelSprite and in-game use. No scaled/recolored/stand-in/placeholder art. Distinct silhouettes preserved.
+**These PNG files are not committed yet** (binary push limitation from the agent side).
 
-## Inventory (59)
-aeoncoil, alpengait, ammonip, apiarch, ashlark, astramare, aurorermine, bamboar, barkglide, basalisk, bellbun, bellstride, bloomnewt, bloomrunner, bloopot, breakwater, brineling, budice, burrcalf, canyonchime, cavernwing, chipmagma, clinket, combwing, cometmane, coralith, duneshade, dusthorn, fenoracle, ferracorn, frostbough, glintfoal, ironstag, lunareed, mangrusk, mesaquill, mirajinn, mireblink, nailnut, nectlet, obsidrake, pinepuff, pipolyp, plinkbat, prairieguard, propfin, rainvault, and the remaining forms in the horizon plate set.
+## One-command import
 
-## Glintfoal line example (verified)
-- Baby: glintfoal.png
-- Adolescent: astramare.png
-- Adult: cometmane.png
+1. Download `horizon_cleaned_assets.zip` from the chat (or the smaller `lineups_key.zip`).
+2. Place the zip in the **repo root**.
+3. Run:
 
-## Processing notes
-- Source: AI 16-bit family plates → process_plate.py
-- Key: flood-fill from edges (tight)
-- Trim: is_paper / is_sky from borders
-- Center: to_sprite bottom-align
-- Output: full transparent masters + 96x96 sprites
+```bash
+bash tools/import_cleaned_art.sh horizon_cleaned_assets.zip
+```
 
-See also `tools/lineups/` for contact sheets (horizon_cleaned_contact.png, glintfoal_family.png, roster_stage1.png, roster_stage3.png, etc.).
+4. Then:
 
-The binary PNG masters and contact sheets are available for download from the conversation artifacts (horizon_clean/, lineups/, sprites_96/). Add them here and to tools/lineups/ via local commit after download.
+```bash
+git add tools/reference_art/horizon_cleaned tools/lineups tools/sprites_96
+git status   # confirm many new .png files
+git commit -m "Add cleaned Horizon masters (transparent) + contact sheets"
+git push origin main
+```
 
-Generated / cleaned 2026-08-23.
+After that, this folder will contain the real 59 transparent masters and `tools/lineups/` will have the contact sheets.
