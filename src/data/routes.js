@@ -30,6 +30,8 @@ export const ROUTES = [
     unlock: null,
     region: 'The Grove',
     regionId: 'grove',
+    biomeId: 'maple-woods',
+    biomeName: 'Maple Woods',
     miles: 1.5,
     reps: 30,
     companions: MAPLE_MEET,
@@ -57,6 +59,8 @@ export const ROUTES = [
     name: 'Cairn Cut',
     region: 'The Grove',
     regionId: 'grove',
+    biomeId: 'cairn-cut',
+    biomeName: 'Packed Earth',
     miles: 3,
     reps: 60,
     companions: CAIRN_MEET,
@@ -85,6 +89,8 @@ export const ROUTES = [
     name: 'Gale Reach',
     region: 'The Grove',
     regionId: 'grove',
+    biomeId: 'gale-reach',
+    biomeName: 'Open Country',
     miles: 5,
     reps: 100,
     companions: GALE_MEET,
@@ -111,6 +117,8 @@ export const ROUTES = [
     name: 'Canopy Run',
     region: 'The Grove',
     regionId: 'grove',
+    biomeId: 'canopy-shade',
+    biomeName: 'Deep Shade',
     miles: 8,
     reps: 160,
     companions: CANOPY_MEET,
@@ -137,6 +145,8 @@ export const ROUTES = [
     name: 'Rill Crossing',
     region: 'The Grove',
     regionId: 'grove',
+    biomeId: 'rill-water',
+    biomeName: 'Stream Crossing',
     miles: 12,
     reps: 220,
     companions: RILL_MEET,
@@ -163,6 +173,8 @@ export const ROUTES = [
     name: 'Ember Grade',
     region: 'The Grove',
     regionId: 'grove',
+    biomeId: 'ember-grade',
+    biomeName: 'Cinder Grade',
     miles: 18,
     reps: 320,
     companions: EMBER_MEET,
@@ -379,6 +391,30 @@ export function trailRow(routeId, r, cols) {
       if (x < 1 || x > cols - 2) { row += n < 48 ? '~' : '.'; continue; }
     } else if (route.edge === 'ember') {
       if (x < 1 || x > cols - 2) { row += n < 40 ? '*' : '.'; continue; }
+    } else if (route.edge === 'sand') {
+      if (x < 1 || x > cols - 2) { row += n < 28 ? '~' : n < 40 ? '*' : '.'; continue; }
+    } else if (route.edge === 'coral') {
+      if (x < 1 || x > cols - 2) { row += n < 72 ? '~' : '*'; continue; }
+    } else if (route.edge === 'marsh') {
+      if (x < 1 || x > cols - 2) { row += n < 52 ? '~' : '^'; continue; }
+    } else if (route.edge === 'snow') {
+      if (x < 1 || x > cols - 2) { row += n < 48 ? 'T' : '*'; continue; }
+    } else if (route.edge === 'pine') {
+      if (x < 2 || x > cols - 3) { row += n < 72 ? 'T' : '*'; continue; }
+    } else if (route.edge === 'steam') {
+      if (x < 1 || x > cols - 2) { row += n < 38 ? '~' : '*'; continue; }
+    } else if (route.edge === 'alpine') {
+      if (x < 1 || x > cols - 2) { row += n < 42 ? '*' : '.'; continue; }
+    } else if (route.edge === 'orchard') {
+      if (x < 1 || x > cols - 2) { row += n < 58 ? 'T' : ','; continue; }
+    } else if (route.edge === 'prairie') {
+      if (x < 1 || x > cols - 2) { row += n < 22 ? ',' : '.'; continue; }
+    } else if (route.edge === 'mangrove') {
+      if (x < 2 || x > cols - 3) { row += n < 58 ? 'T' : '~'; continue; }
+    } else if (route.edge === 'ruin') {
+      if (x < 1 || x > cols - 2) { row += n < 52 ? '*' : 'T'; continue; }
+    } else if (route.edge === 'cave') {
+      if (x < 1 || x > cols - 2) { row += '*'; continue; }
     }
     if (route.tallgrassChance && n < route.tallgrassChance) row += '^';
     else if (route.flowerChance && n < route.flowerChance) row += ',';

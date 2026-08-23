@@ -9,6 +9,7 @@
 // screens. Region badges are the capstone trail's Quest Pin.
 
 function hz(spec) {
+  const b = TRAIL_BIOMES[spec.id] || {};
   return {
     id: spec.id,
     name: spec.name,
@@ -21,9 +22,9 @@ function hz(spec) {
     wardenBond: spec.wardenBond,
     pinId: spec.pinId,
     pinName: spec.pinName,
-    stageTone: spec.stageTone,
-    horizon: spec.horizon,
-    mapId: spec.mapId,
+    stageTone: b.stageTone || spec.stageTone,
+    horizon: b.horizon != null ? b.horizon : spec.horizon,
+    mapId: b.mapId || spec.mapId,
     unlock: spec.unlock,
     region: spec.regionName,
     regionId: spec.regionId,
@@ -32,16 +33,145 @@ function hz(spec) {
     uncommon: spec.uncommon || [],
     rare: spec.rare || [],
     capstone: !!spec.capstone,
-    laneFrac: spec.laneFrac,
-    laneMin: spec.laneMin,
-    edge: spec.edge,
-    tallgrassChance: spec.tallgrassChance || 0,
-    flowerChance: spec.flowerChance || 0,
-    scatterTrees: spec.scatterTrees || 0,
-    scatterStone: spec.scatterStone || 0,
-    scatterWater: spec.scatterWater || 0,
+    biomeId: b.biomeId || spec.id,
+    biomeName: b.biomeName || spec.name,
+    terrain: b.terrain || '',
+    laneFrac: b.laneFrac != null ? b.laneFrac : spec.laneFrac,
+    laneMin: b.laneMin != null ? b.laneMin : spec.laneMin,
+    edge: b.edge || spec.edge,
+    tallgrassChance: b.tallgrassChance != null ? b.tallgrassChance : (spec.tallgrassChance || 0),
+    flowerChance: b.flowerChance != null ? b.flowerChance : (spec.flowerChance || 0),
+    scatterTrees: b.scatterTrees != null ? b.scatterTrees : (spec.scatterTrees || 0),
+    scatterStone: b.scatterStone != null ? b.scatterStone : (spec.scatterStone || 0),
+    scatterWater: b.scatterWater != null ? b.scatterWater : (spec.scatterWater || 0),
   };
 }
+
+// One biome per trail. Sky/floor/edge live here so two trails in the same
+// region cannot share a field. Companions are exclusive to the trail that
+// names them — later trails do not keep earlier faces (Grove still does).
+const TRAIL_BIOMES = {
+  saltglass: {
+    biomeId: 'glass-strand', biomeName: 'Glass Strand',
+    terrain: 'Wet sand, tide pools, bottle-glass.',
+    stageTone: 'saltglass', mapId: 'route_saltglass', edge: 'sand', horizon: 0.34,
+    laneFrac: 0.16, laneMin: 2, tallgrassChance: 2, flowerChance: 10, scatterTrees: 0, scatterStone: 6, scatterWater: 24,
+  },
+  tideglass: {
+    biomeId: 'basalt-reef', biomeName: 'Basalt Reef',
+    terrain: 'Black plates, coral shelves, eelgrass channels.',
+    stageTone: 'tideglass', mapId: 'route_tideglass', edge: 'coral', horizon: 0.3,
+    laneFrac: 0.14, laneMin: 2, tallgrassChance: 0, flowerChance: 2, scatterTrees: 0, scatterStone: 10, scatterWater: 32,
+  },
+  suncrack: {
+    biomeId: 'suncrack-shelf', biomeName: 'Suncrack Shelf',
+    terrain: 'Hot packed earth and cracked ochre.',
+    stageTone: 'suncrack', mapId: 'route_suncrack', edge: 'ember', horizon: 0.32,
+    laneFrac: 0.18, laneMin: 2, tallgrassChance: 0, flowerChance: 8, scatterTrees: 0, scatterStone: 16, scatterWater: 0,
+  },
+  redmesa: {
+    biomeId: 'glassfire-cut', biomeName: 'Glassfire Cut',
+    terrain: 'Obsidian seams and fossil sand.',
+    stageTone: 'redmesa', mapId: 'route_redmesa', edge: 'ember', horizon: 0.26,
+    laneFrac: 0.16, laneMin: 2, tallgrassChance: 0, flowerChance: 2, scatterTrees: 0, scatterStone: 26, scatterWater: 0,
+  },
+  reedwalk: {
+    biomeId: 'silver-reed', biomeName: 'Silver Reed Marsh',
+    terrain: 'Knees of cypress, reed water, night-lights.',
+    stageTone: 'reedwalk', mapId: 'route_reedwalk', edge: 'marsh', horizon: 0.2,
+    laneFrac: 0.16, laneMin: 2, tallgrassChance: 22, flowerChance: 4, scatterTrees: 8, scatterStone: 0, scatterWater: 20,
+  },
+  moonfen: {
+    biomeId: 'lotus-delta', biomeName: 'Lotus Delta',
+    terrain: 'Still pools, willow hang, open petals.',
+    stageTone: 'moonfen', mapId: 'route_moonfen', edge: 'marsh', horizon: 0.18,
+    laneFrac: 0.14, laneMin: 2, tallgrassChance: 12, flowerChance: 14, scatterTrees: 10, scatterStone: 0, scatterWater: 26,
+  },
+  needlesnow: {
+    biomeId: 'needle-snow', biomeName: 'Needle-Snow Pass',
+    terrain: 'Pine, quiet snow, aurora at the ridge.',
+    stageTone: 'needlesnow', mapId: 'route_needlesnow', edge: 'pine', horizon: 0.3,
+    laneFrac: 0.18, laneMin: 2, tallgrassChance: 2, flowerChance: 0, scatterTrees: 16, scatterStone: 10, scatterWater: 0,
+  },
+  frostpine: {
+    biomeId: 'iceflower-cave', biomeName: 'Iceflower Cavern',
+    terrain: 'Ice bloom at the mouth, dripstone in the dark.',
+    stageTone: 'frostpine', mapId: 'route_frostpine', edge: 'cave', horizon: 0.16,
+    laneFrac: 0.16, laneMin: 2, tallgrassChance: 0, flowerChance: 6, scatterTrees: 4, scatterStone: 22, scatterWater: 8,
+  },
+  echorail: {
+    biomeId: 'echo-rail', biomeName: 'Echo Rail',
+    terrain: 'Copper plates, canyon ring, packed stone.',
+    stageTone: 'echorail', mapId: 'route_echorail', edge: 'stone', horizon: 0.24,
+    laneFrac: 0.2, laneMin: 2, tallgrassChance: 0, flowerChance: 0, scatterTrees: 0, scatterStone: 22, scatterWater: 0,
+  },
+  copper: {
+    biomeId: 'steamstone', biomeName: 'Steamstone Basin',
+    terrain: 'Geyser terrace, ironwood, mineral steam.',
+    stageTone: 'copper', mapId: 'route_copper', edge: 'steam', horizon: 0.22,
+    laneFrac: 0.18, laneMin: 2, tallgrassChance: 0, flowerChance: 2, scatterTrees: 4, scatterStone: 16, scatterWater: 14,
+  },
+  cometgrass: {
+    biomeId: 'cometgrass', biomeName: 'Cometgrass Prairie',
+    terrain: 'Dawn dew, bluebells, open mile.',
+    stageTone: 'cometgrass', mapId: 'route_cometgrass', edge: 'prairie', horizon: 0.4,
+    laneFrac: 0.12, laneMin: 1, tallgrassChance: 10, flowerChance: 28, scatterTrees: 1, scatterStone: 0, scatterWater: 0,
+  },
+  starfall: {
+    biomeId: 'grainwheel', biomeName: 'Grainwheel Plains',
+    terrain: 'Wheat, mill-sails, starlight on gold.',
+    stageTone: 'starfall', mapId: 'route_starfall', edge: 'prairie', horizon: 0.42,
+    laneFrac: 0.12, laneMin: 1, tallgrassChance: 16, flowerChance: 12, scatterTrees: 2, scatterStone: 2, scatterWater: 0,
+  },
+  honeyfall: {
+    biomeId: 'honey-rows', biomeName: 'Honey Rows',
+    terrain: 'Orchard lanes, comb drip, warm grass.',
+    stageTone: 'honeyfall', mapId: 'route_honeyfall', edge: 'orchard', horizon: 0.22,
+    laneFrac: 0.24, laneMin: 2, tallgrassChance: 8, flowerChance: 30, scatterTrees: 12, scatterStone: 0, scatterWater: 0,
+  },
+  amber: {
+    biomeId: 'cindergrass', biomeName: 'Cindergrass Fields',
+    terrain: 'Dusk rice, ash grass, ember song.',
+    stageTone: 'amber', mapId: 'route_amber', edge: 'orchard', horizon: 0.2,
+    laneFrac: 0.2, laneMin: 2, tallgrassChance: 12, flowerChance: 10, scatterTrees: 6, scatterStone: 4, scatterWater: 4,
+  },
+  staticridge: {
+    biomeId: 'static-ridge', biomeName: 'Static Ridge',
+    terrain: 'Thin air, bare rock, a quicker heart.',
+    stageTone: 'staticridge', mapId: 'route_staticridge', edge: 'alpine', horizon: 0.44,
+    laneFrac: 0.1, laneMin: 1, tallgrassChance: 0, flowerChance: 6, scatterTrees: 0, scatterStone: 14, scatterWater: 0,
+  },
+  thunderstep: {
+    biomeId: 'heartstone', biomeName: 'Heartstone Heights',
+    terrain: 'Cloud pasture, quartz horns, white sky.',
+    stageTone: 'thunderstep', mapId: 'route_thunderstep', edge: 'alpine', horizon: 0.5,
+    laneFrac: 0.1, laneMin: 1, tallgrassChance: 2, flowerChance: 12, scatterTrees: 1, scatterStone: 8, scatterWater: 0,
+  },
+  rootwater: {
+    biomeId: 'rootwater', biomeName: 'Rootwater Swamp',
+    terrain: 'Prop-roots, brackish boardwalk, cacao shade.',
+    stageTone: 'rootwater', mapId: 'route_rootwater', edge: 'mangrove', horizon: 0.16,
+    laneFrac: 0.16, laneMin: 2, tallgrassChance: 10, flowerChance: 4, scatterTrees: 14, scatterStone: 0, scatterWater: 22,
+  },
+  mangrove: {
+    biomeId: 'redwood-crown', biomeName: 'Redwood Crown',
+    terrain: 'Giant trunks, fig dark, almost no sky.',
+    stageTone: 'mangrove', mapId: 'route_mangrove', edge: 'canopy', horizon: 0.12,
+    laneFrac: 0.14, laneMin: 2, tallgrassChance: 18, flowerChance: 2, scatterTrees: 24, scatterStone: 0, scatterWater: 6,
+  },
+  ringwood: {
+    biomeId: 'ringwood', biomeName: 'Petrified Ringwood',
+    terrain: 'Heather, tree-rings in stone, quiet wool.',
+    stageTone: 'ringwood', mapId: 'route_ringwood', edge: 'ruin', horizon: 0.28,
+    laneFrac: 0.18, laneMin: 2, tallgrassChance: 4, flowerChance: 8, scatterTrees: 6, scatterStone: 16, scatterWater: 0,
+  },
+  deephorizon: {
+    biomeId: 'moonstone-ruin', biomeName: 'Moonstone Ruin',
+    terrain: 'Cave pearl, glyph water, a spiral that outlasts you.',
+    stageTone: 'deephorizon', mapId: 'route_deephorizon', edge: 'cave', horizon: 0.22,
+    laneFrac: 0.16, laneMin: 2, tallgrassChance: 0, flowerChance: 2, scatterTrees: 0, scatterStone: 20, scatterWater: 10,
+  },
+};
 
 export const REGIONS = [
   {
@@ -161,8 +291,7 @@ export const REGIONS = [
         name: 'Blackwave Traverse',
         miles: 4,
         reps: 70,
-        companions: ['brineling', 'skiprock', 'pipolyp', 'siltip'],
-        common: ['brineling', 'skiprock'],
+        companions: ['pipolyp', 'siltip'],
         uncommon: ['pipolyp'],
         rare: ['siltip'],
         capstone: true,
@@ -259,9 +388,7 @@ export const REGIONS = [
         name: 'Glassfire Descent',
         miles: 5,
         reps: 110,
-        companions: ['dusthorn', 'veilisk', 'chipmagma', 'ammonip'],
-        common: ['dusthorn'],
-        uncommon: ['veilisk'],
+        companions: ['chipmagma', 'ammonip'],
         rare: ['chipmagma', 'ammonip'],
         capstone: true,
         warden: 'cindergrind',
@@ -357,9 +484,8 @@ export const REGIONS = [
         name: 'Petalwater Trail',
         miles: 6,
         reps: 110,
-        companions: ['kneebit', 'mireblink', 'wicklet', 'lotadpole'],
-        common: ['kneebit'],
-        uncommon: ['mireblink', 'wicklet'],
+        companions: ['wicklet', 'lotadpole'],
+        uncommon: ['wicklet'],
         rare: ['lotadpole'],
         capstone: true,
         warden: 'couchlurk',
@@ -457,9 +583,7 @@ export const REGIONS = [
         name: 'Iceflower Circuit',
         miles: 7,
         reps: 120,
-        companions: ['pinepuff', 'prismink', 'budice', 'plinkbat'],
-        common: ['pinepuff'],
-        uncommon: ['prismink'],
+        companions: ['budice', 'plinkbat'],
         rare: ['budice', 'plinkbat'],
         capstone: true,
         warden: 'couchlurk',
@@ -554,8 +678,7 @@ export const REGIONS = [
         name: 'Steamstone Walk',
         miles: 8,
         reps: 140,
-        companions: ['clinket', 'knockit', 'nailnut', 'bloopot'],
-        common: ['clinket', 'knockit'],
+        companions: ['nailnut', 'bloopot'],
         uncommon: ['nailnut'],
         rare: ['bloopot'],
         capstone: true,
@@ -651,8 +774,7 @@ export const REGIONS = [
         name: 'Grainwheel Road',
         miles: 5,
         reps: 90,
-        companions: ['bellbun', 'burrcalf', 'glintfoal', 'kernelit'],
-        common: ['bellbun', 'burrcalf'],
+        companions: ['glintfoal', 'kernelit'],
         uncommon: ['glintfoal'],
         rare: ['kernelit'],
         capstone: true,
@@ -749,9 +871,8 @@ export const REGIONS = [
         name: 'Cindergrass Route',
         miles: 6,
         reps: 100,
-        companions: ['nectlet', 'pepkit', 'glimrice', 'sootfinch'],
-        common: ['nectlet'],
-        uncommon: ['pepkit', 'glimrice'],
+        companions: ['glimrice', 'sootfinch'],
+        uncommon: ['glimrice'],
         rare: ['sootfinch'],
         capstone: true,
         warden: 'sludgewad',
@@ -848,9 +969,8 @@ export const REGIONS = [
         name: 'Heartstone Walk',
         miles: 10,
         reps: 180,
-        companions: ['zapram', 'tinkid', 'mistyak', 'roseling'],
-        common: ['zapram'],
-        uncommon: ['tinkid', 'mistyak'],
+        companions: ['mistyak', 'roseling'],
+        uncommon: ['mistyak'],
         rare: ['roseling'],
         capstone: true,
         warden: 'achefang',
@@ -947,8 +1067,7 @@ export const REGIONS = [
         name: 'Giant Step Trail',
         miles: 9,
         reps: 160,
-        companions: ['propfin', 'niblet', 'conecko', 'figbat'],
-        common: ['propfin', 'niblet'],
+        companions: ['conecko', 'figbat'],
         uncommon: ['conecko'],
         rare: ['figbat'],
         capstone: true,
@@ -1047,9 +1166,8 @@ export const REGIONS = [
         name: 'Bubble Archway',
         miles: 12,
         reps: 220,
-        companions: ['mumblewool', 'twigglypt', 'pebbloom', 'glyphish'],
-        common: ['mumblewool'],
-        uncommon: ['twigglypt', 'pebbloom'],
+        companions: ['pebbloom', 'glyphish'],
+        uncommon: ['pebbloom'],
         rare: ['glyphish'],
         capstone: true,
         warden: 'cindergrind',
@@ -1111,6 +1229,16 @@ if (FAMILY_COUNT !== 58) {
 }
 if (HORIZON_ROUTES.length !== 20) {
   throw new Error(`regions: expected 20 horizon trails, got ${HORIZON_ROUTES.length}`);
+}
+const horizonFaces = HORIZON_ROUTES.flatMap((r) => r.companions);
+if (new Set(horizonFaces).size !== horizonFaces.length) {
+  throw new Error('regions: a companion is listed on two Horizon trails');
+}
+if (new Set(HORIZON_ROUTES.map((r) => r.stageTone)).size !== 20) {
+  throw new Error('regions: two Horizon trails share a sky tone');
+}
+if (new Set(HORIZON_ROUTES.map((r) => r.mapId)).size !== 20) {
+  throw new Error('regions: two Horizon trails share a map id');
 }
 
 export default REGIONS;

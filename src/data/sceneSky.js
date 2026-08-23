@@ -77,6 +77,108 @@ export const SCENE_TONES = {
     groundFar: '#2a3238', ground: '#1b2126', disc: '#4f8a7e',
     mapId: 'gym', codes: 'floor',
   },
+
+  // Horizon trails — one atmosphere each. Grove tones above stay put.
+  saltglass: {
+    zenith: '#1a4a5c', sky: '#3a88a0', haze: '#b8e0dc',
+    groundFar: '#c8b890', ground: '#b8a878', disc: '#d4c8a0',
+    mapId: 'route_saltglass', codes: 'sand',
+  },
+  tideglass: {
+    zenith: '#0c2438', sky: '#1e4a68', haze: '#4a8898',
+    groundFar: '#3a4a52', ground: '#2a3840', disc: '#4a6870',
+    mapId: 'route_tideglass', codes: 'reef',
+  },
+  suncrack: {
+    zenith: '#5a280c', sky: '#c46828', haze: '#f0c070',
+    groundFar: '#c88848', ground: '#a86830', disc: '#d49450',
+    mapId: 'route_suncrack', codes: 'earth',
+  },
+  redmesa: {
+    zenith: '#241008', sky: '#5a1c10', haze: '#c05028',
+    groundFar: '#6a3020', ground: '#3a1810', disc: '#8a4030',
+    mapId: 'route_redmesa', codes: 'earth',
+  },
+  reedwalk: {
+    zenith: '#14201c', sky: '#243c34', haze: '#6a8870',
+    groundFar: '#3a5a40', ground: '#243828', disc: '#4a6850',
+    mapId: 'route_reedwalk', codes: 'marsh',
+  },
+  moonfen: {
+    zenith: '#141428', sky: '#28244a', haze: '#7a6a98',
+    groundFar: '#3a4850', ground: '#243038', disc: '#5a6a78',
+    mapId: 'route_moonfen', codes: 'marsh',
+  },
+  needlesnow: {
+    zenith: '#1c3048', sky: '#6a88a8', haze: '#d8e8f0',
+    groundFar: '#b8c8c4', ground: '#8aa098', disc: '#d0dcd8',
+    mapId: 'route_needlesnow', codes: 'snow',
+  },
+  frostpine: {
+    zenith: '#101828', sky: '#203848', haze: '#88c0d0',
+    groundFar: '#4a6070', ground: '#2a3848', disc: '#6a8898',
+    mapId: 'route_frostpine', codes: 'cave',
+  },
+  echorail: {
+    zenith: '#3a2818', sky: '#8a5a30', haze: '#d4a060',
+    groundFar: '#8a6a48', ground: '#5a4630', disc: '#b88850',
+    mapId: 'route_echorail', codes: 'earth',
+  },
+  copper: {
+    zenith: '#2a2a28', sky: '#5a5850', haze: '#c8c0a8',
+    groundFar: '#7a7468', ground: '#4a4840', disc: '#9a9488',
+    mapId: 'route_copper', codes: 'earth',
+  },
+  cometgrass: {
+    zenith: '#243868', sky: '#5a88c8', haze: '#e8d888',
+    groundFar: '#c8c070', ground: '#8aaa58', disc: '#d4d080',
+    mapId: 'route_cometgrass', codes: 'open',
+  },
+  starfall: {
+    zenith: '#1c2048', sky: '#3a5088', haze: '#e8c878',
+    groundFar: '#c8a848', ground: '#8a7a38', disc: '#d4b858',
+    mapId: 'route_starfall', codes: 'open',
+  },
+  honeyfall: {
+    zenith: '#304018', sky: '#6a8840', haze: '#e8d070',
+    groundFar: '#7aaa48', ground: '#5a7830', disc: '#c8b050',
+    mapId: 'route_honeyfall', codes: 'grass',
+  },
+  amber: {
+    zenith: '#3a2010', sky: '#8a4820', haze: '#e8a050',
+    groundFar: '#8a6030', ground: '#5a3818', disc: '#c87838',
+    mapId: 'route_amber', codes: 'grass',
+  },
+  staticridge: {
+    zenith: '#203040', sky: '#4a6888', haze: '#c0d8e8',
+    groundFar: '#8a8a78', ground: '#5a5a50', disc: '#a8a898',
+    mapId: 'route_staticridge', codes: 'earth',
+  },
+  thunderstep: {
+    zenith: '#4868a0', sky: '#88b0d8', haze: '#f0f4f8',
+    groundFar: '#c8d0c0', ground: '#889890', disc: '#d8e0d8',
+    mapId: 'route_thunderstep', codes: 'open',
+  },
+  rootwater: {
+    zenith: '#0c1814', sky: '#1a3028', haze: '#3a6858',
+    groundFar: '#2a4a3c', ground: '#1a3028', disc: '#3a5a48',
+    mapId: 'route_rootwater', codes: 'marsh',
+  },
+  mangrove: {
+    zenith: '#08100c', sky: '#142018', haze: '#2a4a28',
+    groundFar: '#243820', ground: '#182818', disc: '#3a5230',
+    mapId: 'route_mangrove', codes: 'shade',
+  },
+  ringwood: {
+    zenith: '#201828', sky: '#483850', haze: '#b898a8',
+    groundFar: '#6a5a58', ground: '#4a3e40', disc: '#8a6a70',
+    mapId: 'route_ringwood', codes: 'earth',
+  },
+  deephorizon: {
+    zenith: '#101018', sky: '#1c1c30', haze: '#6a7098',
+    groundFar: '#3a4058', ground: '#1c2030', disc: '#5a6280',
+    mapId: 'route_deephorizon', codes: 'cave',
+  },
 };
 
 export function sceneTone(id) {

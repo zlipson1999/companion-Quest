@@ -72,6 +72,16 @@ function TileGround({ mapId, codes }) {
           row += h === 0 && !edge ? '#' : h === 1 ? ',' : '.';
         } else if (codes === 'shade') {
           row += edge && h < 8 ? 'T' : h === 0 ? '^' : '.';
+        } else if (codes === 'sand') {
+          row += h < 2 ? ',' : h < 4 ? '*' : h === 5 ? '~' : '.';
+        } else if (codes === 'reef') {
+          row += h < 6 ? '~' : h < 8 ? '*' : '.';
+        } else if (codes === 'marsh') {
+          row += edge || h < 4 ? '~' : h < 7 ? '^' : '.';
+        } else if (codes === 'snow') {
+          row += edge && h < 6 ? 'T' : h < 3 ? '*' : '.';
+        } else if (codes === 'cave') {
+          row += edge || h < 5 ? '*' : '.';
         } else {
           row += h === 0 && edge ? '^' : '.';
         }

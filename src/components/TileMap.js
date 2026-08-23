@@ -168,6 +168,27 @@ const FIELD_BY_MAP = {
   route_cairn: 'tile_gym_platform',
   route_canopy: 'tile_gym_turf',
   route_ember: 'tile_gym_mats',
+  // Horizon trails pick a floor the biome already owns. No new tile art.
+  route_saltglass: 'tile_grass',
+  route_tideglass: 'tile_gym_platform',
+  route_suncrack: 'tile_gym_mats',
+  route_redmesa: 'tile_gym_mats',
+  route_reedwalk: 'tile_gym_turf',
+  route_moonfen: 'tile_gym_turf',
+  route_needlesnow: 'tile_grass',
+  route_frostpine: 'tile_gym_floor',
+  route_echorail: 'tile_gym_platform',
+  route_copper: 'tile_gym_platform',
+  route_cometgrass: 'tile_grass',
+  route_starfall: 'tile_grass',
+  route_honeyfall: 'tile_grass',
+  route_amber: 'tile_gym_mats',
+  route_staticridge: 'tile_gym_platform',
+  route_thunderstep: 'tile_grass',
+  route_rootwater: 'tile_gym_turf',
+  route_mangrove: 'tile_gym_turf',
+  route_ringwood: 'tile_gym_platform',
+  route_deephorizon: 'tile_gym_floor',
 };
 
 function groundKey(prefix, x, y) {

@@ -1,62 +1,60 @@
-# Companion Quest — 11 Regions
+# Companion Quest — 11 Regions / 26 Biomes
 
-Fifty-eight families, grouped into **11 regions**. The Grove is unchanged.
-Each Horizon region has two walkable trails: an approach, then a Warden
-capstone that awards the region badge (the existing Quest Pin).
+Fifty-eight families. Eleven regions. **Each trail is its own biome** with
+its own sky, ground, edge, and exclusive wild pool.
 
-No new screens. Trails reuse Grove maps, skies, and the six existing
-obstacle Wardens.
+The Grove is unchanged: six trails, original 18 families, cumulative pools.
+Horizon trails do **not** share faces — walk Saltglass Strand for Brineling,
+Blackwave Traverse for Pipolyp. Different ground, different companions.
 
-## The map
+## The Grove (unchanged)
 
-| Region | Trails | Families | Opens after | Badge / Warden |
+| Trail | Biome | Terrain | Companions |
+| --- | --- | --- | --- |
+| Maple Trail | Maple Woods | trees, grass, flowers | Spinseed, Bramblet, Lanternbud |
+| Cairn Cut | Packed Earth | stone, cairns | + Rubblet, Chockit, Facetel |
+| Gale Reach | Open Country | sky, thin track | + Whistlet, Kitefin, Loftburr, Wispurr |
+| Canopy Run | Deep Shade | undergrowth | + Fernap, Dapple, Stillcup, Sporelet, Pebblepup |
+| Rill Crossing | Stream Crossing | water | + starters grown |
+| Ember Grade | Cinder Grade | ember stone | + grown stone/wind/rest |
+
+## Horizon — one biome, one pool
+
+| Region | Trail | Biome | Terrain | Wild there |
 | --- | --- | --- | --- | --- |
-| The Grove | Maple, Cairn, Gale, Canopy, Rill, Ember | 18 original | start | Ember Pin / Cindergrind |
-| Tideglass Coast | Saltglass Strand → Blackwave Traverse | Brineling, Skiprock, Pipolyp, Siltip | Maple Pin | Tideglass Badge / Brinegnash |
-| Red Mesa | Suncrack Trail → Glassfire Descent | Dusthorn, Veilisk, Chipmagma, Ammonip | Stone Pin | Mesa Badge / Cindergrind |
-| Moonfen | Silver Reed Walk → Petalwater Trail | Kneebit, Mireblink, Wicklet, Lotadpole | Canopy Pin | Fen Badge / Couchlurk |
-| Frostpine Reach | Needle-Snow Pass → Iceflower Circuit | Pinepuff, Prismink, Budice, Plinkbat | Gale Pin | Frost Badge / Couchlurk |
-| Copper Canyon | Echo Rail → Steamstone Walk | Clinket, Knockit, Nailnut, Bloopot | Stone Pin | Copper Badge / Snoozeghoul |
-| Starfall Prairie | Cometgrass Run → Grainwheel Road | Bellbun, Burrcalf, Glintfoal, Kernelit | Maple Pin | Prairie Badge / Achefang |
-| Amber Orchard | Honeyfall Lane → Cindergrass Route | Nectlet, Pepkit, Glimrice, Sootfinch | Maple Pin | Orchard Badge / Sludgewad |
-| Thunderstep Highlands | Static Ridge → Heartstone Walk | Zapram, Tinkid, Mistyak, Roseling | Gale Pin | Summit Badge / Achefang |
-| Mangrove Maze | Rootwater Boardwalk → Giant Step Trail | Propfin, Niblet, Conecko, Figbat | Tide Pin | Rootwater Badge / Brinegnash |
-| Deep Horizon | Ringwood Path → Bubble Archway | Mumblewool, Twigglypt, Pebbloom, Glyphish | Ember Pin | Horizon Badge / Cindergrind |
+| Tideglass Coast | Saltglass Strand | Glass Strand | wet sand, tide pools | Brineling, Skiprock |
+| Tideglass Coast | Blackwave Traverse | Basalt Reef | coral, eelgrass | Pipolyp, Siltip |
+| Red Mesa | Suncrack Trail | Suncrack Shelf | hot ochre | Dusthorn, Veilisk |
+| Red Mesa | Glassfire Descent | Glassfire Cut | obsidian, fossil sand | Chipmagma, Ammonip |
+| Moonfen | Silver Reed Walk | Silver Reed Marsh | cypress, night-lights | Kneebit, Mireblink |
+| Moonfen | Petalwater Trail | Lotus Delta | still pools, willow | Wicklet, Lotadpole |
+| Frostpine Reach | Needle-Snow Pass | Needle-Snow | pine, quiet snow | Pinepuff, Prismink |
+| Frostpine Reach | Iceflower Circuit | Iceflower Cavern | ice bloom, dripstone | Budice, Plinkbat |
+| Copper Canyon | Echo Rail | Echo Rail | copper plates | Clinket, Knockit |
+| Copper Canyon | Steamstone Walk | Steamstone Basin | geyser, ironwood | Nailnut, Bloopot |
+| Starfall Prairie | Cometgrass Run | Cometgrass Prairie | dawn dew, bluebells | Bellbun, Burrcalf |
+| Starfall Prairie | Grainwheel Road | Grainwheel Plains | wheat, mill-sails | Glintfoal, Kernelit |
+| Amber Orchard | Honeyfall Lane | Honey Rows | orchard, comb drip | Nectlet, Pepkit |
+| Amber Orchard | Cindergrass Route | Cindergrass Fields | dusk rice, ash grass | Glimrice, Sootfinch |
+| Thunderstep Highlands | Static Ridge | Static Ridge | bare rock, thin air | Zapram, Tinkid |
+| Thunderstep Highlands | Heartstone Walk | Heartstone Heights | cloud pasture, quartz | Mistyak, Roseling |
+| Mangrove Maze | Rootwater Boardwalk | Rootwater Swamp | prop-roots, brackish | Propfin, Niblet |
+| Mangrove Maze | Giant Step Trail | Redwood Crown | giant trunks, fig dark | Conecko, Figbat |
+| Deep Horizon | Ringwood Path | Petrified Ringwood | heather, stone rings | Mumblewool, Twigglypt |
+| Deep Horizon | Bubble Archway | Moonstone Ruin | cave pearl, glyph water | Pebbloom, Glyphish |
 
-## How a region plays
+## How it plays
 
-1. A Grove pin opens the approach trail.
-2. Walk the miles/reps, clear the lighter Warden, earn the approach pin.
-3. The capstone opens. Full regional ecology is in that pool (commons stay, rares join).
-4. Clear the capstone Warden for the **region badge**.
+A Grove pin opens the approach biome. Clear that Warden, then the capstone
+biome — a different field, a different two companions, a harder Warden, the
+region badge.
 
-Maple–Ember still unlock in their original order. Horizon regions never
-insert themselves into that chain (`nextRoute` stays Grove-only).
-
-## Visual identity
-
-Each region reuses one existing tone / map / edge:
-
-- Grove — mixed Maple–Ember (already shipped)
-- Tideglass — rill water
-- Red Mesa — ember stone
-- Moonfen — dusk canopy
-- Frostpine — dusk trees
-- Copper — cairn stone
-- Starfall — gale open
-- Amber — maple orchard
-- Thunderstep — gale high
-- Mangrove — canopy shade
-- Deep Horizon — dusk stone
-
-## Obstacles
-
-No new obstacle creatures. Regions borrow the six existing bad-habit
-Wardens. Capstone HP is higher; approach trails use a lighter fight
-with the same cast.
+Visuals reuse existing tile art (grass / earth / turf / mats / cave floor)
+under a unique sky per trail. No new screens.
 
 ## Data
 
-- `src/data/regions.js` — ecology, landmarks, discoveries, badges, generated Horizon trails
-- `src/data/routes.js` — Grove trails verbatim, then `...HORIZON_ROUTES`
-- `src/data/horizon.js` — family → region / first trail
+- `src/data/regions.js` — `TRAIL_BIOMES` + exclusive pools
+- `src/data/sceneSky.js` — one tone per trail
+- `src/components/TileMap.js` — floor by `mapId`
+- `src/data/routes.js` — Grove biomes named; extra `trailRow` edges
