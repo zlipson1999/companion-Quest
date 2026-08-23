@@ -17,7 +17,7 @@ export default function OptionsScreen() {
 
   const sfxOn = !state.settings.muted;
   const bgmOn = !state.settings.bgmMuted;
-  const control = state.settings.control || 'stick';
+  const control = state.settings.control || 'dpad';
   const units = state.settings.units || 'lb';
 
   const toggleSfx = () => {
