@@ -634,12 +634,10 @@ faint.
   loftburr→driftpuff→cloudburr, fernap→fiddlefrond→frondrest,
   dapple→glimmoth→leaflight, stillcup→dewbasin→rainhold — plus 6 obstacles
   (sludgewad, snoozeghoul, achefang, couchlurk, brinegnash, cindergrind).
-  Maple and Cairn stage-1s are traced from the approved lineups
-  (spinseed, bramblet, lanternbud, rubblet, chockit, facetel). Gale/Canopy
-  stay lineup-only — their plates are scenic (sky, forest) and must be
-  re-generated isolated, not split. Trail evolutions and the two new
-  Wardens remain first-rendition drawings until each has its own isolated
-  master. An evolution is its OWN sprite, never a tinted copy of the base.
+  All thirty-six trail forms are traced from isolated masters (approved
+  lineups, then one creature per file). The two new Wardens remain
+  procedural. An evolution is its OWN master, never a tinted copy of the
+  base.
   The first three families are the ones offered at first bond
   (each goal names its own via `GOALS[].companionId`; `STARTER_IDS` is a
   convenience list the running game does not read); all six are met on the
@@ -689,9 +687,9 @@ keys a light checkerboard if the PNG is fully opaque, downsamples to 96²,
 quantises to a compact palette. `load_traced()` beats the generated sprite
 of the same name in `build_all`. Palette gotcha: tiny features (Dewbble's
 pink mouth) need a hand-added palette entry or they quantise away.
-**Every new creature goes through this kit.** `sphere()` / `Drawn` is the
-playable stand-in when a master does not exist yet — not how a new face
-is designed.
+**Every new creature goes through this kit.** A missing trail master
+fails the build. The `sphere()` + `eye()` recipe is how the first trail
+pass came out as twelve interchangeable blobs and is not used again.
 
 ## 9. UI components (28)
 
@@ -979,12 +977,10 @@ A change is done only when all applicable items are true:
 
 ### Product/content debt
 
-9. **The six obstacle creatures, the Gale/Canopy families, and the
-   Maple/Cairn evolutions remain first-rendition drawings.** Maple and
-   Cairn stage-1s are traced from the approved lineups. Gale/Canopy stay
-   lineup-only until each face is re-generated isolated (scenic plates
-   must not be split). The original 18 companion forms (17 masters;
-   `dewbble` still missing) and 14 world materials derive from authored art.
+9. **The six obstacle creatures remain procedural.** All thirty-six
+   trail forms are designed reference art. The original 18 companion
+   forms (17 masters; `dewbble` still missing) and 14 world materials
+   also derive from authored art.
 10. `state/usePedometer.js` is gone (deleted in Phase 14).
 11. Evolution ceremony is a strobe + swap; it needs both a stronger scene and a
     reduced-motion alternative.

@@ -3,28 +3,21 @@
 Companions are designed as reference art, isolated, and traced. Indexed
 outputs live as `tools/traced_<name>.json`. `build_all()` prefers a traced
 file over anything drawn; a `traced_*.json` that reaches no sprite fails
-the build. `sphere()` / `Drawn` is the playable stand-in when a master
-does not exist yet — not how a new face is designed.
+the build. A trail face without a master fails the build. There is no
+`sphere()` stand-in.
 
-**23 transparent masters** are committed in `tools/reference_art/`
+**53 transparent masters** are committed in `tools/reference_art/`
 (top-level `*.png` only; approval lineups sit in `lineups/` and are not
-counted). That is the original 17 of 18 plus six Maple/Cairn stage-1s
-(spinseed, bramblet, lanternbud, rubblet, chockit, facetel).
-**17 of the original 18 still hold and `dewbble` is still missing** —
-stage 1 stays the shipped teardrop. `python3 tools/check_art.py` verifies
-that each master still REPRODUCES the art the game ships — it re-runs
-`convert_reference.py` and compares the result to the committed
-`traced_<id>.json`. Counting the files was the weaker claim: a count
-cannot tell a real source from a PNG rendered back out of the shipped
-indexed art.
+counted). That is the original 17 of 18 plus all 36 trail-family forms.
+**`dewbble` still has no master** — stage 1 stays the shipped teardrop.
+`python3 tools/check_art.py` verifies that each master still REPRODUCES
+the art the game ships.
 
 The quality bar is the approved trail lineups in
 `tools/reference_art/lineups/` (Maple, Cairn, Gale, Canopy). Maple and
-Cairn sit on a flat field and split cleanly. **Gale and Canopy are
-scenic plates (sky, forest) and stay lineup-only** — do not split them
-into ship masters; re-generate each face isolated with the Ship master
-prompt. Their evolutions, and Maple/Cairn's, remain first-rendition
-drawings until each has its own isolated master.
+Cairn sit on a flat field and split cleanly. Gale and Canopy are scenic
+plates — their ship masters were re-generated isolated, not split out of
+the forest/sky.
 
 The authored world-material atlas lives in `assets/textures/masters/`.
 `tools/convert_texture_atlas.py` turns its cells into indexed runtime tiles.
@@ -289,8 +282,6 @@ and the only prompt to use — is `tools/CHARACTER_PROMPT.md`.
 People (Coach Maple, the player) stay on `tools/convert_character.py`.
 This section is companion creatures only.
 
-If the ship master is missing, stop and make the master — do not invent
-a `sphere()` stand-in for a new face. The first-rendition drawing that
-already ships for a Gale/Canopy face or a trail evolution is a gap to
-close, not a template. Evolutions get their own isolated master; a
-tinted copy of the base is the same mistake as the blob pass.
+If the ship master is missing, stop and make the master. There is no
+`sphere()` fallback. Evolutions get their own isolated master; a tinted
+copy of the base is the same mistake as the blob pass.

@@ -96,9 +96,8 @@ thing this game is built not to have.
     `python3 tools/make_sprites.py` (traced wins), **Read
     `tools/sprite_preview.png`**, then point `src/data/creatures.js` at
     the new key + palette. Evolutions get their own isolated master. A
-    tinted copy of the base reads as the same creature. `sphere()` /
-    `Drawn` is the playable stand-in when a master does not exist yet —
-    not how a new face is designed.
+    tinted copy of the base reads as the same creature. There is no
+    `sphere()` fallback for a trail face — the build fails instead.
   - `<PixelArt>`/`<PixelSprite>` honour the requested `size` **exactly**
     (fractional cells). Rounding to whole pixels was harmless at 16×16 and
     snapped a 30px request up to 48px once sprites got bigger.
