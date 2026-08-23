@@ -82,6 +82,7 @@ thing this game is built not to have.
 | `docs/AGENTS.md` | Verification loop, honesty, import-time asserts |
 | `docs/HISTORY.md` | The thirteen phase write-ups, verbatim |
 | `docs/AUDIT.md` | Current repo findings |
+| `docs/DEBRIEF.md` | One-page honest debt, what landed, what is still open |
 | `docs/UI_SYSTEM.md` | Trailkeeper surfaces (`FieldCard` / `TrailAction`) |
 | `docs/ACCOUNTS.md` | Friends, boards, day-sync, privacy |
 | `docs/STEP_COUNTING.md` | Pedometer vs accelerometer |

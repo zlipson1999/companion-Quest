@@ -26,8 +26,8 @@ Severity: **blocker** (wrong or unreachable content a player hits),
 | A8 | n/a | noted | `expo-font` used via the Press Start package, not a direct import |
 | A9 | medium | **fixed** (#30) | import-time 3-stage family guard |
 | A10 | medium | **fixed** | sourceless companions fail `check_art.py` (Dewbble stays reported) |
-| A11 | high | recommend | Dewbble still has no master — do not re-render a PNG |
-| A12 | medium | recommend | Original six families have no approval lineup |
+| A11 | high | **fixed** | Dewbble isolated master + convert (not a JSON re-render) |
+| A12 | medium | **fixed** | First-bond approval lineup (Sproutle / Emberkit / Dewbble) |
 | A13 | medium | **fixed** (#30) | Root `package.json` has `npm test` |
 | A14 | n/a | noted | `check_docs.py` still compares both coach guardrail copies |
 | A15 | n/a | noted | Companion count is `CREATURES` minus obstacles = 54 |
@@ -317,23 +317,27 @@ Severity: **high**. Status: **fixed**.
 
 ### 2.2 Dewbble / starter masters
 
-`tools/reference_art/dewbble.png` **does not exist**. `traced_dewbble.json`
-does. `docs/ART_KIT.md:9-14` already states this.
+`tools/reference_art/dewbble.png` now exists. `traced_dewbble.json`
+is produced from that isolated master. The 2026-08-21 source PNG was
+never committed; the player later attached the three first-rendition
+plates (Sproutle, Emberkit, Dewbble on a magenta field). Those plates
+are the source. The old indexed JSON was not exported back to a PNG.
 
-Eight starter-line masters exist but are tiny PNGs (1.1–2.0 KB): `sproutle`,
-`emberkit`, `bloomtail`, `groveheart`, `pyrelynx`, `cindermane`, `tidewade`,
-`maelstride`. They are real isolated sprites (Sproutle reads as the designed
-teardrop, not a sphere+eyes blob). They are not the painted lineup plates the
-trail families have.
+The eight tiny starter-line pixel sheets (1.1–2.0 KB) are replaced by
+the attached first-bond plates plus distinct adolescent/adult masters.
 
 **A11 — Dewbble still has no master.**
-Severity: **high** (provenance non-negotiable). Status: **recommend**
-(do not re-render a PNG out of the indexed JSON to close the count).
+Severity: **high** (provenance non-negotiable). Status: **fixed**.
+The attached Dewbble plate (stout teardrop, pale belly, pointed crown,
+two-highlight eyes, magenta backdrop) was isolated and traced. The old
+indexed JSON was not exported back to a PNG.
 
 **A12 — Original six families have no approval lineup in
 `tools/reference_art/lineups/`.**
-Only `maple` / `cairn` / `gale` / `canopy` trail plates.
-Severity: **medium**. Status: **recommend**.
+Severity: **medium**. Status: **fixed**.
+`lineups/firstbond.png` is Sproutle / Emberkit / Dewbble — the three
+attached plates, isolated from magenta, same type as Maple/Cairn. Later
+stages stay their own isolated masters.
 
 Obstacles remain procedural (`GAME_BIBLE.md:983-986`). No
 `traced_sludgewad.json` etc.
@@ -592,7 +596,7 @@ Ran on 2026-08-23 against this branch (`cursor/audit-findings-e7e6` = `main`
 6. **A21 / A22** — Party / bag / habit-log / week / Index empty + a11y. Web trail is #32.
 7. **A32** — grown-form copy; pool composition unchanged.
 
-Skipped here: A9/A13/A23/A24 (#30 has a broader check_art rewrite), A16/A17
-(#31), A18–A20 (#32), A2/A3 (#28), A26–A30 (#33), A11 (do not draw Dewbble),
-A7 (keep declared), A33/A34, any progression/economy/catch-rate retune.
-`check_art.py` now exits 1 on Dewbble on purpose.
+Skipped here: A9/A13/A23/A24 (#30), A16/A17 (#31), A18–A20 (#32), A2/A3
+(#28), A26–A30 (#33), A7 (keep declared), A33/A34, any progression /
+economy / catch-rate retune. A11/A12 and the stage-bar remakes are the
+follow-up integrate PR (`docs/DEBRIEF.md`).

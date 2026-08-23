@@ -6,10 +6,12 @@ file over anything drawn; a `traced_*.json` that reaches no sprite fails
 the build. A trail face without a master fails the build. There is no
 `sphere()` stand-in.
 
-**53 transparent masters** are committed in `tools/reference_art/`
+**54 transparent masters** are committed in `tools/reference_art/`
 (top-level `*.png` only; approval lineups sit in `lineups/` and are not
-counted). That is the original 17 of 18 plus all 36 trail-family forms.
-**`dewbble` still has no master** — stage 1 stays the shipped teardrop.
+counted). That is all 18 original-six forms plus all 36 trail-family forms.
+**Dewbble has a first-rendition isolated master** from the attached
+Create Your Companion plate (magenta field keyed out) that reproduces
+`traced_dewbble.json` — not a re-render of the old indexed grid.
 `python3 tools/check_art.py` verifies that each master still REPRODUCES
 the art the game ships, and **fails a family whose stages are too
 similar** (silhouette IoU + colour difference). That second gate exists
@@ -17,11 +19,12 @@ because a visual audit found seven trail families that were the same
 pose three times. The art is already wrong; the check refuses to
 accept it. Do not loosen the thresholds so the current blobs pass.
 
-The quality bar is the approved trail lineups in
-`tools/reference_art/lineups/` (Maple, Cairn, Gale, Canopy). Maple and
-Cairn sit on a flat field and split cleanly. Gale and Canopy are scenic
-plates — their ship masters were re-generated isolated, not split out of
-the forest/sky.
+The quality bar is the approved lineups in
+`tools/reference_art/lineups/` (first-bond, Maple, Cairn, Gale, Canopy).
+Maple and Cairn sit on a flat field and split cleanly. Gale and Canopy
+are scenic plates — their ship masters were re-generated isolated, not
+split out of the forest/sky. The first-bond plate is Sproutle / Emberkit
+/ Dewbble.
 
 The authored world-material atlas lives in `assets/textures/masters/`.
 `tools/convert_texture_atlas.py` turns its cells into indexed runtime tiles.

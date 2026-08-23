@@ -105,7 +105,8 @@ Every companion `traced_<id>.json` is either:
 ```
 
 `make_sprites.py` ignores extra keys. `check_art.py` does not ignore a missing
-master without this block. Today the only allowed gap is **Dewbble**.
+master without this block. Dewbble no longer uses a gap block — it has a
+committed isolated master that reproduces the traced JSON.
 
 ## Companions — worked example (Maple Trail, already shipped)
 

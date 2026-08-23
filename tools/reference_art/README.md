@@ -4,11 +4,14 @@ Top-level `*.png` files are isolated **ship masters**.
 `python3 tools/check_docs.py` counts those files; approval lineups live
 in `lineups/` and are not in that count.
 
-**Original six families.** 17 of 18 forms have a master. `sproutle` and
-`emberkit` plus the signed KEEP evos are traced from the pixel sheets.
-**`dewbble` still has no master.** Pebblepup, Wispurr and Sporelet use
-`*_stage2.png` / `*_stage3.png` filenames mapped through the evolution
-chain in `check_art.py`.
+**Original six families.** All 18 forms have a master. Sproutle, Emberkit
+and Dewbble are the first-bond plates (Create Your Companion): isolated
+from a magenta field, not re-rendered from indexed JSON. Their stage-2/3
+forms (Bloomtail/Groveheart, Pyrelynx/Cindermane, Tidewade/Maelstride)
+are separate creatures — baby / adolescent / adult — not tints. The
+approval plate is `lineups/firstbond.png`. Pebblepup, Wispurr and
+Sporelet use `*_stage2.png` / `*_stage3.png` filenames mapped through
+the evolution chain in `check_art.py`.
 
 **Trail families.** Designed faces, not lit spheres. The approved
 lineups (`lineups/maple.png`, `cairn.png`, `gale.png`, `canopy.png`) are

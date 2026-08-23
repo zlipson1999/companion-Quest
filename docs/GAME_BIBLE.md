@@ -1000,7 +1000,7 @@ A change is done only when all applicable items are true:
 
 9. **The six obstacle creatures remain procedural.** All thirty-six
    trail forms are designed reference art. The original 18 companion
-   forms (17 masters; `dewbble` still missing) and 14 world materials
+   forms (18 masters, including Dewbble) and 14 world materials
    also derive from authored art.
 10. `state/usePedometer.js` is gone (deleted in Phase 14).
 11. Evolution ceremony is a strobe + swap; it needs both a stronger scene and a
