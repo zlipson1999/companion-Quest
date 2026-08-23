@@ -10,6 +10,7 @@ export {
   wipeSave,
   GameContext,
 } from './GameContext';
+export { hydrateSave, FRESH, SAVE_VERSION, HYDRATE_KEYS } from './hydrate';
 export { xpToNext, xpProgress, levelFromXp, maxHpFor } from './leveling';
 export { loadGame, saveGame, clearGame } from './storage';
 export { blankDay, dayIn, stamp, trim, lastDays, weekOf, previousWeekOf, totals, isActive, weekStart } from './history';

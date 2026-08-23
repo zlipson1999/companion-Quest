@@ -1,3 +1,7 @@
+// Kept as copy, not as a route. HomeIntro used to dump onto this lecture;
+// reaching it called navigate('goal') and skipped Sunkist Lane. The walking
+// beat lives in the rooms (play-quality A18). Router no longer registers it.
+
 import React from 'react';
 import { View } from 'react-native';
 import { Screen, DualPane, DialogueBox, PixelText, PixelSprite, Window } from '../components';

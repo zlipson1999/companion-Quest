@@ -4,7 +4,7 @@
 // Deliberately check-in based rather than calorie based. The game rewards
 // showing up and eating well, never restriction or guilt.
 
-import { palette } from '../theme';
+import { palette } from '../theme/colors';
 
 const DIET = {
   id: 'diet',

@@ -62,8 +62,14 @@ export default function BagScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {owned.length === 0 ? (
           <Window tone="cream" pad={16}>
-            <PixelText size="small" color={palette.windowTextDim} align="center">
-              Your bag is empty. Walk the Route to find items!
+            <PixelText
+              size="small"
+              color={palette.windowTextDim}
+              align="center"
+              accessibilityRole="text"
+              accessibilityLabel="Your bag is empty. Walk a trail to find items."
+            >
+              Your bag is empty. Walk a trail to find items.
             </PixelText>
           </Window>
         ) : (

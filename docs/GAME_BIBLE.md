@@ -98,7 +98,7 @@ src/
   state/       GameContext (reducer, save), leveling, evolution, history,
                recovery, economy (Trail Credit), cardioMaths (console numbers),
                useDistance, stepDetector, storage
-  screens/     Router + 30 screens (§4), plus useCardio (the one path real
+  screens/     Router + 29 screens (§4), plus useCardio (the one path real
                distance takes into the game) and placeMemory (where you were
                standing in each place)
   components/  28 building blocks (§9)
@@ -158,7 +158,7 @@ the bed sleeps or logs last night, the desk is your habits,
 the kitchen counters log a meal, the kitchen shelf is the cookbook, the sofa is
 stillness, the wardrobe is your bag.
 
-## 4. Screens (all 30, registered in `screens/Router.js`)
+## 4. Screens (all 29, registered in `screens/Router.js`)
 
 Router holds the `SCREENS` map, `navigate(name, params)`, `toBattle(params)`
 (which plays the `BattleTransition` flash/wipe first), a `TOWN_BGM` set — every
@@ -191,7 +191,6 @@ clears it.
 | `pairing` | PairingScreen | first-bond ceremony + Coach lines |
 | `outfit` | OutfitSelectScreen | character creation — the three-face player plate, then gym outfit |
 | `homeIntro` | HomeIntroScreen | the scripted walk: bedroom → downstairs → Sunkist Lane (`HUB`, not a stub) |
-| `coachTutorial` | CoachTutorialScreen | unused leftover; the talk is bumping Coach in the gym |
 | `hub` | HubScreen | Sunkist Lane (13×17). Walk-around town, bump-to-use, 6-entry menu — the other destinations are places you WALK to |
 | `gym` | GymScreen | Quest Fitness (17×19). Equipment IS the menu; also runs the in-room cardio session (§5.7) |
 | `sparIntro` | SparIntroScreen | safety redirect; live path is bumping Rowan, who sends Pebblepup |
@@ -213,6 +212,10 @@ clears it.
 | `friends` | FriendsScreen | who can see your training: account, add-by-code, circle, what-is-shared, leave. Off the hub menu. |
 | `board` | BoardScreen | cork noticeboard (gym `G`). This week among people you chose; FieldCards, no rank/race. Same screen Friends opens. |
 | `options` | OptionsScreen | SFX/BGM toggles, lb/kg units, control mode, body weight (§5.7), erase save |
+
+`CoachTutorialScreen.js` is kept as copy only. It is not in `SCREENS`. Reaching
+it used to `navigate('goal')` and skip the lane; the first-run walking beat
+belongs in the rooms.
 
 ## 4b. The three places (`data/maps.js`)
 
@@ -989,7 +992,7 @@ A change is done only when all applicable items are true:
     reduced-motion alternative.
 12. No per-movement progression charts despite weight-aware PR data.
 13. Train (presets) vs Forge (builder) naming still confuses (user-reported).
-14. `dusk` battle tone is defined but unused.
+14. (closed) `dusk` battle tone deleted — no caller, no trail used it.
 15. Scratchpad walkthrough artifact drifts from the app (preview-only).
 16. The Coach proxy is undeployed; generative chat is unavailable in production.
 17. Full Circle (6) is a CATCH no-op: Knot stays, fight stays, Index unchanged.

@@ -29,6 +29,19 @@ export default function PartyScreen() {
         {party.members.length}/6 companions · tap to set your active buddy
       </PixelText>
       <ScrollView showsVerticalScrollIndicator={false}>
+        {party.members.length === 0 ? (
+          <Window tone="cream" pad={16}>
+            <PixelText
+              size="small"
+              color={palette.windowTextDim}
+              align="center"
+              accessibilityRole="text"
+              accessibilityLabel="No companions yet. Meet Coach Maple in the gym."
+            >
+              No companions yet. Meet Coach Maple in the gym — then this list is yours.
+            </PixelText>
+          </Window>
+        ) : null}
         {party.members.map((m, i) => {
           const active = i === party.activeIndex;
           return (

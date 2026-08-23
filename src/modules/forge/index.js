@@ -11,7 +11,7 @@
 // logged — it happened, and the tally should say so — but the day's growth is
 // already banked. The game does not reward grinding itself into the ground.
 
-import { palette } from '../../theme';
+import { palette } from '../../theme/colors';
 import { analysePlan } from './analysis';
 
 // Two plans to open with, so the screen teaches by example rather than starting

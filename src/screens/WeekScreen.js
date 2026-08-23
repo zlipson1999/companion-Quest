@@ -139,7 +139,13 @@ export default function WeekScreen() {
 
         <Window tone="dark" pad={12} style={{ marginTop: space.sm }}>
           <PixelText size="small" color={palette.secondary}>How it is going</PixelText>
-          <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 8, lineHeight: 15 }}>
+          <PixelText
+            size="tiny"
+            color={palette.windowFill}
+            style={{ marginTop: 8, lineHeight: 15 }}
+            accessibilityRole="text"
+            accessibilityLabel={weekVerdict(now, before, recovery, partWeek, elapsed)}
+          >
             {weekVerdict(now, before, recovery, partWeek, elapsed)}
           </PixelText>
         </Window>

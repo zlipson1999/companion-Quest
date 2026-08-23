@@ -195,7 +195,7 @@ export default function HabitLogScreen({ params }) {
 
         {modState.entries.length ? (
           <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
-            <PixelText size="small" color={palette.accentDark} style={{ marginBottom: 4 }}>
+            <PixelText size="small" color={palette.accentDark} style={{ marginBottom: 4 }} accessibilityRole="header">
               Logged today
             </PixelText>
             {modState.entries
@@ -212,7 +212,18 @@ export default function HabitLogScreen({ params }) {
                 </View>
               ))}
           </Window>
-        ) : null}
+        ) : (
+          <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
+            <PixelText
+              size="tiny"
+              color={palette.windowTextDim}
+              accessibilityRole="text"
+              accessibilityLabel="Nothing logged today."
+            >
+              Nothing logged today. The first check-in is the one that counts.
+            </PixelText>
+          </Window>
+        )}
 
         <View style={{ height: space.sm }} />
       </ScrollView>

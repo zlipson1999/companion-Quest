@@ -31,12 +31,38 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 ART = ROOT / 'tools' / 'reference_art'
 
 
+def _array_block(src, name):
+    m = re.search(rf"{name} = \[([^\]]+)\]", src)
+    if not m:
+        raise SystemExit(f'check_art: could not find {name} — has creatures.js moved?')
+    return m.group(1)
+
+
+def _expand_id_array(src, name, seen=None):
+    """Read a JS id array, expanding `...OTHER_IDS` spreads.
+
+    WILD_COMPANION_IDS is `[...STARTER_IDS, 'pebblepup', ..., ...TRAIL_COMPANION_IDS]`.
+    Walking only the quoted ids inside that one literal missed Dewbble (and
+    every other starter and trail root).
+    """
+    seen = seen if seen is not None else set()
+    if name in seen:
+        return []
+    seen.add(name)
+    ids = []
+    for spread, lit in re.findall(r"\.\.\.(\w+)|'(\w+)'", _array_block(src, name)):
+        if spread:
+            ids.extend(_expand_id_array(src, spread, seen))
+        else:
+            ids.append(lit)
+    return ids
+
+
 def family_chains():
     """root -> [stage ids], read out of creatures.js so it cannot drift."""
     src = (ROOT / 'src' / 'data' / 'creatures.js').read_text(encoding='utf-8')
     evolves = dict(re.findall(r"^  (\w+): \{$\n(?:.*\n)*?    evolvesTo: '?(\w+)'?,", src, re.M))
-    roots = re.search(r"WILD_COMPANION_IDS = \[([^\]]+)\]", src).group(1)
-    roots = re.findall(r"'(\w+)'", roots)
+    roots = _expand_id_array(src, 'WILD_COMPANION_IDS')
     chains = {}
     for root in roots:
         chain, cur = [], root
@@ -109,6 +135,12 @@ def main():
 
     if broken or orphaned:
         print(f'\n{len(broken) + len(orphaned)} problem(s) above.')
+        return 1
+    # Sourceless is a fail, not a footnote. Re-rendering a PNG out of the
+    # indexed JSON would satisfy a file count and hide the provenance gap
+    # this script exists to keep visible (Dewbble).
+    if sourceless:
+        print('\nSourceless companions fail this check. Do not invent a master from the JSON.')
         return 1
     return 0
 

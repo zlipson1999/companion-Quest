@@ -19,7 +19,6 @@ const TONES = {
   grass: { sky: '#4a6ea8', far: '#7fa8d8', disc: palette.grassTall, mapId: 'route_maple', codes: 'grass' },
   maple: { sky: '#4a6ea8', far: '#7fa8d8', disc: palette.grassTall, mapId: 'route_maple', codes: 'grass' },
   trail: { sky: '#5f7fb4', far: '#9fc0e0', disc: palette.sand, mapId: 'route_gale', codes: 'path' },
-  dusk: { sky: '#3a2c52', far: '#8a6a9e', disc: '#6b5d7a', mapId: 'route_maple', codes: 'grass' },
   // Indoors. Coach's push-up contest happens on the gym floor, not on a
   // hillside — a sparring match staged in a meadow reads as a different game.
   hall: { sky: '#232833', far: '#39404d', disc: '#4f8a7e', mapId: 'gym', codes: 'floor' },

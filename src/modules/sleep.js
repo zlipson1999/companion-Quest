@@ -8,7 +8,7 @@
 // Rewards lean on bond and healing rather than XP. Sleeping well is not effort;
 // it is the thing that makes effort pay off, and your companion recovers with you.
 
-import { palette } from '../theme';
+import { palette } from '../theme/colors';
 
 function night(label, hours) {
   return (day) => ({
