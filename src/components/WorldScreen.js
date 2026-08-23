@@ -139,6 +139,8 @@ export default function WorldScreen({
   // falsy just leaves the place and objective.
   status,
   showControl = true,
+  // A guided NPC (the gym tour's Coach Maple) rendered on the map.
+  walker,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const reach = showControl ? reachableThing(map, player) : null;
@@ -204,7 +206,7 @@ export default function WorldScreen({
           </View>
         ) : null}
         <View style={{ width: worldW, height: worldH }}>
-          <TileMap map={map} player={player} tileSize={tile} viewport={{ width: worldW, height: worldH }} />
+          <TileMap map={map} player={player} tileSize={tile} viewport={{ width: worldW, height: worldH }} walker={walker} />
         </View>
         {reach && showControl ? (
           <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: space.sm, alignItems: 'center' }}>
