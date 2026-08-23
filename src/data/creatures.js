@@ -440,8 +440,9 @@ if (unlisted.length) {
   throw new Error(`creatures: ${unlisted.join(', ')} reach no Index entry`);
 }
 
-// Complete family or not at all. A one- or two-stage companion is how
-// an agent ships a baby and then tints it. Obstacles do not evolve.
+// A companion ships as a complete 3-stage family or not at all. A two-stage
+// line used to pass INDEX_ORDER (both ids listed) and still ship unfinished.
+// Obstacles do not evolve. Baby / adolescent / adult — not a tint of one pose.
 const shortFamily = WILD_COMPANION_IDS.filter((id) => familyChain(id).length !== 3);
 if (shortFamily.length) {
   throw new Error(
