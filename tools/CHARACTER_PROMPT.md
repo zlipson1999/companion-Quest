@@ -88,6 +88,9 @@ of one prompt are not a family.
 - **Emberkit** (sitting cub) → **Pyrelynx** (standing flame-ear lynx)
   → **Cindermane** (fire-mane beast)
 - **Dewbble** (dewdrop) → **Tidewade** → **Maelstride**
+- **Pebblepup** (sitting mosaic puppy) → **Cairnhound** (standing
+  dry-stone wolf) → **Monolithound** (jagged dolmen-beast). Not the
+  trail Rubblet / Dolmenhold line.
 - **Spinseed** (tan ribbed seed-kid, fan samara crest) → **Whirlkey**
   (upright veined torso, leaf-wings, three vine legs) → **Samaraile**
   (leaf-armor standing sail, eight golden key-wings — not a bigger seed)

@@ -31,4 +31,6 @@ faces isolated. Do not ship the result.
 
 Family plates (`*_family.png`) are baby / adolescent / adult of one
 species. They are for looking at. Each stage still ships as its own
-isolated master under `tools/reference_art/<id>.png`.
+isolated master under `tools/reference_art/<id>.png` (or
+`<root>_stageN.png`). `pebblepup_family.png` is Pebblepup /
+Cairnhound / Monolithound.

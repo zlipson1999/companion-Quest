@@ -9,9 +9,12 @@ and Dewbble are the first-bond plates (Create Your Companion): isolated
 from a magenta field, not re-rendered from indexed JSON. Their stage-2/3
 forms (Bloomtail/Groveheart, Pyrelynx/Cindermane, Tidewade/Maelstride)
 are separate creatures — baby / adolescent / adult — not tints. The
-approval plate is `lineups/firstbond.png`. Pebblepup, Wispurr and
-Sporelet use `*_stage2.png` / `*_stage3.png` filenames mapped through
-the evolution chain in `check_art.py`.
+approval plate is `lineups/firstbond.png`. Pebblepup is now a
+first-rendition family (magenta keyed out): sitting mosaic puppy →
+standing dry-stone cairnhound → jagged dolmen-beast monolithound.
+Filenames stay `pebblepup.png` / `pebblepup_stage2.png` /
+`pebblepup_stage3.png` (mapped through `check_art.py`). Wispurr and
+Sporelet still use that stage-filename pattern.
 
 **Trail families.** Designed faces, not lit spheres. The approved
 lineups (`lineups/maple.png`, `cairn.png`, `gale.png`, `canopy.png`) are

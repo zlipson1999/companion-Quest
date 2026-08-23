@@ -12,7 +12,10 @@ counted). That is all 18 original-six forms plus all 36 trail-family forms.
 The three first-bond families are complete first-rendition lines
 (magenta keyed out, not a re-render of an old indexed grid):
 Sproutle → Bloomtail → Groveheart, Emberkit → Pyrelynx → Cindermane,
-Dewbble → Tidewade → Maelstride. Ids are permanent.
+Dewbble → Tidewade → Maelstride. Pebblepup → Cairnhound →
+Monolithound is the next original-six family on that same path
+(sitting mosaic puppy / standing dry-stone hound / jagged
+dolmen-beast). Ids are permanent.
 `python3 tools/check_art.py` verifies that each master still REPRODUCES
 the art the game ships, and **fails a family whose stages are too
 similar** (silhouette IoU + colour difference). That second gate exists
