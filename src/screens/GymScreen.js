@@ -43,33 +43,65 @@ const MENU = [
 // The route between stops is found at runtime over the real grid, so a future
 // floor re-plan cannot silently walk her through a rack.
 const TOUR_STOPS = [
-  { at: { x: 2, y: 2 }, face: 'up', lines: [
-    { speaker: 'Coach Maple', text: 'Welcome to Quest Fitness. Everything in this room works one way: walk up to a thing and use it. Come — I will show you the floor.' },
-    { speaker: 'Coach Maple', text: 'The iron. Any rack or bar here opens the Forge, where you build your OWN session — movements, sets, the weight you actually lift. Log it honestly and it all feeds your journey.' },
+  { at: { x: 6, y: 16 }, face: 'down', lines: [
+    { speaker: 'Coach Maple', text: 'Welcome to Quest Fitness. Everything in this room works one way: walk up to a thing and use it. Stay close - I will show you every station on my floor.' },
+    { speaker: 'Coach Maple', text: 'Reception. Your whole record lives here - every mile, every session, every catch. Walk into the desk any time you want the honest total.' },
   ] },
-  { at: { x: 6, y: 6 }, face: 'right', lines: [
-    { speaker: 'Coach Maple', text: 'The machines. Same Forge, guided iron — walk into any of them when you want a session built around what a machine does best.' },
-  ] },
-  { at: { x: 14, y: 6 }, face: 'right', lines: [
-    { speaker: 'Coach Maple', text: 'The deck, and the rowers behind it. Step on and the console starts — and hear me on this: only REAL movement counts here. There is no button that walks for you, in this gym or anywhere in your life.' },
-  ] },
-  { at: { x: 14, y: 12 }, face: 'right', lines: [
-    { speaker: 'Coach Maple', text: 'The mat floor. Walk on for a guided circuit — dead bugs, push-ups, holds — reps you really do, counted when you say they are done. Your word is the equipment here.' },
-  ] },
-  { at: { x: 13, y: 1 }, face: 'up', lines: [
-    { speaker: 'Coach Maple', text: 'My whiteboard keeps this week — what you have done against the week before. Reception at the front keeps your whole record, and the cork board beside it is where friends compare honest weeks.' },
+  { at: { x: 7, y: 16 }, face: 'down', lines: [
+    { speaker: 'Coach Maple', text: 'The cork noticeboard. Friends pin their weeks here - miles, days, sessions. Only people you both agreed to, and only what a person can actually do.' },
   ] },
   { at: { x: 11, y: 16 }, face: 'down', lines: [
-    { speaker: 'Coach Maple', text: 'The smoothie bar. It takes Trail Credit, and credit is minted by effort — miles walked, sessions done. Nobody buys their way up in here.' },
-    { speaker: 'Coach Maple', text: 'And it does not stop at this door: your kitchen logs what you eat, your bed logs how you sleep, your desk keeps the habits. After today, go home and see it.' },
+    { speaker: 'Coach Maple', text: 'The smoothie bar. It takes Trail Credit, and credit is minted by effort - miles walked, sessions done. Nobody buys their way up in here.' },
+  ] },
+  { at: { x: 2, y: 16 }, face: 'down', lines: [
+    { speaker: 'Coach Maple', text: 'Lockers. Your supplies live here - the same bag you carry on the trail. Apples, water, and the Kinship Knots you will learn about soon.' },
+  ] },
+  { at: { x: 1, y: 2 }, face: 'left', lines: [
+    { speaker: 'Coach Maple', text: 'The mirror. Not for admiring - walk into it mid-session and it becomes a form check: your own camera with the movement cues over the top. What a mirror is FOR.' },
+  ] },
+  { at: { x: 2, y: 4 }, face: 'left', lines: [
+    { speaker: 'Coach Maple', text: 'Kettlebells. Swings, carries, get-ups - walk in and the Forge opens with them ready.' },
+  ] },
+  { at: { x: 2, y: 6 }, face: 'left', lines: [
+    { speaker: 'Coach Maple', text: 'The dumbbell run. Every session you write yourself starts by walking into the iron you mean to use.' },
+  ] },
+  { at: { x: 4, y: 5 }, face: 'left', lines: [
+    { speaker: 'Coach Maple', text: 'Flat benches. Iron, not furniture - press here, log the weight you actually lifted, and your bests land on the boards.' },
+  ] },
+  { at: { x: 4, y: 8 }, face: 'left', lines: [
+    { speaker: 'Coach Maple', text: 'The EZ-bar cradle. Curls and skull-crushers without the wrist ache. Same Forge, same honest count.' },
+  ] },
+  { at: { x: 5, y: 2 }, face: 'up', lines: [
+    { speaker: 'Coach Maple', text: 'The power racks. The heart of the Forge: build your OWN session - movements, sets, the load on the bar. Write down what really happened, not what you hoped.' },
+  ] },
+  { at: { x: 14, y: 2 }, face: 'up', lines: [
+    { speaker: 'Coach Maple', text: 'The pull-up bar. Bodyweight is iron too - it goes in the Forge like everything else.' },
+  ] },
+  { at: { x: 13, y: 1 }, face: 'up', lines: [
+    { speaker: 'Coach Maple', text: 'My whiteboard keeps this week against the week before - the honest verdict, not the flattering one.' },
+  ] },
+  { at: { x: 6, y: 6 }, face: 'right', lines: [
+    { speaker: 'Coach Maple', text: 'The machines. Guided iron - walk into any of them when you want a session built around what a machine does best.' },
+  ] },
+  { at: { x: 14, y: 4 }, face: 'right', lines: [
+    { speaker: 'Coach Maple', text: 'The water station. It opens your daily habits - water, food, sleep, stillness. Logging them honestly grows your companion the same as the iron does.' },
+  ] },
+  { at: { x: 14, y: 6 }, face: 'right', lines: [
+    { speaker: 'Coach Maple', text: 'The deck. Step on and the console starts - and hear me on this: only REAL movement counts. There is no button that walks for you, here or anywhere in your life.' },
+  ] },
+  { at: { x: 14, y: 10 }, face: 'right', lines: [
+    { speaker: 'Coach Maple', text: 'The rowers. Same rule as the deck - the console counts what your body actually does.' },
+  ] },
+  { at: { x: 14, y: 12 }, face: 'right', lines: [
+    { speaker: 'Coach Maple', text: 'The mat floor. Walk on for a guided circuit - dead bugs, push-ups, holds. Reps you really do, counted when you say they are done. Your word is the equipment here.' },
   ] },
   // The tour ENDS on the turf, on purpose: warming up is where a session
-  // starts, so it is the last thing she teaches and the first thing you do —
+  // starts, so it is the last thing she teaches and the first thing you do -
   // and it is where Rowan finds you afterwards.
   { at: { x: 2, y: 13 }, face: 'left', lines: [
-    { speaker: 'Coach Maple', text: 'Last stop, and the most important: the turf. Every session STARTS here, with dynamic stretches — leg swings, walking lunges, arm circles, high knees. Movement that warms you, not holds that put you to sleep.' },
+    { speaker: 'Coach Maple', text: 'Last stop, and the most important: the turf. Every session STARTS here, with dynamic stretches - leg swings, walking lunges, arm circles, high knees. Movement that warms you, not holds that put you to sleep.' },
     { speaker: 'Coach Maple', text: 'Warm muscles move better and get hurt less. Walk onto the turf before the iron, every time, and the routine will guide you through it.' },
-    { speaker: 'Coach Maple', text: 'So — the real question, right here on the grass. What are you here to become? Answer honestly, because a companion is about to recognize you by it.' },
+    { speaker: 'Coach Maple', text: 'So - the real question, right here on the grass. What are you here to become? Answer honestly, because a companion is about to recognize you by it.' },
   ] },
 ];
 
@@ -128,7 +160,7 @@ export default function GymScreen() {
   const beginStop = (index, from) => {
     const stop = TOUR_STOPS[index];
     const path = pathBetween(tourMap, from, stop.at);
-    setTour({ stop: index, coach: { ...from, facing: path.length ? 'down' : stop.face }, path, talking: path.length === 0 });
+    setTour({ stop: index, coach: { ...from, facing: path.length ? 'down' : stop.face }, path, hist: [], follow: null, talking: path.length === 0 });
   };
 
   useEffect(() => {
@@ -139,16 +171,34 @@ export default function GymScreen() {
         const [next, ...rest] = cur.path;
         const dirTo = next.x > cur.coach.x ? 'right' : next.x < cur.coach.x ? 'left' : next.y > cur.coach.y ? 'down' : 'up';
         const arrived = rest.length === 0;
+        // You follow her, two steps behind, along the exact tiles she walked —
+        // so the follower can never clip a rack she went around.
+        const hist = [...cur.hist, { x: cur.coach.x, y: cur.coach.y }];
+        const follow = hist.length > 1 ? hist.shift() : null;
         return {
           ...cur,
           coach: { x: next.x, y: next.y, facing: arrived ? TOUR_STOPS[cur.stop].face : dirTo },
           path: rest,
+          hist,
+          follow,
           talking: arrived,
         };
       });
     }, 230);
     return () => clearTimeout(t);
   }, [tour]);
+
+  // The follower's step is applied outside the tour reducer, from the tile it
+  // hands over: your sprite walks her trail while she talks ahead of you.
+  useEffect(() => {
+    if (!tour || !tour.follow) return;
+    const me = playerRef.current;
+    const f = tour.follow;
+    if (f.x === me.x && f.y === me.y) return;
+    const facing = f.x > me.x ? 'right' : f.x < me.x ? 'left' : f.y > me.y ? 'down' : 'up';
+    apply({ x: f.x, y: f.y, facing });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tour && tour.follow]);
 
   const advanceTour = () => {
     if (!tour) return;
@@ -157,9 +207,9 @@ export default function GymScreen() {
       dispatch({ type: 'MARK_META', payload: { coachIntroDone: true } });
       setTour(null);
       playSfx('confirm');
-      // The goal talk happens ON the turf, so the first bond brings you back
-      // to the grass — which is exactly where Rowan comes to find you.
-      rememberSpot('gym', { x: 3, y: 13, facing: 'left' });
+      // You followed her to the turf, so the first bond returns you exactly
+      // where you stand now — which is where Rowan comes to find you.
+      rememberSpot('gym', { ...playerRef.current });
       navigate('goal');
       return;
     }
