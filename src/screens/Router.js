@@ -40,6 +40,7 @@ import CoachChatScreen from './CoachChatScreen';
 import FriendsScreen from './FriendsScreen';
 import BoardScreen from './BoardScreen';
 import OptionsScreen from './OptionsScreen';
+import WorldMapScreen from './WorldMapScreen';
 import LoadingScreen from './LoadingScreen';
 
 const SCREENS = {
@@ -72,6 +73,7 @@ const SCREENS = {
   friends: FriendsScreen,
   board: BoardScreen,
   options: OptionsScreen,
+  world: WorldMapScreen,
 };
 
 // Every non-battle screen plays the town loop. 'route' matters especially:
@@ -79,7 +81,7 @@ const SCREENS = {
 // just kept playing over the walk.
 const TOWN_BGM = new Set([
   'title', 'intro', 'outfit', 'homeIntro', 'goal', 'pairing', 'sparIntro', 'cookbook', 'smoothiebar', 'hub', 'gym', 'route', 'rest', 'workout', 'summary', 'index', 'bag', 'friends', 'board',
-  'party', 'coach', 'options', 'habits', 'habit', 'forge', 'forgeEdit', 'formcheck', 'week',
+  'party', 'coach', 'options', 'habits', 'habit', 'forge', 'forgeEdit', 'formcheck', 'week', 'world',
 ]);
 
 // Somewhere you can WALK AROUND. Arriving at one is a fresh context rather than
