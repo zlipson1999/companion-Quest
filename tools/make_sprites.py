@@ -4070,6 +4070,14 @@ def build_all():
         'stillcup', 'dewbasin', 'rainhold',
     ):
         add(trail_id)
+    import glob as _glob
+    for _path in sorted(_glob.glob(os.path.join(TRACED_DIR, 'traced_*.json'))):
+        _name = os.path.basename(_path)[7:-5]
+        if _name in s:
+            continue
+        if _name.startswith(('tile_', 'field_', 'prop_', 'walk_', 'portrait_', 'hero_')):
+            continue
+        add(_name)
     add('sludgewad', sludgewad()); add('snoozeghoul', snoozeghoul())
     add('couchlurk', couchlurk()); add('achefang', achefang())
     add('brinegnash', brinegnash()); add('cindergrind', cindergrind())
