@@ -95,6 +95,24 @@ copy of hydrate/A1/A5/A10/A25/A32.
 - **Wispurr is not missing.** `wispurr` / `galegait` / `skywhorl`
   already have isolated first-rendition masters (`wispurr.png`,
   `wispurr_stage2.png`, `wispurr_stage3.png`) and pass the stage bar.
+- **Sporelet family.** Ids stay `sporelet` / `mycobloom` / `canopore`.
+  Stage 1 is the incomplete toadstool kid (cream body, red spotted
+  cap, dark-brown rim, white/yellow sparkles). Stage 2 is the plated
+  scout (cracked loaf-cap, golden gills, shoulder fruiting). Stage 3
+  is a rooted canopy (multi-tier brim, hooded face, yellow spore
+  sparks, bark legs in moss) — not a bigger spotted kid. Magenta is
+  chroma; sparkles and spore sparks stay. Named masters replace the
+  old `sporelet_stage2/3.png` mapping. Family plate
+  `lineups/sporelet_family.png`.
+- **Spinseed family remade from the attached maple-key plates.**
+  `familyChain('spinseed')` is spinseed → whirlkey → samaraile.
+  Not Wispurr. Magenta is chroma. The old hovering-bulb traces are
+  replaced: Spinseed is a tan ribbed seed-kid with a fan samara crest
+  (right-edge notch) and oak-leaf arms; Whirlkey grew leaf-wings and
+  three vine legs; Samaraile is a leaf-armor standing sail with eight
+  golden key-wings and talons — not a bigger seed. Isolated masters
+  and `traced_<id>.json` for those three ids. Family plate:
+  `lineups/spinseed_family.png`.
 - **Stage bar remakes** for the other clone trail families (Stillcup,
   Kitefin, Whistlet, Chockit, Dapple, Loftburr, and the rest of
   Gale/Canopy). Each remade stage has its own isolated master and
