@@ -198,6 +198,33 @@ def build():
         tone(n("G6"), 0.24, vol=0.42),
     ]))
 
+    # Noticeboard: cork, pin, paper. Material only — no menu hits, no fanfare.
+    # Pin/cork follow hit.wav (noise + low square); rustle is short noise.
+    cork = mix(
+        tone(0, 0.12, vol=0.30, wave="noise", attack=0.002, release=0.80),
+        tone(88, 0.14, vol=0.34, wave="square", duty=0.45, attack=0.002, release=0.82),
+    )
+    rustle = seq([
+        silence(0.11),
+        tone(0, 0.19, vol=0.16, wave="noise", attack=0.04, release=0.55),
+    ])
+    write_wav("noticeboard.wav", mix(cork, rustle))
+    write_wav("board_tab.wav", mix(
+        tone(0, 0.055, vol=0.26, wave="noise", attack=0.001, release=0.70),
+        tone(170, 0.070, vol=0.20, wave="square", duty=0.25, attack=0.001, release=0.78),
+    ))
+    write_wav("board_update.wav", mix(
+        tone(0, 0.048, vol=0.18, wave="noise", attack=0.001, release=0.75),
+        tone(148, 0.060, vol=0.14, wave="square", duty=0.25, attack=0.001, release=0.82),
+    ))
+    write_wav("friend_request.wav",
+              tone(0, 0.19, vol=0.17, wave="noise", attack=0.03, release=0.50))
+    write_wav("friend_accept.wav", seq([
+        tone(0, 0.11, vol=0.16, wave="noise", attack=0.02, release=0.55),
+        silence(0.03),
+        tone(0, 0.13, vol=0.14, wave="noise", attack=0.03, release=0.50),
+    ]))
+
     build_bgm()
 
 

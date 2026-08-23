@@ -102,9 +102,9 @@ export default function FriendsScreen() {
   };
 
   const add = async () => {
-    playSfx('confirm');
     const out = await acc.run(() => api.addFriend(acc.token, code));
     if (out) {
+      playSfx(out.state === 'accepted' ? 'friend_accept' : 'friend_request');
       setCode('');
       setNote(
         out.state === 'accepted'
@@ -116,8 +116,8 @@ export default function FriendsScreen() {
   };
 
   const accept = async (f) => {
-    playSfx('confirm');
-    await acc.run(() => api.acceptFriend(acc.token, f.id));
+    const out = await acc.run(() => api.acceptFriend(acc.token, f.id));
+    if (out) playSfx('friend_accept');
     refresh();
   };
 

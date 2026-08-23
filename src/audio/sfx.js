@@ -20,6 +20,11 @@ const SFX_SOURCES = {
   heal: require('../../assets/sfx/heal.wav'),
   milestone: require('../../assets/sfx/milestone.wav'),
   catch: require('../../assets/sfx/catch.wav'),
+  noticeboard: require('../../assets/sfx/noticeboard.wav'),
+  board_tab: require('../../assets/sfx/board_tab.wav'),
+  board_update: require('../../assets/sfx/board_update.wav'),
+  friend_request: require('../../assets/sfx/friend_request.wav'),
+  friend_accept: require('../../assets/sfx/friend_accept.wav'),
 };
 
 const BGM_SOURCES = {

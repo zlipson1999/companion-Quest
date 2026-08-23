@@ -850,11 +850,10 @@ and differed in every sample — meaning "run the generator and diff" could
 prove the art was current but never the audio.
 
 **One gap is written down rather than closed.** ART_KIT claimed all 18
-companion masters are committed; only 15 are. `sproutle`, `emberkit` and
-`dewbble` have traced JSON but no master, and none is in the history either.
-Provenance is this file's first non-negotiable, so for those three the
-committed chain starts at the indexed output rather than a source image. It is
-stated as a gap to close, and `check_docs.py` counts the masters.
+companion masters are committed; 17 are. `dewbble` still has no master —
+stage 1 stays the shipped teardrop, and its chain starts at the indexed
+output. `sproutle` and `emberkit` now have pixel-sheet masters. The remaining
+gap is stated here, and `check_docs.py` counts the masters.
 
 ### Phase 14b — the second pass: config, server, tooling
 
