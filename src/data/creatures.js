@@ -1,4 +1,4 @@
-import { HORIZON_CREATURES } from './horizonCreatures';
+import { HORIZON_CREATURES, HORIZON_COMPANION_IDS } from './horizonCreatures';
 
 // Original creature roster. Two kinds of wild creature:
 //  - befriendable COMPANIONS (catchable: starters + wild species), each of
