@@ -4,7 +4,7 @@
 // equipment, no reps, no distance, nothing to measure but time, and it still
 // grows your companion through exactly the same reducer path as a battle.
 
-import { palette } from '../theme';
+import { palette } from '../theme/colors';
 
 const MEDITATION = {
   id: 'meditation',

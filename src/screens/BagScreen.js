@@ -84,9 +84,9 @@ export default function BagScreen() {
               color={palette.windowTextDim}
               align="center"
               accessibilityRole="text"
-              accessibilityLabel="Your bag is empty. Walk the Route to find items!"
+              accessibilityLabel="Your bag is empty. Walk a trail to find items."
             >
-              Your bag is empty. Walk the Route to find items!
+              Your bag is empty. Walk a trail to find items.
             </PixelText>
           </Window>
         ) : (

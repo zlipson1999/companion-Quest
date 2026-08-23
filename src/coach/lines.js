@@ -144,11 +144,17 @@ export function trainerSparLines(activeName, trainerName, companionName) {
   ];
 }
 
-export function wildIntro(activeName, wildName, isCompanion) {
+export function wildIntro(activeName, wildName, isCompanion, grownForm) {
   if (isCompanion) {
     return [
       { speaker: 'Trail', text: `${wildName} steps out to meet you.` },
       { speaker: activeName, text: 'A possible new friend! Match its effort, stay standing, then offer a Kinship Knot.' },
+    ];
+  }
+  if (grownForm) {
+    return [
+      { speaker: 'Trail', text: `${wildName} is a grown form you already know.` },
+      { speaker: activeName, text: 'Not an invitation — a challenge. Stay standing.' },
     ];
   }
   return [

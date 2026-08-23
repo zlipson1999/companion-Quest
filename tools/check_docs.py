@@ -42,7 +42,7 @@ def first(pattern, text, label):
 
 def build_checks():
     bible = read('docs/GAME_BIBLE.md')
-    game = read('src/state/GameContext.js')
+    game = read('src/state/hydrate.js')
     econ = read('src/state/economy.js')
     cardio = read('src/state/cardioMaths.js')
     maps = read('src/data/maps.js')

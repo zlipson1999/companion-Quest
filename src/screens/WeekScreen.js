@@ -127,7 +127,13 @@ export default function WeekScreen() {
         </FieldCard>
 
         <FieldCard tone="ink" title="How it is going" style={{ marginTop: space.sm }}>
-          <PixelText size="tiny" color={tokens.textOnDark} style={{ lineHeight: 15 }}>
+          <PixelText
+            size="tiny"
+            color={tokens.textOnDark}
+            style={{ lineHeight: 15 }}
+            accessibilityRole="text"
+            accessibilityLabel={weekVerdict(now, before, recovery, partWeek, elapsed)}
+          >
             {weekVerdict(now, before, recovery, partWeek, elapsed)}
           </PixelText>
         </FieldCard>

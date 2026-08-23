@@ -13,6 +13,7 @@ import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { ENCOUNTERS } from '../data/obstacles';
 import { getCreature } from '../data/creatures';
+import { isGrownForm } from '../data/wild';
 import { canEvolve } from '../state/evolution';
 import { battleMovesFor, movesLearnedBetween } from '../data/exercises';
 import {
@@ -103,7 +104,7 @@ export default function BattleScreen({ params }) {
       ? trainerSparLines(companion.creature.name, params.trainer || 'Rowan', wild.name)
       : params.opponent
         ? sparIntro(companion.creature.name, wild.name)
-        : wildIntro(companion.creature.name, wild.name, target.isCompanion);
+        : wildIntro(companion.creature.name, wild.name, target.isCompanion, isGrownForm(wild.id));
   });
   const thenRef = useRef(() => setPhase('menu'));
 
@@ -384,7 +385,7 @@ export default function BattleScreen({ params }) {
             name={wild.name}
             hp={wildHp}
             maxHp={target.hp}
-            tag={params.trainer ? `${params.trainer}'s` : params.opponent ? 'sparring' : target.isCompanion ? 'wild' : 'obstacle'}
+            tag={params.trainer ? `${params.trainer}'s` : params.opponent ? 'sparring' : target.isCompanion ? 'wild' : isGrownForm(wild.id) ? 'grown' : 'obstacle'}
             tagColor={target.isCompanion ? palette.hpHigh : palette.danger}
             style={{ flex: 1, marginRight: space.lg }}
           />

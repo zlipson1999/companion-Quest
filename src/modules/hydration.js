@@ -4,7 +4,7 @@
 // counts (glasses of water), what a good day looks like (dailyGoal) and what
 // each log is worth; the registry and GameContext do the rest.
 
-import { palette } from '../theme';
+import { palette } from '../theme/colors';
 
 const HYDRATION = {
   id: 'hydration',

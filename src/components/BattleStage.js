@@ -17,7 +17,6 @@ import HorizonSky from './HorizonSky';
 // shallow ellipse lit from above rather than a flat stripe.
 const DISC = [0.52, 0.78, 0.93, 1.0, 1.0, 0.96, 0.84, 0.62];
 
-
 // Battle tiles are drawn at 3x the overworld's usual scale — "zoomed in".
 const TILE_SIZE = 52;
 

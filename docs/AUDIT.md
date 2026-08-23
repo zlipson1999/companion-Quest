@@ -1,14 +1,9 @@
 # Companion Quest — full-repo audit
 
 Date: 2026-08-23. Against `main` at `40d8477` (trail companions + Sunkist Lane).
-Second pass the same day after a scope change: **this PR is audit-only.**
-Instruction rewrite, UI migration, play-quality work, companion remakes, and
-new features are out of scope here. Findings stay written down so they are
-not lost in chat.
+Statuses updated after #30 and #33 landed on `main`.
 
-Auditor re-read the repo; earlier session summaries were not trusted.
-
-Status column: **fixed** (this PR), **recommend** (later, not this PR),
+Status column: **fixed** (on `main` or this PR), **recommend** (still open),
 **noted** (intentional / already documented).
 
 Severity: **blocker** (wrong or unreachable content a player hits),
@@ -21,38 +16,38 @@ Severity: **blocker** (wrong or unreachable content a player hits),
 
 | id | severity | status | one line |
 |---|---|---|---|
-| A1 | medium | recommend | `coachTutorial` registered, no way in |
-| A2 | high | **fixed** | Bedroom stairs did nothing on the rest screen |
-| A3 | high | **fixed** | Front door inside the house did not leave |
+| A1 | medium | **fixed** | `coachTutorial` unregistered; file kept (would skip the lane) |
+| A2 | high | **fixed** | Bedroom stairs work on the rest screen |
+| A3 | high | **fixed** | Front door inside the house leaves |
 | A4 | n/a | noted | `GAIN_BOND` has no dispatcher (interface, keep) |
-| A5 | medium | recommend | No save-migration fixture test |
-| A6 | low | noted | `BattleStage` `dusk` tone unused |
-| A7 | low | noted | `expo-crypto` / `expo-asset` not imported by app code |
+| A5 | medium | **fixed** | v1 save fixture through `hydrateSave` |
+| A6 | low | **fixed** | unused `dusk` tone deleted |
+| A7 | low | noted | `expo-crypto` / `expo-asset` kept — Pages `npm ci` / auth-session |
 | A8 | n/a | noted | `expo-font` used via the Press Start package, not a direct import |
-| A9 | medium | recommend | No import-time "family is 3 stages" guard |
-| A10 | medium | recommend | `check_art.py` reports sourceless companions but exits 0 |
-| A11 | high | recommend | Dewbble still has no master |
+| A9 | medium | **fixed** (#30) | import-time 3-stage family guard |
+| A10 | medium | **fixed** | sourceless companions fail `check_art.py` (Dewbble stays reported) |
+| A11 | high | recommend | Dewbble still has no master — do not re-render a PNG |
 | A12 | medium | recommend | Original six families have no approval lineup |
-| A13 | medium | recommend | Root `package.json` has no `test` script |
+| A13 | medium | **fixed** (#30) | Root `package.json` has `npm test` |
 | A14 | n/a | noted | `check_docs.py` still compares both coach guardrail copies |
 | A15 | n/a | noted | Companion count is `CREATURES` minus obstacles = 54 |
-| A16 | medium | recommend | Trailkeeper UI migration is unfinished |
-| A17 | medium | recommend | `PixelButton` ignores `scale.touchMin` |
-| A18 | medium | recommend | First-run never says "walking is the input" as a dedicated beat |
-| A19 | medium | recommend | Published web trail is a dead end with no on-scene copy |
-| A20 | low | recommend | "Maple Lane" leftover comments |
-| A21 | medium | recommend | Accessibility is sparse |
-| A22 | low–medium | recommend | Empty / offline states uneven (web trail silent) |
-| A23 | high | recommend | `CLAUDE.md` is 956 lines of changelog wearing a manual's name |
-| A24 | high | recommend | Working-memory file still describes procedural `sphere()`/`eye()` |
-| A25 | high | recommend | `check_art.py` `family_chains()` does not expand spreads |
-| A26 | medium | recommend | Options Erase does not `forgetAll()` |
-| A27 | blocker | recommend | `BagScreen` crashes if opened before a companion |
-| A28 | blocker | recommend | `HomeRestScreen` crashes if opened before a companion |
-| A29 | blocker | recommend | `SummaryScreen` crashes if opened before a companion |
-| A30 | high | recommend | Forge / Workout finish paths assume a companion |
+| A16 | medium | done-on-branch #31 | Trailkeeper UI migration is unfinished |
+| A17 | medium | done-on-branch #31 | `PixelButton` ignores `scale.touchMin` |
+| A18 | medium | done-on-branch #32 | First-run never says "walking is the input" as a dedicated beat |
+| A19 | medium | done-on-branch #32 | Published web trail is a dead end with no on-scene copy |
+| A20 | low | done-on-branch #32 | "Maple Lane" leftover comments |
+| A21 | medium | **fixed** + #33 | a11y labels on empty first-morning / party states |
+| A22 | low–medium | **fixed** + #32/#33 | empty states on crash-or-blank screens; web trail is #32 |
+| A23 | high | **fixed** (#30) | `CLAUDE.md` slimmed; history is `docs/HISTORY.md` |
+| A24 | high | **fixed** (#30) | Working-memory file no longer describes `sphere()`/`eye()` as the path |
+| A25 | high | **fixed** | `family_chains()` expands spreads so Dewbble is reported |
+| A26 | medium | **fixed** (#33) | Options Erase calls `forgetAll()` |
+| A27 | blocker | **fixed** (#33) | `BagScreen` empty-state before a companion |
+| A28 | blocker | **fixed** (#33) | `HomeRestScreen` empty-state before a companion |
+| A29 | blocker | **fixed** (#33) | `SummaryScreen` empty-state before a companion |
+| A30 | high | **fixed** (#33) | Forge / Workout finish no longer assume a companion |
 | A31 | low | noted | HomeIntro downstairs stairs are a no-op (one-way first walk) |
-| A32 | medium | recommend | Later-trail pools pad with uncatchable evo stages |
+| A32 | medium | **fixed** (copy only) | Grown-form meetings named; pool composition unchanged |
 | A33 | low | noted | GAME_BIBLE §14.17 lists designed Full Circle behavior as debt |
 | A34 | n/a | noted | `check_docs.py` does not watch this file |
 
@@ -64,8 +59,9 @@ Severity: **blocker** (wrong or unreachable content a player hits),
 
 Every file in `src/screens/*Screen.js` is registered in `Router.js` `SCREENS`
 except `LoadingScreen`, which is the pre-hydrate / pre-font shell
-(`Router.js:148-149`, `App.js:21-22`). That is correct. `SCREENS` has 30
-entries; the bible claims 30 (`GAME_BIBLE.md:161`). `check_docs.py` agrees.
+(`Router.js:148-149`, `App.js:21-22`). That is correct. `SCREENS` is 29
+after A1 (was 30 including the unused `coachTutorial`). `check_docs.py`
+watches the count.
 
 | route | way in | status |
 |---|---|---|
@@ -103,11 +99,9 @@ If it were reached, `CoachTutorialScreen.js:25` would `navigate('goal')` and
 skip the lane.
 
 **A1 — `coachTutorial` registered, no way in.**
-`src/screens/CoachTutorialScreen.js:19` / `src/screens/Router.js:51`.
-Severity: **medium**. Status: **recommend**. Do not delete the lessons until
-someone decides whether first-run copy (A18) reuses them. HomeIntro used to
-dump onto this lecture; it now exits onto Sunkist Lane
-(`HomeIntroScreen.js:11-12,59-61`).
+Unregistered from `SCREENS` and `TOWN_BGM`. The file stays: A18 on #32 owns
+the first-run walking beat, and reaching this lecture called `navigate('goal')`
+and skipped the lane. Severity: **medium**. Status: **fixed**.
 
 ### 1.2 Map codes
 
@@ -158,19 +152,19 @@ First walk is Title → Intro → Outfit → HomeIntro → Lane → gym → Coac
 The bedroom wardrobe is `P` → `bag` (`maps.js:195`). HomeIntro walks the
 bedroom *before* the gym talk, so bumping the wardrobe on the first morning
 throws. Gym lockers (`maps.js:257`) are the same crash after you reach the
-floor but before pairing. Severity: **blocker**. Status: **recommend**.
+floor but before pairing. Severity: **blocker**. Status: ****fixed** (#33)**.
 
 **A28 — `HomeRestScreen` crashes if opened before a companion.**
 `src/screens/HomeRestScreen.js:56-58` builds sleep lines from
 `companion.creature.name` at render. Hub menu item "Go Home"
 (`HubScreen.js:22`) is available the moment you step onto the lane.
-Severity: **blocker**. Status: **recommend**.
+Severity: **blocker**. Status: ****fixed** (#33)**.
 
 **A29 — `SummaryScreen` crashes if opened before a companion.**
 `src/screens/SummaryScreen.js:37` calls
 `evolveProgress(companion, companion.creature, companion.level)` at render.
 Gym reception `N` (`maps.js:261`) is reachable before pairing.
-Severity: **blocker**. Status: **recommend**.
+Severity: **blocker**. Status: ****fixed** (#33)**.
 
 **A30 — Forge / Workout finish paths assume a companion.**
 `ForgeScreen.js:229,241-244,272` and `WorkoutScreen.js:37-53,62` dereference
@@ -178,7 +172,7 @@ Severity: **blocker**. Status: **recommend**.
 iron station are reachable before pairing. The list UIs render; finishing
 throws. `WorkoutScreen.js:122` already has a ternary for the empty-state
 blurb, then the complete path does not. Severity: **high**.
-Status: **recommend**.
+Status: ****fixed** (#33)**.
 
 `PartyScreen` is safe (empty list). `RouteScreen.js:373` guards the sprite.
 `IndexScreen` and `WeekScreen` do not need a companion. GymScreen already
@@ -256,9 +250,10 @@ from a v1 `companion` may lack `baseId`; runtime reads `m.id` / `getCreature`.
 `hp` missing is treated as max in `applyEffect` (`GameContext.js:144`).
 
 **A5 — No save-migration fixture test.**
-Severity: **medium**. Status: **recommend**. A JS walk of a v1 blob through
-`HYDRATE` belongs in whatever grows a root `test` script (A13). Do not invent
-days.
+`src/state/hydrate.js` is the HYDRATE body. `tools/test_hydrate.mjs` walks a
+v1 blob (single `companion`, Bond Token, no credits) and asserts required keys,
+party/evo, knot fold, zero credits, empty history. Does not invent days.
+Severity: **medium**. Status: **fixed**.
 
 **A26 — Options Erase does not `forgetAll()`.**
 `OptionsScreen.js:120` is `wipeSave(); RESET; navigate('title')`.
@@ -268,7 +263,7 @@ square. Options erase leaves `gym`, `hub`, `route:session`, and house spots
 in the process Map. OutfitSelect clears only the `intro:*` keys
 (`OutfitSelectScreen.js:24-26`). After Erase → Enter the World, the first
 gym visit can drop you on last journey's square.
-Severity: **medium**. Status: **recommend**.
+Severity: **medium**. Status: ****fixed** (#33)**.
 
 ### 1.6 Dead files / dead registrations
 
@@ -276,8 +271,8 @@ No shipped `src/` file is unimported. `data/index.js`, `screens/RestScreen.js`,
 `state/usePedometer.js` are already gone.
 
 **A6 — `BattleStage` `dusk` tone unused.**
-`src/components/BattleStage.js:22`. Severity: **low**. Status: **noted**
-(bible §14 item 14).
+Deleted. No trail `stageTone` named it; bible §14 item 14 marked closed.
+Severity: **low**. Status: **fixed**.
 
 **A7 — `expo-crypto` / `expo-asset` not imported by app code.**
 Declared in `package.json:17,22`. `expo-asset` is a Metro/Expo transitive;
@@ -311,21 +306,14 @@ A two-stage family would still pass `INDEX_ORDER` if both ids are listed.
 `creatures.js:415-439`. Severity: **medium**. Status: **recommend**.
 
 **A10 — `check_art.py` reports sourceless companions but exits 0.**
-`tools/check_art.py:97-113`. Severity: **medium**. Status: **recommend**.
-A later art-tooling change should fail on traced art with no provenance
-**and** on families shorter than 3; do not delete the existing
-master-reproduces-shipped-art check. Another agent is touching
-`check_art.py` / `CHARACTER_PROMPT.md`; this audit does not edit those files.
+Sourceless now exits 1. Dewbble is still named; the gap is not papered over
+with a re-rendered PNG. The master-reproduces-shipped-art check stays.
+Severity: **medium**. Status: **fixed**.
 
 **A25 — `check_art.py` `family_chains()` does not expand spreads.**
-`tools/check_art.py:38-39` reads `WILD_COMPANION_IDS = \[([^\]]+)\]` and then
-only the quoted ids inside that one array. The array is
-`[...STARTER_IDS, 'pebblepup', 'wispurr', 'sporelet', ...TRAIL_COMPANION_IDS]`
-(`creatures.js:390-392`), so the sourceless report only walks three families.
-A 2026-08-23 run on this branch printed “53 of 53 masters reproduce” and
-**did not mention Dewbble**. Severity: **high** (the provenance gap the
-script exists to show is invisible). Status: **recommend**. Do not fight the
-other art-tooling agent on this file; the finding stays here.
+`family_chains()` now expands `...STARTER_IDS` and `...TRAIL_COMPANION_IDS`,
+so Dewbble (and every other starter / trail root) is in the sourceless walk.
+Severity: **high**. Status: **fixed**.
 
 ### 2.2 Dewbble / starter masters
 
@@ -378,9 +366,9 @@ every Warden / companion id exists. Gym cardio must not pass `routeId`
 `catchable: false`. `rollWildEncounter` (`wild.js:50-57`) then returns
 `isCompanion: false` / `catchRate: 0` — a 55% "companion" roll that is
 actually a fight. `WILD_COMPANIONS` has stats for them, so HP is not the
-fallback. Severity: **medium**. Status: **recommend** (either only list
-catchable roots, or say on the trail that this is a grown form you already
-know).
+fallback. Pool sizes stay (changing them would change encounter rates).
+Trail + battle copy now names a grown form via `isGrownForm`.
+Severity: **medium**. Status: **fixed** (copy only).
 
 ### 2.5 Maps vs bible sizes
 
@@ -505,18 +493,16 @@ someone next edits the bible; do not change the behavior).
 
 ---
 
-## 7. Feature proposals
+## 7. Feature proposals (parking lot only)
 
 Do **not** change progression numbers. Fit the existing plugin / history /
-world / friends / coach paths.
-
-Implemented on `cursor/new-features-e7e6` (Part 5). F4–F8 stay parked.
+world / friends / coach paths. **Not this PR.**
 
 | # | idea | why it fits | implement? |
 |---|---|---|---|
-| F1 | Coach proposes a Forge plan the player can import | `src/modules/forge/suggest.js` builds a deterministic bodyweight plan from `neglectedMuscles`. Coach chat and the Forge list can import it via `MODULE_PATCH`. An LLM never writes the numbers. | **done** |
-| F2 | Weekly friend challenge (shared, one metric, Monday reset) | `src/state/weekChallenge.js` rotates Miles / Days / Sessions by local Monday. Board ribbon and a cork card name it. Display only — no extra XP, bond or Trail Credit. | **done** |
-| F3 | Evolution / bond ceremony that is not a strobe+swap | `src/components/GrowthCeremony.js` uses `motion.ceremony` (620ms) once each way. Battle and Forge wait to dispatch `EVOLVE` until it settles. Reduced-motion names both forms and skips the fade. | **done** |
+| F1 | Coach proposes a Forge plan the player can import | `coach/context.js` already briefs neglected muscles and saved plans; Forge already `MODULE_PATCH`es plans. Deterministic template from analysis, not an LLM writing numbers. | later |
+| F2 | Weekly friend challenge (shared, one metric, Monday reset) | Boards already week-scoped; `friendIdsOf` is the privacy function; server already validates days. One extra challenge row, no new currency. | later |
+| F3 | Evolution / bond ceremony that is not a strobe+swap | `EVOLVE` already fires from Battle/Forge; motion tokens have `ceremony: 620`. Reduced-motion path required (bible gap 11). | later |
 | F4 | Per-movement PR sparkline on plan detail | `forge/history.js` already stores PRs. Charts only. | later |
 | F5 | Reading / chores / social check-in modules | Phase 6 idea; registry is the install step. | later |
 | F6 | History export (local JSON) | `state/history.js` is already the substrate. | later |
@@ -549,7 +535,8 @@ Ran on 2026-08-23 against this branch (`cursor/audit-findings-e7e6` = `main`
 + the two house fixes + this file):
 
 - `python3 tools/check_docs.py` — **25/25 figures + both coach guardrail
-  pairs agree.** Save 9, 30 screens, 28 components, 416 atlas cells, 139
+  pairs agree.** Save 9, 30 screens, 30 components (HorizonSky + GrowthCeremony
+  both export), 416 atlas cells, 139
   runtime sprites, kcal 0.53/0.75, pace 12, 54 companions, 6 obstacles, 74
   recipes, knot 2.5 mi, credit 10/8/6/4, map sizes 13×17 / 17×19 / 13×15 /
   11×13, 53 masters, 9 perks, six hub menu entries, 5 modules.
@@ -583,3 +570,29 @@ Ran on 2026-08-23 against this branch (`cursor/audit-findings-e7e6` = `main`
   agent owns companion-creation skill work).
 - Did not start an instruction rewrite, UI migration, play-quality pass,
   companion remake, or new feature.
+
+---
+
+## 11. Fixes on the follow-up branches
+
+`cursor/first-morning-guards-e7e6` (#33):
+
+1. **A26** — Options Erase calls `forgetAll()`.
+2. **A27–A30** — Bag, Home, Status, Forge, Workout, Battle, Coach, Route
+   no longer read `companion.creature` before pairing.
+3. **A21 / A22** — those empty states have spoken labels.
+
+`cursor/audit-fixes-e7e6` (this branch):
+
+1. **A1** — `coachTutorial` unregistered; file kept as copy (would skip the lane).
+2. **A5** — `hydrateSave` + `tools/test_hydrate.mjs` (v1 blob, required keys).
+3. **A6** — unused `dusk` tone deleted (no caller).
+4. **A10** — sourceless companions fail `check_art.py`; Dewbble stays named.
+5. **A25** — `family_chains()` expands spreads so Dewbble is in the walk.
+6. **A21 / A22** — Party / bag / habit-log / week / Index empty + a11y. Web trail is #32.
+7. **A32** — grown-form copy; pool composition unchanged.
+
+Skipped here: A9/A13/A23/A24 (#30 has a broader check_art rewrite), A16/A17
+(#31), A18–A20 (#32), A2/A3 (#28), A26–A30 (#33), A11 (do not draw Dewbble),
+A7 (keep declared), A33/A34, any progression/economy/catch-rate retune.
+`check_art.py` now exits 1 on Dewbble on purpose.

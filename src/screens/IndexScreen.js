@@ -17,7 +17,18 @@ function Entry({ id, status, locked }) {
   const typeLabel = c.type && CREATURE_TYPES[c.type];
   return (
     <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <View
+        accessible
+        accessibilityRole="text"
+        accessibilityLabel={
+          locked
+            ? 'A later trail. Not yet unlocked.'
+            : known
+              ? `${c.name}. ${status === 'owned' ? 'Owned' : 'Seen'}. ${c.species || ''}`
+              : 'Unknown companion. Not yet discovered.'
+        }
+        style={{ flexDirection: 'row', alignItems: 'center' }}
+      >
         <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center' }}>
           <PixelSprite spriteKey={c.sprite} palette={known ? c.palette : SILHOUETTE} size={56} />
         </View>

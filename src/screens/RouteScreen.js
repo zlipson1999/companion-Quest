@@ -21,7 +21,7 @@ import { useGame, useCompanion } from '../state';
 import { useNav, PLACE_LABELS } from './navContext';
 import { playSfx } from '../audio';
 import { pacingForGoal, formatMiles } from '../data/route';
-import { rollWildEncounter } from '../data/wild';
+import { isGrownForm, rollWildEncounter } from '../data/wild';
 import {
   ROUTES,
   getRoute,
@@ -190,7 +190,13 @@ export default function RouteScreen({ params = {} }) {
       const c = getCreature(enc.creatureId);
       dispatch({ type: 'SEE_CREATURE', payload: { id: enc.creatureId } });
       playSfx('encounter');
-      setMessage(enc.isCompanion ? `${c.name} steps onto the trail and watches you.` : `${c.name} gathers across the path.`);
+      setMessage(
+        enc.isCompanion
+          ? `${c.name} steps onto the trail and watches you.`
+          : isGrownForm(enc.creatureId)
+            ? `${c.name} is a grown form you already know. This meeting is a challenge, not an invitation.`
+            : `${c.name} gathers across the path.`
+      );
       encTimer.current = setTimeout(() => toBattle({
         ...enc,
         from: 'route',

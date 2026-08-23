@@ -61,5 +61,12 @@ export function rollWildEncounter(milestone = 1, companionIds, obstacleId) {
   return { creatureId: e.creatureId, isCompanion: false, hp: e.hp, xp: e.xp, bond: e.bond, catchRate: 0 };
 }
 
+// Later trails list evolved forms. catchable is false, so the roll is a
+// fight, not an invitation. Pool composition is content — this only names it.
+export function isGrownForm(id) {
+  const c = getCreature(id);
+  return !!(c && !c.catchable && WILD_COMPANIONS[id]);
+}
+
 export default rollWildEncounter;
 
