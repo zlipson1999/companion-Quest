@@ -163,11 +163,23 @@ export function catchFailLine(wildName) {
 }
 
 export function catchFullLine(wildName) {
-  return `Your Circle has no open place, so ${wildName} can't join yet — the meeting is recorded in your Journal.`;
+  return `Your Circle is full — six companions. ${wildName} cannot join, and the Knot stays with you. Make room first.`;
 }
 
 export function noKnotLine() {
   return 'You\'re out of Kinship Knots! The trail leaves them at milestones, and the smoothie bar braids them.';
+}
+
+export function pinLines(wardenName, pinName, nextTrail) {
+  return [
+    { speaker: 'Narration', text: `${wardenName} yields. This trail is yours.` },
+    {
+      speaker: 'Trail',
+      text: nextTrail
+        ? `You earn the ${pinName}. A Kinship Knot settles in your bag, and ${nextTrail} opens.`
+        : `You earn the ${pinName}. A Kinship Knot settles in your bag.`,
+    },
+  ];
 }
 
 export function companionFledLines(wildName) {

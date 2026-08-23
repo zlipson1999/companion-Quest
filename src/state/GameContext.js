@@ -6,11 +6,19 @@
 // pay out through the same XP/bond path as everything else — that is the whole
 // point of the plugin system.
 
-import React, { createContext, useContext, useEffect, useReducer, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { getCreature } from '../data/creatures';
 import { getItem } from '../data/items';
 import { priceOf } from '../data/shop';
 import { pacingForGoal } from '../data/route';
+import {
+  addTrailMiles,
+  addTrailReps,
+  awardPin,
+  emptyTrails,
+  normalizeTrails,
+  setActiveTrail,
+} from '../data/routes';
 import { migrateGoalId } from '../data/goals';
 import { xpProgress, levelFromXp, maxHpFor } from './leveling';
 import { loadGame, saveGame, clearGame } from './storage';
@@ -33,7 +41,7 @@ import {
 const today = todayKey;
 const STARTING_KNOTS = 3;
 const MAX_PARTY = 6;
-const SAVE_VERSION = 8;
+const SAVE_VERSION = 9;
 
 function daysBetween(a, b) {
   if (!a || !b) return 0;
@@ -88,6 +96,8 @@ const FRESH = {
   settings: { muted: false, bgmMuted: false, units: 'lb', control: 'stick', bodyWeightLb: DEFAULT_BODY_WEIGHT_LB },
   // Rowan is only in the gym until the push-up contest is done.
   meta: { createdAt: today(), lastPlayedDate: today(), sparDone: false },
+  // Per-trail miles, challenge reps, and Quest Pins. Gym miles never land here.
+  trails: emptyTrails(),
 };
 
 function clamp(n, lo, hi) {
@@ -236,6 +246,10 @@ function reducer(state, action) {
         merged.bag.knot = (merged.bag.knot || 0) + merged.bag.token;
         delete merged.bag.token;
       }
+      // v9: four trails with per-trail miles/reps and Quest Pins. Older saves
+      // start Maple Trail at zero rather than being back-credited for miles
+      // walked before trails existed — those miles were not trail-tagged.
+      merged.trails = normalizeTrails(saved.trails);
       merged.version = SAVE_VERSION;
 
       // v3 also moved "today" from a UTC date to a LOCAL one. A pre-v3
@@ -256,7 +270,11 @@ function reducer(state, action) {
     }
 
     case 'RESET':
-      return { ...FRESH, meta: { createdAt: today(), lastPlayedDate: today() } };
+      return {
+        ...FRESH,
+        meta: { createdAt: today(), lastPlayedDate: today(), sparDone: false },
+        trails: emptyTrails(),
+      };
 
     case 'START_GAME': {
       const { goalId, starterId } = action.payload;
@@ -308,8 +326,12 @@ function reducer(state, action) {
       // Walking is where credit comes from. Minted on the same fractional carry
       // as the XP above, for the same reason.
       const earned = mint(state, mi * CREDIT_PER_MILE);
+      // Only outdoor trail distance fills a trail quota. The gym's deck
+      // dispatches the same action without a routeId on purpose.
+      const trails = addTrailMiles(state.trails, action.payload.routeId, mi);
       return {
         ...withEvo,
+        trails,
         credits: earned.credits,
         // Steps are recorded per day as well as lifetime: a friends board can
         // only check that a day's distance and its step count agree with each
@@ -387,7 +409,7 @@ function reducer(state, action) {
       return { ...state, activeIndex: clamp(action.payload.index, 0, state.party.length - 1) };
 
     case 'WIN_BATTLE': {
-      const { xp = 0, bond = 0, targetId, companionHp, spar } = action.payload;
+      const { xp = 0, bond = 0, targetId, companionHp, spar, warden, routeId } = action.payload;
       const next = updateActive(state, (m) => ({
         ...applyEffect(m, { evo: pointsFor('battle') }),
         xp: m.xp + xp,
@@ -395,8 +417,15 @@ function reducer(state, action) {
         hp: clamp(companionHp != null ? companionHp : (m.hp == null ? memberMaxHp(m) : m.hp), 0, memberMaxHp(m)),
       }));
       const won = mint(state, CREDIT_PER_WIN);
+      const pin = warden && routeId ? awardPin(state.trails, routeId) : { trails: state.trails, first: false };
       return {
         ...next,
+        trails: pin.trails,
+        // First Warden win: the pin is on the trail record; a Knot is the
+        // invitation that trail just opened.
+        bag: pin.first
+          ? { ...state.bag, knot: (state.bag.knot || 0) + 1 }
+          : state.bag,
         credits: won.credits,
         history: remember(state, { xp, bond, battles: 1, load: LOAD_PER_BATTLE }),
         stats: {
@@ -417,14 +446,17 @@ function reducer(state, action) {
 
     case 'CATCH': {
       const { creatureId, xp = 0, bond = 0, hp } = action.payload;
+      // Full Circle: a no-op. Do not spend a Knot (the screen must not
+      // CONSUME either), do not stamp the Index, do not leave the fight.
+      if (state.party.length >= MAX_PARTY) return state;
       const dex = { ...state.dex, [creatureId]: 'owned' };
-      if (state.party.length >= MAX_PARTY) {
-        // team full — record it in the index, but it does NOT join or count.
-        return { ...state, dex };
-      }
       const maxHp = maxHpFor(getCreature(creatureId), levelFromXp(xp));
       const member = { id: creatureId, baseId: creatureId, xp, bond, evo: 0, hp: hp != null ? hp : maxHp };
       return { ...state, party: [...state.party, member], dex, stats: { ...state.stats, caught: state.stats.caught + 1 } };
+    }
+
+    case 'SET_TRAIL': {
+      return { ...state, trails: setActiveTrail(state.trails, action.payload.routeId) };
     }
 
     case 'LOSE_BATTLE': {
@@ -486,12 +518,13 @@ function reducer(state, action) {
     // and then vanished, so nothing in the app could ever tell you how many
     // push-ups you had done — the one number a fitness game should never lose.
     case 'LOG_EXERCISE': {
-      const { id, kind, target = 0 } = action.payload || {};
+      const { id, kind, target = 0, routeId } = action.payload || {};
       if (target <= 0) return state;
       const reps = kind === 'hold' ? 0 : target;
       const holdSec = kind === 'hold' ? target : 0;
       return {
         ...state,
+        trails: addTrailReps(state.trails, routeId, reps),
         history: remember(state, { sets: 1, reps, holdSec }),
         stats: {
           ...state.stats,
@@ -573,7 +606,7 @@ const GameContext = createContext(null);
 export function GameProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, FRESH);
   const [hydrated, setHydrated] = React.useState(false);
-  const firstSave = useRef(true);
+  const [saveError, setSaveError] = React.useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -588,12 +621,16 @@ export function GameProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
-    if (firstSave.current) firstSave.current = false;
-    saveGame(state);
+    if (!hydrated) return undefined;
+    let cancelled = false;
+    (async () => {
+      const ok = await saveGame(state);
+      if (!cancelled) setSaveError(ok ? null : 'Could not save your progress.');
+    })();
+    return () => { cancelled = true; };
   }, [state, hydrated]);
 
-  return <GameContext.Provider value={{ state, dispatch, hydrated }}>{children}</GameContext.Provider>;
+  return <GameContext.Provider value={{ state, dispatch, hydrated, saveError }}>{children}</GameContext.Provider>;
 }
 
 export function useGame() {

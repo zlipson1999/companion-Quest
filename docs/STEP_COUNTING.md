@@ -93,7 +93,7 @@ iPhone needs an Apple Developer account.
 
 ## How to tell which one is running
 
-Open **Route 1**:
+Open **the trails** (Maple Trail):
 
 | Message | Source |
 |---|---|

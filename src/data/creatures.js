@@ -13,20 +13,20 @@ export const CREATURES = {
   // --- Starter line: Balance ---
   sproutle: {
     id: 'sproutle', stage: 1, name: 'Sproutle', sprite: 'sproutle', palette: 'sprout',
-    species: 'Seedling Companion', kind: 'starter', goalId: 'root',
+    species: 'Seedling Companion', kind: 'starter', type: 'grove', goalId: 'root',
     baseHp: 60, catchable: true, catchRate: 0.55,
     flavor: 'A gentle sprout-spirit. It grows calmer and steadier the more balanced your days become.',
     evolvesTo: 'bloomtail', evolveLevel: 5, evolvePoints: 30,
   },
   bloomtail: {
     id: 'bloomtail', stage: 2, name: 'Bloomtail', sprite: 'bloomtail', palette: 'bloom',
-    species: 'Blossom Companion', kind: 'evolution', baseHp: 100, scale: 1.18, catchable: false,
+    species: 'Blossom Companion', kind: 'evolution', type: 'grove', baseHp: 100, scale: 1.18, catchable: false,
     flavor: 'Sproutle in full bloom — its petals open a little wider with every steady week.',
     evolvesTo: 'groveheart', evolveLevel: 14, evolvePoints: 110,
   },
   groveheart: {
     id: 'groveheart', stage: 3, name: 'Groveheart', sprite: 'groveheart', palette: 'grove',
-    species: 'Grove Guardian Companion', kind: 'evolution', baseHp: 152, scale: 1.32, catchable: false,
+    species: 'Grove Guardian Companion', kind: 'evolution', type: 'grove', baseHp: 152, scale: 1.32, catchable: false,
     flavor: 'Seasons of steady days, grown into one standing thing. It keeps the pace you set.',
     evolvesTo: null,
   },
@@ -34,20 +34,20 @@ export const CREATURES = {
   // --- Starter line: Strength ---
   emberkit: {
     id: 'emberkit', stage: 1, name: 'Emberkit', sprite: 'emberkit', palette: 'ember',
-    species: 'Ember Cub Companion', kind: 'starter', goalId: 'muscle',
+    species: 'Ember Cub Companion', kind: 'starter', type: 'grove', goalId: 'muscle',
     baseHp: 64, catchable: true, catchRate: 0.5,
     flavor: 'A warm little ember cub. Its inner flame burns brighter each time you push yourself.',
     evolvesTo: 'pyrelynx', evolveLevel: 5, evolvePoints: 30,
   },
   pyrelynx: {
     id: 'pyrelynx', stage: 2, name: 'Pyrelynx', sprite: 'pyrelynx', palette: 'pyre',
-    species: 'Flame Lynx Companion', kind: 'evolution', baseHp: 108, scale: 1.18, catchable: false,
+    species: 'Flame Lynx Companion', kind: 'evolution', type: 'grove', baseHp: 108, scale: 1.18, catchable: false,
     flavor: 'Emberkit, grown bold and blazing. It paces beside you, ready for the next set.',
     evolvesTo: 'cindermane', evolveLevel: 14, evolvePoints: 110,
   },
   cindermane: {
     id: 'cindermane', stage: 3, name: 'Cindermane', sprite: 'cindermane', palette: 'cinder',
-    species: 'Blazing Mane Companion', kind: 'evolution', baseHp: 164, scale: 1.32, catchable: false,
+    species: 'Blazing Mane Companion', kind: 'evolution', type: 'grove', baseHp: 164, scale: 1.32, catchable: false,
     flavor: 'Every set you ever finished, burning at once. It does not flinch at heavy days.',
     evolvesTo: null,
   },
@@ -55,20 +55,20 @@ export const CREATURES = {
   // --- Starter line: Distance ---
   dewbble: {
     id: 'dewbble', stage: 1, name: 'Dewbble', sprite: 'dewbble', palette: 'dew',
-    species: 'Dewdrop Companion', kind: 'starter', goalId: 'lean',
+    species: 'Dewdrop Companion', kind: 'starter', type: 'grove', goalId: 'lean',
     baseHp: 58, catchable: true, catchRate: 0.55,
     flavor: 'A bright dewdrop sprite. It rolls a little farther with every step you take together.',
     evolvesTo: 'tidewade', evolveLevel: 5, evolvePoints: 30,
   },
   tidewade: {
     id: 'tidewade', stage: 2, name: 'Tidewade', sprite: 'tidewade', palette: 'tide',
-    species: 'Tidewalker Companion', kind: 'evolution', baseHp: 96, scale: 1.18, catchable: false,
+    species: 'Tidewalker Companion', kind: 'evolution', type: 'grove', baseHp: 96, scale: 1.18, catchable: false,
     flavor: 'Dewbble, deepened into a rolling tide. Distance means nothing to it now.',
     evolvesTo: 'maelstride', evolveLevel: 14, evolvePoints: 110,
   },
   maelstride: {
     id: 'maelstride', stage: 3, name: 'Maelstride', sprite: 'maelstride', palette: 'maels',
-    species: 'Deep Current Companion', kind: 'evolution', baseHp: 146, scale: 1.32, catchable: false,
+    species: 'Deep Current Companion', kind: 'evolution', type: 'grove', baseHp: 146, scale: 1.32, catchable: false,
     flavor: 'A current with somewhere to be. Every mile you have walked is still moving in it.',
     evolvesTo: null,
   },
@@ -76,55 +76,55 @@ export const CREATURES = {
   // --- Wild catchable companions (found in tall grass) ---
   pebblepup: {
     id: 'pebblepup', stage: 1, name: 'Pebblepup', sprite: 'pebblepup', palette: 'rock',
-    species: 'Stonehound Companion', kind: 'wild', baseHp: 66, catchable: true, catchRate: 0.45,
+    species: 'Stonehound Companion', kind: 'wild', type: 'stone', baseHp: 66, catchable: true, catchRate: 0.45,
     flavor: 'A sturdy little stone pup. Steady and dependable — it never skips a day.',
     evolvesTo: 'cairnhound', evolveLevel: 5, evolvePoints: 30,
   },
   cairnhound: {
     id: 'cairnhound', stage: 2, name: 'Cairnhound', sprite: 'cairnhound', palette: 'rock',
-    species: 'Cairn Hound Companion', kind: 'evolution', baseHp: 112, scale: 1.18, catchable: false,
+    species: 'Cairn Hound Companion', kind: 'evolution', type: 'stone', baseHp: 112, scale: 1.18, catchable: false,
     flavor: 'Steady days have lengthened its stride and settled every stone into place.',
     evolvesTo: 'monolithound', evolveLevel: 14, evolvePoints: 110,
   },
   monolithound: {
     id: 'monolithound', stage: 3, name: 'Monolithound', sprite: 'monolithound', palette: 'rock',
-    species: 'Monolith Guardian Companion', kind: 'evolution', baseHp: 170, scale: 1.32, catchable: false,
+    species: 'Monolith Guardian Companion', kind: 'evolution', type: 'stone', baseHp: 170, scale: 1.32, catchable: false,
     flavor: 'A patient guardian built one dependable day at a time.',
     evolvesTo: null,
   },
   wispurr: {
     id: 'wispurr', stage: 1, name: 'Wispurr', sprite: 'wispurr', palette: 'air',
-    species: 'Cloudkit Companion', kind: 'wild', baseHp: 54, catchable: true, catchRate: 0.6,
+    species: 'Cloudkit Companion', kind: 'wild', type: 'wind', baseHp: 54, catchable: true, catchRate: 0.6,
     flavor: 'A breezy cloud-kit. Light on its feet and always ready for a long walk.',
     evolvesTo: 'galegait', evolveLevel: 5, evolvePoints: 30,
   },
   galegait: {
     id: 'galegait', stage: 2, name: 'Galegait', sprite: 'galegait', palette: 'air',
-    species: 'Gale Cat Companion', kind: 'evolution', baseHp: 94, scale: 1.18, catchable: false,
+    species: 'Gale Cat Companion', kind: 'evolution', type: 'wind', baseHp: 94, scale: 1.18, catchable: false,
     flavor: 'Its stride carries the clean momentum of a morning breeze.',
     evolvesTo: 'skywhorl', evolveLevel: 14, evolvePoints: 110,
   },
   skywhorl: {
     id: 'skywhorl', stage: 3, name: 'Skywhorl', sprite: 'skywhorl', palette: 'air',
-    species: 'Dawnwind Guardian Companion', kind: 'evolution', baseHp: 148, scale: 1.32, catchable: false,
+    species: 'Dawnwind Guardian Companion', kind: 'evolution', type: 'wind', baseHp: 148, scale: 1.32, catchable: false,
     flavor: 'Every mile circles its bright heart like wind around a sunrise.',
     evolvesTo: null,
   },
   sporelet: {
     id: 'sporelet', stage: 1, name: 'Sporelet', sprite: 'sporelet', palette: 'spore',
-    species: 'Sporeling Companion', kind: 'wild', baseHp: 62, catchable: true, catchRate: 0.5,
+    species: 'Sporeling Companion', kind: 'wild', type: 'rest', baseHp: 62, catchable: true, catchRate: 0.5,
     flavor: 'A cheerful little mushroom sprite that thrives on rest and good routines.',
     evolvesTo: 'mycobloom', evolveLevel: 5, evolvePoints: 30,
   },
   mycobloom: {
     id: 'mycobloom', stage: 2, name: 'Mycobloom', sprite: 'mycobloom', palette: 'spore',
-    species: 'Restorative Scout Companion', kind: 'evolution', baseHp: 104, scale: 1.18, catchable: false,
+    species: 'Restorative Scout Companion', kind: 'evolution', type: 'rest', baseHp: 104, scale: 1.18, catchable: false,
     flavor: 'Good rest gathers beneath its cap as warm, guiding spores.',
     evolvesTo: 'canopore', evolveLevel: 14, evolvePoints: 110,
   },
   canopore: {
     id: 'canopore', stage: 3, name: 'Canopore', sprite: 'canopore', palette: 'spore',
-    species: 'Living Canopy Companion', kind: 'evolution', baseHp: 158, scale: 1.32, catchable: false,
+    species: 'Living Canopy Companion', kind: 'evolution', type: 'rest', baseHp: 158, scale: 1.32, catchable: false,
     flavor: 'A sheltering grove grown from recovery practiced without guilt.',
     evolvesTo: null,
   },
@@ -132,22 +132,22 @@ export const CREATURES = {
   // --- Obstacle creatures (bad habits — cleared, not caught) ---
   sludgewad: {
     id: 'sludgewad', name: 'Sludgewad', sprite: 'sludgewad', palette: 'sludge',
-    species: 'Sluggishness', kind: 'obstacle', baseHp: 40, catchable: false,
+    species: 'Sluggishness', kind: 'obstacle', type: 'grove', baseHp: 40, catchable: false,
     flavor: 'A blob of that heavy, sluggish feeling. A few good reps melt it right away.',
   },
   snoozeghoul: {
     id: 'snoozeghoul', name: 'Snoozeghoul', sprite: 'snoozeghoul', palette: 'snooze',
-    species: 'The Snooze', kind: 'obstacle', baseHp: 50, catchable: false,
+    species: 'The Snooze', kind: 'obstacle', type: 'stone', baseHp: 50, catchable: false,
     flavor: 'The drowsy fog that whispers "five more minutes." Movement chases it off.',
   },
   achefang: {
     id: 'achefang', name: 'Achefang', sprite: 'achefang', palette: 'ache',
-    species: 'Soreness', kind: 'obstacle', baseHp: 60, catchable: false,
+    species: 'Soreness', kind: 'obstacle', type: 'wind', baseHp: 60, catchable: false,
     flavor: 'Yesterday\'s soreness, baring its teeth. Move gently and it loses its bite.',
   },
   couchlurk: {
     id: 'couchlurk', name: 'Couchlurk', sprite: 'couchlurk', palette: 'couch',
-    species: 'The Slump', kind: 'obstacle', baseHp: 75, catchable: false,
+    species: 'The Slump', kind: 'obstacle', type: 'rest', baseHp: 75, catchable: false,
     flavor: 'The cozy pull of the couch. Tougher than it looks — but you are tougher still.',
   },
 };
@@ -156,6 +156,16 @@ export const STARTER_IDS = ['sproutle', 'emberkit', 'dewbble'];
 export const WILD_COMPANION_IDS = ['sproutle', 'emberkit', 'dewbble', 'pebblepup', 'wispurr', 'sporelet'];
 export const OBSTACLE_IDS = ['sludgewad', 'snoozeghoul', 'achefang', 'couchlurk'];
 export const ALL_CREATURE_IDS = Object.keys(CREATURES);
+
+// Types belong on the creature, not on the trail table — creatures.js must
+// not import routes.js. Maple's three starters are Grove; each later trail
+// introduces one type of its own.
+export const CREATURE_TYPES = {
+  grove: 'Grove',
+  stone: 'Stone',
+  wind: 'Wind',
+  rest: 'Rest',
+};
 
 export function getCreature(id) {
   return CREATURES[id] || null;

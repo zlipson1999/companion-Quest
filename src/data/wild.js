@@ -2,7 +2,7 @@
 // bond invitation and bad-habit obstacles that must be cleared.
 
 import { WILD_COMPANION_IDS, getCreature } from './creatures';
-import { pickEncounter } from './obstacles';
+import { ENCOUNTERS, pickEncounter } from './obstacles';
 
 // Encounter stats for trail companions (tuned so bonding is
 // realistic). xp/bond are the rewards for befriending (or defeating).
@@ -17,15 +17,21 @@ export const WILD_COMPANIONS = {
 
 // Roll a wild encounter. ~55% a befriendable companion, ~45% a bad-habit
 // obstacle whose pool grows as you get farther along (milestone index).
-export function rollWildEncounter(milestone = 1) {
+export function rollWildEncounter(milestone = 1, companionIds, obstacleId) {
+  const pool = companionIds && companionIds.length ? companionIds : null;
+  // A trail names its own companions. Mixing the whole roster in would make
+  // four trails one shared pool with the sign swapped. The local Warden is
+  // the only obstacle that belongs here — the milestone pool would put
+  // Couchlurk on Maple Trail and leak a locked Index row.
   const isCompanion = Math.random() < 0.55;
   if (isCompanion) {
-    const id = WILD_COMPANION_IDS[Math.floor(Math.random() * WILD_COMPANION_IDS.length)];
+    const ids = pool || WILD_COMPANION_IDS;
+    const id = ids[Math.floor(Math.random() * ids.length)];
     const c = getCreature(id);
     const stats = WILD_COMPANIONS[id] || { hp: Math.floor((c.baseHp || 50) * 0.7), xp: 28, bond: 6 };
     return { creatureId: id, isCompanion: true, hp: stats.hp, xp: stats.xp, bond: stats.bond, catchRate: c.catchRate || 0.5 };
   }
-  const e = pickEncounter(milestone);
+  const e = (obstacleId && ENCOUNTERS[obstacleId]) || pickEncounter(milestone);
   return { creatureId: e.creatureId, isCompanion: false, hp: e.hp, xp: e.xp, bond: e.bond, catchRate: 0 };
 }
 

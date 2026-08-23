@@ -29,8 +29,8 @@ function KeepAwakeOnDeck() {
 
 const MENU = [
   { label: 'Back to Maple Lane', value: 'hub', sublabel: 'the lane outside' },
-  { label: 'Talk to Coach', value: 'coach', sublabel: 'ask her anything' },
-  { label: 'Route 1', value: 'route', sublabel: 'real miles, encounters' },
+  { label: 'Shelf sessions', value: 'workout', sublabel: 'take a session off the shelf' },
+  { label: 'Trails', value: 'route', sublabel: 'real miles, Wardens' },
   { label: 'Team', value: 'party', sublabel: 'companions' },
   { label: 'Options', value: 'options', sublabel: 'settings' },
 ];
@@ -123,6 +123,7 @@ export default function GymScreen() {
         return;
       }
       if (station && station.screen) {
+        if (code === 'A' && !companion) return;
         playSfx('confirm');
         // Coach is the goal conversation until you have a companion, and the
         // chat after that. Re-running the goal screen on a live save would

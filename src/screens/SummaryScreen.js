@@ -9,6 +9,7 @@ import { palette, space } from '../theme';
 import { useGame, useCompanion, useModules } from '../state';
 import { useNav } from './navContext';
 import { getGoal } from '../data/goals';
+import { ROUTES, normalizeTrails } from '../data/routes';
 import { breakdownSince } from '../data/exercises';
 import { getWorkout } from '../data/workouts';
 import { moduleSprite } from '../modules';
@@ -29,9 +30,10 @@ function StatCell({ label, value, color }) {
 export default function SummaryScreen() {
   const { state } = useGame();
   const companion = useCompanion();
-  const { navigate, goBack, back } = useNav();
+  const { goBack, back } = useNav();
   const modules = useModules();
   const goal = getGoal(state.goalId);
+  const trails = normalizeTrails(state.trails);
   const evo = evolveProgress(companion, companion.creature, companion.level);
   const s = state.stats;
   // The same diff the cardio console runs, against a zero baseline: the
@@ -158,6 +160,25 @@ export default function SummaryScreen() {
             ))}
           </Window>
         ) : null}
+
+        <Window tone="cream" pad={12} style={{ marginTop: space.md }}>
+          <PixelText size="small" color={palette.accentDark} style={{ marginBottom: 6 }}>
+            Quest Pins
+          </PixelText>
+          {ROUTES.map((r) => {
+            const earned = !!(trails.progress[r.id] && trails.progress[r.id].pin);
+            return (
+              <View key={r.id} style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                <PixelText size="tiny" color={palette.windowText}>
+                  {r.pinName}
+                </PixelText>
+                <PixelText size="tiny" color={earned ? palette.success : palette.windowTextDim}>
+                  {earned ? 'earned' : 'not yet'}
+                </PixelText>
+              </View>
+            );
+          })}
+        </Window>
 
         <Window tone="cream" pad={12} style={{ marginTop: space.md }}>
           <PixelText size="small" color={palette.accentDark} style={{ marginBottom: 6 }}>

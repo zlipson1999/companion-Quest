@@ -23,7 +23,7 @@ ask twice.
 
 ## Test 1 — Is the pedometer even detected?  ⬅ the one that matters
 
-Go to **Route 1**.
+Go to **the trails** (north gate, or Trails on the menu). Maple Trail is the first.
 
 | What you see | What it means |
 |---|---|

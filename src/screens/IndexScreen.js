@@ -6,13 +6,15 @@ import { Screen, Window, PixelText, PixelButton, PixelSprite } from '../componen
 import { palette, space } from '../theme';
 import { useGame } from '../state';
 import { useNav } from './navContext';
-import { INDEX_ORDER, getCreature } from '../data/creatures';
+import { INDEX_ORDER, getCreature, CREATURE_TYPES } from '../data/creatures';
+import { isCreatureLocked } from '../data/routes';
 
 const SILHOUETTE = ['transparent', palette.ink, palette.ink, palette.ink, palette.ink, palette.ink, palette.ink];
 
-function Entry({ id, status }) {
+function Entry({ id, status, locked }) {
   const c = getCreature(id);
-  const known = status === 'owned' || status === 'seen';
+  const known = !locked && (status === 'owned' || status === 'seen');
+  const typeLabel = c.type && CREATURE_TYPES[c.type];
   return (
     <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -24,7 +26,11 @@ function Entry({ id, status }) {
             <PixelText size="body" color={palette.windowText}>
               {known ? c.name : '???'}
             </PixelText>
-            {status === 'owned' ? (
+            {locked ? (
+              <PixelText size="tiny" color={palette.windowTextDim}>
+                LOCKED
+              </PixelText>
+            ) : status === 'owned' ? (
               <PixelText size="tiny" color={palette.success}>
                 OWNED
               </PixelText>
@@ -36,11 +42,11 @@ function Entry({ id, status }) {
           </View>
           {known ? (
             <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6 }}>
-              {c.species}
+              {c.species}{typeLabel ? ` · ${typeLabel}` : ''}
             </PixelText>
           ) : (
             <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6 }}>
-              not yet discovered
+              {locked ? 'a later trail' : 'not yet discovered'}
             </PixelText>
           )}
           {status === 'owned' && c.flavor ? (
@@ -56,7 +62,7 @@ function Entry({ id, status }) {
 
 export default function IndexScreen() {
   const { state } = useGame();
-  const { navigate, goBack, back } = useNav();
+  const { goBack, back } = useNav();
   const order = INDEX_ORDER;
   const owned = order.filter((id) => state.dex[id] === 'owned').length;
   const seen = order.filter((id) => state.dex[id] === 'seen').length;
@@ -70,9 +76,13 @@ export default function IndexScreen() {
         Owned {owned} · Seen {seen} · Total {order.length}
       </PixelText>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {order.map((id) => (
-          <Entry key={id} id={id} status={state.dex[id] || 'unknown'} />
-        ))}
+        {order.map((id) => {
+          const status = state.dex[id] || 'unknown';
+          // A companion you already travel with is never a silhouette, even
+          // if its trail is still the next one along (older saves).
+          const locked = isCreatureLocked(id, state.trails) && status !== 'owned';
+          return <Entry key={id} id={id} status={status} locked={locked} />;
+        })}
       </ScrollView>
       <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
     </Screen>

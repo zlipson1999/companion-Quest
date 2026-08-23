@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
 import { Screen, PixelText, PixelSprite, PixelButton, Window } from '../components';
 import { palette, space } from '../theme';
-import { useGame } from '../state';
+import { useGame, wipeSave } from '../state';
 import { useNav } from './navContext';
 
 export default function TitleScreen() {
@@ -49,7 +49,7 @@ export default function TitleScreen() {
             </PixelText>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.lg }}>
               <PixelButton label="Cancel" tone="plain" sound="cancel" style={{ flex: 1, marginRight: 6 }} onPress={() => setConfirmReset(false)} />
-              <PixelButton label="Erase" tone="danger" style={{ flex: 1, marginLeft: 6 }} onPress={() => { dispatch({ type: 'RESET' }); navigate('homeIntro'); }} />
+              <PixelButton label="Erase" tone="danger" style={{ flex: 1, marginLeft: 6 }} onPress={async () => { await wipeSave(); dispatch({ type: 'RESET' }); navigate('intro'); }} />
             </View>
           </Window>
         ) : hasSave ? (
