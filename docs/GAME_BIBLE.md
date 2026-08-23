@@ -639,8 +639,11 @@ faint.
   (sludgewad, snoozeghoul, achefang, couchlurk, brinegnash, cindergrind).
   All thirty-six trail forms are traced from isolated masters (approved
   lineups, then one creature per file). The two new Wardens remain
-  procedural. An evolution is its OWN master, never a tinted copy of the
-  base.
+  procedural. An evolution is its OWN master and a new silhouette —
+  baby / adolescent / adult, never a tinted, scaled, or outlined copy
+  of the base. `check_art.py` fails a family whose stages are too
+  similar. Several committed trail evos currently fail that gate;
+  the art is wrong, not the check.
   The first three families are the ones offered at first bond
   (each goal names its own via `GOALS[].companionId`; `STARTER_IDS` is a
   convenience list the running game does not read); all six are met on the
@@ -691,8 +694,11 @@ quantises to a compact palette. `load_traced()` beats the generated sprite
 of the same name in `build_all`. Palette gotcha: tiny features (Dewbble's
 pink mouth) need a hand-added palette entry or they quantise away.
 **Every new creature goes through this kit.** A missing trail master
-fails the build. The `sphere()` + `eye()` recipe is how the first trail
-pass came out as twelve interchangeable blobs and is not used again.
+fails the build. Each family is baby / adolescent / adult — three
+different creatures, not a tinted copy. `check_art.py` fails a family
+whose stages are too similar. The `sphere()` + `eye()` recipe is how
+the first trail pass came out as twelve interchangeable blobs and is
+not used again.
 
 ## 9. UI components (28)
 
