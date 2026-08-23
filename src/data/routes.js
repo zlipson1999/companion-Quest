@@ -12,6 +12,7 @@
 
 import { familyChain, getCreature, STARTER_IDS } from './creatures';
 import { SCENE_TONES } from './sceneSky';
+import { HORIZON_ROUTES } from './regions';
 
 // Cumulative pools. A longer walk can meet anyone you have already unlocked,
 // plus the new faces that trail introduces. Wild pick is random from this list.
@@ -26,6 +27,9 @@ export const ROUTES = [
   {
     id: 'maple',
     name: 'Maple Trail',
+    unlock: null,
+    region: 'The Grove',
+    regionId: 'grove',
     miles: 1.5,
     reps: 30,
     companions: MAPLE_MEET,
@@ -49,7 +53,10 @@ export const ROUTES = [
   },
   {
     id: 'cairn',
+    unlock: 'maple',
     name: 'Cairn Cut',
+    region: 'The Grove',
+    regionId: 'grove',
     miles: 3,
     reps: 60,
     companions: CAIRN_MEET,
@@ -74,7 +81,10 @@ export const ROUTES = [
   },
   {
     id: 'gale',
+    unlock: 'cairn',
     name: 'Gale Reach',
+    region: 'The Grove',
+    regionId: 'grove',
     miles: 5,
     reps: 100,
     companions: GALE_MEET,
@@ -97,7 +107,10 @@ export const ROUTES = [
   },
   {
     id: 'canopy',
+    unlock: 'gale',
     name: 'Canopy Run',
+    region: 'The Grove',
+    regionId: 'grove',
     miles: 8,
     reps: 160,
     companions: CANOPY_MEET,
@@ -120,7 +133,10 @@ export const ROUTES = [
   },
   {
     id: 'rill',
+    unlock: 'canopy',
     name: 'Rill Crossing',
+    region: 'The Grove',
+    regionId: 'grove',
     miles: 12,
     reps: 220,
     companions: RILL_MEET,
@@ -143,7 +159,10 @@ export const ROUTES = [
   },
   {
     id: 'ember',
+    unlock: 'rill',
     name: 'Ember Grade',
+    region: 'The Grove',
+    regionId: 'grove',
     miles: 18,
     reps: 320,
     companions: EMBER_MEET,
@@ -164,6 +183,7 @@ export const ROUTES = [
     scatterTrees: 0,
     scatterStone: 14,
   },
+  ...HORIZON_ROUTES,
 ];
 
 export const ROUTE_ORDER = ROUTES.map((r) => r.id);
@@ -201,11 +221,14 @@ export function normalizeTrails(raw) {
 }
 
 export function isTrailUnlocked(routeId, trails) {
-  const i = ROUTE_ORDER.indexOf(routeId);
-  if (i <= 0) return true;
-  const prev = ROUTE_ORDER[i - 1];
+  const route = BY_ID[routeId];
+  if (!route) return false;
+  // Grove trails and horizon trails both name the pin that opens them.
+  // Maple (unlock: null) is always open. Do not fall back to "previous in
+  // the array" — that would lock Tideglass Coast behind Ember Grade.
+  if (!route.unlock) return true;
   const t = normalizeTrails(trails);
-  return !!(t.progress[prev] && t.progress[prev].pin);
+  return !!(t.progress[route.unlock] && t.progress[route.unlock].pin);
 }
 
 export function trailOf(trails) {
@@ -302,10 +325,12 @@ export function isCreatureLocked(creatureId, trails) {
   return !isTrailUnlocked(routeId, trails);
 }
 
+const GROVE_ORDER = ['maple', 'cairn', 'gale', 'canopy', 'rill', 'ember'];
+
 export function nextRoute(routeId) {
-  const i = ROUTE_ORDER.indexOf(routeId);
-  if (i < 0 || i >= ROUTE_ORDER.length - 1) return null;
-  return getRoute(ROUTE_ORDER[i + 1]);
+  const i = GROVE_ORDER.indexOf(routeId);
+  if (i >= 0 && i < GROVE_ORDER.length - 1) return getRoute(GROVE_ORDER[i + 1]);
+  return null;
 }
 
 export function wardenBattle(route) {
