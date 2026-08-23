@@ -80,20 +80,21 @@ export const CREATURES = {
   // --- Wild catchable companions (found in tall grass) ---
   pebblepup: {
     id: 'pebblepup', stage: 1, name: 'Pebblepup', sprite: 'pebblepup', palette: 'rock',
-    species: 'Stonehound Companion', kind: 'wild', type: 'stone', baseHp: 66, catchable: true, catchRate: 0.45,
-    flavor: 'A sturdy little stone pup. Steady and dependable — it never skips a day.',
+    species: 'Living Stone Puppy Companion', kind: 'wild', type: 'stone', baseHp: 66, catchable: true, catchRate: 0.45,
+    flavor: 'A loyal, sturdy pup of smooth river stones with moss in the joints. Large warm eyes. Eager, grounded.',
     evolvesTo: 'cairnhound', evolveLevel: 5, evolvePoints: 30,
   },
   cairnhound: {
     id: 'cairnhound', stage: 2, name: 'Cairnhound', sprite: 'cairnhound', palette: 'rock',
-    species: 'Cairn Hound Companion', kind: 'evolution', type: 'stone', baseHp: 112, scale: 1.18, catchable: false,
-    flavor: 'Steady days have lengthened its stride and settled every stone into place.',
+    species: 'Trail Cairn Hound Companion', kind: 'evolution', type: 'stone', baseHp: 112, scale: 1.18, catchable: false,
+    flavor: 'Alert and dependable. River stones have settled into cairn slabs; longer legs, the same face, moss in the seams.',
     evolvesTo: 'monolithound', evolveLevel: 14, evolvePoints: 110,
   },
+  // Display name is Dolmanguard (user spec). Id stays monolithound — permanent.
   monolithound: {
-    id: 'monolithound', stage: 3, name: 'Monolithound', sprite: 'monolithound', palette: 'rock',
-    species: 'Monolith Guardian Companion', kind: 'evolution', type: 'stone', baseHp: 170, scale: 1.32, catchable: false,
-    flavor: 'A patient guardian built one dependable day at a time.',
+    id: 'monolithound', stage: 3, name: 'Dolmanguard', sprite: 'monolithound', palette: 'rock',
+    species: 'Ancient Stone Guardian Companion', kind: 'evolution', type: 'stone', baseHp: 170, scale: 1.32, catchable: false,
+    flavor: 'Immovable, patient, protective. Weathered monolith slabs, moss and pale lichen in the cracks. A living landmark of Cairnwalker Pass.',
     evolvesTo: null,
   },
   wispurr: {

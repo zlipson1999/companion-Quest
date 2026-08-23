@@ -298,7 +298,7 @@ Evolve points are **per companion** — earned by whoever is active.
 (`canEvolve`): stage 1→2 at Lv 5 + 30 pts; stage 2→3 at Lv 14 + 110 pts.
 Fifty-eight full lines — the original six (Sproutle→Bloomtail→Groveheart,
 Emberkit→Pyrelynx→Cindermane, Dewbble→Tidewade→Maelstride,
-Pebblepup→Cairnhound→Monolithound, Wispurr→Galegait→Skywhorl,
+Pebblepup→Cairnhound→Dolmanguard (id monolithound), Wispurr→Galegait→Skywhorl,
 Sporelet→Mycobloom→Canopore) plus twelve trail families with the same
 gates (Spinseed→Whirlkey→Samaraile, Bramblet→Briarthicket→Hedgeroot,
 Lanternbud→Gleambud→Grovelamp, Rubblet→Cairnstack→Dolmenhold,

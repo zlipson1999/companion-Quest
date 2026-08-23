@@ -115,9 +115,10 @@ of one prompt are not a family.
 - **Chockit** (conical banded chock) → **Crackwedge** (stood up,
   cracked into plates) → **Cliffchock** (cliff given limbs, diagonal
   strata). Not an outlined wedge.
-- **Pebblepup** (sitting mosaic puppy) → **Cairnhound** (standing
-  dry-stone wolf) → **Monolithound** (jagged dolmen-beast). Not the
-  trail Rubblet / Dolmenhold line.
+- **Pebblepup** (sitting mosaic river-stone puppy) → **Cairnhound**
+  (cairn-slab hound, longer legs) → **Dolmanguard** (id
+  `monolithound`: monolith-slab guardian). Moss and lichen stay.
+  Not the trail Rubblet / Dolmenhold line.
 - **Sporelet** (toadstool kid + sparkles) → **Mycobloom** (plated
   scout, cracked loaf-cap, shoulder fruiting) → **Canopore**
   (rooted canopy, bark legs in moss — not a bigger spotted kid)
