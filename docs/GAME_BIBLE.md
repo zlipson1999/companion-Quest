@@ -98,7 +98,7 @@ src/
   state/       GameContext (reducer, save), leveling, evolution, history,
                recovery, economy (Trail Credit), cardioMaths (console numbers),
                useDistance, stepDetector, storage
-  screens/     Router + 29 screens (§4), plus useCardio (the one path real
+  screens/     Router + 30 screens (§4), plus useCardio (the one path real
                distance takes into the game) and placeMemory (where you were
                standing in each place)
   components/  30 building blocks (§9)
@@ -158,7 +158,7 @@ the bed sleeps or logs last night, the desk is your habits,
 the kitchen counters log a meal, the kitchen shelf is the cookbook, the sofa is
 stillness, the wardrobe is your bag.
 
-## 4. Screens (all 29, registered in `screens/Router.js`)
+## 4. Screens (all 30, registered in `screens/Router.js`)
 
 Router holds the `SCREENS` map, `navigate(name, params)`, `toBattle(params)`
 (which plays the `BattleTransition` flash/wipe first), a `TOWN_BGM` set — every
@@ -197,6 +197,7 @@ clears it.
 | `cookbook` | CookbookScreen | the kitchen shelf: 74 recipes, 18 categories, search over names/blurbs/tags/ingredients |
 | `smoothiebar` | SmoothieBarScreen | the gym's bar; spends Trail Credit (§5.6) |
 | `route` | RouteScreen | six trails — §5.4 |
+| `world` | WorldMapScreen | region journey journal: the 11 regions, pins and Wardens per trail. Opened from the hub menu's Trails entry |
 | `battle` | BattleScreen | §6 |
 | `workout` | WorkoutScreen | 6 preset routines (data/workouts.js), pay ×`workoutXpMult`; a station can pin one via `params.workoutId` |
 | `rest` | HomeRestScreen | your house (13×15 downstairs, 11×13 bedroom); the bed sleeps (`HEAL_FULL`) |
