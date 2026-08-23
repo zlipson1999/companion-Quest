@@ -24,6 +24,7 @@ export { default as Joystick } from './Joystick';
 export { default as MoveControl, CONTROL_MODES } from './MoveControl';
 export { default as TileImage } from './TileImage';
 export { default as WorldScreen, worldTileFor, MenuButton, TOP_INSET } from './WorldScreen';
+export { default as HorizonSky } from './HorizonSky';
 export { default as CompanionStatus } from './CompanionStatus';
 export { default as CardioConsole } from './CardioConsole';
 export { default as GrowthCeremony } from './GrowthCeremony';

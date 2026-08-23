@@ -45,7 +45,7 @@ src/
   state/       game reducer + context (auto-persist), leveling, evolution,
                history, recovery, economy (Trail Credit), cardio maths,
                distance (pedometer / accelerometer / GPS)
-  components/  28 blocks — WorldScreen, TileMap/TileImage, CardioConsole,
+  components/  29 blocks — WorldScreen, HorizonSky, TileMap/TileImage, CardioConsole,
                 CompanionStatus, Joystick, the Trailkeeper primitives, ...
   modules/     the life-module plugin system + 5 modules (the Forge is one)
   coach/       the companion/Coach's warm, in-character dialogue

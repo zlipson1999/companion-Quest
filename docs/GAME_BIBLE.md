@@ -526,9 +526,12 @@ milestone count) → `toBattle` flash → BattleScreen.
   flash + damage pop 140 → counter lunge 650 → counter flinch/pop 790 → faint
   (KO) at 430 after its flinch. Entry: wild slides in from +90 px right,
   companion from −110 left, staggered 160. All timers cleared on unmount.
-- **Stage**: real zoomed grass/path tiles (3× overworld scale) under a single
-  sky colour + one haze line; horizon at 0.16 so BOTH combatants stand on
-  ground. Platforms are stacked-rect discs with lit top / shaded underside.
+- **Stage**: real zoomed grass/path tiles (3× overworld scale) under the
+  shared `HorizonSky` painter (`src/data/sceneSky.js` — zenith/sky/haze
+  scanlines + a haze feather on the join, not a flat hex and a 4px line);
+  horizon at 0.16 so BOTH combatants stand on ground. Platforms are
+  stacked-rect discs with lit top / shaded underside. The trail and the
+  stage share one tone table so they cannot drift.
 - Defeat → `LOSE_BATTLE`, hub. Swap preserves per-member HP. Evolution beat:
   white strobe, sprite morph, EVOLVE action.
 
@@ -707,7 +710,8 @@ cursor + sfx), DialogueBox (typewriter, blip every 2 chars, bobbing advance
 arrow, tap-to-complete), PixelText (PressStart2P, sizes tiny→hero), PixelArt /
 PixelSprite, BarFill (tube-shaded meters; border thins ≤8 px) → HPBar /
 ProgressBar / StatusPlate (name/Lv/HP + EXP strip on YOUR plate only),
-BattleStage + Platform, BattleTransition (flash/wipe), TileMap (+exported
+BattleStage + Platform + HorizonSky (shared zenith/haze painter; sceneSky.js),
+BattleTransition (flash/wipe), TileMap (+exported
 Tile; fractional cells — rounding once clipped ¼ of every tile), DualPane,
 Dpad, Screen, Triangle (the font has no arrow glyphs — never rely on unicode
 arrows/hearts).
