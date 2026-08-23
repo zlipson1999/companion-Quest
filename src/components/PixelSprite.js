@@ -7,6 +7,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
 import PixelArt from './PixelArt';
 import { SPRITES } from '../data/sprites';
+import { standinSprite } from '../data/spriteStandins';
 
 export default function PixelSprite({
   spriteKey,
@@ -23,7 +24,10 @@ export default function PixelSprite({
   accessibilityLabel,
   style,
 }) {
-  const sprite = SPRITES[spriteKey];
+  const resolvedKey = SPRITES[spriteKey]
+    ? spriteKey
+    : standinSprite(spriteKey, typeof palette === 'string' ? palette : null, 1);
+  const sprite = SPRITES[resolvedKey] || SPRITES[spriteKey];
   const bobY = useRef(new Animated.Value(0)).current;
   const shakeX = useRef(new Animated.Value(0)).current;
   const flash = useRef(new Animated.Value(0)).current;

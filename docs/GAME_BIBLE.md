@@ -641,11 +641,15 @@ faint.
   chockit→crackwedge→cliffchock, facetel→prismore→quartzspire,
   whistlet→reedgale→stormflute, kitefin→ribbonsail→skysheet,
   loftburr→driftpuff→cloudburr, fernap→fiddlefrond→frondrest,
-  dapple→glimmoth→leaflight, stillcup→dewbasin→rainhold — plus 6 obstacles
-  (sludgewad, snoozeghoul, achefang, couchlurk, brinegnash, cindergrind).
+  dapple→glimmoth→leaflight, stillcup→dewbasin→rainhold — plus 16 obstacles
+  (sludgewad, snoozeghoul, achefang, couchlurk, brinegnash, cindergrind,
+  and ten Horizon Warden partners: saltcramp, heatgrind, mirelurk,
+  nightsnooze, muterail, stillhoof, skipcomb, flathorn, rootrush, voidglyph).
   All thirty-six trail forms are traced from isolated masters (approved
-  lineups, then one creature per file). The two new Wardens remain
-  procedural. An evolution is its OWN master and a new silhouette —
+  lineups, then one creature per file). Horizon faces draw from matching
+  palette/stage stand-ins until their own masters land. Horizon Warden
+  partners reuse obstacle silhouettes with their own palettes. An evolution
+  is its OWN master and a new silhouette —
   baby / adolescent / adult, never a tinted, scaled, or outlined copy
   of the base. `check_art.py` fails a family whose stages are too
   similar. Several committed trail evos currently fail that gate;
@@ -832,7 +836,7 @@ Status labels:
 | What devices and OS versions are supported? | **OPEN.** Portrait is forced and tablets are allowed; minimum Android/iOS versions, screen sizes, low-end device floor and tablet UX are unspecified. |
 | Is the game free, paid, ad-supported or subscription-based? | **OPEN.** No monetization or entitlement code exists. |
 | Is an account required? Is there cloud sync or multi-device play? | **CURRENT: no.** One local save, no auth, no cloud backup, no export/import. Whether this is permanent is **OPEN**. |
-| What is the content target at launch? | **OPEN.** Current roster is 54 companion forms across 18 families plus 6 obstacles; roadmap expansion is aspiration, not a launch commitment. |
+| What is the content target at launch? | **OPEN.** Current roster is 54 companion forms across 18 families plus 16 obstacles; roadmap expansion is aspiration, not a launch commitment. |
 | What is the expected play cadence and session length? | **OPEN.** Daily modules and route pacing imply daily play, but retention, encounter-rate and time-to-evolution targets are not specified or validated. |
 | Are notifications/reminders part of the product? | **CURRENT: no.** Desired reminders, quiet hours, consent and notification copy are **OPEN**. |
 | What does “done” mean for a feature? | **DECIDED below in §13.7.** Code that merely renders in web is not sufficient for sensor, persistence, camera, GL or audio work. |

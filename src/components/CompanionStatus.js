@@ -11,6 +11,7 @@ import PixelSprite from './PixelSprite';
 import PixelText from './PixelText';
 import ProgressBar from './ProgressBar';
 import { palette, space, tokens } from '../theme';
+import { idleLine, encourageLine } from '../data/personality';
 
 export default function CompanionStatus({ companion, stats, style }) {
   if (!companion) {
@@ -31,6 +32,9 @@ export default function CompanionStatus({ companion, stats, style }) {
   // them here would be a second source of truth for the same numbers.
   const maxHp = companion.maxHp || Math.max(1, Math.round(companion.hp));
   const hpPart = Math.max(0, Math.min(1, companion.hp / maxHp));
+  const mood = companion.creature
+    ? (idleLine(companion.creature) || encourageLine(companion.creature))
+    : null;
 
   return (
     <View style={[{ flexDirection: 'row', alignItems: 'center' }, style]}>
@@ -78,20 +82,17 @@ export default function CompanionStatus({ companion, stats, style }) {
         {/* What you have actually done, since that is what moved the meters
             above it. */}
         {stats ? (
-          // One string with separators rather than three cells spaced apart:
-          // space-between has no slack left once the three readouts fill the
-          // row, so on a narrow phone they ran together into "18,400 steps8.4
-          // mi0 sessions". A separator cannot collapse.
-          //
-          // `workoutsDone` is the lifetime counter. This read `stats.workouts`,
-          // which is a per-DAY history stamp and does not exist on stats at all
-          // — so the HUD said "0 sessions" however much you had trained.
           <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 4 }}>
             {[
               `${(stats.totalSteps || 0).toLocaleString()} steps`,
               `${(stats.distanceMi || 0).toFixed(1)} mi`,
               `${stats.workoutsDone || 0} ${stats.workoutsDone === 1 ? 'session' : 'sessions'}`,
             ].join('  ·  ')}
+          </PixelText>
+        ) : null}
+        {mood ? (
+          <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 3 }} numberOfLines={2}>
+            {mood}
           </PixelText>
         ) : null}
       </View>

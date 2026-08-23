@@ -13,6 +13,7 @@
 import { familyChain, getCreature, STARTER_IDS } from './creatures';
 import { SCENE_TONES } from './sceneSky';
 import { HORIZON_ROUTES } from './regions';
+import { getWarden } from './wardens';
 
 // Cumulative pools. A longer walk can meet anyone you have already unlocked,
 // plus the new faces that trail introduces. Wild pick is random from this list.
@@ -337,16 +338,18 @@ export function isCreatureLocked(creatureId, trails) {
   return !isTrailUnlocked(routeId, trails);
 }
 
-const GROVE_ORDER = ['maple', 'cairn', 'gale', 'canopy', 'rill', 'ember'];
-
 export function nextRoute(routeId) {
-  const i = GROVE_ORDER.indexOf(routeId);
-  if (i >= 0 && i < GROVE_ORDER.length - 1) return getRoute(GROVE_ORDER[i + 1]);
+  const route = BY_ID[routeId];
+  if (!route) return null;
+  const siblings = ROUTES.filter((r) => r.regionId === route.regionId);
+  const i = siblings.findIndex((r) => r.id === routeId);
+  if (i >= 0 && i < siblings.length - 1) return siblings[i + 1];
   return null;
 }
 
 export function wardenBattle(route) {
   const next = nextRoute(route.id);
+  const keeper = getWarden(route.id);
   return {
     creatureId: route.warden,
     isCompanion: false,
@@ -357,6 +360,10 @@ export function wardenBattle(route) {
     from: 'route',
     routeId: route.id,
     warden: true,
+    trainerBattle: true,
+    trainer: keeper ? keeper.name : 'Warden',
+    trainerKit: keeper ? keeper.kit : 'hero_man',
+    trainerLine: keeper ? keeper.line : null,
     stageTone: route.stageTone,
     horizon: route.horizon,
     pinName: route.pinName,
