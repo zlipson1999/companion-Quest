@@ -1,5 +1,7 @@
-// The four trails. Each is a different place: its own terrain, its own
+// The trails. Each is a different place: its own terrain, its own
 // companions, its own Warden, and a Quest Pin for the first time you clear it.
+// Later trails keep a bigger random pool — Maple 3, Cairn 6, Gale 10,
+// Canopy 15, then the two long trails past eight miles.
 //
 // Gym cardio MUST NOT pass a routeId into ADD_DISTANCE — indoor miles are
 // real, but they are not trail miles, and a treadmill must never fill a
@@ -10,13 +12,22 @@
 
 import { familyChain, getCreature, STARTER_IDS } from './creatures';
 
+// Cumulative pools. A longer walk can meet anyone you have already unlocked,
+// plus the new faces that trail introduces. Wild pick is random from this list.
+const MAPLE_MEET = ['spinseed', 'bramblet', 'lanternbud'];
+const CAIRN_MEET = [...MAPLE_MEET, 'rubblet', 'chockit', 'facetel'];
+const GALE_MEET = [...CAIRN_MEET, 'whistlet', 'kitefin', 'loftburr', 'wispurr'];
+const CANOPY_MEET = [...GALE_MEET, 'fernap', 'dapple', 'stillcup', 'sporelet', 'pebblepup'];
+const RILL_MEET = [...CANOPY_MEET, ...STARTER_IDS, 'tidewade', 'bloomtail'];
+const EMBER_MEET = [...RILL_MEET, 'pyrelynx', 'cairnhound', 'galegait', 'mycobloom'];
+
 export const ROUTES = [
   {
     id: 'maple',
     name: 'Maple Trail',
     miles: 1.5,
     reps: 30,
-    companions: [...STARTER_IDS],
+    companions: MAPLE_MEET,
     warden: 'sludgewad',
     wardenHp: 55,
     wardenXp: 45,
@@ -39,7 +50,7 @@ export const ROUTES = [
     name: 'Cairn Cut',
     miles: 3,
     reps: 60,
-    companions: ['pebblepup'],
+    companions: CAIRN_MEET,
     warden: 'snoozeghoul',
     wardenHp: 72,
     wardenXp: 60,
@@ -64,7 +75,7 @@ export const ROUTES = [
     name: 'Gale Reach',
     miles: 5,
     reps: 100,
-    companions: ['wispurr'],
+    companions: GALE_MEET,
     warden: 'achefang',
     wardenHp: 90,
     wardenXp: 80,
@@ -87,7 +98,7 @@ export const ROUTES = [
     name: 'Canopy Run',
     miles: 8,
     reps: 160,
-    companions: ['sporelet'],
+    companions: CANOPY_MEET,
     warden: 'couchlurk',
     wardenHp: 115,
     wardenXp: 100,
@@ -104,6 +115,52 @@ export const ROUTES = [
     tallgrassChance: 28,
     flowerChance: 0,
     scatterTrees: 20,
+  },
+  {
+    id: 'rill',
+    name: 'Rill Crossing',
+    miles: 12,
+    reps: 220,
+    companions: RILL_MEET,
+    warden: 'brinegnash',
+    wardenHp: 140,
+    wardenXp: 120,
+    wardenBond: 20,
+    pinId: 'tide',
+    pinName: 'Tide Pin',
+    stageTone: 'rill',
+    horizon: 0.28,
+    mapId: 'route_rill',
+    laneFrac: 0.16,
+    laneMin: 2,
+    edge: 'rill',
+    tallgrassChance: 6,
+    flowerChance: 10,
+    scatterTrees: 2,
+    scatterWater: 18,
+  },
+  {
+    id: 'ember',
+    name: 'Ember Grade',
+    miles: 18,
+    reps: 320,
+    companions: EMBER_MEET,
+    warden: 'cindergrind',
+    wardenHp: 170,
+    wardenXp: 150,
+    wardenBond: 24,
+    pinId: 'ember',
+    pinName: 'Ember Pin',
+    stageTone: 'ember',
+    horizon: 0.22,
+    mapId: 'route_ember',
+    laneFrac: 0.2,
+    laneMin: 2,
+    edge: 'ember',
+    tallgrassChance: 0,
+    flowerChance: 8,
+    scatterTrees: 0,
+    scatterStone: 14,
   },
 ];
 
@@ -209,11 +266,28 @@ export function earnedPins(trails) {
 // Which trail a creature belongs to — Index uses this to silhouette anyone
 // whose trail is still locked. Built here so creatures.js never imports us.
 const CREATURE_TRAIL = {};
+// First-bond families are never silhouetted. They belong to Maple even
+// though the wild pool there is the three new grove faces.
+STARTER_IDS.forEach((id) => {
+  familyChain(id).forEach((cid) => { CREATURE_TRAIL[cid] = 'maple'; });
+});
 ROUTES.forEach((route) => {
   route.companions.forEach((root) => {
-    familyChain(root).forEach((id) => { CREATURE_TRAIL[id] = route.id; });
+    familyChain(root).forEach((id) => {
+      // First trail that names them owns the lock. Later cumulative pools
+      // must not re-lock Spinseed to Canopy.
+      if (!CREATURE_TRAIL[id]) CREATURE_TRAIL[id] = route.id;
+    });
   });
-  CREATURE_TRAIL[route.warden] = route.id;
+  if (!CREATURE_TRAIL[route.warden]) CREATURE_TRAIL[route.warden] = route.id;
+});
+
+const POOL_SIZES = { maple: 3, cairn: 6, gale: 10, canopy: 15, rill: 20, ember: 24 };
+ROUTES.forEach((route) => {
+  const want = POOL_SIZES[route.id];
+  if (want != null && route.companions.length !== want) {
+    throw new Error(`routes: ${route.id} pool is ${route.companions.length}, want ${want}`);
+  }
 });
 
 export function creatureTrailId(creatureId) {
@@ -274,9 +348,14 @@ export function trailRow(routeId, r, cols) {
       if (x < 1 || x > cols - 2) { row += n < 6 ? ',' : '.'; continue; }
     } else if (route.edge === 'canopy') {
       if (x < 2 || x > cols - 3) { row += n < 80 ? 'T' : '^'; continue; }
+    } else if (route.edge === 'rill') {
+      if (x < 1 || x > cols - 2) { row += n < 48 ? '~' : '.'; continue; }
+    } else if (route.edge === 'ember') {
+      if (x < 1 || x > cols - 2) { row += n < 40 ? '*' : '.'; continue; }
     }
     if (route.tallgrassChance && n < route.tallgrassChance) row += '^';
     else if (route.flowerChance && n < route.flowerChance) row += ',';
+    else if (route.scatterWater && n < route.scatterWater) row += '~';
     else if (route.scatterStone && n < route.scatterStone) row += '*';
     else if (route.scatterTrees && n < route.scatterTrees) row += 'T';
     else row += '.';

@@ -141,6 +141,20 @@ PALETTE_SPECS = {
     'snooze':  {'body': ('#2a2650', '#b9b6ee'), 'leaf': ('#413a72', '#d5d2ff'), 'belly': ('#38346a', '#c9c6f7')},
     'ache':    {'body': ('#6b1730', '#ffb0c4'), 'leaf': ('#93253f', '#ffd0dc'), 'belly': ('#7d2038', '#ffc2d2')},
     'couch':   {'body': ('#3f2a17', '#d4a374'), 'leaf': ('#5a3d22', '#e8c49a'), 'belly': ('#4d3520', '#dcb387')},
+    # Trail companions approved as original silhouettes — not recolours of the
+    # six families already in the roster.
+    'samara':  {'body': ('#1a4020', '#c8e878'), 'leaf': ('#6b5a18', '#ffe08a'), 'belly': ('#4a6b2a', '#f4ffd0')},
+    'bramble': {'body': ('#14280e', '#6a9a3a'), 'leaf': ('#2a4a16', '#c8e070'), 'belly': ('#3a2a14', '#b89050')},
+    'lantern': {'body': ('#1e3a16', '#8fc45a'), 'leaf': ('#7a4a08', '#ffd46a'), 'belly': ('#8a5a10', '#fff0b0')},
+    'chock':   {'body': ('#4a3420', '#d4b080'), 'leaf': ('#3a3028', '#a89878'), 'belly': ('#5c4830', '#ead8b0')},
+    'quartz':  {'body': ('#3a4a62', '#d8f0ff'), 'leaf': ('#6a88a8', '#ffffff'), 'belly': ('#4a6078', '#e8f4ff')},
+    'kite':    {'body': ('#5c4a28', '#f2e0b0'), 'leaf': ('#8a7a50', '#fff8e0'), 'belly': ('#6b5a38', '#fff4d0')},
+    'puff':    {'body': ('#6a6470', '#f4f0ea'), 'leaf': ('#8a9ab0', '#ffffff'), 'belly': ('#7a7468', '#fff8f0')},
+    'fern':    {'body': ('#0e3014', '#7ad060'), 'leaf': ('#1a4a20', '#c8f090'), 'belly': ('#2a4a24', '#d0e8a0')},
+    'dapple':  {'body': ('#1a2a14', '#6a8a40'), 'leaf': ('#6b5a18', '#f0d060'), 'belly': ('#2a3a20', '#a0c060')},
+    'moss':    {'body': ('#1a3020', '#6a9a58'), 'leaf': ('#0a3050', '#6ac8e0'), 'belly': ('#2a4030', '#c8e0a8')},
+    'brine':   {'body': ('#0a3040', '#7ad0d8'), 'leaf': ('#5a6a50', '#d0d0b0'), 'belly': ('#1a4048', '#a0e0e8')},
+    'scorch':  {'body': ('#4a1408', '#ff7a30'), 'leaf': ('#6b2a08', '#ffc040'), 'belly': ('#5c2010', '#ff9a50')},
     # Interior plaster. Its own palette because the wall and the floor were
     # both warm browns off the furniture ramp, so a room read as a brown box
     # with the corners missing. A painted wall is cooler and much paler than a
@@ -1631,6 +1645,259 @@ def sporelet(pal='spore'):
     c.eye(20, 33, 2.6)
     c.eye(29, 33, 2.6)
     c.blob(24.5, 38, 1.6, 1, 'eye', 0.0)
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def spinseed(pal='samara'):
+    """Maple-key spirit — a seed body between two samara wings."""
+    c = new_creature(pal)
+    c.shadow(24, 44, 11, 3)
+    c.poly([(4, 22), (18, 10), (20, 28), (8, 32)], 'leaf', 0.72)
+    c.poly([(44, 22), (30, 10), (28, 28), (40, 32)], 'leaf', 0.80)
+    c.sphere(24, 26, 8.5, 9.5, 'body')
+    c.sphere(24, 30, 5.0, 4.0, 'belly', ambient=0.55)
+    c.eye(20.5, 24, 2.6)
+    c.eye(27.5, 24, 2.6)
+    c.blob(24, 29, 1.6, 0.8, 'eye', 0.0)
+    c.occlude()
+    c.rim('leaf', 1.1)
+    c.outline()
+    return c
+
+
+def bramblet(pal='bramble'):
+    """Walking bramble knot — root-toes, leaf-ears, thorn texture."""
+    c = new_creature(pal)
+    c.shadow(24, 44, 12, 3)
+    c.poly([(12, 16), (15, 4), (22, 15)], 'leaf', 0.62)
+    c.poly([(36, 16), (33, 4), (26, 15)], 'leaf', 0.70)
+    c.sphere(24, 26, 13, 12, 'body')
+    c.sphere(24, 32, 7, 5, 'belly', ambient=0.50)
+    c.limb(16, 36, 12, 44, 2.2, 1.6, 'belly', ambient=0.28)
+    c.limb(32, 36, 36, 44, 2.2, 1.6, 'belly', ambient=0.34)
+    for sx, sy in ((14, 20), (34, 19), (18, 34), (31, 33)):
+        c.blob(sx, sy, 1.4, 1.1, 'leaf', 0.35)
+    c.eye(18.5, 23, 2.8)
+    c.eye(29.5, 23, 2.8)
+    c.blob(24, 29, 1.8, 0.9, 'eye', 0.0)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def lanternbud(pal='lantern'):
+    """Closed bud lantern — sap-light in the head, leafy feet."""
+    c = new_creature(pal)
+    c.shadow(24, 44, 10, 3)
+    c.limb(20, 36, 17, 44, 2.4, 2.0, 'body', ambient=0.30)
+    c.limb(28, 36, 31, 44, 2.4, 2.0, 'body', ambient=0.36)
+    c.sphere(24, 34, 6.5, 5.5, 'body')
+    c.poly([(14, 26), (24, 6), (34, 26)], 'leaf', 0.78)
+    c.sphere(24, 22, 8.5, 9.0, 'leaf', ambient=0.42)
+    c.sphere(24, 24, 5.0, 5.5, 'belly', ambient=0.72)
+    c.spec(21, 18, 2.6, 'belly', strength=0.55)
+    c.eye(20.5, 28, 2.4)
+    c.eye(27.5, 28, 2.4)
+    c.occlude()
+    c.rim('belly')
+    c.outline()
+    return c
+
+
+def rubblet(pal='rock'):
+    """Three cairn stones stacked, face in the middle rock."""
+    c = new_creature(pal)
+    c.shadow(24, 44, 12, 3)
+    c.sphere(24, 38, 11, 7, 'body', squash=0.7)
+    c.sphere(24, 28, 9, 7, 'leaf', ambient=0.40)
+    c.sphere(24, 18, 6.5, 5.5, 'belly', ambient=0.50)
+    c.eye(20.5, 27, 2.4)
+    c.eye(27.5, 27, 2.4)
+    c.blob(24, 31, 1.5, 0.7, 'eye', 0.0)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def chockit(pal='chock'):
+    """Wedge climbing-stone with grip-toes."""
+    c = new_creature(pal)
+    c.shadow(24, 44, 11, 3)
+    c.poly([(8, 36), (40, 14), (42, 38), (12, 42)], 'body', 0.58)
+    c.rect(14, 28, 34, 30, 'leaf', 0.70)
+    c.limb(16, 40, 13, 45, 2.0, 1.5, 'belly', ambient=0.30)
+    c.limb(30, 40, 34, 45, 2.0, 1.5, 'belly', ambient=0.36)
+    c.eye(26, 26, 2.6)
+    c.eye(34, 22, 2.6)
+    c.blob(30, 29, 1.6, 0.8, 'eye', 0.0)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def facetel(pal='quartz'):
+    """Quartz cluster — face lives in the largest facet."""
+    c = new_creature(pal)
+    c.shadow(24, 44, 11, 3)
+    c.sphere(24, 36, 8, 6, 'body', squash=0.75)
+    c.poly([(16, 32), (20, 10), (28, 12), (30, 32)], 'leaf', 0.82)
+    c.poly([(28, 30), (34, 8), (40, 18), (36, 34)], 'belly', 0.70)
+    c.poly([(12, 30), (10, 16), (18, 14), (20, 32)], 'body', 0.55)
+    c.eye(21, 22, 2.3)
+    c.eye(27, 20, 2.3)
+    c.spec(22, 14, 2.0, 'leaf', strength=0.6)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def whistlet(pal='air'):
+    """Reed-flute bird — hollow beak, pennant crest, not a cloud cat."""
+    c = new_creature(pal)
+    c.shadow(24, 44, 10, 3)
+    c.limb(28, 24, 42, 20, 2.2, 1.1, 'leaf', ambient=0.50)
+    c.sphere(22, 26, 10, 9, 'body')
+    c.sphere(22, 30, 6, 4, 'belly', ambient=0.58)
+    c.poly([(16, 16), (20, 6), (26, 16)], 'leaf', 0.75)
+    c.limb(18, 34, 16, 44, 1.6, 1.2, 'body', ambient=0.30)
+    c.limb(26, 34, 28, 44, 1.6, 1.2, 'body', ambient=0.36)
+    c.eye(18, 23, 2.6)
+    c.eye(25, 23, 2.6)
+    c.blob(22, 28, 1.5, 0.7, 'eye', 0.0)
+    c.occlude()
+    c.rim('leaf', 1.2)
+    c.outline()
+    return c
+
+
+def kitefin(pal='kite'):
+    """Thin kite-ray — diamond sail, ribbon tail."""
+    c = new_creature(pal)
+    c.shadow(24, 44, 12, 3)
+    c.poly([(24, 8), (42, 26), (24, 36), (6, 26)], 'body', 0.62)
+    c.poly([(24, 14), (36, 26), (24, 32), (12, 26)], 'belly', 0.78)
+    c.limb(24, 36, 20, 46, 1.4, 0.7, 'leaf', ambient=0.44)
+    c.limb(24, 36, 28, 46, 1.4, 0.7, 'leaf', ambient=0.50)
+    c.eye(20, 24, 2.2)
+    c.eye(28, 24, 2.2)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def loftburr(pal='puff'):
+    """Seed-parachute puff — thread legs, fluff for a head."""
+    c = new_creature(pal)
+    c.shadow(24, 44, 10, 3)
+    c.sphere(24, 20, 13, 12, 'body', ambient=0.48)
+    c.sphere(24, 22, 8, 7, 'belly', ambient=0.70)
+    c.limb(20, 30, 16, 44, 1.1, 0.6, 'leaf', ambient=0.40)
+    c.limb(28, 30, 32, 44, 1.1, 0.6, 'leaf', ambient=0.46)
+    for sx, sy, sr in ((14, 14, 3.2), (34, 13, 3.0), (24, 10, 3.4), (18, 24, 2.6)):
+        c.sphere(sx, sy, sr, sr * 0.9, 'leaf', ambient=0.62)
+    c.eye(19.5, 20, 2.5)
+    c.eye(28.5, 20, 2.5)
+    c.blob(24, 24, 1.5, 0.8, 'eye', 0.0)
+    c.occlude()
+    c.rim('leaf', 1.2)
+    c.outline()
+    return c
+
+
+def fernap(pal='fern'):
+    """Fiddlehead — a spiral body, sleepy eyes in the coil."""
+    c = new_creature(pal)
+    c.shadow(24, 44, 10, 3)
+    pts = []
+    for i in range(14):
+        t = i / 13.0
+        ang = t * 4.2 * math.pi
+        rad = 2.2 + t * 11
+        pts.append((24 + math.cos(ang) * rad, 26 + math.sin(ang) * rad * 0.85))
+    for i, (x, y) in enumerate(pts):
+        r = 2.0 + i * 0.18
+        c.sphere(x, y, r, r * 0.9, 'body' if i % 2 == 0 else 'leaf', ambient=0.34 + i * 0.02)
+    c.sphere(24, 24, 6, 5.5, 'belly', ambient=0.55)
+    c.eye(21, 23, 2.3)
+    c.eye(27, 23, 2.3)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def dapple(pal='dapple'):
+    """Shade-moth — wings patterned like light through leaves."""
+    c = new_creature(pal)
+    c.shadow(24, 44, 12, 3)
+    c.poly([(4, 28), (8, 12), (22, 18), (20, 32)], 'body', 0.50)
+    c.poly([(44, 28), (40, 12), (26, 18), (28, 32)], 'body', 0.58)
+    c.blob(12, 20, 2.4, 2.0, 'leaf', 0.85)
+    c.blob(36, 19, 2.2, 1.8, 'leaf', 0.90)
+    c.blob(16, 26, 1.8, 1.5, 'leaf', 0.80)
+    c.blob(32, 25, 1.8, 1.5, 'leaf', 0.84)
+    c.sphere(24, 26, 7, 7, 'belly')
+    c.eye(21, 25, 2.3)
+    c.eye(27, 25, 2.3)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def stillcup(pal='moss'):
+    """Moss cup holding a bead of rain."""
+    c = new_creature(pal)
+    c.shadow(24, 44, 11, 3)
+    c.limb(18, 36, 15, 44, 2.2, 1.8, 'body', ambient=0.28)
+    c.limb(30, 36, 33, 44, 2.2, 1.8, 'body', ambient=0.34)
+    c.sphere(24, 32, 12, 9, 'body', squash=0.65)
+    c.sphere(24, 28, 8, 5, 'leaf', ambient=0.70)
+    c.spec(21, 26, 2.4, 'leaf', strength=0.55)
+    c.eye(19, 34, 2.4)
+    c.eye(29, 34, 2.4)
+    c.blob(24, 37, 1.6, 0.8, 'eye', 0.0)
+    c.occlude()
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def brinegnash(pal='brine'):
+    """Salt-cramp obstacle — a crusted, dripping mass."""
+    c = new_creature(pal)
+    c.shadow(24, 43, 15, 3)
+    c.sphere(24, 30, 17, 13, 'body', squash=0.75)
+    c.sphere(14, 22, 6, 5, 'leaf')
+    c.sphere(34, 24, 5.5, 5, 'leaf')
+    for dx, dy, r in ((11, 41, 2.2), (20, 43, 2.0), (29, 43, 2.1), (38, 40, 1.8)):
+        c.sphere(dx, dy, r, r * 1.2, 'belly', ambient=0.48)
+    c.eye(18, 28, 3.2)
+    c.eye(30, 28, 3.2)
+    c.rect(19, 34, 30, 36, 'eye', 0.0)
+    c.rim('leaf')
+    c.outline()
+    return c
+
+
+def cindergrind(pal='scorch'):
+    """Overuse obstacle — a grinding ember that will not sit down."""
+    c = new_creature(pal)
+    c.shadow(24, 43, 15, 3)
+    c.sphere(24, 31, 16, 12, 'body', squash=0.8)
+    c.sphere(24, 24, 10, 8, 'leaf', ambient=0.40)
+    c.poly([(16, 16), (20, 6), (24, 16)], 'leaf', 0.85)
+    c.poly([(24, 16), (28, 5), (32, 16)], 'belly', 0.80)
+    c.eye(18, 30, 3.0)
+    c.eye(30, 30, 3.0)
+    c.rect(20, 36, 29, 37, 'eye', 0.0)
     c.rim('leaf')
     c.outline()
     return c
@@ -4004,8 +4271,13 @@ def build_all():
     add('cairnhound', pebblepup()); add('monolithound', pebblepup())
     add('galegait', wispurr()); add('skywhorl', wispurr())
     add('mycobloom', sporelet()); add('canopore', sporelet())
+    add('spinseed', spinseed()); add('bramblet', bramblet()); add('lanternbud', lanternbud())
+    add('rubblet', rubblet()); add('chockit', chockit()); add('facetel', facetel())
+    add('whistlet', whistlet()); add('kitefin', kitefin()); add('loftburr', loftburr())
+    add('fernap', fernap()); add('dapple', dapple()); add('stillcup', stillcup())
     add('sludgewad', sludgewad()); add('snoozeghoul', snoozeghoul())
     add('couchlurk', couchlurk()); add('achefang', achefang())
+    add('brinegnash', brinegnash()); add('cindergrind', cindergrind())
 
     # People. Each player character gets its own four facings x three frames on
     # its own palette, so picking a character changes who walks around rather

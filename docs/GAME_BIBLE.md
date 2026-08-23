@@ -91,7 +91,7 @@ src/
   data/        creatures, goals, exercises(+learnset/tiers/breakdown), items,
                wild, obstacles, workouts(6), maps(4 places + zones),
                movements(140), muscles(14), recipes(74), shop, characters,
-               outfits, route(pacing), routes(four trails / Wardens / Quest Pins),
+               outfits, route(pacing), routes(six trails / Wardens / Quest Pins),
                sprites.js + tileAtlas.js
                (BOTH GENERATED — never edit by hand)
   state/       GameContext (reducer, save), leveling, evolution, history,
@@ -196,7 +196,7 @@ clears it.
 | `sparIntro` | SparIntroScreen | safety redirect; live path is bumping Rowan, who sends Pebblepup |
 | `cookbook` | CookbookScreen | the kitchen shelf: 74 recipes, 18 categories, search over names/blurbs/tags/ingredients |
 | `smoothiebar` | SmoothieBarScreen | the gym's bar; spends Trail Credit (§5.6) |
-| `route` | RouteScreen | four trails — §5.4 |
+| `route` | RouteScreen | six trails — §5.4 |
 | `battle` | BattleScreen | §6 |
 | `workout` | WorkoutScreen | 6 preset routines (data/workouts.js), pay ×`workoutXpMult`; a station can pin one via `params.workoutId` |
 | `rest` | HomeRestScreen | your house (13×15 downstairs, 11×13 bedroom); the bed sleeps (`HEAL_FULL`) |
@@ -310,25 +310,29 @@ explicit `stage: 1|2|3`. Wild-family evolution names remain clearance candidates
   is nothing to meet — so the hook hands back the delta and the caller decides.
   **Gym cardio must not pass `routeId`.** Indoor miles still count as real
   walking (XP, credit, lifetime stats) but they do not fill a trail quota.
-- **Four trails** (`src/data/routes.js`), save `version: 9`. Maple Trail is
+- **Six trails** (`src/data/routes.js`), save `version: 9`. Maple Trail is
   unlocked from the start. Walk that trail's miles and confirm its reps in
   challenges, then Challenge the Warden. First win grants the Quest Pin, a
-  Kinship Knot, and the next trail's companions.
+  Kinship Knot, and the next trail. Wild companion pick is random from that
+  trail's pool. Pools grow with the walk: 3, 6, 10, 15, 20, 24. Later pools
+  keep earlier faces and add new ones. Pin-path mileage is 1.5+3+5+8+12+18
+  = 47.5 miles.
 
-  | Trail | Miles | Reps | Companions | Warden | Pin |
+  | Trail | Miles | Reps | Pool | Warden | Pin |
   |---|---|---|---|---|---|
-  | Maple Trail | 1.5 | 30 | starters (Grove) | Sludgewad | Maple Pin |
-  | Cairn Cut | 3 | 60 | Pebblepup (Stone) | Snoozeghoul | Stone Pin |
-  | Gale Reach | 5 | 100 | Wispurr (Wind) | Achefang | Gale Pin |
-  | Canopy Run | 8 | 160 | Sporelet (Rest) | Couchlurk | Canopy Pin |
+  | Maple Trail | 1.5 | 30 | 3 | Sludgewad | Maple Pin |
+  | Cairn Cut | 3 | 60 | 6 | Snoozeghoul | Stone Pin |
+  | Gale Reach | 5 | 100 | 10 | Achefang | Gale Pin |
+  | Canopy Run | 8 | 160 | 15 | Couchlurk | Canopy Pin |
+  | Rill Crossing | 12 | 220 | 20 | Brinegnash | Tide Pin |
+  | Ember Grade | 18 | 320 | 24 | Cindergrind | Ember Pin |
 
-  Each trail is a different place (not one shared grass strip): Maple is a
-  green lane with trees; Cairn is packed earth and stone (`tile_gym_platform`);
-  Gale is open country with a thin track and more sky; Canopy is dense shade
-  on `tile_gym_turf`. BattleStage tones match. The Index silhouettes
-  locked-trail creatures. Status lists Quest Pins. The trail switcher shows
-  all four; locked ones are disabled. Original terms only: trail, Warden,
-  Quest Pin. `creatures.js` does not import `routes.js`.
+  Each trail is a different place: Maple trees and grass; Cairn packed earth
+  (`tile_gym_platform`); Gale open sky; Canopy shade on `tile_gym_turf`;
+  Rill water margins; Ember warm mats (`tile_gym_mats`). BattleStage tones
+  match. The Index silhouettes locked-trail creatures. Status lists Quest
+  Pins. Original terms only: trail, Warden, Quest Pin. `creatures.js` does
+  not import `routes.js`.
 - RouteScreen used to carry a second mode for the cardio deck, rendered as
   the outdoor trail with its trees switched off; the deck lives in the gym
   now (§5.7).
@@ -607,15 +611,18 @@ faint.
 4. `backlight()` (rim opposite the key light) and `spec()` (hotspots) are what
    read as "modern".
 
-### 8.3 Sprite inventory (101 runtime sprites + 416 atlas cells)
+### 8.3 Sprite inventory (115 runtime sprites + 416 atlas cells)
 
-- Creatures 48×48 authored @2× = 96 px: **18 companions — 6 families of 3
+- Creatures 48×48 authored @2× = 96 px: **30 companions — 6 families of 3
   stages, every one of them TRACED** (sproutle→bloomtail→groveheart,
   emberkit→pyrelynx→cindermane, dewbble→tidewade→maelstride,
   pebblepup→cairnhound→monolithound, wispurr→galegait→skywhorl,
-  sporelet→mycobloom→canopore) — plus 4 obstacles (sludgewad, snoozeghoul,
-  achefang, couchlurk), which are procedural. An evolution is its OWN drawn
-  sprite, never a tinted copy of the base.
+  sporelet→mycobloom→canopore) plus twelve trail-only stage-1s (spinseed,
+  bramblet, lanternbud, rubblet, chockit, facetel, whistlet, kitefin,
+  loftburr, fernap, dapple, stillcup) — plus 6 obstacles (sludgewad, snoozeghoul,
+  achefang, couchlurk, brinegnash, cindergrind). Trail-only faces and the two
+  new Wardens are procedural. An evolution is its OWN drawn sprite, never a
+  tinted copy of the base.
   The first three families are the ones offered at first bond
   (each goal names its own via `GOALS[].companionId`; `STARTER_IDS` is a
   convenience list the running game does not read); all six are met on the

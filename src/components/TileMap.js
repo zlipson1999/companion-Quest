@@ -167,6 +167,7 @@ const FIELD_BY_MAP = {
   home: 'tile_home_floor',
   route_cairn: 'tile_gym_platform',
   route_canopy: 'tile_gym_turf',
+  route_ember: 'tile_gym_mats',
 };
 
 function groundKey(prefix, x, y) {

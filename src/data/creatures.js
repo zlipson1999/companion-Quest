@@ -129,6 +129,80 @@ export const CREATURES = {
     evolvesTo: null,
   },
 
+  // --- Trail companions (stage 1, catchable; longer trails add more to the pool) ---
+  spinseed: {
+    id: 'spinseed', stage: 1, name: 'Spinseed', sprite: 'spinseed', palette: 'samara',
+    species: 'Samara Companion', kind: 'wild', type: 'grove', baseHp: 56, catchable: true, catchRate: 0.55,
+    flavor: 'A maple-key spirit. It helicopters beside you for as long as you keep walking.',
+    evolvesTo: null,
+  },
+  bramblet: {
+    id: 'bramblet', stage: 1, name: 'Bramblet', sprite: 'bramblet', palette: 'bramble',
+    species: 'Bramble Knot Companion', kind: 'wild', type: 'grove', baseHp: 62, catchable: true, catchRate: 0.5,
+    flavor: 'A walking knot of living bramble. Thorny to look at, patient on the lane.',
+    evolvesTo: null,
+  },
+  lanternbud: {
+    id: 'lanternbud', stage: 1, name: 'Lanternbud', sprite: 'lanternbud', palette: 'lantern',
+    species: 'Sap-Lantern Companion', kind: 'wild', type: 'grove', baseHp: 58, catchable: true, catchRate: 0.52,
+    flavor: 'A closed bud that holds a bead of sap-light. It brightens when you show up.',
+    evolvesTo: null,
+  },
+  rubblet: {
+    id: 'rubblet', stage: 1, name: 'Rubblet', sprite: 'rubblet', palette: 'rock',
+    species: 'Cairn Stack Companion', kind: 'wild', type: 'stone', baseHp: 70, catchable: true, catchRate: 0.45,
+    flavor: 'Three stones that decided to travel together. The middle one does the talking.',
+    evolvesTo: null,
+  },
+  chockit: {
+    id: 'chockit', stage: 1, name: 'Chockit', sprite: 'chockit', palette: 'chock',
+    species: 'Wedge-Stone Companion', kind: 'wild', type: 'stone', baseHp: 68, catchable: true, catchRate: 0.46,
+    flavor: 'A climbing wedge with grip-toes. It likes a path that leans uphill.',
+    evolvesTo: null,
+  },
+  facetel: {
+    id: 'facetel', stage: 1, name: 'Facetel', sprite: 'facetel', palette: 'quartz',
+    species: 'Quartz Cluster Companion', kind: 'wild', type: 'stone', baseHp: 64, catchable: true, catchRate: 0.48,
+    flavor: 'A shy face lives in the largest facet. Catch the light and it looks back.',
+    evolvesTo: null,
+  },
+  whistlet: {
+    id: 'whistlet', stage: 1, name: 'Whistlet', sprite: 'whistlet', palette: 'air',
+    species: 'Reed-Wind Companion', kind: 'wild', type: 'wind', baseHp: 54, catchable: true, catchRate: 0.58,
+    flavor: 'A reed-flute bird. It only sings when you are actually moving.',
+    evolvesTo: null,
+  },
+  kitefin: {
+    id: 'kitefin', stage: 1, name: 'Kitefin', sprite: 'kitefin', palette: 'kite',
+    species: 'Kite-Ray Companion', kind: 'wild', type: 'wind', baseHp: 52, catchable: true, catchRate: 0.6,
+    flavor: 'A thin sail of a creature. The wind holds it up; your pace keeps it near.',
+    evolvesTo: null,
+  },
+  loftburr: {
+    id: 'loftburr', stage: 1, name: 'Loftburr', sprite: 'loftburr', palette: 'puff',
+    species: 'Seed-Parachute Companion', kind: 'wild', type: 'wind', baseHp: 50, catchable: true, catchRate: 0.62,
+    flavor: 'A puff of seed-down with thread legs. It drifts until you give it somewhere to land.',
+    evolvesTo: null,
+  },
+  fernap: {
+    id: 'fernap', stage: 1, name: 'Fernap', sprite: 'fernap', palette: 'fern',
+    species: 'Fiddlehead Companion', kind: 'wild', type: 'rest', baseHp: 60, catchable: true, catchRate: 0.5,
+    flavor: 'A curled fern that unfurls a little more after an honest rest.',
+    evolvesTo: null,
+  },
+  dapple: {
+    id: 'dapple', stage: 1, name: 'Dapple', sprite: 'dapple', palette: 'dapple',
+    species: 'Shade-Moth Companion', kind: 'wild', type: 'rest', baseHp: 56, catchable: true, catchRate: 0.54,
+    flavor: 'Wings like sunlight through leaves. It settles when you stop rushing.',
+    evolvesTo: null,
+  },
+  stillcup: {
+    id: 'stillcup', stage: 1, name: 'Stillcup', sprite: 'stillcup', palette: 'moss',
+    species: 'Rain-Cup Companion', kind: 'wild', type: 'rest', baseHp: 58, catchable: true, catchRate: 0.52,
+    flavor: 'A moss cup that holds one bead of rain. Stillness is how it stays full.',
+    evolvesTo: null,
+  },
+
   // --- Obstacle creatures (bad habits — cleared, not caught) ---
   sludgewad: {
     id: 'sludgewad', name: 'Sludgewad', sprite: 'sludgewad', palette: 'sludge',
@@ -150,11 +224,31 @@ export const CREATURES = {
     species: 'The Slump', kind: 'obstacle', type: 'rest', baseHp: 75, catchable: false,
     flavor: 'The cozy pull of the couch. Tougher than it looks — but you are tougher still.',
   },
+  brinegnash: {
+    id: 'brinegnash', name: 'Brinegnash', sprite: 'brinegnash', palette: 'brine',
+    species: 'The Cramp', kind: 'obstacle', type: 'tide', baseHp: 95, catchable: false,
+    flavor: 'Salt and skipped water, grinding in the calves. Drink, then move through it.',
+  },
+  cindergrind: {
+    id: 'cindergrind', name: 'Cindergrind', sprite: 'cindergrind', palette: 'scorch',
+    species: 'The Overwork', kind: 'obstacle', type: 'ember', baseHp: 120, catchable: false,
+    flavor: 'The grind that will not sit down. Hard days without recovery, given teeth.',
+  },
 };
 
 export const STARTER_IDS = ['sproutle', 'emberkit', 'dewbble'];
-export const WILD_COMPANION_IDS = ['sproutle', 'emberkit', 'dewbble', 'pebblepup', 'wispurr', 'sporelet'];
-export const OBSTACLE_IDS = ['sludgewad', 'snoozeghoul', 'achefang', 'couchlurk'];
+export const TRAIL_COMPANION_IDS = [
+  'spinseed', 'bramblet', 'lanternbud',
+  'rubblet', 'chockit', 'facetel',
+  'whistlet', 'kitefin', 'loftburr',
+  'fernap', 'dapple', 'stillcup',
+];
+export const WILD_COMPANION_IDS = [
+  ...STARTER_IDS, 'pebblepup', 'wispurr', 'sporelet', ...TRAIL_COMPANION_IDS,
+];
+export const OBSTACLE_IDS = [
+  'sludgewad', 'snoozeghoul', 'achefang', 'couchlurk', 'brinegnash', 'cindergrind',
+];
 export const ALL_CREATURE_IDS = Object.keys(CREATURES);
 
 // Types belong on the creature, not on the trail table — creatures.js must
@@ -165,6 +259,8 @@ export const CREATURE_TYPES = {
   stone: 'Stone',
   wind: 'Wind',
   rest: 'Rest',
+  tide: 'Tide',
+  ember: 'Ember',
 };
 
 export function getCreature(id) {

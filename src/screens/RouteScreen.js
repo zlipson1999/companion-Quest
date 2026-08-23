@@ -54,12 +54,16 @@ const SCENE_SKY = {
   cairn: '#5c5a52',
   gale: '#6aa8dc',
   canopy: '#1c2a1a',
+  rill: '#3a6a88',
+  ember: '#6a2a14',
 };
 const SCENE_HAZE = {
   maple: '#7fa8d8',
   cairn: '#b0a890',
   gale: '#d0e8f8',
   canopy: '#3a5a32',
+  rill: '#8ec8d8',
+  ember: '#d87838',
 };
 
 function ScrollingScene({ width, height, moving, trailId }) {
