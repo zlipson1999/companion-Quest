@@ -6,9 +6,10 @@ file over anything drawn; a `traced_*.json` that reaches no sprite fails
 the build. A trail face without a master fails the build. There is no
 `sphere()` stand-in.
 
-**54 transparent masters** are committed in `tools/reference_art/`
+**57 transparent masters** are committed in `tools/reference_art/`
 (top-level `*.png` only; approval lineups sit in `lineups/` and are not
-counted). That is all 18 original-six forms plus all 36 trail-family forms.
+counted). That is all 18 original-six forms plus all 36 trail-family forms
+plus Dusthorn → Mesaquill → Suncerast.
 The three first-bond families are complete first-rendition lines
 (magenta keyed out, not a re-render of an old indexed grid):
 Sproutle → Bloomtail → Groveheart, Emberkit → Pyrelynx → Cindermane,
@@ -32,6 +33,7 @@ are scenic plates — their ship masters were re-generated isolated, not
 split out of the forest/sky. The first-bond plate is Sproutle / Emberkit
 / Dewbble. The original-six stage-1 plate is `lineups/originalsix.png`.
 The Sporelet family plate is `lineups/sporelet_family.png`.
+The Dusthorn family plate is `lineups/dusthorn_family.png`.
 
 The authored world-material atlas lives in `assets/textures/masters/`.
 `tools/convert_texture_atlas.py` turns its cells into indexed runtime tiles.

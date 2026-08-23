@@ -27,7 +27,10 @@ the species bar — look at them, do not ship them.
 same pose is not a stage. The Gale/Canopy and Lanternbud/Chockit/Dapple
 lines were remade so `python3 tools/check_art.py` passes. Stillcup is
 the moss-kid / bowl-sleeper / walking-basin line (named masters
-`stillcup` / `dewbasin` / `rainhold`; pink rim flowers stay). Do not
+`stillcup` / `dewbasin` / `rainhold`; pink rim flowers stay). Dusthorn is
+the first 40-family spec line: stout horned-toad / lean spiked runner /
+sun-rune stone golem (named masters `dusthorn` / `mesaquill` /
+`suncerast`; magenta chroma keyed, yellow runes stay). Do not
 loosen the check. The skill is `tools/CHARACTER_PROMPT.md`.
 
 - **Maple and Cairn** sit on a flat field. Split with

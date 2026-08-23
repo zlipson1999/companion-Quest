@@ -25,6 +25,7 @@ export const WILD_COMPANIONS = {
   fernap: { hp: 46, xp: 40, bond: 10 },
   dapple: { hp: 42, xp: 40, bond: 10 },
   stillcup: { hp: 44, xp: 40, bond: 10 },
+  dusthorn: { hp: 46, xp: 36, bond: 8 },
   bloomtail: { hp: 70, xp: 44, bond: 10 },
   pyrelynx: { hp: 74, xp: 44, bond: 10 },
   tidewade: { hp: 68, xp: 44, bond: 10 },

@@ -296,7 +296,7 @@ Evolve points are **per companion** — earned by whoever is active.
 
 **Evolution gate** = level AND points, checked after battle level-ups
 (`canEvolve`): stage 1→2 at Lv 5 + 30 pts; stage 2→3 at Lv 14 + 110 pts.
-Eighteen full lines — the original six (Sproutle→Bloomtail→Groveheart,
+Nineteen full lines — the original six (Sproutle→Bloomtail→Groveheart,
 Emberkit→Pyrelynx→Cindermane, Dewbble→Tidewade→Maelstride,
 Pebblepup→Cairnhound→Monolithound, Wispurr→Galegait→Skywhorl,
 Sporelet→Mycobloom→Canopore) plus twelve trail families with the same
@@ -305,7 +305,8 @@ Lanternbud→Gleambud→Grovelamp, Rubblet→Cairnstack→Dolmenhold,
 Chockit→Crackwedge→Cliffchock, Facetel→Prismore→Quartzspire,
 Whistlet→Reedgale→Stormflute, Kitefin→Ribbonsail→Skysheet,
 Loftburr→Driftpuff→Cloudburr, Fernap→Fiddlefrond→Frondrest,
-Dapple→Glimmoth→Leaflight, Stillcup→Dewbasin→Rainhold). Creatures carry
+Dapple→Glimmoth→Leaflight, Stillcup→Dewbasin→Rainhold) and the first
+spec family (Dusthorn→Mesaquill→Suncerast). Creatures carry
 explicit `stage: 1|2|3`. Only the stage-1 form is catchable; later stages
 are grown, never knotted.
 
@@ -628,9 +629,9 @@ faint.
 4. `backlight()` (rim opposite the key light) and `spec()` (hotspots) are what
    read as "modern".
 
-### 8.3 Sprite inventory (139 runtime sprites + 416 atlas cells)
+### 8.3 Sprite inventory (142 runtime sprites + 416 atlas cells)
 
-- Creatures 48×48 authored @2× = 96 px: **54 companions — 18 families of 3
+- Creatures 48×48 authored @2× = 96 px: **57 companions — 19 families of 3
   stages**. The first six families are TRACED (sproutle→bloomtail→groveheart,
   emberkit→pyrelynx→cindermane, dewbble→tidewade→maelstride,
   pebblepup→cairnhound→monolithound, wispurr→galegait→skywhorl,
@@ -641,10 +642,12 @@ faint.
   chockit→crackwedge→cliffchock, facetel→prismore→quartzspire,
   whistlet→reedgale→stormflute, kitefin→ribbonsail→skysheet,
   loftburr→driftpuff→cloudburr, fernap→fiddlefrond→frondrest,
-  dapple→glimmoth→leaflight, stillcup→dewbasin→rainhold — plus 6 obstacles
+  dapple→glimmoth→leaflight, stillcup→dewbasin→rainhold — plus the
+  first spec family dusthorn→mesaquill→suncerast (Red Mesa / Suncrack)
+  and 6 obstacles
   (sludgewad, snoozeghoul, achefang, couchlurk, brinegnash, cindergrind).
-  All thirty-six trail forms are traced from isolated masters (approved
-  lineups, then one creature per file). The two new Wardens remain
+  All thirty-six trail forms and the Dusthorn line are traced from isolated
+  masters (approved lineups, then one creature per file). The two new Wardens remain
   procedural. An evolution is its OWN master and a new silhouette —
   baby / adolescent / adult, never a tinted, scaled, or outlined copy
   of the base. `check_art.py` fails a family whose stages are too
@@ -832,7 +835,7 @@ Status labels:
 | What devices and OS versions are supported? | **OPEN.** Portrait is forced and tablets are allowed; minimum Android/iOS versions, screen sizes, low-end device floor and tablet UX are unspecified. |
 | Is the game free, paid, ad-supported or subscription-based? | **OPEN.** No monetization or entitlement code exists. |
 | Is an account required? Is there cloud sync or multi-device play? | **CURRENT: no.** One local save, no auth, no cloud backup, no export/import. Whether this is permanent is **OPEN**. |
-| What is the content target at launch? | **OPEN.** Current roster is 54 companion forms across 18 families plus 6 obstacles; roadmap expansion is aspiration, not a launch commitment. |
+| What is the content target at launch? | **OPEN.** Current roster is 57 companion forms across 19 families plus 6 obstacles; roadmap expansion is aspiration, not a launch commitment. |
 | What is the expected play cadence and session length? | **OPEN.** Daily modules and route pacing imply daily play, but retention, encounter-rate and time-to-evolution targets are not specified or validated. |
 | Are notifications/reminders part of the product? | **CURRENT: no.** Desired reminders, quiet hours, consent and notification copy are **OPEN**. |
 | What does “done” mean for a feature? | **DECIDED below in §13.7.** Code that merely renders in web is not sufficient for sensor, persistence, camera, GL or audio work. |
@@ -1031,7 +1034,7 @@ A change is done only when all applicable items are true:
    catch economy, exercise volume and evolution pacing.
 7. Trace the wild/obstacle creatures; add a reduced-motion evolution ceremony.
 8. Add progression charts from PR/weight history.
-9. Expand past 18 companion families only after the content validator,
+9. Expand past 19 companion families only after the content validator,
    rights/provenance record and balance targets exist.
 10. Then consider per-exercise battle animation, a richer obstacle roster and
     town growth.

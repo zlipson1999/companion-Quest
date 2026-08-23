@@ -153,6 +153,9 @@ PALETTE_SPECS = {
     'fern':    {'body': ('#0e3014', '#7ad060'), 'leaf': ('#1a4a20', '#c8f090'), 'belly': ('#2a4a24', '#d0e8a0')},
     'dapple':  {'body': ('#1a2a14', '#6a8a40'), 'leaf': ('#6b5a18', '#f0d060'), 'belly': ('#2a3a20', '#a0c060')},
     'moss':    {'body': ('#1a3020', '#6a9a58'), 'leaf': ('#0a3050', '#6ac8e0'), 'belly': ('#2a4030', '#c8e0a8')},
+    # Red Mesa horned-lizard family: ochre / rust scales, cream horns, sun-gold.
+    'mesa':    {'body': ('#5c2410', '#e8a050'), 'leaf': ('#8a4a14', '#f4d070'),
+                'belly': ('#8a6a38', '#f8ead0'), 'accent': ('#c47a08', '#ffe66a')},
     'brine':   {'body': ('#0a3040', '#7ad0d8'), 'leaf': ('#5a6a50', '#d0d0b0'), 'belly': ('#1a4048', '#a0e0e8')},
     'scorch':  {'body': ('#4a1408', '#ff7a30'), 'leaf': ('#6b2a08', '#ffc040'), 'belly': ('#5c2010', '#ff9a50')},
     # Interior plaster. Its own palette because the wall and the floor were
@@ -4068,6 +4071,7 @@ def build_all():
         'fernap', 'fiddlefrond', 'frondrest',
         'dapple', 'glimmoth', 'leaflight',
         'stillcup', 'dewbasin', 'rainhold',
+        'dusthorn', 'mesaquill', 'suncerast',
     ):
         add(trail_id)
     add('sludgewad', sludgewad()); add('snoozeghoul', snoozeghoul())

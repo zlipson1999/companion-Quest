@@ -1,5 +1,3 @@
-import { HORIZON_CREATURES } from './horizonCreatures';
-
 // Original creature roster. Two kinds of wild creature:
 //  - befriendable COMPANIONS (catchable: starters + wild species), each of
 //    which can join your team; some evolve.
@@ -351,6 +349,29 @@ export const CREATURES = {
     evolvesTo: null,
   },
 
+  // --- Spec expansion: Red Mesa / Suncrack Trail ---
+  dusthorn: {
+    id: 'dusthorn', stage: 1, name: 'Dusthorn', sprite: 'dusthorn', palette: 'mesa',
+    species: 'Horned-Lizard Companion', kind: 'wild', type: 'stone',
+    baseHp: 64, catchable: true, catchRate: 0.48,
+    flavor: 'A sandstone toad with a fan for a tail. The hornlets catch the first heat of the day.',
+    evolvesTo: 'mesaquill', evolveLevel: 5, evolvePoints: 30,
+  },
+  mesaquill: {
+    id: 'mesaquill', stage: 2, name: 'Mesaquill', sprite: 'mesaquill', palette: 'mesa',
+    species: 'Sun-Quill Companion', kind: 'evolution', type: 'stone',
+    baseHp: 108, scale: 1.18, catchable: false,
+    flavor: 'The body lengthens. Layered scales and sunlit quills take the mesa at a run.',
+    evolvesTo: 'suncerast', evolveLevel: 14, evolvePoints: 110,
+  },
+  suncerast: {
+    id: 'suncerast', stage: 3, name: 'Suncerast', sprite: 'suncerast', palette: 'mesa',
+    species: 'Sun-Crest Guardian Companion', kind: 'evolution', type: 'stone',
+    baseHp: 166, scale: 1.32, catchable: false,
+    flavor: 'A mesa that learned to stand. The sun on its chest is the heat you walked through.',
+    evolvesTo: null,
+  },
+
   // --- Obstacle creatures (bad habits — cleared, not caught) ---
   sludgewad: {
     id: 'sludgewad', name: 'Sludgewad', sprite: 'sludgewad', palette: 'sludge',
@@ -383,10 +404,6 @@ export const CREATURES = {
     flavor: 'The grind that will not sit down. Hard days without recovery, given teeth.',
   },
 
-  // Horizon families (40 x 3). Reserved for named trails that are not
-  // walkable yet. User plates still incoming — interim masters live in
-  // tools/reference_art/ and were drawn by tools/horizon_kit.py.
-  ...HORIZON_CREATURES,
 };
 
 export const STARTER_IDS = ['sproutle', 'emberkit', 'dewbble'];
@@ -396,9 +413,10 @@ export const TRAIL_COMPANION_IDS = [
   'whistlet', 'kitefin', 'loftburr',
   'fernap', 'dapple', 'stillcup',
 ];
+export const SPEC_FAMILY_IDS = ['dusthorn'];
 export const WILD_COMPANION_IDS = [
   ...STARTER_IDS, 'pebblepup', 'wispurr', 'sporelet', ...TRAIL_COMPANION_IDS,
-  ...HORIZON_COMPANION_IDS,
+  ...SPEC_FAMILY_IDS,
 ];
 export const OBSTACLE_IDS = [
   'sludgewad', 'snoozeghoul', 'achefang', 'couchlurk', 'brinegnash', 'cindergrind',
