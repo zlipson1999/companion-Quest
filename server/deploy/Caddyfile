@@ -1,0 +1,11 @@
+# HTTPS in two lines. Replace the domain, run `caddy run` (or the systemd
+# service below), and Caddy fetches and renews the certificate itself.
+#
+#   sudo caddy run --config /etc/caddy/Caddyfile
+#
+# The proxy terminates TLS and forwards to the Node server on 8787. Remember
+# TRUST_PROXY=1 in the server's .env, or one busy player rate-limits everyone.
+
+api.example.com {
+  reverse_proxy 127.0.0.1:8787
+}

@@ -49,6 +49,12 @@ jobs:
         # where the entire JS bundle lives.
         run: touch dist/.nojekyll
 
+      - name: Publish static pages (privacy policy)
+        # The privacy policy rides along with the game so it has a stable URL
+        # for the app stores and OAuth consent screens:
+        #   https://zlipson1999.github.io/companion-Quest/privacy.html
+        run: cp web/privacy.html dist/privacy.html
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
