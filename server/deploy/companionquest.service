@@ -1,0 +1,26 @@
+# systemd unit for the Companion Quest server (Coach proxy + friends + saves).
+#
+#   sudo cp companionquest.service /etc/systemd/system/
+#   sudo systemctl enable --now companionquest
+#
+# The .env lives beside the server and is loaded by the app itself; this unit
+# only needs to know where the code is and to keep it alive.
+
+[Unit]
+Description=Companion Quest server (coach, friends, cloud saves)
+After=network.target
+
+[Service]
+Type=simple
+User=companionquest
+WorkingDirectory=/opt/companion-quest/server
+ExecStart=/usr/bin/node index.js
+Restart=always
+RestartSec=3
+# The SQLite file holds real training logs. Keep the process from wandering.
+ProtectSystem=full
+ReadWritePaths=/opt/companion-quest/server
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
