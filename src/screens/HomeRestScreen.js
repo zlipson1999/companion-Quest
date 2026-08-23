@@ -45,6 +45,27 @@ export default function HomeRestScreen() {
   // coming back to the gym door.
   const [floorId, setFloorId] = useState(() => recallSpot('home:floor', 'downstairs'));
   const [sleeping, setSleeping] = useState(false);
+
+  // Maple's homework: after her tour and Rowan's contest, the first visit home
+  // walks you through the other half of the game — the kitchen logs what you
+  // eat, the desk keeps your habits, the bed is real rest. You DO each one
+  // rather than being told about it; the step advances when the thing is used.
+  const tourStep = state.meta.homeTourStep || 0;
+  const homeTour = !!(companion && state.meta.coachIntroDone && state.meta.sparDone && !state.meta.homeTourDone);
+  const TOUR_HINTS = [
+    'Maple’s tip: the kitchen logs what you actually eat — walk to the fridge or worktop',
+    'Upstairs — the desk keeps your daily habits. Go log one honestly',
+    'Last one: walk into your bed. Real rest restores Resolve — never feel guilty about it',
+  ];
+  // Her voice follows you home once, to say what the house actually does
+  // before the hints take over. Local state on purpose: interrupting again on
+  // every re-entry would turn a welcome into a nag.
+  const [briefed, setBriefed] = useState(!homeTour || tourStep > 0);
+  const BRIEFING = [
+    { speaker: 'Coach Maple', text: 'One more lesson, and it lives in your own house: home is training too. Three things here feed the same journey the iron does.' },
+    { speaker: 'Coach Maple', text: 'The kitchen logs what you actually ate — no calorie maths, just honesty. The desk upstairs keeps your daily habits. And the bed is real rest: Resolve comes back while you sleep.' },
+    { speaker: 'Coach Maple', text: 'Try the kitchen first. Log something true, then the desk, then get some sleep. That is a whole day done right.' },
+  ];
   const floor = FLOORS[floorId];
   const [player, setPlayer] = useState(() =>
     recallSpot(`home:${floorId}`, { ...floor.spawn, facing: 'up' }, (s) => isWalkable(floor, s.x, s.y))
@@ -94,7 +115,7 @@ export default function HomeRestScreen() {
     forgetSpot('home:upstairs');
   };
   const move = (dir) => {
-    if (sleeping) return;
+    if (sleeping || !briefed) return;
     const { x, y } = playerRef.current;
     const nx = dir === 'left' ? x - 1 : dir === 'right' ? x + 1 : x;
     const ny = dir === 'up' ? y - 1 : dir === 'down' ? y + 1 : y;
@@ -115,6 +136,10 @@ export default function HomeRestScreen() {
     // than the sleep LOG, so it is handled before the furniture table.
     if (floorId === 'upstairs' && nx === floor.bed.x && ny === floor.bed.y) {
       setFacing(null);
+      // The bed is the tour's last stop: resting completes the homework.
+      if (homeTour && tourStep >= 2) {
+        dispatch({ type: 'MARK_META', payload: { homeTourDone: true } });
+      }
       setTimeout(sleep, 120);
       return;
     }
@@ -124,6 +149,17 @@ export default function HomeRestScreen() {
       setFacing(station);
       if (station && station.screen) {
         playSfx('confirm');
+        // Tour steps advance by DOING: using the kitchen moves you to the
+        // desk, using the desk sends you to bed. Any diet log counts as the
+        // kitchen; the desk or any habit log counts as habits.
+        if (homeTour) {
+          const moduleId = station.params && station.params.moduleId;
+          if (tourStep === 0 && moduleId === 'diet') {
+            dispatch({ type: 'MARK_META', payload: { homeTourStep: 1 } });
+          } else if (tourStep === 1 && (station.screen === 'habits' || moduleId)) {
+            dispatch({ type: 'MARK_META', payload: { homeTourStep: 2 } });
+          }
+        }
         rememberSpot('home:floor', floorId);
         rememberSpot(`home:${floorId}`, playerRef.current);
         setTimeout(() => navigate(station.screen, station.params || {}), 140);
@@ -148,8 +184,13 @@ export default function HomeRestScreen() {
       player={player}
       onMove={move}
       place={floor.name}
-      objective={facing ? facing.label : floor.hint}
-      status={<CompanionStatus companion={companion} stats={state.stats} />}
+      objective={homeTour ? TOUR_HINTS[Math.min(tourStep, 2)] : facing ? facing.label : floor.hint}
+      showControl={briefed}
+      status={
+        !briefed
+          ? <DialogueBox lines={BRIEFING} onComplete={() => setBriefed(true)} />
+          : <CompanionStatus companion={companion} stats={state.stats} />
+      }
     />
   );
 }

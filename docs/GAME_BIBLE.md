@@ -98,7 +98,7 @@ src/
   state/       GameContext (reducer, save), leveling, evolution, history,
                recovery, economy (Trail Credit), cardioMaths (console numbers),
                useDistance, stepDetector, storage
-  screens/     Router + 31 screens (§4), plus useCardio (the one path real
+  screens/     Router + 30 screens (§4), plus useCardio (the one path real
                distance takes into the game) and placeMemory (where you were
                standing in each place)
   components/  30 building blocks (§9)
@@ -158,7 +158,7 @@ the bed sleeps or logs last night, the desk is your habits,
 the kitchen counters log a meal, the kitchen shelf is the cookbook, the sofa is
 stillness, the wardrobe is your bag.
 
-## 4. Screens (all 31, registered in `screens/Router.js`)
+## 4. Screens (all 30, registered in `screens/Router.js`)
 
 Router holds the `SCREENS` map, `navigate(name, params)`, `toBattle(params)`
 (which plays the `BattleTransition` flash/wipe first), a `TOWN_BGM` set — every
@@ -187,7 +187,6 @@ clears it.
 |---|---|---|
 | `title` | TitleScreen | logo, Continue, and (no save, server configured) "Sign in — continue a journey" → `friends`. Deliberately NO start-over here; erasing lives in Options (RESET then `title`, so outfit/character creation runs on Enter the World) |
 | `intro` | IntroScreen | Coach's typewriter welcome |
-| `coachTutorial` | CoachTutorialScreen | Coach Maple's welcome lessons — how the gym, the kitchen, the bed and the habits connect. Reached by walking up to her with no companion; flows into `goal` |
 | `goal` | GoalSelectScreen | companion creation — the first-rendition plate (Sproutle, Emberkit, Dewbble). Same type as character creation: three faces, pick one. The goal is that companion's temperament. |
 | `pairing` | PairingScreen | first-bond ceremony + Coach lines |
 | `outfit` | OutfitSelectScreen | character creation — the three-face player plate, then gym outfit |

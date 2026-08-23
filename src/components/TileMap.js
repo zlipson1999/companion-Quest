@@ -409,7 +409,43 @@ function StandingSprite({ spriteKey, s }) {
   );
 }
 
-export default function TileMap({ map, player, tileSize, style, viewport }) {
+// A guided NPC — Coach Maple leading the gym tour. Moves and animates exactly
+// like the player so a step reads as a step, not a teleport.
+function Walker({ walker, s }) {
+  const pos = useRef(new Animated.ValueXY({ x: walker.x * s, y: walker.y * s })).current;
+  const [wf, setWf] = useState(0);
+  const last = useRef(`${walker.x},${walker.y}`);
+  const park = useRef(null);
+  useEffect(() => {
+    Animated.timing(pos, { toValue: { x: walker.x * s, y: walker.y * s }, duration: STEP_MS, useNativeDriver: true }).start();
+    const key = `${walker.x},${walker.y}`;
+    if (key !== last.current) {
+      last.current = key;
+      setWf((f) => (f === 1 ? 2 : 1));
+      if (park.current) clearTimeout(park.current);
+      park.current = setTimeout(() => setWf(0), STEP_MS);
+    }
+  }, [walker.x, walker.y, s, pos]);
+  useEffect(() => () => { if (park.current) clearTimeout(park.current); }, []);
+  const key = (walker.kind === 'rowan' ? rowanSprite : coachSprite)(walker.facing || 'down', wf);
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        width: s,
+        height: s,
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        transform: [{ translateX: pos.x }, { translateY: pos.y }],
+      }}
+    >
+      <PixelSprite spriteKey={key} size={widthForHeight(key, s * 1.85)} />
+    </Animated.View>
+  );
+}
+
+export default function TileMap({ map, player, tileSize, style, viewport, walker }) {
   const { state } = useGame();
   const s = tileSize;
   const pos = useRef(new Animated.ValueXY({ x: player.x * s, y: player.y * s })).current;
@@ -519,6 +555,7 @@ export default function TileMap({ map, player, tileSize, style, viewport }) {
         fadeDuration={0}
         style={{ position: 'absolute', left: 0, top: 0, width: map.cols * s, height: map.rows * s }}
       />
+      {walker ? <Walker walker={walker} s={s} /> : null}
       <Animated.View
         style={{
           position: 'absolute',
