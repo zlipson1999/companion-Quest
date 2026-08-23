@@ -14,7 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: horizon-pipeline-masters
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-python@v5
@@ -24,46 +23,17 @@ jobs:
       - name: Install Pillow
         run: pip install pillow
 
-      - name: Generate, convert, rebuild sprites
+      - name: Generate convert rebuild validate
         run: bash tools/ship_horizon_masters.sh
-
-      - name: Update docs for 174 masters / 259 sprites
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          bible = Path('docs/GAME_BIBLE.md')
-          bt = bible.read_text()
-          bt = bt.replace('### 8.3 Sprite inventory (139 runtime sprites + 416 atlas cells)',
-                          '### 8.3 Sprite inventory (259 runtime sprites + 416 atlas cells)')
-          bt = re.sub(r'\*\*54 companions — 18 families of 3\n  stages\*\*',
-                      '**174 companions — 58 families of 3\n  stages** (18 Grove + 40 Horizon)', bt)
-          bible.write_text(bt)
-          art = Path('docs/ART_KIT.md')
-          at = art.read_text()
-          at = at.replace('**54 transparent masters**', '**174 transparent masters**')
-          at = at.replace('That is all 18 original-six forms plus all 36 trail-family forms.',
-                          'That is all 54 Grove forms plus all 120 Horizon first-pass pipeline forms.')
-          art.write_text(at)
-          cd = Path('tools/check_docs.py')
-          t = cd.read_text()
-          old = "    companions = len(re.findall(r'^  \\w+: \\{$', creatures, re.M)) - obstacles"
-          if 'horizonCreatures' not in t and old in t:
-              new = """    horizon = read('src/data/horizonCreatures.js') if (ROOT / 'src/data/horizonCreatures.js').exists() else ''
-    companions = (len(re.findall(r'^  \\w+: \\{$', creatures, re.M)) - obstacles
-                  + len(re.findall(r'^  \\w+: \\{$', horizon, re.M)))"""
-              cd.write_text(t.replace(old, new, 1))
-          print('docs patched')
-          PY
 
       - name: Commit generated masters
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A tools/reference_art tools/traced_*.json tools/make_sprites.py src/data/sprites.js docs/ tools/check_docs.py tools/check_art.py tools/ship_horizon_masters.sh || true
+          git add -A tools/reference_art tools/traced_*.json tools/make_sprites.py src/data/sprites.js docs/ || true
           if git diff --staged --quiet; then
             echo "No asset changes to commit"
           else
             git commit -m "Horizon first-pass masters: 120 unique stage plates (CI ship)"
-            git push origin HEAD:horizon-pipeline-masters
+            git push
           fi
