@@ -90,6 +90,9 @@ of one prompt are not a family.
 - **Emberkit** (sitting cub) → **Pyrelynx** (standing flame-ear lynx)
   → **Cindermane** (fire-mane beast)
 - **Dewbble** (dewdrop) → **Tidewade** → **Maelstride**
+- **Fernap** (pear + cream belly + one tight fiddlehead stalk) →
+  **Fiddlefrond** (unfurled plant humanoid, two-frond heart crest) →
+  **Frondrest** (walking canopy / palm headdress). Not a taller coil.
 - **Loftburr** (brown bulb, 8-lobe cotton boll, six root-tendrils) →
   **Driftpuff** (pear body releasing seedlets) → **Cloudburr**
   (sleepy brown teardrop under a seed-cloud, five floating tufts).
