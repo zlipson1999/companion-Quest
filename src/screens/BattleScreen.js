@@ -92,16 +92,19 @@ export default function BattleScreen({ params }) {
   const teamFull = party.members.length >= 6;
 
   const [wildHp, setWildHp] = useState(target.hp);
-  const [companionHp, setCompanionHp] = useState(Math.max(1, Math.round(companion.hp)));
+  const [companionHp, setCompanionHp] = useState(Math.max(1, Math.round((companion && companion.hp) || 1)));
 
   const [phase, setPhase] = useState('message');
-  const [lines, setLines] = useState(() =>
-    params.trainerBattle || params.trainer
+  const [lines, setLines] = useState(() => {
+    if (!companion) {
+      return [{ speaker: 'Narration', text: 'Meet Coach Maple in the gym — then the trail has someone to stand with you.' }];
+    }
+    return params.trainerBattle || params.trainer
       ? trainerSparLines(companion.creature.name, params.trainer || 'Rowan', wild.name)
       : params.opponent
         ? sparIntro(companion.creature.name, wild.name)
-        : wildIntro(companion.creature.name, wild.name, target.isCompanion)
-  );
+        : wildIntro(companion.creature.name, wild.name, target.isCompanion);
+  });
   const thenRef = useRef(() => setPhase('menu'));
 
   const [selectedMove, setSelectedMove] = useState(null);
@@ -110,7 +113,7 @@ export default function BattleScreen({ params }) {
   // Moves come from the companion's level and evolution stage, already
   // decorated with tier scaling — never from the raw exercise table, or a
   // Tier III companion would fight with Tier I numbers.
-  const battleMoves = battleMovesFor(companion.level, companion.creature.stage || 1);
+  const battleMoves = companion ? battleMovesFor(companion.level, companion.creature.stage || 1) : [];
   const getMove = (id) => battleMoves.find((m) => m.id === id) || null;
 
   const [wildHit, setWildHit] = useState(0);
@@ -174,6 +177,16 @@ export default function BattleScreen({ params }) {
     loop.start();
     return () => loop.stop();
   }, [evolving, evoFlash]);
+
+  // Route encounters and the gym spar both assume a party. If this screen
+  // is opened without one, do not read companion.creature.
+  if (!companion) {
+    return (
+      <Screen style={{ padding: space.md, justifyContent: 'flex-end' }}>
+        <DialogueBox lines={lines} onComplete={() => navigate(returnTo)} />
+      </Screen>
+    );
+  }
 
   const finish = () => navigate(returnTo);
 

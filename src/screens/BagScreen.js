@@ -24,6 +24,12 @@ export default function BagScreen() {
       setToast(`${item.name} is used in battle, not here.`);
       return;
     }
+    // Wardrobe and lockers open before pairing. Consuming a heal into
+    // nobody is the same class of bug as the sprite crash below.
+    if (!companion) {
+      setToast('Meet Coach Maple in the gym — items are for the two of you.');
+      return;
+    }
     dispatch({ type: 'USE_ITEM', payload: { itemId: id } });
     playSfx(item.effect && item.effect.heal ? 'heal' : 'item');
     const parts = [];
@@ -40,17 +46,28 @@ export default function BagScreen() {
       </PixelText>
 
       <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={36} />
-          <View style={{ flex: 1, marginLeft: space.sm }}>
-            <HPBar hp={companion.hp} maxHp={companion.maxHp} width={180} label="HP" />
-            {/* Your tab, where you keep your things. The bar is the only place
-                it is spent, so this is the only place it needs to be read. */}
+        {companion ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={36} />
+            <View style={{ flex: 1, marginLeft: space.sm }}>
+              <HPBar hp={companion.hp} maxHp={companion.maxHp} width={180} label="HP" />
+              {/* Your tab, where you keep your things. The bar is the only place
+                  it is spent, so this is the only place it needs to be read. */}
+              <PixelText size="tiny" color={palette.secondary} style={{ marginTop: 6 }}>
+                {`${state.credits || 0} Trail Credit`}
+              </PixelText>
+            </View>
+          </View>
+        ) : (
+          <View>
+            <PixelText size="tiny" color={palette.windowFill} style={{ lineHeight: 14 }}>
+              Meet Coach Maple in the gym. The bag is for the two of you.
+            </PixelText>
             <PixelText size="tiny" color={palette.secondary} style={{ marginTop: 6 }}>
               {`${state.credits || 0} Trail Credit`}
             </PixelText>
           </View>
-        </View>
+        )}
       </Window>
 
       <Window tone="cream" pad={10} style={{ marginBottom: space.sm }}>

@@ -225,7 +225,7 @@ export default function ForgeScreen({ params }) {
       lines.push({ speaker: 'Narration', text: "Logged. Today's growth was already banked — rest is part of it." });
       playSfx('confirm');
     }
-    if (done.perks.length) {
+    if (done.perks.length && companion) {
       lines.push({ speaker: companion.creature.name, text: `${done.perks.map((p) => p.name).join(' and ')} — I could feel that in the work.` });
     }
     if (newPrs.length) {
@@ -238,27 +238,33 @@ export default function ForgeScreen({ params }) {
       });
     }
     if (preview.goalJustHit) lines.push({ speaker: 'Narration', text: habitGoalLine(module.name) });
-    const after = levelFromXp(companion.xp + preview.reward.xp);
-    if (after > companion.level) {
-      playSfx('levelup');
-      lines.push({ speaker: 'Narration', text: levelUpLine(companion.creature.name, after) });
-    }
+    // Racks open before pairing. MODULE_LOG already no-ops an empty party;
+    // the crash was reading companion.creature / companion.xp here.
+    if (companion) {
+      const after = levelFromXp(companion.xp + preview.reward.xp);
+      if (after > companion.level) {
+        playSfx('levelup');
+        lines.push({ speaker: 'Narration', text: levelUpLine(companion.creature.name, after) });
+      }
 
-    // Evolution can no longer only happen in battle. A player who lifts and
-    // never fights was previously capped at their starting form forever, which
-    // made the whole progression invisible to exactly the people this module is
-    // for. Project the points this session just paid, since `companion` is the
-    // pre-dispatch snapshot.
-    const projected = {
-      ...companion,
-      evo: (companion.evo || 0) + pointsFor('session') + pointsFor('pr', newPrs.length),
-    };
-    const creature = getCreature(companion.id);
-    if (canEvolve(projected, creature, after)) {
-      const evoLines = evolveLines(creature.name, getCreature(creature.evolvesTo).name);
-      lines.push(evoLines[0], evoLines[2]);
-      playSfx('evolve');
-      dispatch({ type: 'EVOLVE', payload: { newId: creature.evolvesTo } });
+      // Evolution can no longer only happen in battle. A player who lifts and
+      // never fights was previously capped at their starting form forever, which
+      // made the whole progression invisible to exactly the people this module is
+      // for. Project the points this session just paid, since `companion` is the
+      // pre-dispatch snapshot.
+      const projected = {
+        ...companion,
+        evo: (companion.evo || 0) + pointsFor('session') + pointsFor('pr', newPrs.length),
+      };
+      const creature = getCreature(companion.id);
+      if (canEvolve(projected, creature, after)) {
+        const evoLines = evolveLines(creature.name, getCreature(creature.evolvesTo).name);
+        lines.push(evoLines[0], evoLines[2]);
+        playSfx('evolve');
+        dispatch({ type: 'EVOLVE', payload: { newId: creature.evolvesTo } });
+      }
+    } else {
+      lines.push({ speaker: 'Narration', text: 'Meet Coach Maple in the gym — then this work has someone to grow.' });
     }
     setResultLines(lines);
     setPhase('result');
@@ -269,7 +275,13 @@ export default function ForgeScreen({ params }) {
     return (
       <Screen style={{ padding: space.md, justifyContent: 'flex-end' }}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={110} bob />
+          {companion ? (
+            <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={110} bob />
+          ) : (
+            <PixelText size="tiny" color={palette.windowFill} align="center" style={{ lineHeight: 14 }}>
+              Meet Coach Maple in the gym.
+            </PixelText>
+          )}
         </View>
         <DialogueBox
           lines={resultLines}

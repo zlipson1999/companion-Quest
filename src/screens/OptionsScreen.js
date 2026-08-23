@@ -7,6 +7,7 @@ import { palette, space } from '../theme';
 import { useGame, wipeSave } from '../state';
 import { DEFAULT_BODY_WEIGHT_LB, displayWeight } from '../state/cardioMaths';
 import { useNav } from './navContext';
+import { forgetAll } from './placeMemory';
 import { setMuted, setBgmMuted, playSfx } from '../audio';
 
 function Toggle({ label, value, onToggle }) {
@@ -117,7 +118,7 @@ export default function OptionsScreen() {
             </PixelText>
             <View style={{ flexDirection: 'row', marginTop: space.md }}>
               <PixelButton label="Cancel" tone="plain" sound="cancel" style={{ flex: 1, marginRight: 6 }} onPress={() => setConfirm(false)} />
-              <PixelButton label="Erase" tone="danger" style={{ flex: 1, marginLeft: 6 }} onPress={async () => { await wipeSave(); dispatch({ type: 'RESET' }); navigate('title'); }} />
+              <PixelButton label="Erase" tone="danger" style={{ flex: 1, marginLeft: 6 }} onPress={async () => { await wipeSave(); forgetAll(); dispatch({ type: 'RESET' }); navigate('title'); }} />
             </View>
           </Window>
         ) : (

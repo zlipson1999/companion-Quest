@@ -34,8 +34,9 @@ export default function WorkoutScreen({ params = {} }) {
   const complete = () => {
     const mult = pacingForGoal(state.goalId).workoutXpMult || 1;
     const gainedXp = Math.round((workout.reward.xp || 0) * mult);
-    const beforeLevel = companion.level;
-    const afterLevel = levelFromXp(companion.xp + gainedXp);
+    // The iron is reachable before pairing. The session still happened —
+    // COMPLETE_WORKOUT already no-ops companion XP on an empty party —
+    // but the dialogue used to read companion.creature and throw.
     dispatch({
       type: 'COMPLETE_WORKOUT',
       // Each line of the routine is a set you did, so a six-part circuit
@@ -43,13 +44,21 @@ export default function WorkoutScreen({ params = {} }) {
       payload: { workoutId: workout.id, reward: workout.reward, sets: workout.steps.length },
     });
     playSfx('heal');
-    const lines = [
-      { speaker: companion.creature.name, text: workoutComplete() },
-      { speaker: 'Narration', text: `+${gainedXp} XP   +${workout.reward.bond} bond` },
-    ];
-    if (afterLevel > beforeLevel) {
-      playSfx('levelup');
-      lines.push({ speaker: 'Narration', text: levelUpLine(companion.creature.name, afterLevel) });
+    const lines = companion
+      ? [
+          { speaker: companion.creature.name, text: workoutComplete() },
+          { speaker: 'Narration', text: `+${gainedXp} XP   +${workout.reward.bond} bond` },
+        ]
+      : [
+          { speaker: 'Narration', text: 'You did the work.' },
+          { speaker: 'Narration', text: 'Meet Coach Maple in the gym — then this session has someone to grow.' },
+        ];
+    if (companion) {
+      const afterLevel = levelFromXp(companion.xp + gainedXp);
+      if (afterLevel > companion.level) {
+        playSfx('levelup');
+        lines.push({ speaker: 'Narration', text: levelUpLine(companion.creature.name, afterLevel) });
+      }
     }
     setResultLines(lines);
     setPhase('result');
@@ -59,7 +68,13 @@ export default function WorkoutScreen({ params = {} }) {
     return (
       <Screen style={{ padding: space.md, justifyContent: 'flex-end' }}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={110} bob />
+          {companion ? (
+            <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={110} bob />
+          ) : (
+            <PixelText size="tiny" color={palette.windowFill} align="center" style={{ lineHeight: 14 }}>
+              Meet Coach Maple in the gym.
+            </PixelText>
+          )}
         </View>
         <DialogueBox lines={resultLines} onComplete={pinned ? goBack : () => navigate('hub')} />
       </Screen>
