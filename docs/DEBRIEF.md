@@ -38,9 +38,8 @@ Play-quality and Trailkeeper UI live on #31/#32 if those are still open.
 - **A18/A19** — first-run walking beat and on-scene web-trail copy live on
   the play-quality branch if it has not merged.
 - **Full Circle** is a designed no-op (A33), not a bug.
-- **Stage bar.** Several Gale/Canopy and trail evo families were the same
-  pose three times. The gate must keep failing those until the art is
-  remade. Do not loosen `check_art.py`.
+- **Stage bar is closed on this branch.** `check_art.py` passes all 18
+  families. Do not loosen the gate.
 
 ## What this PR closes
 
@@ -57,10 +56,10 @@ Play-quality and Trailkeeper UI live on #31/#32 if those are still open.
   Maple/Cairn and the player card. Stage 2/3 of those lines
   (Bloomtail/Groveheart, Pyrelynx/Cindermane, Tidewade/Maelstride) are
   their own isolated masters: baby / adolescent / adult, not tints.
-- **Stage bar remakes** for families that were failing as clones. Each
-  remade stage gets its own isolated master and its own `traced_<id>.json`.
-  Ids are permanent. Families we could not remake at first-rendition
-  quality stay failing and stay named.
+- **Stage bar remakes** for the clone trail families (Stillcup, Kitefin,
+  Whistlet, Lanternbud, Chockit, Dapple, and the rest of Gale/Canopy).
+  Each remade stage has its own isolated master and `traced_<id>.json`.
+  Ids are permanent. `check_art.py` now passes all 18 families.
 
 ## What we searched before the plates arrived
 
