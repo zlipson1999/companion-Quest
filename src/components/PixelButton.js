@@ -4,7 +4,7 @@
 import React from 'react';
 import { Pressable } from 'react-native';
 import PixelText from './PixelText';
-import { palette } from '../theme';
+import { palette, scale } from '../theme';
 import { playSfx } from '../audio';
 
 const TONES = {
@@ -19,6 +19,9 @@ export default function PixelButton({ label, onPress, tone = 'primary', disabled
   const t = TONES[tone] || TONES.primary;
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      accessibilityLabel={label}
       disabled={disabled}
       onPress={() => {
         if (disabled) return;
@@ -30,6 +33,7 @@ export default function PixelButton({ label, onPress, tone = 'primary', disabled
           backgroundColor: t.fill,
           borderColor: palette.ink,
           borderWidth: 3,
+          minHeight: scale.touchMin,
           paddingVertical: 10,
           paddingHorizontal: 16,
           alignItems: 'center',
