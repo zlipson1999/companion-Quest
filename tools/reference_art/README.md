@@ -51,6 +51,25 @@ sun-rune stone golem (named masters `dusthorn` / `mesaquill` /
 loosen the check. The skill is `tools/CHARACTER_PROMPT.md`.
 
 
+
+**Plinkbat family (Rainshadow Forest / Dripstone Trail).** Named
+masters `plinkbat` / `cavernwing` / `rainvault`. Magenta chroma keyed;
+pink blush, ice-blue crystals, purple eyes, and silver claws stay.
+Stage 1 is a chibi ice-eared crystal kit (no arms; three belly
+diamonds). Stage 2 is a lean mineral-veined bat with silver
+earrings — not a larger kit. Stage 3 is a six-eyed stone gargoyle
+whose wings drip into icicle points. Approval plate:
+`lineups/plinkbat_family.png`.
+
+
+**Burrcalf family (Golden Steppe / Thistlehoof Way).** Named masters
+`burrcalf` / `thistlebuck` / `prairieguard`. Magenta chroma keyed;
+purple thistles, sage burs, and cream fur stay. Stage 1 is a stocky
+Highland calf stuck with purple and sage burs. Stage 2 is a
+forward-facing thistle-crown deer — not a recolor of the calf.
+Stage 3 is a frontal folk bison with a grass-and-thistle crown and
+chest emblem. Approval plate: `lineups/burrcalf_family.png`.
+
 **Propfin family (Mangrove Maze / Rootwater Boardwalk).** Named
 masters `propfin` / `mangrusk` / `rootback`. Magenta chroma keyed;
 teal eyes and cream throats stay. Stage 1 is a kawaii frog-spider

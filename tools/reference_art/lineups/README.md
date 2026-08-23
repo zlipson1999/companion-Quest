@@ -18,6 +18,7 @@ is the three attached Create Your Companion faces, isolated from magenta.
 | `propfin_family.png` | Propfin family | Propfin, Mangrusk, Rootback | Magenta field — lineup only |
 | `clinket_family.png` | Clinket family | Clinket, Bellstride, Canyonchime | Magenta field — lineup only |
 | `glintfoal_family.png` | Glintfoal family | Glintfoal, Astramare, Cometmane | Magenta field — lineup only |
+| `plinkbat_family.png` | Plinkbat family | Plinkbat, Cavernwing, Rainvault | Magenta field — lineup only |
 
 The locked prompt that produced them is `tools/CHARACTER_PROMPT.md`.
 A lineup is three **species**. Each species still owes a family plate
@@ -40,3 +41,4 @@ species. They are for looking at. Each stage still ships as its own
 isolated master under `tools/reference_art/<id>.png` (or
 `<root>_stageN.png`). `pebblepup_family.png` is Pebblepup /
 Cairnhound / Monolithound.
+| `burrcalf_family.png` | Burrcalf family | Burrcalf, Thistlebuck, Prairieguard | Magenta field — lineup only |

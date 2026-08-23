@@ -258,37 +258,37 @@ export const HORIZON_CREATURES = {
   plinkbat: {
     id: 'plinkbat', stage: 1, name: 'Plinkbat', sprite: 'plinkbat', palette: 'art_plinkbat',
     species: 'Droplet-Ear Companion', kind: 'wild', type: 'rest', baseHp: 50, catchable: true, catchRate: 0.58,
-    flavor: 'A round bat with droplet ears. Dripstone is a metronome it likes.',
+    flavor: 'A chibi ice-eared crystal kit. Pink blush, white icicles on the ears, three belly diamonds. Dripstone is a metronome it likes.',
     evolvesTo: 'cavernwing', evolveLevel: 5, evolvePoints: 30,
   },
   cavernwing: {
     id: 'cavernwing', stage: 2, name: 'Cavernwing', sprite: 'cavernwing', palette: 'art_cavernwing',
     species: 'Mineral-Wing Companion', kind: 'evolution', type: 'rest', baseHp: 90, scale: 1.18, catchable: false,
-    flavor: 'Mineral-veined wings. The forest above the cave is still a cave to it.',
+    flavor: 'A lean mineral-veined bat. Ice-blue crystals, silver ear-gems, silver claws. Not a larger smiling kit.',
     evolvesTo: 'rainvault', evolveLevel: 14, evolvePoints: 110,
   },
   rainvault: {
     id: 'rainvault', stage: 3, name: 'Rainvault', sprite: 'rainvault', palette: 'art_rainvault',
     species: 'Cavern-Ceiling Guardian Companion', kind: 'evolution', type: 'rest', baseHp: 144, scale: 1.32, catchable: false,
-    flavor: 'Wings like a dripping ceiling. Shelter you made by slowing down.',
+    flavor: 'A stone gargoyle. Six purple face-eyes, a five-eye chest, wings shredded into icicle points. The kit is gone.',
     evolvesTo: null,
   },
   burrcalf: {
     id: 'burrcalf', stage: 1, name: 'Burrcalf', sprite: 'burrcalf', palette: 'art_burrcalf',
     species: 'Thistle Calf Companion', kind: 'wild', type: 'grove', baseHp: 68, catchable: true, catchRate: 0.44,
-    flavor: 'A fuzzy calf with soft thistle tufts. Steppe wind combs it.',
+    flavor: 'A stocky Highland calf. Cream muzzle and chest, purple hooves, purple and sage burs stuck in the fur.',
     evolvesTo: 'thistlebuck', evolveLevel: 5, evolvePoints: 30,
   },
   thistlebuck: {
     id: 'thistlebuck', stage: 2, name: 'Thistlebuck', sprite: 'thistlebuck', palette: 'art_thistlebuck',
     species: 'Shoulder-Burr Companion', kind: 'evolution', type: 'grove', baseHp: 112, scale: 1.18, catchable: false,
-    flavor: 'Stocky, flowering shoulder burrs. The way is longer than it looks.',
+    flavor: 'A deer-legged youth with a thistle crown and mane. Not a larger bur-stuck calf.',
     evolvesTo: 'prairieguard', evolveLevel: 14, evolvePoints: 110,
   },
   prairieguard: {
     id: 'prairieguard', stage: 3, name: 'Prairieguard', sprite: 'prairieguard', palette: 'art_prairieguard',
     species: 'Thistle-Mane Guardian Companion', kind: 'evolution', type: 'grove', baseHp: 170, scale: 1.32, catchable: false,
-    flavor: 'Wind-swept thistle mane, seed-down beard. The prairie keeps pace.',
+    flavor: 'A folk bison. Grass-and-thistle crown, forehead emblem, ornate white chest. The calf is gone.',
     evolvesTo: null,
   },
   prismink: {

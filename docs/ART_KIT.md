@@ -20,7 +20,12 @@ bluebell flowers. Family plates:
 `lineups/bellbun_family.png`, `lineups/zapram_family.png`,
 `lineups/nectlet_family.png`, `lineups/chipmagma_family.png`,
 `lineups/propfin_family.png`, `lineups/clinket_family.png`,
-`lineups/glintfoal_family.png`.
+`lineups/glintfoal_family.png`,
+`lineups/burrcalf_family.png`.
+Burrcalf → Thistlebuck → Prairieguard is the Golden Steppe /
+Thistlehoof Way line (bur-stuck calf / thistle-crown deer /
+folk bison; magenta is chroma only). Purple thistles, sage
+burs, and cream fur stay.
 Nectlet → Combwing → Apiarch is the Amber Orchard / Honeyfall Lane
 line (magenta keyed; golden honeycomb and amber stay). Chipmagma →
 Shardscale → Obsidrake is the Obsidian Hollow / Glassfire Descent
@@ -31,6 +36,11 @@ magenta is chroma only). Clinket → Bellstride → Canyonchime is
 the Copper Canyon / Echo Rail line (verdigris on bronze stays).
 Glintfoal → Astramare → Cometmane is the Starfall Prairie /
 Cometgrass Run line (purple mane and energy-flame legs stay).
+Plinkbat → Cavernwing → Rainvault is the Rainshadow Forest /
+Dripstone Trail line (ice-eared crystal kit / mineral-veined bat /
+stone gargoyle; magenta is chroma only). Pink blush, ice-blue
+crystals, purple eyes, and silver claws stay.
+
 The three first-bond families are complete first-rendition lines
 (magenta keyed out, not a re-render of an old indexed grid):
 Sproutle → Bloomtail → Groveheart, Emberkit → Pyrelynx → Cindermane,
