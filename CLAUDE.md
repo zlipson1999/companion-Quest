@@ -798,7 +798,7 @@ battle unmounts the trail and `useDistance` restarts from zero with it, so the
 session baseline is taken from the LIFETIME stats (which persist) and parked in
 `placeMemory` across the round trip. Walk a fifth of a mile, get stopped by a
 Sludgewad, do ten push-ups, come back — the console still reads 0.20 mi, and
-now reads the reps too. "Back to Maple Lane" is what ends the walk.
+now reads the reps too. "Back to Sunkist Lane" is what ends the walk.
 
 ## Phase 14 — DONE: the audit, and making drift catchable everywhere
 
@@ -820,7 +820,7 @@ reaches no entry — the same guard `build_all()` uses on unused art and
 **Four user-visible copy bugs.** The spar screen still said "MAPLE TRAINING
 HALL"; the Coach told anyone with no plans to go to "Town -> Forge -> New
 Plan", a menu entry deleted when the gym BECAME the menu; Route 1's exit said
-"Back to Town" long after the town became Maple Lane. `PLACE_LABELS` moved to
+"Back to Town" long after the town became Sunkist Lane. `PLACE_LABELS` moved to
 `navContext` so a place has one name (Router imports every screen, so a screen
 importing Router back would close a cycle).
 

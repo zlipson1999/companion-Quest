@@ -1,4 +1,4 @@
-// Maple Lane. The world fills the phone and scrolls under you; the objective
+// Sunkist Lane. The world fills the phone and scrolls under you; the objective
 // ribbon, the menu button and the stick sit on top of it.
 //
 // This used to be a map in the top half with fourteen destinations listed
@@ -79,7 +79,7 @@ export default function HubScreen() {
       map={HUB}
       player={player}
       onMove={move}
-      place="Maple Lane"
+      place="Sunkist Lane"
       objective={objective}
       status={<CompanionStatus companion={companion} stats={state.stats} />}
       menu={MENU}

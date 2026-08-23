@@ -77,6 +77,7 @@ export default function HomeRestScreen() {
     const blocked = !isWalkable(floor, nx, ny);
     const next = blocked ? { x, y, facing: dir } : { x: nx, y: ny, facing: dir };
     playerRef.current = next; setPlayer(next);
+    rememberSpot('home:floor', floorId);
     rememberSpot(`home:${floorId}`, next);
     if (floorId === 'downstairs' && next.x === floor.stairs.x && next.y === floor.stairs.y) setTimeout(changeFloor, 120);
 
@@ -94,6 +95,8 @@ export default function HomeRestScreen() {
       setFacing(station);
       if (station && station.screen) {
         playSfx('confirm');
+        rememberSpot('home:floor', floorId);
+        rememberSpot(`home:${floorId}`, playerRef.current);
         setTimeout(() => navigate(station.screen, station.params || {}), 140);
       }
       return;

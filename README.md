@@ -97,7 +97,7 @@ python3 tools/check_docs.py      # docs still agree with the code
   fiction calls it your Circle; the screen is labelled Team).
 - **Goal-tuned pacing.** Your chosen goal tunes milestone spacing, encounter cadence,
   and workout XP over the same shared mechanics.
-- **Three places you walk around, where the room is the menu.** Maple Lane, the gym
+- **Three places you walk around, where the room is the menu.** Sunkist Lane, the gym
   (Quest Fitness) and your own house. Walk into a rack to write a session, the treadmill
   to run it in the room with a real console (time, distance, laps, pace, kcal, sets,
   reps), Coach for a session off the shelf, the turf for walking stretches, the mats for

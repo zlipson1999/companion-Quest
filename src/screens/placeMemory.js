@@ -31,4 +31,11 @@ export function forgetSpot(id) {
   spots.delete(id);
 }
 
-export default { rememberSpot, recallSpot, forgetSpot };
+// Begin Again and a new walk through the house must not inherit last
+// session's square — otherwise the intro starts in the kitchen and the
+// cookbook's Back button looks like it teleported you.
+export function forgetAll() {
+  spots.clear();
+}
+
+export default { rememberSpot, recallSpot, forgetSpot, forgetAll };

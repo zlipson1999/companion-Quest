@@ -137,6 +137,13 @@ export function sparIntro(activeName, partnerName) {
   ];
 }
 
+export function trainerSparLines(activeName, trainerName, companionName) {
+  return [
+    { speaker: trainerName, text: `${companionName} has been working with me all morning. Your turn.` },
+    { speaker: 'Coach Maple', text: `Same rules as any challenge. ${activeName} carries the Resolve — you do the work.` },
+  ];
+}
+
 export function wildIntro(activeName, wildName, isCompanion) {
   if (isCompanion) {
     return [

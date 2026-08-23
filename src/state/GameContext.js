@@ -433,11 +433,10 @@ function reducer(state, action) {
           creditCarry: won.creditCarry,
           battlesWon: state.stats.battlesWon + 1,
         },
-        // A person is not a creature. The spar passes its opponent in whole
-        // rather than by creature id, so `spar` must not be recorded as one —
-        // this line used to stamp it regardless, and only INDEX_ORDER filtering
-        // the roster kept `dex.spar` from being visible.
-        dex: seenDex(state.dex, targetId),
+        // A trainer's companion is on the roster, but this fight is not how
+        // you meet it. Stamping seen here leaked Pebblepup into the Index
+        // before Cairn Cut was open.
+        dex: spar ? state.dex : seenDex(state.dex, targetId),
         // Winning the spar is the end of that scene: Rowan has finished his
         // session and gone.
         meta: spar ? { ...state.meta, sparDone: true } : state.meta,

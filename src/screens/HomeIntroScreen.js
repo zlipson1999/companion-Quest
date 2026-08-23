@@ -1,15 +1,15 @@
 import React, { useRef, useState } from 'react';
-import { View } from 'react-native';
 import { WorldScreen, CompanionStatus } from '../components';
-import { palette, screen, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { BEDROOM, DOWNSTAIRS, isWalkable, interactionForCode } from '../data/maps';
 import { playSfx } from '../audio';
+import { recallSpot, rememberSpot } from './placeMemory';
 
 // The two rooms come from data/maps.js; the intro brings the route through
-// them. They used to be declared here as well as in HomeRestScreen, and the
-// copies had drifted — different grids for the same room.
+// them. The front door used to dump you onto a 9×7 stub "lane" and then a
+// Coach lecture screen. The real town is HUB — Sunkist Lane — and the gym
+// talk happens when you walk up to Coach inside Quest Fitness.
 const AREAS = {
   bedroom: {
     ...BEDROOM,
@@ -24,33 +24,48 @@ const AREAS = {
     name: 'Your Home — Downstairs',
     spawn: { x: 11, y: 2 },
     exit: { x: 6, y: 14 },
-    hint: 'Head through your front door.',
-    next: 'outside',
-  },
-  outside: {
-    name: 'Maple Lane', cols: 9, rows: 7, spawn: { x: 2, y: 5 }, exit: { x: 6, y: 2 },
-    grid: ['TTTTTTTTT', 'ThhhTyyyT', 'THDHTYdYT', 'T.####..T', 'T.#..#..T', 'T.####..T', 'TTTTTTTTT'],
-    hint: 'Quest Fitness is next door. Find its entrance.', next: 'coachTutorial',
+    hint: 'Head through your front door onto Sunkist Lane.',
+    next: 'hub',
   },
 };
+
+// Just south of the house door on HUB, facing the lane.
+const LANE_FROM_HOUSE = { x: 2, y: 6, facing: 'down' };
+
+function persistArea(areaId, spot) {
+  rememberSpot('intro:area', areaId);
+  rememberSpot(`intro:${areaId}`, spot);
+  // Share the house keys so a cookbook opened during the intro returns
+  // to the kitchen, not a remounted bedroom.
+  const floor = areaId === 'bedroom' ? 'upstairs' : 'downstairs';
+  rememberSpot('home:floor', floor);
+  rememberSpot(`home:${floor}`, spot);
+}
 
 export default function HomeIntroScreen() {
   const { navigate } = useNav();
   const { state } = useGame();
   const companion = useCompanion();
-  const [areaId, setAreaId] = useState('bedroom');
+  const [areaId, setAreaId] = useState(() => recallSpot('intro:area', 'bedroom'));
   const area = AREAS[areaId];
-  const [player, setPlayer] = useState({ ...area.spawn, facing: 'down' });
+  const [player, setPlayer] = useState(() =>
+    recallSpot(`intro:${areaId}`, { ...area.spawn, facing: 'down' }, (s) => isWalkable(area, s.x, s.y))
+  );
   const [facing, setFacing] = useState(null);
   const playerRef = useRef(player);
 
   const enter = (next) => {
     playSfx('confirm');
-    if (next === 'coachTutorial') return navigate(next);
+    if (next === 'hub') {
+      rememberSpot('hub', LANE_FROM_HOUSE);
+      return navigate('hub');
+    }
     const nextArea = AREAS[next];
+    const spot = { ...nextArea.spawn, facing: 'down' };
+    persistArea(next, spot);
     setAreaId(next);
-    playerRef.current = { ...nextArea.spawn, facing: 'down' };
-    setPlayer(playerRef.current);
+    playerRef.current = spot;
+    setPlayer(spot);
   };
 
   const move = (dir) => {
@@ -61,10 +76,12 @@ export default function HomeIntroScreen() {
     const next = blocked ? { x, y, facing: dir } : { x: nx, y: ny, facing: dir };
     playerRef.current = next;
     setPlayer(next);
+    persistArea(areaId, next);
 
     // Walking into your own furniture uses it, the same way the gym's
     // equipment works. The bed logs last night, the desk opens your habits,
-    // the kitchen shelf is the cookbook.
+    // the kitchen shelf is the cookbook. Persist first so Back remounts
+    // this floor rather than the bedroom default.
     if (blocked) {
       const station = interactionForCode(area.grid[ny] && area.grid[ny][nx], area);
       setFacing(station);

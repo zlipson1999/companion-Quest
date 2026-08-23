@@ -7,6 +7,7 @@ import { Screen, PixelText, PixelSprite, PixelButton, Window } from '../componen
 import { palette, space } from '../theme';
 import { useGame, wipeSave } from '../state';
 import { useNav } from './navContext';
+import { forgetAll } from './placeMemory';
 
 export default function TitleScreen() {
   const { state, dispatch } = useGame();
@@ -49,7 +50,7 @@ export default function TitleScreen() {
             </PixelText>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.lg }}>
               <PixelButton label="Cancel" tone="plain" sound="cancel" style={{ flex: 1, marginRight: 6 }} onPress={() => setConfirmReset(false)} />
-              <PixelButton label="Erase" tone="danger" style={{ flex: 1, marginLeft: 6 }} onPress={async () => { await wipeSave(); dispatch({ type: 'RESET' }); navigate('intro'); }} />
+              <PixelButton label="Erase" tone="danger" style={{ flex: 1, marginLeft: 6 }} onPress={async () => { await wipeSave(); forgetAll(); dispatch({ type: 'RESET' }); navigate('intro'); }} />
             </View>
           </Window>
         ) : hasSave ? (

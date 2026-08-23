@@ -4,6 +4,7 @@ import { Screen, Window, PixelText, PixelSprite, PixelButton } from '../componen
 import { palette, space } from '../theme';
 import { useGame } from '../state';
 import { useNav } from './navContext';
+import { forgetSpot } from './placeMemory';
 import { OUTFITS, outfitPalette } from '../data/outfits';
 import { CHARACTERS, playerPortrait, playerSprite } from '../data/characters';
 
@@ -17,6 +18,9 @@ export default function OutfitSelectScreen() {
 
   const confirm = () => {
     dispatch({ type: 'SET_PLAYER_CHARACTER', payload: { outfitId: selected, gender } });
+    forgetSpot('intro:area');
+    forgetSpot('intro:bedroom');
+    forgetSpot('intro:downstairs');
     navigate('homeIntro');
   };
 
