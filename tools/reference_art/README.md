@@ -33,6 +33,13 @@ sun-rune stone golem (named masters `dusthorn` / `mesaquill` /
 `suncerast`; magenta chroma keyed, yellow runes stay). Do not
 loosen the check. The skill is `tools/CHARACTER_PROMPT.md`.
 
+**Brineling family (Tideglass Coast / Saltglass Strand).** Named masters
+`brineling` / `shoregleam` / `tidecrown`. Magenta chroma keyed; pink
+coral limbs and lavender growths stay. Stage 2 is a standing pearl-plate
+humanoid, not a recolor of the shell hermit. Stage 3 is the tall
+wave-armor guardian (white pupil-less eyes, chest pearl). Approval plate:
+`lineups/brineling_family.png`.
+
 - **Maple and Cairn** sit on a flat field. Split with
   `tools/split_lineup.py`, then convert. Stage-1 masters
   (`spinseed`, `bramblet`, `lanternbud`, `rubblet`, `chockit`,

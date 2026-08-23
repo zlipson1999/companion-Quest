@@ -6,10 +6,13 @@ file over anything drawn; a `traced_*.json` that reaches no sprite fails
 the build. A trail face without a master fails the build. There is no
 `sphere()` stand-in.
 
-**57 transparent masters** are committed in `tools/reference_art/`
+**60 transparent masters** are committed in `tools/reference_art/`
 (top-level `*.png` only; approval lineups sit in `lineups/` and are not
 counted). That is all 18 original-six forms plus all 36 trail-family forms
-plus Dusthorn → Mesaquill → Suncerast.
+plus Dusthorn → Mesaquill → Suncerast and Brineling / Shoregleam /
+Tidecrown (Tideglass Coast). Magenta is chroma; coral limbs and
+lavender growths stay. Family plates: `lineups/dusthorn_family.png`,
+`lineups/brineling_family.png`.
 The three first-bond families are complete first-rendition lines
 (magenta keyed out, not a re-render of an old indexed grid):
 Sproutle → Bloomtail → Groveheart, Emberkit → Pyrelynx → Cindermane,

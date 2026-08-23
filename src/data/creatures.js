@@ -372,6 +372,29 @@ export const CREATURES = {
     evolvesTo: null,
   },
 
+  // --- Spec expansion: Tideglass Coast / Saltglass Strand ---
+  brineling: {
+    id: 'brineling', stage: 1, name: 'Brineling', sprite: 'brineling', palette: 'seaglass',
+    species: 'Sea-Glass Hermit Companion', kind: 'wild', type: 'tide',
+    baseHp: 58, catchable: true, catchRate: 0.52,
+    flavor: 'A seafoam hermit in a teal crystal shell. Coral feet and a row of pearls — it peeks out when the tide is kind.',
+    evolvesTo: 'shoregleam', evolveLevel: 5, evolvePoints: 30,
+  },
+  shoregleam: {
+    id: 'shoregleam', stage: 2, name: 'Shoregleam', sprite: 'shoregleam', palette: 'seaglass',
+    species: 'Pearl-Plate Companion', kind: 'evolution', type: 'tide',
+    baseHp: 100, scale: 1.18, catchable: false,
+    flavor: 'The shell stands up. Four pearls down the chest, coral hands, mint ribbons from the tide.',
+    evolvesTo: 'tidecrown', evolveLevel: 14, evolvePoints: 110,
+  },
+  tidecrown: {
+    id: 'tidecrown', stage: 3, name: 'Tidecrown', sprite: 'tidecrown', palette: 'seaglass',
+    species: 'Tide-Crown Guardian Companion', kind: 'evolution', type: 'tide',
+    baseHp: 156, scale: 1.32, catchable: false,
+    flavor: 'A standing tide. White lamp-eyes, a pearl held in coral, wave-crest armor — the strand\u2019s keeper.',
+    evolvesTo: null,
+  },
+
   // --- Obstacle creatures (bad habits — cleared, not caught) ---
   sludgewad: {
     id: 'sludgewad', name: 'Sludgewad', sprite: 'sludgewad', palette: 'sludge',
@@ -403,7 +426,6 @@ export const CREATURES = {
     species: 'The Overwork', kind: 'obstacle', type: 'ember', baseHp: 120, catchable: false,
     flavor: 'The grind that will not sit down. Hard days without recovery, given teeth.',
   },
-
 };
 
 export const STARTER_IDS = ['sproutle', 'emberkit', 'dewbble'];
@@ -413,7 +435,10 @@ export const TRAIL_COMPANION_IDS = [
   'whistlet', 'kitefin', 'loftburr',
   'fernap', 'dapple', 'stillcup',
 ];
-export const SPEC_FAMILY_IDS = ['dusthorn'];
+export const SPEC_FAMILY_IDS = [
+  'dusthorn',
+  'brineling',
+];
 export const WILD_COMPANION_IDS = [
   ...STARTER_IDS, 'pebblepup', 'wispurr', 'sporelet', ...TRAIL_COMPANION_IDS,
   ...SPEC_FAMILY_IDS,

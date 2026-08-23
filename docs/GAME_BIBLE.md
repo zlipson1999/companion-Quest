@@ -629,9 +629,9 @@ faint.
 4. `backlight()` (rim opposite the key light) and `spec()` (hotspots) are what
    read as "modern".
 
-### 8.3 Sprite inventory (142 runtime sprites + 416 atlas cells)
+### 8.3 Sprite inventory (145 runtime sprites + 416 atlas cells)
 
-- Creatures 48×48 authored @2× = 96 px: **57 companions — 19 families of 3
+- Creatures 48×48 authored @2× = 96 px: **60 companions — 20 families of 3
   stages**. The first six families are TRACED (sproutle→bloomtail→groveheart,
   emberkit→pyrelynx→cindermane, dewbble→tidewade→maelstride,
   pebblepup→cairnhound→monolithound, wispurr→galegait→skywhorl,
@@ -642,11 +642,12 @@ faint.
   chockit→crackwedge→cliffchock, facetel→prismore→quartzspire,
   whistlet→reedgale→stormflute, kitefin→ribbonsail→skysheet,
   loftburr→driftpuff→cloudburr, fernap→fiddlefrond→frondrest,
-  dapple→glimmoth→leaflight, stillcup→dewbasin→rainhold — plus the
-  first spec family dusthorn→mesaquill→suncerast (Red Mesa / Suncrack)
-  and 6 obstacles
+  dapple→glimmoth→leaflight, stillcup→dewbasin→rainhold, plus
+  dusthorn→mesaquill→suncerast (Red Mesa / Suncrack) and
+  brineling→shoregleam→tidecrown (Tideglass Coast / Saltglass Strand)
+  — plus 6 obstacles
   (sludgewad, snoozeghoul, achefang, couchlurk, brinegnash, cindergrind).
-  All thirty-six trail forms and the Dusthorn line are traced from isolated
+  All thirty-six trail forms plus the Dusthorn and Brineling lines are traced from isolated
   masters (approved lineups, then one creature per file). The two new Wardens remain
   procedural. An evolution is its OWN master and a new silhouette —
   baby / adolescent / adult, never a tinted, scaled, or outlined copy
@@ -835,7 +836,7 @@ Status labels:
 | What devices and OS versions are supported? | **OPEN.** Portrait is forced and tablets are allowed; minimum Android/iOS versions, screen sizes, low-end device floor and tablet UX are unspecified. |
 | Is the game free, paid, ad-supported or subscription-based? | **OPEN.** No monetization or entitlement code exists. |
 | Is an account required? Is there cloud sync or multi-device play? | **CURRENT: no.** One local save, no auth, no cloud backup, no export/import. Whether this is permanent is **OPEN**. |
-| What is the content target at launch? | **OPEN.** Current roster is 57 companion forms across 19 families plus 6 obstacles; roadmap expansion is aspiration, not a launch commitment. |
+| What is the content target at launch? | **OPEN.** Current roster is 60 companion forms across 20 families plus 6 obstacles; roadmap expansion is aspiration, not a launch commitment. |
 | What is the expected play cadence and session length? | **OPEN.** Daily modules and route pacing imply daily play, but retention, encounter-rate and time-to-evolution targets are not specified or validated. |
 | Are notifications/reminders part of the product? | **CURRENT: no.** Desired reminders, quiet hours, consent and notification copy are **OPEN**. |
 | What does “done” mean for a feature? | **DECIDED below in §13.7.** Code that merely renders in web is not sufficient for sensor, persistence, camera, GL or audio work. |

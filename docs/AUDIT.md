@@ -291,8 +291,8 @@ Status: **noted** (keep declared; Pages `npm ci` needs the lockfile).
 
 | claim | code | docs |
 |---|---|---|
-| Companion forms | 57 (`CREATURES` minus 6 obstacles) | `GAME_BIBLE.md` **57 companions** |
-| Families | 19 × 3 (`STARTER_IDS` 3 + wild 3 + `TRAIL_COMPANION_IDS` 12 + `SPEC_FAMILY_IDS` 1) | 19 families |
+| Companion forms | 60 (`CREATURES` minus 6 obstacles) | `GAME_BIBLE.md` **60 companions** |
+| Families | 20 × 3 (`STARTER_IDS` 3 + wild 3 + `TRAIL_COMPANION_IDS` 12 + `SPEC_FAMILY_IDS` 2) | 20 families |
 | Obstacles | 6 (`OBSTACLE_IDS`, `creatures.js:393-395`) | plus 6 obstacles |
 | `INDEX_ORDER` | `WILD_COMPANION_IDS.flatMap(familyChain)` + obstacles (`creatures.js:428-431`) | lists every id; import throws if not (`creatures.js:436-439`) |
 | `evolvesTo` | every non-final companion points at a real id; finals `null` | ok |

@@ -19,7 +19,7 @@ const MAPLE_MEET = ['spinseed', 'bramblet', 'lanternbud'];
 const CAIRN_MEET = [...MAPLE_MEET, 'rubblet', 'chockit', 'facetel'];
 const GALE_MEET = [...CAIRN_MEET, 'whistlet', 'kitefin', 'loftburr', 'wispurr'];
 const CANOPY_MEET = [...GALE_MEET, 'fernap', 'dapple', 'stillcup', 'sporelet', 'pebblepup'];
-const RILL_MEET = [...CANOPY_MEET, ...STARTER_IDS, 'tidewade', 'bloomtail'];
+const RILL_MEET = [...CANOPY_MEET, ...STARTER_IDS, 'tidewade', 'bloomtail', 'brineling'];
 const EMBER_MEET = [...RILL_MEET, 'pyrelynx', 'cairnhound', 'galegait', 'mycobloom'];
 
 export const ROUTES = [

@@ -94,6 +94,8 @@ stays so nobody ships the old pose three times again.
   face in the chest). Never a tinted bowl.
 - Dapple (rotund kawaii moth) → Glimmoth (slender tattered-leaf flyer) →
   Leaflight (four serrated leaf-wings, banded abdomen). Never the same round puff.
+- Brineling (crystal-shell hermit) → Shoregleam (pearl-plate walker) →
+  Tidecrown (tall wave-armor guardian, white pupil-less eyes)
 - Spinseed (winged seed) → Whirlkey (same seed, walking legs) → Samaraile
   (stacked key-sail stalk, no longer a hovering bulb)
 - Bramblet (vine knot) → Briarthicket (walking thicket, four roots) →
