@@ -16,6 +16,7 @@ import IntroScreen from './IntroScreen';
 import OutfitSelectScreen from './OutfitSelectScreen';
 import HomeIntroScreen from './HomeIntroScreen';
 import GoalSelectScreen from './GoalSelectScreen';
+import CoachTutorialScreen from './CoachTutorialScreen';
 import PairingScreen from './PairingScreen';
 import HubScreen from './HubScreen';
 import GymScreen from './GymScreen';
@@ -49,6 +50,7 @@ const SCREENS = {
   outfit: OutfitSelectScreen,
   homeIntro: HomeIntroScreen,
   goal: GoalSelectScreen,
+  coachTutorial: CoachTutorialScreen,
   pairing: PairingScreen,
   hub: HubScreen,
   gym: GymScreen,
@@ -80,7 +82,7 @@ const SCREENS = {
 // fleeing a battle returns there, and without an entry here the battle music
 // just kept playing over the walk.
 const TOWN_BGM = new Set([
-  'title', 'intro', 'outfit', 'homeIntro', 'goal', 'pairing', 'sparIntro', 'cookbook', 'smoothiebar', 'hub', 'gym', 'route', 'rest', 'workout', 'summary', 'index', 'bag', 'friends', 'board',
+  'title', 'intro', 'outfit', 'homeIntro', 'goal', 'coachTutorial', 'pairing', 'sparIntro', 'cookbook', 'smoothiebar', 'hub', 'gym', 'route', 'rest', 'workout', 'summary', 'index', 'bag', 'friends', 'board',
   'party', 'coach', 'options', 'habits', 'habit', 'forge', 'forgeEdit', 'formcheck', 'week', 'world',
 ]);
 

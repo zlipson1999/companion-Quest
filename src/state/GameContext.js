@@ -541,6 +541,11 @@ function reducer(state, action) {
     case 'SET_SETTING':
       return { ...state, settings: { ...state.settings, [action.payload.key]: action.payload.value } };
 
+    // One-way story flags (coachIntroDone, ...). Settings are choices a person
+    // can change back; meta records that a moment has happened.
+    case 'MARK_META':
+      return { ...state, meta: { ...state.meta, ...action.payload } };
+
     default:
       return state;
   }
