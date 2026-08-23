@@ -19,6 +19,7 @@ import {
   wildIntro,
   sparIntro, movePrompt, moveLanded, victoryLines, defeatLines, levelUpLine, evolveLines,
   catchSuccessLines, catchFailLine, catchFullLine, noKnotLine, companionFledLines, swapLine,
+  pinLines,
 } from '../coach';
 
 function clamp(n, lo, hi) {
@@ -225,7 +226,7 @@ export default function BattleScreen({ params }) {
   const confirmMove = () => {
     const move = getMove(selectedMove);
     // You just did the exercise. Record it before anything else happens to it.
-    dispatch({ type: 'LOG_EXERCISE', payload: { id: move.id, kind: move.kind, target: move.target } });
+    dispatch({ type: 'LOG_EXERCISE', payload: { id: move.id, kind: move.kind, target: move.target, routeId: params.routeId } });
     const dmg = move.power + Math.floor((companion.level - 1) * 2);
     const newWildHp = Math.max(0, wildHp - dmg);
     // Choreography: the companion steps INTO the strike, and only then does the
@@ -253,9 +254,24 @@ export default function BattleScreen({ params }) {
         );
       } else {
         const afterXp = companion.xp + target.xp;
-        dispatch({ type: 'WIN_BATTLE', payload: { xp: target.xp, bond: target.bond, targetId: target.targetId, companionHp, spar: !!params.opponent } });
+        const alreadyPinned = !!(
+          params.routeId
+          && state.trails
+          && state.trails.progress
+          && state.trails.progress[params.routeId]
+          && state.trails.progress[params.routeId].pin
+        );
+        const firstPin = !!params.warden && !alreadyPinned;
+        dispatch({ type: 'WIN_BATTLE', payload: { xp: target.xp, bond: target.bond, targetId: target.targetId, companionHp, spar: !!params.opponent, warden: !!params.warden, routeId: params.routeId } });
         playSfx('victory');
-        say(victoryLines(companion.creature.name, wild.name, target.xp), () => runLevelEvolveThen(beforeLevel, afterXp, finish));
+        if (firstPin) {
+          say(
+            pinLines(wild.name, params.pinName || 'Quest Pin', params.nextTrail),
+            () => runLevelEvolveThen(beforeLevel, afterXp, finish)
+          );
+        } else {
+          say(victoryLines(companion.creature.name, wild.name, target.xp), () => runLevelEvolveThen(beforeLevel, afterXp, finish));
+        }
       }
       return;
     }
@@ -291,9 +307,7 @@ export default function BattleScreen({ params }) {
       return;
     }
     if (teamFull) {
-      dispatch({ type: 'CONSUME_ITEM', payload: { itemId: 'knot' } });
-      dispatch({ type: 'CATCH', payload: { creatureId: target.targetId, xp: 60, bond: 5 } });
-      say([{ speaker: 'Narration', text: catchFullLine(wild.name) }], finish);
+      say([{ speaker: 'Narration', text: catchFullLine(wild.name) }], () => setPhase('menu'));
       return;
     }
     dispatch({ type: 'CONSUME_ITEM', payload: { itemId: 'knot' } });
@@ -351,10 +365,11 @@ export default function BattleScreen({ params }) {
   const doDefeat = () => {
     playSfx('lowhp');
     dispatch({ type: 'LOSE_BATTLE', payload: { targetId: target.targetId } });
-    say(defeatLines(companion.creature.name), () => navigate('hub'));
+    say(defeatLines(companion.creature.name), () => navigate(returnTo));
   };
 
   const flee = () => {
+    if (params.sparIntro) return;
     playSfx('cancel');
     navigate(returnTo);
   };
@@ -366,10 +381,13 @@ export default function BattleScreen({ params }) {
   // A balanced field-console composition: both participants receive matched
   // instruments and share one trail plane. Do not tune this against another
   // title's diagonal cards or platform layout.
-  const stageTone = params.opponent ? 'hall' : params.from === 'route' ? 'grass' : 'trail';
+  const stageTone = params.opponent
+    ? 'hall'
+    : (params.stageTone || (params.from === 'route' ? 'grass' : 'trail'));
+  const stageHorizon = params.horizon != null ? params.horizon : 0.16;
 
   const top = (
-    <BattleStage tone={stageTone} horizon={0.16}>
+    <BattleStage tone={stageTone} horizon={stageHorizon}>
       <View style={{ flex: 1, padding: space.sm }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
           <StatusPlate
@@ -449,7 +467,9 @@ export default function BattleScreen({ params }) {
           onSelect={(opt) => startMove(opt.value)}
         />
         <View style={{ flexDirection: 'row', marginTop: space.sm }}>
-          <PixelButton label="Flee" tone="plain" sound="cancel" style={{ flex: 1, marginRight: 5 }} onPress={flee} />
+          {params.sparIntro ? null : (
+            <PixelButton label="Flee" tone="plain" sound="cancel" style={{ flex: 1, marginRight: 5 }} onPress={flee} />
+          )}
           {party.members.length > 1 ? (
             <PixelButton label="Rotate" tone="dark" sound="cursor" style={{ flex: 1, marginRight: 5 }} onPress={() => setPhase('swap')} />
           ) : null}

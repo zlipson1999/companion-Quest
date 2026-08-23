@@ -25,6 +25,9 @@ const FIELD_CODES = {
   W: 'tile_wall',
   h: 'tile_roof_rest',
   y: 'tile_roof_gym',
+  // Packed-earth cairns on Cairn Cut. Reuses the gym block field so the
+  // stone trail is not a second copy of Maple's tree line.
+  '*': 'tile_gym_block',
 };
 
 // Interior walls are a different material from the outdoor stone, and a room
@@ -159,7 +162,12 @@ function runSuffix(map, code, x, y) {
 const FIELD_SPAN = 4;
 
 const GROUND_FIELD = 'tile_grass';
-const FIELD_BY_MAP = { gym: 'tile_gym_floor', home: 'tile_home_floor' };
+const FIELD_BY_MAP = {
+  gym: 'tile_gym_floor',
+  home: 'tile_home_floor',
+  route_cairn: 'tile_gym_platform',
+  route_canopy: 'tile_gym_turf',
+};
 
 function groundKey(prefix, x, y) {
   const col = ((x % FIELD_SPAN) + FIELD_SPAN) % FIELD_SPAN;
@@ -193,7 +201,7 @@ const WATER_CODES = new Set(['~']);
 // Anything solid enough to drop shade onto the ground beside it. World light is
 // upper-left, so a caster darkens the ground to its south and east.
 const SHADOW_CASTERS = new Set([
-  'T', 'W', 'H', 'Y', 'h', 'y', 'D', 'd', 'G',
+  'T', '*', 'W', 'H', 'Y', 'h', 'y', 'D', 'd', 'G',
   '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w',
   'e', 'E', 'v', 'k', 'f', 'a', 'c', 'F', 'o',
   'L', 'U', 'j', 'q', 'N', 'z', 'S', 'Q', 'J', 'I',
@@ -271,13 +279,18 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
   // What the CODE is, not where it is. Folding `zoneField` in here meant every
   // square inside a zone counted as bare floor, so the whole rack row drew as
   // empty platform: the props never reached their own branch.
-  const isFloorCode = code === '.' || code === ',' || (floor && code === '#');
+  const isFloorCode = code === '.' || code === ',';
 
   let layers;
   // The gate takes the path's own autotiling. It used to render a wooden door
   // standing in the tree line, which is a door to nowhere — the way out of town
   // is the trail carrying on north, so the trail carries on north.
-  if (!floor && PATH_CODES.has(code)) {
+  // Path is always a path, even when the map has a field floor. Treating '#' as
+  // the field when `floor` was set made Cairn Cut and Canopy Run one continuous
+  // slab with the lane painted out — the same grass-strip mistake wearing a
+  // different texture. Indoor cardio no longer uses this screen, so the gym
+  // does not need '#' to mean rubber.
+  if (PATH_CODES.has(code)) {
     const mask = maskAt(map, x, y, PATH_CODES);
     layers = [{ key: `tile_path_m${mask}` }, ...innerCorners(map, x, y, PATH_CODES, 'tile_path')];
   } else if (!floor && WATER_CODES.has(code)) {

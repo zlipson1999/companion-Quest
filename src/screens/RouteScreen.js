@@ -21,9 +21,18 @@ import { useNav, PLACE_LABELS } from './navContext';
 import { playSfx } from '../audio';
 import { pacingForGoal, formatMiles } from '../data/route';
 import { rollWildEncounter } from '../data/wild';
+import {
+  ROUTES,
+  getRoute,
+  isTrailUnlocked,
+  trailOf,
+  trailReady,
+  trailRow,
+  wardenBattle,
+} from '../data/routes';
+import { getCreature } from '../data/creatures';
 import { breakdownSince, formatBreakdown } from '../data/exercises';
 import { getWorkout } from '../data/workouts';
-import { getCreature } from '../data/creatures';
 import { outfitPalette } from '../data/outfits';
 import { playerSprite } from '../data/characters';
 import { routeCheer, pickupLine } from '../coach';
@@ -39,39 +48,35 @@ import { DEFAULT_BODY_WEIGHT_LB } from '../state/cardioMaths';
 // path, tall grass and tree tiles the overworld uses, scrolling past you.
 const ROUTE_TS = 22;
 
-// A deterministic strip, so the trail looks the same every time you walk it and
-// nothing reshuffles under you on a re-render.
-function routeRow(r, cols) {
-  const laneW = Math.max(3, Math.round(cols * 0.3));
-  const lane0 = Math.floor((cols - laneW) / 2);
-  const h = (r * 2654435761) >>> 0;
-  let row = '';
-  for (let x = 0; x < cols; x += 1) {
-    const n = ((h ^ (x * 2246822519)) >>> 0) % 100;
-    if (x >= lane0 && x < lane0 + laneW) {
-      row += '#';
-    } else if (x < 1 || x > cols - 2) {
-      row += 'T';
-    } else if (x < 2 || x > cols - 3) {
-      row += n < 62 ? 'T' : '^';
-    } else {
-      row += n < 14 ? '^' : n < 22 ? ',' : '.';
-    }
-  }
-  return row;
-}
+// Same sky and haze as BattleStage, so the walk and the challenge are one place.
+const SCENE_SKY = {
+  maple: '#4a6ea8',
+  cairn: '#5c5a52',
+  gale: '#6aa8dc',
+  canopy: '#1c2a1a',
+};
+const SCENE_HAZE = {
+  maple: '#7fa8d8',
+  cairn: '#b0a890',
+  gale: '#d0e8f8',
+  canopy: '#3a5a32',
+};
 
-function ScrollingScene({ width, height, moving }) {
+function ScrollingScene({ width, height, moving, trailId }) {
   const offset = useRef(new Animated.Value(0)).current;
+  const route = getRoute(trailId);
+  // Tiles used to cover the whole phone, so SCENE_SKY never showed and the
+  // four trails read as one slab with the sign swapped. The ground starts at
+  // the trail's own horizon — Gale is mostly sky, Canopy almost none.
+  const skyH = Math.round(height * (route.horizon || 0.16));
+  const groundH = Math.max(ROUTE_TS * 4, height - skyH);
   const cols = Math.ceil(width / ROUTE_TS);
-  const rows = Math.ceil(height / ROUTE_TS) + 1;
+  const rows = Math.ceil(groundH / ROUTE_TS) + 1;
   const [frame, setFrame] = useState(0);
 
   useEffect(() => {
     let loop;
     if (moving) {
-      // One full tile-row per cycle, then reset — two stacked copies of the
-      // strip make the wrap invisible.
       offset.setValue(0);
       loop = Animated.loop(Animated.timing(offset, { toValue: 1, duration: 620, useNativeDriver: true }));
       loop.start();
@@ -88,13 +93,10 @@ function ScrollingScene({ width, height, moving }) {
 
   const translate = offset.interpolate({ inputRange: [0, 1], outputRange: [0, ROUTE_TS] });
 
-  // Tile resolves its layers from its neighbours, so the strip has to be a map
-  // rather than loose codes. Handing it rows one at a time cost the trail its
-  // autotiled edges and its trees — the scene came out as a field of grass.
   const sceneMap = useMemo(() => {
-    const grid = Array.from({ length: rows * 2 }, (_, r) => routeRow(r % rows, cols));
-    return { id: 'route', cols, rows: rows * 2, grid };
-  }, [rows, cols]);
+    const grid = Array.from({ length: rows * 2 }, (_, r) => trailRow(trailId, r % rows, cols));
+    return { id: route.mapId, cols, rows: rows * 2, grid };
+  }, [rows, cols, trailId, route.mapId]);
 
   const strip = useMemo(
     () =>
@@ -109,8 +111,9 @@ function ScrollingScene({ width, height, moving }) {
   );
 
   return (
-    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden', backgroundColor: palette.grassDark }}>
-      <Animated.View style={{ position: 'absolute', top: -ROUTE_TS * rows, transform: [{ translateY: translate }] }}>
+    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden', backgroundColor: SCENE_SKY[trailId] || palette.grassDark }}>
+      <View style={{ position: 'absolute', left: 0, right: 0, top: skyH, height: 4, backgroundColor: SCENE_HAZE[trailId] || '#7fa8d8' }} />
+      <Animated.View style={{ position: 'absolute', top: skyH - ROUTE_TS, transform: [{ translateY: translate }] }}>
         {strip}
       </Animated.View>
     </View>
@@ -123,6 +126,8 @@ export default function RouteScreen({ params = {} }) {
   const companion = useCompanion();
   const { navigate, toBattle } = useNav();
   const pacing = pacingForGoal(state.goalId);
+  const { route, progress } = trailOf(state.trails);
+  const ready = trailReady(route, progress);
 
   const [message, setMessage] = useState('The trail opens up ahead. Every real step carries you forward!');
   const [encMeter, setEncMeter] = useState(0);
@@ -168,22 +173,34 @@ export default function RouteScreen({ params = {} }) {
   const encThreshRef = useRef(pacing.encMin + Math.random() * (pacing.encMax - pacing.encMin));
   const busyRef = useRef(false);
   const encTimer = useRef(null);
+  const trailRef = useRef(route);
+  trailRef.current = route;
 
   // Real distance becomes progress through the one shared path; the trail adds
   // the only thing that is its own, which is having somebody to meet.
+  // routeId is required: gym cardio uses this same hook WITHOUT one, so indoor
+  // miles never fill a trail quota.
   const { dist, moving } = useCardio({
+    routeId: route.id,
     onDelta: (dM) => {
       if (dM <= 0 || busyRef.current) return;
       encMiRef.current += dM;
       setEncMeter(Math.min(1, encMiRef.current / encThreshRef.current));
       if (encMiRef.current < encThreshRef.current) return;
       busyRef.current = true;
-      const enc = rollWildEncounter(state.stats.milestonesReached + 1);
+      const current = trailRef.current;
+      const enc = rollWildEncounter(state.stats.milestonesReached + 1, current.companions, current.warden);
       const c = getCreature(enc.creatureId);
       dispatch({ type: 'SEE_CREATURE', payload: { id: enc.creatureId } });
       playSfx('encounter');
       setMessage(enc.isCompanion ? `${c.name} steps onto the trail and watches you.` : `${c.name} gathers across the path.`);
-      encTimer.current = setTimeout(() => toBattle({ ...enc, from: 'route' }), 550);
+      encTimer.current = setTimeout(() => toBattle({
+        ...enc,
+        from: 'route',
+        routeId: current.id,
+        stageTone: current.stageTone,
+        horizon: current.horizon,
+      }), 550);
     },
     onMilestone: (item) => setMessage(`Milestone! ${pickupLine(item.name)} ${routeCheer()}`),
   });
@@ -230,14 +247,29 @@ export default function RouteScreen({ params = {} }) {
     }
   };
 
-  // The same console the cardio deck runs. The measurement is identical out
-  // here — real distance, real time — so there is no reason the trail should
-  // report it in a different, smaller vocabulary. What the trail adds is the
-  // two things only it has: how close the next milestone is, and how close the
-  // next trail sign is.
+  const pickTrail = (id) => {
+    if (!isTrailUnlocked(id, state.trails)) return;
+    dispatch({ type: 'SET_TRAIL', payload: { routeId: id } });
+    encMiRef.current = 0;
+    setEncMeter(0);
+    const next = getRoute(id);
+    setMessage(`${next.name} stretches out ahead.`);
+  };
+
+  const challengeWarden = () => {
+    if (!ready || busyRef.current) return;
+    busyRef.current = true;
+    const battle = wardenBattle(route);
+    const c = getCreature(battle.creatureId);
+    dispatch({ type: 'SEE_CREATURE', payload: { id: battle.creatureId } });
+    playSfx('encounter');
+    setMessage(`${c.name} — the Warden of ${route.name} — takes the path.`);
+    encTimer.current = setTimeout(() => toBattle(battle), 550);
+  };
+
   const trailPanel = (
     <CardioConsole
-      title={pacing.trail.toUpperCase()}
+      title={route.name.toUpperCase()}
       seconds={seconds}
       miles={sessionMiles}
       steps={sessionSteps}
@@ -252,10 +284,12 @@ export default function RouteScreen({ params = {} }) {
           ● GPS RUN
         </PixelText>
       ) : null}
-      <ProgressBar value={state.stats.routeMi} max={pacing.milestoneMi} color={palette.hpHigh} height={12} label="Next milestone" showText={false} style={{ marginTop: space.sm }} />
-      <ProgressBar value={encMeter} max={1} color={palette.accent} height={8} label="Trail signs" showText={false} style={{ marginTop: 6 }} />
+      <ProgressBar value={progress.miles} max={route.miles} color={palette.hpHigh} height={12} label={`${route.miles} mi for the Warden`} showText={false} style={{ marginTop: space.sm }} />
+      <ProgressBar value={progress.reps} max={route.reps} color={palette.accent} height={8} label={`${route.reps} reps in challenges`} showText={false} style={{ marginTop: 6 }} />
+      <ProgressBar value={encMeter} max={1} color={palette.secondary} height={6} label="Trail signs" showText={false} style={{ marginTop: 6 }} />
       <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6 }}>
-        {formatMiles(state.stats.distanceMi)} lifetime · {state.stats.milestonesReached} milestones
+        {formatMiles(progress.miles)} / {route.miles} mi · {progress.reps}/{route.reps} reps
+        {progress.pin ? ` · ${route.pinName}` : ''}
       </PixelText>
     </CardioConsole>
   );
@@ -320,6 +354,7 @@ export default function RouteScreen({ params = {} }) {
           width={screen.width}
           height={screen.height}
           moving={running}
+          trailId={route.id}
         />
 
         {/* You and your companion, standing clear of the panel below. */}
@@ -358,15 +393,25 @@ export default function RouteScreen({ params = {} }) {
               {dist.gpsError}
             </PixelText>
           ) : null}
-          {(
+          {ready ? (
             <PixelButton
-              label={dist.running ? 'Stop Run' : 'Start Run (GPS)'}
-              tone={dist.running ? 'danger' : 'primary'}
-              sound="confirm"
+              label={`Challenge the Warden`}
+              tone="gold"
               style={{ marginTop: space.sm }}
-              onPress={toggleRun}
+              onPress={challengeWarden}
             />
-          )}
+          ) : progress.pin ? (
+            <PixelText size="tiny" color={palette.secondary} style={{ marginTop: space.sm }} align="center">
+              {route.pinName} earned
+            </PixelText>
+          ) : null}
+          <PixelButton
+            label={dist.running ? 'Stop Run' : 'Start Run (GPS)'}
+            tone={dist.running ? 'danger' : 'primary'}
+            sound="confirm"
+            style={{ marginTop: space.sm }}
+            onPress={toggleRun}
+          />
         </View>
       </View>
 
@@ -376,6 +421,24 @@ export default function RouteScreen({ params = {} }) {
             <PixelText size="small" color={tokens.textOnDark} style={{ marginBottom: space.sm }}>
               ON THE TRAIL
             </PixelText>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: space.sm }}>
+              {ROUTES.map((r) => {
+                const unlocked = isTrailUnlocked(r.id, state.trails);
+                const active = r.id === route.id;
+                return (
+                  <PixelButton
+                    key={r.id}
+                    label={r.name}
+                    tone={active ? 'gold' : 'dark'}
+                    size="small"
+                    disabled={!unlocked}
+                    sound="cursor"
+                    style={{ marginRight: 6, marginBottom: 6, paddingVertical: 8, paddingHorizontal: 10 }}
+                    onPress={() => pickTrail(r.id)}
+                  />
+                );
+              })}
+            </View>
             <ScrollView showsVerticalScrollIndicator={false}>{stepPanel}</ScrollView>
             <TrailAction
               label={`Back to ${PLACE_LABELS.hub}`}

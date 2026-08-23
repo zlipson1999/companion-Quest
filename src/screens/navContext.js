@@ -9,7 +9,7 @@ export const PLACE_LABELS = {
   hub: 'Maple Lane',
   gym: 'the gym',
   rest: 'Home',
-  route: 'Route 1',
+  route: 'the trails',
 };
 
 export function useNav() {

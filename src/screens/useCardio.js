@@ -18,7 +18,7 @@ import { playSfx } from '../audio';
 // How long the walking pulse stays lit after the last step arrives.
 const MOVING_MS = 900;
 
-export default function useCardio({ active = true, onDelta, onMilestone } = {}) {
+export default function useCardio({ active = true, onDelta, onMilestone, routeId } = {}) {
   const { state, dispatch } = useGame();
   const dist = useDistance();
   const [moving, setMoving] = useState(false);
@@ -27,8 +27,8 @@ export default function useCardio({ active = true, onDelta, onMilestone } = {}) 
   const lastSteps = useRef(0);
   const prevMilestones = useRef(state.stats.milestonesReached);
   const moveTimer = useRef(null);
-  const cbs = useRef({ onDelta, onMilestone });
-  cbs.current = { onDelta, onMilestone };
+  const cbs = useRef({ onDelta, onMilestone, routeId });
+  cbs.current = { onDelta, onMilestone, routeId };
 
   useEffect(() => {
     if (!active) return;
@@ -37,7 +37,7 @@ export default function useCardio({ active = true, onDelta, onMilestone } = {}) 
     if (dM <= 0 && dS <= 0) return;
     lastMiles.current = dist.miles;
     lastSteps.current = dist.steps;
-    dispatch({ type: 'ADD_DISTANCE', payload: { miles: dM, steps: dS } });
+    dispatch({ type: 'ADD_DISTANCE', payload: { miles: dM, steps: dS, routeId: cbs.current.routeId } });
 
     setMoving(true);
     if (moveTimer.current) clearTimeout(moveTimer.current);

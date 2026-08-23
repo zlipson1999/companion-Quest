@@ -50,7 +50,7 @@ src/
   modules/     the life-module plugin system + 5 modules (the Forge is one)
   coach/       the companion/Coach's warm, in-character dialogue
   audio/       expo-av sound manager for the original SFX + chiptune loops
-  screens/     28 screens + the Router (with a real back stack)
+  screens/     30 screens + the Router (with a real back stack)
 assets/sfx/    generated 8-bit WAV SFX + looping chiptune tracks
 assets/tiles/  generated tile atlas + room lighting
 tools/         asset generators (make_sprites.py, make_audio.py), the three
@@ -131,8 +131,8 @@ runs (guardrail + persona) but won't produce live replies.
 See `CLAUDE.md` for the phase-by-phase history and `docs/GAME_BIBLE.md` for every
 system with its exact numbers, and run `python3 tools/check_docs.py` after changing
 any figure either of them quotes. Lifetime reps, sets and held seconds now read back
-out on the Status screen, and the Coach's brief reports sets; next up is the Week
-view, and a design pass on Route 1.
+out on the Status screen, and the Coach's brief reports sets. Four trails, Wardens
+and Quest Pins live in `src/data/routes.js`.
 
 ## Tech
 

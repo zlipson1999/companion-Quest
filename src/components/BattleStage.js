@@ -16,12 +16,16 @@ import { Tile } from './TileMap';
 const DISC = [0.52, 0.78, 0.93, 1.0, 1.0, 0.96, 0.84, 0.62];
 
 const TONES = {
-  grass: { sky: '#4a6ea8', far: '#7fa8d8', disc: palette.grassTall, field: 'grass' },
-  trail: { sky: '#5f7fb4', far: '#9fc0e0', disc: palette.sand, field: 'path' },
-  dusk: { sky: '#3a2c52', far: '#8a6a9e', disc: '#6b5d7a', field: 'grass' },
+  grass: { sky: '#4a6ea8', far: '#7fa8d8', disc: palette.grassTall, mapId: 'route_maple', codes: 'grass' },
+  maple: { sky: '#4a6ea8', far: '#7fa8d8', disc: palette.grassTall, mapId: 'route_maple', codes: 'grass' },
+  trail: { sky: '#5f7fb4', far: '#9fc0e0', disc: palette.sand, mapId: 'route_gale', codes: 'path' },
+  dusk: { sky: '#3a2c52', far: '#8a6a9e', disc: '#6b5d7a', mapId: 'route_maple', codes: 'grass' },
   // Indoors. Coach's push-up contest happens on the gym floor, not on a
   // hillside — a sparring match staged in a meadow reads as a different game.
-  hall: { sky: '#232833', far: '#39404d', disc: '#4f8a7e', field: 'gym_floor' },
+  hall: { sky: '#232833', far: '#39404d', disc: '#4f8a7e', mapId: 'gym', codes: 'floor' },
+  cairn: { sky: '#5c5a52', far: '#b0a890', disc: '#8a7a58', mapId: 'route_cairn', codes: 'earth' },
+  gale: { sky: '#6aa8dc', far: '#d0e8f8', disc: palette.sand, mapId: 'route_gale', codes: 'open' },
+  canopy: { sky: '#1c2a1a', far: '#3a5a32', disc: '#2e4a28', mapId: 'route_canopy', codes: 'shade' },
 };
 
 // Battle tiles are drawn at 3x the overworld's usual scale — "zoomed in".
@@ -56,7 +60,7 @@ export function Platform({ width = 96, tone = 'grass' }) {
 
 // The ground: rows of real tiles, scattered exactly the way the overworld
 // scatters them (same coordinate hash, via Tile), clipped to the stage.
-function TileGround({ field }) {
+function TileGround({ mapId, codes }) {
   const cols = Math.ceil(screen.width / TILE_SIZE) + 1;
   const rows = Math.ceil((screen.height * 0.5) / TILE_SIZE) + 1;
   // Tile resolves its layers from its neighbours, so the stage floor has to be
@@ -67,21 +71,26 @@ function TileGround({ field }) {
     for (let y = 0; y < rows; y += 1) {
       let row = '';
       for (let x = 0; x < cols; x += 1) {
-        if (field === 'gym_floor') {
+        const h = ((x * 7 + y * 13) >>> 0) % 17;
+        const edge = x < 2 || x > cols - 3;
+        if (codes === 'floor') {
           row += '.';
-        } else if (field === 'path') {
+        } else if (codes === 'path') {
           row += '#';
+        } else if (codes === 'earth') {
+          row += h === 0 ? '#' : h < 3 ? '*' : '.';
+        } else if (codes === 'open') {
+          row += h === 0 && !edge ? '#' : h === 1 ? ',' : '.';
+        } else if (codes === 'shade') {
+          row += edge && h < 8 ? 'T' : h === 0 ? '^' : '.';
         } else {
-          // mostly grass, the odd tall-grass clump toward the edges — the
-          // middle stays calm so the combatants read cleanly against it
-          const h = ((x * 7 + y * 13) >>> 0) % 17;
-          row += h === 0 && (x < 2 || x > cols - 3) ? '^' : '.';
+          row += h === 0 && edge ? '^' : '.';
         }
       }
       out.push(row);
     }
-    return { id: field === 'gym_floor' ? 'gym' : 'stage', cols, rows, grid: out };
-  }, [field, cols, rows]);
+    return { id: mapId || 'stage', cols, rows, grid: out };
+  }, [codes, mapId, cols, rows]);
 
   return (
     <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden' }}>
@@ -105,7 +114,7 @@ export default function BattleStage({ tone = 'grass', horizon = 0.52, children, 
       {/* haze over distant ground — one line, not a stack of stripes */}
       <View style={{ position: 'absolute', left: 0, right: 0, top: `${skyH}%`, height: 4, backgroundColor: t.far }} />
       <View style={{ position: 'absolute', left: 0, right: 0, top: `${skyH}%`, bottom: 0 }}>
-        <TileGround field={t.field} />
+        <TileGround mapId={t.mapId} codes={t.codes} />
       </View>
       <View style={{ flex: 1 }}>{children}</View>
     </View>

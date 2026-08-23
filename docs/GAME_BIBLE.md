@@ -91,14 +91,13 @@ src/
   data/        creatures, goals, exercises(+learnset/tiers/breakdown), items,
                wild, obstacles, workouts(6), maps(4 places + zones),
                movements(140), muscles(14), recipes(74), shop, characters,
-               outfits, route(pacing), sprites.js + tileAtlas.js
+               outfits, route(pacing), routes(four trails / Wardens / Quest Pins),
+               sprites.js + tileAtlas.js
                (BOTH GENERATED — never edit by hand)
   state/       GameContext (reducer, save), leveling, evolution, history,
                recovery, economy (Trail Credit), cardioMaths (console numbers),
                useDistance, stepDetector, storage
-               [usePedometer.js is DEAD legacy — superseded by useDistance,
-                still exported from state/index.js; safe to delete]
-  screens/     Router + 28 screens (§4), plus useCardio (the one path real
+  screens/     Router + 30 screens (§4), plus useCardio (the one path real
                distance takes into the game) and placeMemory (where you were
                standing in each place)
   components/  28 building blocks (§9)
@@ -185,9 +184,9 @@ clears it.
 
 | route | file | what it is |
 |---|---|---|
-| `title` | TitleScreen | logo, blinking Press Start, bobbing starters; Continue / New Adventure (+erase confirm) when a save exists |
+| `title` | TitleScreen | logo, Continue / Begin Again (Begin Again RESET then `intro`, so outfit/character creation runs) |
 | `intro` | IntroScreen | Coach's typewriter welcome |
-| `goal` | GoalSelectScreen | the three goals (§5.2) with starter previews; rows are `Pressable` (an `onTouchEnd` bug once made mouse selection impossible on web) |
+| `goal` | GoalSelectScreen | the three goals (§5.2) with **no starter previews** — the companion is a surprise at the ceremony; rows are `Pressable` |
 | `pairing` | PairingScreen | starter reveal + Coach lines |
 | `outfit` | OutfitSelectScreen | one-time character + outfit choice |
 | `homeIntro` | HomeIntroScreen | the scripted walk: bedroom → downstairs → the lane |
@@ -197,7 +196,7 @@ clears it.
 | `sparIntro` | SparIntroScreen | Coach's push-up contest against Rowan; hands to the real BattleScreen |
 | `cookbook` | CookbookScreen | the kitchen shelf: 74 recipes, 18 categories, search over names/blurbs/tags/ingredients |
 | `smoothiebar` | SmoothieBarScreen | the gym's bar; spends Trail Credit (§5.6) |
-| `route` | RouteScreen | the engine room — §5.4 |
+| `route` | RouteScreen | four trails — §5.4 |
 | `battle` | BattleScreen | §6 |
 | `workout` | WorkoutScreen | 6 preset routines (data/workouts.js), pay ×`workoutXpMult`; a station can pin one via `params.workoutId` |
 | `rest` | HomeRestScreen | your house (13×15 downstairs, 11×13 bedroom); the bed sleeps (`HEAL_FULL`) |
@@ -309,11 +308,32 @@ explicit `stage: 1|2|3`. Wild-family evolution names remain clearance candidates
   copy of that, and two copies of "real movement counts" is the last thing this
   game can afford to let drift. Encounters stay with the trail — indoors there
   is nothing to meet — so the hook hands back the delta and the caller decides.
-- RouteScreen is Route 1 and nothing else. It used to carry a second mode for
-  the cardio deck, rendered as the outdoor trail with its trees switched off;
-  the deck lives in the gym now (§5.7).
-- The trail visual is a deterministic scrolling tile field (`routeRow` hash);
-  it scrolls only while distance is actually arriving.
+  **Gym cardio must not pass `routeId`.** Indoor miles still count as real
+  walking (XP, credit, lifetime stats) but they do not fill a trail quota.
+- **Four trails** (`src/data/routes.js`), save `version: 9`. Maple Trail is
+  unlocked from the start. Walk that trail's miles and confirm its reps in
+  challenges, then Challenge the Warden. First win grants the Quest Pin, a
+  Kinship Knot, and the next trail's companions.
+
+  | Trail | Miles | Reps | Companions | Warden | Pin |
+  |---|---|---|---|---|---|
+  | Maple Trail | 1.5 | 30 | starters (Grove) | Sludgewad | Maple Pin |
+  | Cairn Cut | 3 | 60 | Pebblepup (Stone) | Snoozeghoul | Stone Pin |
+  | Gale Reach | 5 | 100 | Wispurr (Wind) | Achefang | Gale Pin |
+  | Canopy Run | 8 | 160 | Sporelet (Rest) | Couchlurk | Canopy Pin |
+
+  Each trail is a different place (not one shared grass strip): Maple is a
+  green lane with trees; Cairn is packed earth and stone (`tile_gym_platform`);
+  Gale is open country with a thin track and more sky; Canopy is dense shade
+  on `tile_gym_turf`. BattleStage tones match. The Index silhouettes
+  locked-trail creatures. Status lists Quest Pins. The trail switcher shows
+  all four; locked ones are disabled. Original terms only: trail, Warden,
+  Quest Pin. `creatures.js` does not import `routes.js`.
+- RouteScreen used to carry a second mode for the cardio deck, rendered as
+  the outdoor trail with its trees switched off; the deck lives in the gym
+  now (§5.7).
+- The trail visual is a deterministic scrolling tile field (`trailRow` per
+  trail); it scrolls only while distance is actually arriving.
 - **Step sources, in priority order** (see docs/STEP_COUNTING.md):
   1. OS pedometer (`Pedometer.watchStepCount`) — counts with the screen off;
      needs Physical activity / Motion permission; NOT always reachable inside
@@ -396,7 +416,7 @@ tween every other step in that room uses, so no bespoke mount animation was
 needed — the stick hides, movement is disabled (the button is how you get off,
 the way the bar is on a real one), and the gym stays on screen above.
 
-Route 1 runs the same console: the measurement outdoors is identical, so there
+The trail runs the same console: the measurement outdoors is identical, so there
 was no reason the trail should report it in a smaller vocabulary. It passes a
 `title` (the trail names itself), `children` (its milestone and trail-sign
 meters) and no `onStop`, because outdoors there is no getting off a trail.
@@ -472,7 +492,8 @@ milestone count) → `toBattle` flash → BattleScreen.
   you are) and `standing = companionHp/maxHp` (**your own** remaining Resolve).
   That inverts the incentive on purpose: finishing strong earns the knot, and
   grinding something into the ground at any cost earns nothing.
-  Full team (6) → the knot is still spent, creature goes to the Index.
+  Full Circle (6) → CATCH is a no-op: the Knot is not spent, the fight stays
+  open, nothing is stamped in the Index. Make room first.
 - **Every confirmed move is recorded.** `LOG_EXERCISE` banks the set into
   `stats.sets`, its repetitions into `stats.reps` (or seconds into
   `stats.holdSec`), a per-exercise tally into `stats.exercises`, and a row into
@@ -688,10 +709,10 @@ board_update, friend_request, friend_accept + bgm_town / bgm_battle loops.
 `audio/sfx.js` wraps expo-av; every call degrades silently (web autoplay,
 early calls). BGM switching lives in Router via TOWN_BGM.
 
-## 12. Save format — `companionquest:save:v1` key, `version: 8`
+## 12. Save format — `companionquest:save:v1` key, `version: 9`
 
 ```js
-{ version: 8, started, goalId,                    // 'muscle'|'lean'|'root'
+{ version: 9, started, goalId,                    // 'muscle'|'lean'|'root'
   playerOutfit, playerGender,                     // one-time, v6
   party: [{ id, baseId, xp, bond, evo, hp }],     // ≤6
   activeIndex,
@@ -713,7 +734,8 @@ early calls). BGM switching lives in Router via TOWN_BGM.
                                                   // for the Forge); control
                                                   // 'stick'|'dpad';
                                                   // bodyWeightLb always POUNDS
-  meta: { createdAt, lastPlayedDate, sparDone } }
+  meta: { createdAt, lastPlayedDate, sparDone },
+  trails: { activeId, progress: { [routeId]: { miles, reps, pin } } } }  // v9
 ```
 
 Migrations, all in HYDRATE — and every one of them refuses to invent history:
@@ -727,6 +749,7 @@ Migrations, all in HYDRATE — and every one of them refuses to invent history:
 | v5→6 | `playerOutfit` / `playerGender`; null defaults keep older saves in setup |
 | v6→7 | `credits: 0` — NOT back-paid for miles the app was not minting on |
 | v7→8 | `bag.token` → `bag.knot`, carried across rather than voided: somebody's count is somebody's earned work |
+| v8→9 | `trails` — Maple Trail at zero miles/reps, no pins. Older miles are not back-credited: they were not trail-tagged, and gym miles must never fill a trail quota |
 
 Plus, every load: goal ids translated, `rollAllModules` day roll, and a
 `MODULE_RESET_DAY` self-heal from the Habits screens so a session left open past
@@ -913,8 +936,8 @@ A change is done only when all applicable items are true:
    validation or migration suite (§13.5).
 3. **Background step counting is unproven in a standalone app** — accelerometer
    fallback works only in the foreground. EAS physical-device proof is a gate.
-4. **Save failure is silent and local-only** — no corrupt-save recovery,
-   backup/export or cloud decision.
+4. **Save failure shows a red banner** (`saveError` on GameProvider / Router).
+   Corrupt-save recovery, backup/export and cloud remain open.
 5. **Accessibility is unspecified** — especially tiny pixel text, focus/labels,
    touch targets and reduced-motion alternatives for flashes/strobes.
 6. **Privacy/safety/service operations are undocumented** — no privacy policy,
@@ -928,7 +951,7 @@ A change is done only when all applicable items are true:
 
 9. **Four obstacle creatures and a few structural tiles remain procedural.**
    All 18 companion forms and 14 world materials now derive from authored art.
-10. `state/usePedometer.js` is dead code (still exported).
+10. `state/usePedometer.js` is gone (deleted in Phase 14).
 11. Evolution ceremony is a strobe + swap; it needs both a stronger scene and a
     reduced-motion alternative.
 12. No per-movement progression charts despite weight-aware PR data.
@@ -936,8 +959,7 @@ A change is done only when all applicable items are true:
 14. `dusk` battle tone is defined but unused.
 15. Scratchpad walkthrough artifact drifts from the app (preview-only).
 16. The Coach proxy is undeployed; generative chat is unavailable in production.
-17. Befriending with a full team still spends the Kinship Knot and only marks
-    the creature owned; decide storage/replacement behaviour.
+17. Full Circle (6) is a CATCH no-op: Knot stays, fight stays, Index unchanged.
 18. Balance targets and simulations in §13.6 do not exist.
 19. Art-reference provenance is not tracked as release metadata.
 

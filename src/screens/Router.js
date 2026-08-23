@@ -8,6 +8,8 @@ import { NavContext, PLACE_LABELS } from './navContext';
 import { useGame } from '../state';
 import { playBgm, setMuted, setBgmMuted } from '../audio';
 import BattleTransition from '../components/BattleTransition';
+import { PixelText } from '../components';
+import { palette, space } from '../theme';
 
 import TitleScreen from './TitleScreen';
 import IntroScreen from './IntroScreen';
@@ -90,7 +92,7 @@ const PLACES = new Set(['hub', 'gym', 'rest', 'route', 'title', 'homeIntro']);
 // Only places get named on a back button. Anywhere else it is just "Back",
 // because "Back to the movement picker" is worse than saying nothing.
 export default function Router() {
-  const { state, hydrated } = useGame();
+  const { state, hydrated, saveError } = useGame();
   const [route, setRoute] = useState(null);
   const [stack, setStack] = useState([]);
   const [pendingBattle, setPendingBattle] = useState(null);
@@ -152,6 +154,13 @@ export default function Router() {
   return (
     <NavContext.Provider value={nav}>
       <View style={{ flex: 1 }}>
+        {saveError ? (
+          <View style={{ backgroundColor: palette.danger, paddingVertical: 8, paddingHorizontal: space.md, zIndex: 40 }}>
+            <PixelText size="tiny" color={palette.white} align="center">
+              {saveError}
+            </PixelText>
+          </View>
+        ) : null}
         <Active params={route.params || {}} />
         {pendingBattle ? (
           <BattleTransition

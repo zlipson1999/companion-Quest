@@ -42,7 +42,7 @@ export const HUB = {
     // A bench by the water does what the sofa indoors does.
     '+': { screen: 'habit', params: { moduleId: 'meditation' }, label: 'Bench — sit by the water' },
     // Label only, no screen. A signpost that opened a menu would be a menu.
-    i: { label: 'Signpost — Route 1, through the north gate' },
+    i: { label: 'Signpost — the trails, through the north gate' },
     '%': { label: 'Your post box. Nothing today.' },
   },
 };
@@ -270,14 +270,12 @@ const INTERACTIONS = {
   B: { screen: 'forge', label: 'Flat bench — build your own session' },
   w: { screen: 'habits', label: 'Water station — daily habits' },
   M: { screen: 'formcheck', label: 'Mirror — form check' },
-  // Resolved in GymScreen: before you have a companion this is where the goal
-  // conversation happens; afterwards it is the coach chat. Sending an existing
-  // save to the goal screen would re-run START_GAME and replace the party.
-  // Coach hands you a session already written. Before you have a companion she
-  // is the goal conversation instead — GymScreen resolves that, because
-  // re-running the goal screen on a live save would replace the party.
-  C: { screen: 'workout', label: 'Coach Maple — take a session off the shelf' },
-  A: { screen: 'workout', label: 'Rowan — mid-session, and happy to spot you' },
+  // Coach Maple is chat once you have a companion; before that she is the
+  // goal conversation. GymScreen resolves it, because sending a live save
+  // to the goal screen would re-run START_GAME and replace the party.
+  // Bumping her is how you talk. Shelf sessions live on the gym menu.
+  C: { screen: 'coach', label: 'Coach Maple — she will talk with you' },
+  A: { screen: 'sparIntro', label: 'Rowan — the push-up contest is still on' },
   // The two zones at the south end. Each opens the routine it is FOR rather
   // than the list of all of them: you walked to the turf, so you already
   // said which one you wanted.
@@ -359,7 +357,7 @@ if (shadowed.length) {
 export const TRIGGER_LABELS = {
   rest: 'Home',
   gym: 'Quest Fitness',
-  route: 'Route 1',
+  route: 'the trails',
   hub: 'Maple Lane',
 };
 

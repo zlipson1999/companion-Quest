@@ -17,7 +17,7 @@ import { HUB, isWalkable, tileAt, triggerForCode, interactionForCode } from '../
 import { recallSpot, rememberSpot } from './placeMemory';
 
 const MENU = [
-  { label: 'Route 1', value: 'route', sublabel: 'real miles, encounters' },
+  { label: 'Trails', value: 'route', sublabel: 'real miles, Wardens' },
   { label: 'Quest Fitness', value: 'gym', sublabel: 'train, cardio, coach' },
   { label: 'Go Home', value: 'rest', sublabel: 'sleep upstairs' },
   { label: 'Team', value: 'party', sublabel: 'companions' },
@@ -71,8 +71,8 @@ export default function HubScreen() {
   const objective = facingThing ? facingThing.label : !companion
     ? 'Meet Coach Maple inside Quest Fitness'
     : state.stats.distanceMi < 0.1
-      ? 'Head out through the north gate and walk Route 1'
-      : 'Train at the gym, or walk Route 1 for more distance';
+      ? 'Head out through the north gate and walk Maple Trail'
+      : 'Train at the gym, or walk a trail for more distance';
 
   return (
     <WorldScreen

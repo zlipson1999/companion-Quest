@@ -119,12 +119,16 @@ permission needed, but foreground-only. The Route states which is running rather
 than pretending they are equivalent. See `docs/STEP_COUNTING.md`.
 
 **State shape** (persisted to AsyncStorage, auto-migrated by `version`, currently
-**8**): `{ started, goalId, playerOutfit, playerGender, party:[{id,baseId,xp,
+**9**): `{ started, goalId, playerOutfit, playerGender, party:[{id,baseId,xp,
 bond,evo,hp}], activeIndex, credits, stats, bag, dex, modules, history,
-settings, meta }`. Companion XP is a lifetime total; level/HP are derived
+settings, meta, trails }`. Companion XP is a lifetime total; level/HP are derived
 (`src/state/leveling.js`). `useCompanion()` returns the active party member;
 `useParty()` returns the whole team. Distance is in miles (`stats.distanceMi`);
-the Route auto-advances and rolls grass encounters off real distance.
+the Route auto-advances and rolls grass encounters off real distance. **Trail
+quotas** (miles + challenge reps) live in `state.trails` and only increment when
+`ADD_DISTANCE` / `LOG_EXERCISE` carry a `routeId` — gym cardio must not pass one.
+A full Circle (6) makes `CATCH` a no-op (no Knot spent, stay in the fight).
+Begin Again `RESET`s then navigates to `intro` so outfit/character creation runs.
 
 **Navigation:** a tiny custom router (`src/screens/Router.js` + `navContext`) —
 `navigate(name)` and `toBattle(params)` (which plays the flash/wipe). Register
