@@ -19,6 +19,7 @@ is the three attached Create Your Companion faces, isolated from magenta.
 | `clinket_family.png` | Clinket family | Clinket, Bellstride, Canyonchime | Magenta field — lineup only |
 | `glintfoal_family.png` | Glintfoal family | Glintfoal, Astramare, Cometmane | Magenta field — lineup only |
 | `plinkbat_family.png` | Plinkbat family | Plinkbat, Cavernwing, Rainvault | Magenta field — lineup only |
+| `knockit_family.png` | Knockit family | Knockit, Bamboar, Canebrute | Magenta field — lineup only |
 | `figbat_family.png` | Figbat family | Figbat, Orchardusk, Noctifera | Magenta field — lineup only |
 | `ammonip_family.png` | Ammonip family | Ammonip, Spiralisk, Aeoncoil | Magenta field — lineup only |
 

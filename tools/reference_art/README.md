@@ -79,6 +79,15 @@ quadruped. Stage 2 is a bipedal stone-armor lizard with a head spiral
 — not a larger shelled kid. Stage 3 is a frontal spiral monolith with
 petrified fan-wings. Approval plate: `lineups/ammonip_family.png`.
 
+
+**Knockit family (Bamboo Ravine / Hollowstem Way).** Named masters
+`knockit` / `bamboar` / `canebrute`. Magenta chroma keyed; light-pink
+snout, lime armor, gold hornlets, and bamboo green stay. Stage 1 is
+a chibi piglet with a stacked bamboo-shoot horn and gold hornlets.
+Stage 2 is a lime-plated boar with white tusks — not a larger
+piglet. Stage 3 is a shaggy bamboo-spine beast with segmented
+tusks. Approval plate: `lineups/knockit_family.png`.
+
 **Plinkbat family (Rainshadow Forest / Dripstone Trail).** Named
 masters `plinkbat` / `cavernwing` / `rainvault`. Magenta chroma keyed;
 pink blush, ice-blue crystals, purple eyes, and silver claws stay.

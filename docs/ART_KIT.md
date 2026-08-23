@@ -42,6 +42,10 @@ Plinkbat → Cavernwing → Rainvault is the Rainshadow Forest /
 Dripstone Trail line (ice-eared crystal kit / mineral-veined bat /
 stone gargoyle; magenta is chroma only). Pink blush, ice-blue
 crystals, purple eyes, and silver claws stay.
+Knockit → Bamboar → Canebrute is the Bamboo Ravine / Hollowstem
+Way line (bamboo-horn piglet / lime-armored boar / bamboo-spine
+beast; magenta is chroma only). Light-pink snout, lime armor,
+gold hornlets, and bamboo green stay.
 Figbat → Orchardusk → Noctifera is the Night Orchard /
 Starlit Fig Path line (fig-kid / leaf-ear fox-bat / star-wing
 mystic; magenta is chroma only). Green leaf-ears, cream masks,
