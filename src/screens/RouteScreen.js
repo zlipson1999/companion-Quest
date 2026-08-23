@@ -48,19 +48,31 @@ import { DEFAULT_BODY_WEIGHT_LB } from '../state/cardioMaths';
 // path, tall grass and tree tiles the overworld uses, scrolling past you.
 const ROUTE_TS = 22;
 
-const SCENE_BG = {
-  maple: palette.grassDark,
-  cairn: '#4a4030',
-  gale: '#6a98c4',
-  canopy: '#1a2a18',
+// Same sky and haze as BattleStage, so the walk and the challenge are one place.
+const SCENE_SKY = {
+  maple: '#4a6ea8',
+  cairn: '#5c5a52',
+  gale: '#6aa8dc',
+  canopy: '#1c2a1a',
+};
+const SCENE_HAZE = {
+  maple: '#7fa8d8',
+  cairn: '#b0a890',
+  gale: '#d0e8f8',
+  canopy: '#3a5a32',
 };
 
 function ScrollingScene({ width, height, moving, trailId }) {
   const offset = useRef(new Animated.Value(0)).current;
-  const cols = Math.ceil(width / ROUTE_TS);
-  const rows = Math.ceil(height / ROUTE_TS) + 1;
-  const [frame, setFrame] = useState(0);
   const route = getRoute(trailId);
+  // Tiles used to cover the whole phone, so SCENE_SKY never showed and the
+  // four trails read as one slab with the sign swapped. The ground starts at
+  // the trail's own horizon — Gale is mostly sky, Canopy almost none.
+  const skyH = Math.round(height * (route.horizon || 0.16));
+  const groundH = Math.max(ROUTE_TS * 4, height - skyH);
+  const cols = Math.ceil(width / ROUTE_TS);
+  const rows = Math.ceil(groundH / ROUTE_TS) + 1;
+  const [frame, setFrame] = useState(0);
 
   useEffect(() => {
     let loop;
@@ -99,8 +111,9 @@ function ScrollingScene({ width, height, moving, trailId }) {
   );
 
   return (
-    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden', backgroundColor: SCENE_BG[trailId] || palette.grassDark }}>
-      <Animated.View style={{ position: 'absolute', top: -ROUTE_TS * rows, transform: [{ translateY: translate }] }}>
+    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden', backgroundColor: SCENE_SKY[trailId] || palette.grassDark }}>
+      <View style={{ position: 'absolute', left: 0, right: 0, top: skyH, height: 4, backgroundColor: SCENE_HAZE[trailId] || '#7fa8d8' }} />
+      <Animated.View style={{ position: 'absolute', top: skyH - ROUTE_TS, transform: [{ translateY: translate }] }}>
         {strip}
       </Animated.View>
     </View>
@@ -380,15 +393,6 @@ export default function RouteScreen({ params = {} }) {
               {dist.gpsError}
             </PixelText>
           ) : null}
-          {(
-            <PixelButton
-              label={dist.running ? 'Stop Run' : 'Start Run (GPS)'}
-              tone={dist.running ? 'danger' : 'primary'}
-              sound="confirm"
-              style={{ marginTop: space.sm }}
-              onPress={toggleRun}
-            />
-          )}
           {ready ? (
             <PixelButton
               label={`Challenge the Warden`}
@@ -401,6 +405,13 @@ export default function RouteScreen({ params = {} }) {
               {route.pinName} earned
             </PixelText>
           ) : null}
+          <PixelButton
+            label={dist.running ? 'Stop Run' : 'Start Run (GPS)'}
+            tone={dist.running ? 'danger' : 'primary'}
+            sound="confirm"
+            style={{ marginTop: space.sm }}
+            onPress={toggleRun}
+          />
         </View>
       </View>
 
