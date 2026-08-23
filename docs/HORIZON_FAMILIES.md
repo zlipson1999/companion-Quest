@@ -14,10 +14,10 @@ A companion with no trail is not silhouetted (`isCreatureLocked` is false).
 Masters live in `tools/reference_art/<id>.png`. First-rendition plates
 are landed where they already existed (Brineling, Dusthorn, Mireblink,
 Pinepuff, Clinket, Glintfoal, Propfin, Zapram, Nectlet, Chipmagma,
-Bellbun, Mumblewool — magenta keyed out, never matted into the body).
+Bellbun, Mumblewool, Figbat, Ammonip — magenta keyed out, never matted into the body).
 Bellbun's green leaves, purple blush, and bluebell flowers stay.
 Propfin's teal eyes stay; Clinket's verdigris stays;
-Glintfoal's purple mane and energy-flame legs stay. Plinkbat's pink blush, ice-blue crystals, purple eyes, and silver claws stay. Magenta is chroma only.
+Glintfoal's purple mane and energy-flame legs stay. Plinkbat's pink blush, ice-blue crystals, purple eyes, and silver claws stay. Figbat's green leaf-ears and starry wing speckles stay; Ammonip's burnt-orange spirals stay. Magenta is chroma only.
 Nectlet's golden honeycomb and amber stay. Chipmagma's lava orange
 stays. Magenta is chroma only.
 Families still waiting on a plate use an interim isolated drawing from
@@ -34,3 +34,6 @@ Bloomnewt → Lotosaur as specified.
 Ids are permanent. Do not rename.
 
 Burrcalf's purple thistles, sage burs, and cream fur stay. Magenta is chroma only.
+Kernelit sky-blue geometrics, amber eyes, and gold feathers stay. Magenta is chroma only.
+
+Bloopot's teal glow, copper borders, white steam, and Vaportoise's pink tongue stay. Not Rootback.

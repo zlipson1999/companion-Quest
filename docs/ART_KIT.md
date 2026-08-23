@@ -22,7 +22,8 @@ bluebell flowers. Family plates:
 `lineups/propfin_family.png`, `lineups/clinket_family.png`,
 `lineups/glintfoal_family.png`,
 `lineups/burrcalf_family.png`,
-`lineups/plinkbat_family.png`.
+`lineups/plinkbat_family.png`,
+`lineups/kernelit_family.png`.
 Burrcalf → Thistlebuck → Prairieguard is the Golden Steppe /
 Thistlehoof Way line (bur-stuck calf / thistle-crown deer /
 folk bison; magenta is chroma only). Purple thistles, sage
@@ -41,14 +42,28 @@ Plinkbat → Cavernwing → Rainvault is the Rainshadow Forest /
 Dripstone Trail line (ice-eared crystal kit / mineral-veined bat /
 stone gargoyle; magenta is chroma only). Pink blush, ice-blue
 crystals, purple eyes, and silver claws stay.
+Figbat → Orchardusk → Noctifera is the Night Orchard /
+Starlit Fig Path line (fig-kid / leaf-ear fox-bat / star-wing
+mystic; magenta is chroma only). Green leaf-ears, cream masks,
+and starry wing speckles stay.
+Ammonip → Spiralisk → Aeoncoil is the Shellwind Desert /
+Fossil Current line (rocky ammonite / stone-armor lizard /
+spiral monolith; magenta is chroma only). Burnt-orange spirals
+and cream fossil cores stay.
+
+Kernelit → Millwing → Harvestail is the Windmill Plains /
+Grainwheel Road line (spiral-petal moth / compass-eyespot moth /
+owl harvest warrior; magenta is chroma only). Sky-blue geometrics,
+amber eyes, and gold feathers stay. Not Dapple → Glimmoth → Leaflight.
 
 The three first-bond families are complete first-rendition lines
 (magenta keyed out, not a re-render of an old indexed grid):
 Sproutle → Bloomtail → Groveheart, Emberkit → Pyrelynx → Cindermane,
 Dewbble → Tidewade → Maelstride. Pebblepup → Cairnhound →
-Monolithound is the next original-six family on that same path
-(sitting mosaic puppy / standing dry-stone hound / jagged
-dolmen-beast). Sporelet → Mycobloom → Canopore is the same kind of
+Dolmanguard (id `monolithound`) is the next original-six family
+on that same path (sitting mosaic river-stone puppy / cairn-slab
+hound / monolith-slab guardian). Magenta is chroma; moss green
+and pale lichen stay. Not Rubblet → Cairnstack → Dolmenhold. Sporelet → Mycobloom → Canopore is the same kind of
 first-rendition line (magenta keyed; stage-1 sparkles and stage-3
 spore sparks stay). The Pinepuff family plate is
 `lineups/pinepuff_family.png`. First-rendition plates, magenta keyed

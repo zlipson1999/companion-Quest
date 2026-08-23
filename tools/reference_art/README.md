@@ -11,7 +11,8 @@ forms (Bloomtail/Groveheart, Pyrelynx/Cindermane, Tidewade/Maelstride)
 are separate creatures — baby / adolescent / adult — not tints. The
 approval plate is `lineups/firstbond.png`. Pebblepup is now a
 first-rendition family (magenta keyed out): sitting mosaic puppy →
-standing dry-stone cairnhound → jagged dolmen-beast monolithound.
+cairn-slab hound → monolith-slab Dolmanguard (id `monolithound`).
+Moss green and pale lichen stay. Not the Rubblet / Dolmenhold line.
 Filenames stay `pebblepup.png` / `pebblepup_stage2.png` /
 `pebblepup_stage3.png` (mapped through `check_art.py`). Sporelet /
 Mycobloom / Canopore now ship as named masters (magenta keyed;
@@ -51,6 +52,32 @@ sun-rune stone golem (named masters `dusthorn` / `mesaquill` /
 loosen the check. The skill is `tools/CHARACTER_PROMPT.md`.
 
 
+
+
+**Kernelit family (Windmill Plains / Grainwheel Road).** Named
+masters `kernelit` / `millwing` / `harvestail`. Magenta chroma keyed;
+sky-blue geometrics, amber eyes, and gold feathers stay. Stage 1 is
+a kawaii spiral-petal moth. Stage 2 is a fluffy six-legged moth
+with compass eyespots — not a larger kid. Stage 3 is a humanoid
+owl harvest warrior with windmill-blade wings. Not Dapple /
+Glimmoth / Leaflight. Approval plate: `lineups/kernelit_family.png`.
+
+
+**Figbat family (Night Orchard / Starlit Fig Path).** Named masters
+`figbat` / `orchardusk` / `noctifera`. Magenta chroma keyed; green
+leaf-ears, cream masks, and starry wing speckles stay. Stage 1 is a
+plump fig-kid with leaf ears and relaxed bat wings. Stage 2 is a
+fox-faced biped with arm-wings and a seed-spotted belly — not a
+recolor of the fig. Stage 3 is a star-wing mystic (purple ribbed
+ears, leaf crown, eye-sigil wings). Approval plate:
+`lineups/figbat_family.png`.
+
+**Ammonip family (Shellwind Desert / Fossil Current).** Named masters
+`ammonip` / `spiralisk` / `aeoncoil`. Magenta chroma keyed; burnt-orange
+spirals and cream fossil cores stay. Stage 1 is a rocky ammonite
+quadruped. Stage 2 is a bipedal stone-armor lizard with a head spiral
+— not a larger shelled kid. Stage 3 is a frontal spiral monolith with
+petrified fan-wings. Approval plate: `lineups/ammonip_family.png`.
 
 **Plinkbat family (Rainshadow Forest / Dripstone Trail).** Named
 masters `plinkbat` / `cavernwing` / `rainvault`. Magenta chroma keyed;
@@ -156,3 +183,12 @@ drawing that already ships for a Gale/Canopy face or a trail evolution
 is a gap to close, not a template. Keep provenance and commercial-use
 clearance for every source image with the release records; repository
 presence is not a rights determination.
+
+**Bloopot family (Geyser Basin / Steamstone Walk).** Named masters
+`bloopot` / `vaportoise` / `geyshell`. Magenta chroma keyed; teal
+glow, copper borders, white steam, and the stage-2 pink tongue stay.
+Stage 1 is a mosaic vent-and-bubble kid. Stage 2 is a mountain-tier
+turtle with cloud-stack head nubs — not a recolor of the kid.
+Stage 3 is a frontal steam-plume basin tortoise. Not Rootback
+(forest grove on the shell). Approval plate: `lineups/bloopot_family.png`.
+
