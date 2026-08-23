@@ -23,8 +23,8 @@ check pass. Do not lift the `__DEV__` step injector.
 
 House stairs and the front door (A2/A3) were already on `main` via #28.
 Play-quality and Trailkeeper UI live on #31/#32 if those are still open.
-#35 is on `main`; this PR is the leftover art + debrief, not a second copy
-of hydrate/A1/A5/A10/A25/A32.
+#35 is on `main`; this PR is the leftover art + debrief, not a second
+copy of hydrate/A1/A5/A10/A25/A32.
 
 ## Honest debt (still true after this PR unless named below)
 
@@ -40,31 +40,45 @@ of hydrate/A1/A5/A10/A25/A32.
 - **A18/A19** — first-run walking beat and on-scene web-trail copy live on
   the play-quality branch if it has not merged.
 - **Full Circle** is a designed no-op (A33), not a bug.
+- **Stage bar is closed on this branch.** `check_art.py` passes all 18
+  families. That means silhouettes differ. It does not mean every face
+  is final. Do not loosen the gate.
 
 ## What this PR closes
 
-- **A11 Dewbble.** No master existed in the repo, git history, or stashes.
-  The 2026-08-21 trace commit used a PNG that was never committed. This
-  PR does **not** re-render `traced_dewbble.json` back to a PNG. It ships
-  a new first-rendition isolated master matching the existing Dewbble
-  identity (living dewdrop, navy→cyan, pink mouth, satellite droplets),
-  then traces it. `check_art.py` reproduces the new JSON from that master.
-- **A12 first-bond approval lineup.** Sproutle / Emberkit / Dewbble as
-  `lineups/firstbond.png` — three designed faces, full body, 3/4 view,
-  same plate type as Maple/Cairn. Later stages stay their own isolated
-  masters, not tints.
-- **Stage bar remakes** for Stillcup, Kitefin, Whistlet, Lanternbud,
-  Chockit, Dapple, Loftburr, plus Fernap / Rubblet / Facetel. Each remade
-  stage has its own isolated master and `traced_<id>.json`. Ids are
-  permanent. `check_art.py` exits 0 on all 18 families. Thresholds were
-  not loosened.
+- **A11 Dewbble.** The player attached the missing first-rendition plate:
+  stout teardrop, medium blue, pale belly/face, pointed crown, glossy
+  dark-blue eyes with two highlights each, tiny smile, 3-finger arms,
+  4-toe feet, magenta backdrop. Isolated (magenta is backdrop, not
+  body), committed as `tools/reference_art/dewbble.png`, traced. This
+  PR does **not** re-render the old indexed JSON back to a PNG.
+- **A12 first-bond approval lineup.** The same three attached plates —
+  Sproutle, Emberkit, Dewbble — are `lineups/firstbond.png`. Same type
+  as Maple/Cairn and the player card.
+- **Sproutle family complete.** A second pair of attached plates is
+  Bloomtail (adolescent: pear body, cream belly, open pink flower with
+  white-tipped petals, leafy tail, white claws — not two unopened
+  leaves) and Groveheart (adult: walking grove, bark muscle, tan
+  chest, five small trees as hair, lime eyes, moss mantle). Isolated
+  from magenta, traced as their own masters. Not tints of Sproutle.
+  Ids stay `sproutle` / `bloomtail` / `groveheart`.
+- **Emberkit family complete.** A third pair is Pyrelynx (standing
+  flame-eared lynx) and Cindermane (fire-mane beast, black ear tufts,
+  chevron stripes). Ids stay `emberkit` / `pyrelynx` / `cindermane`.
+- **Dewbble line.** Tidewade / Maelstride keep their own isolated
+  masters. Do not tint Dewbble to invent them.
+- **Stage bar remakes** for the clone trail families (Stillcup,
+  Kitefin, Whistlet, Lanternbud, Chockit, Dapple, Loftburr, and the
+  rest of Gale/Canopy). Each remade stage has its own isolated master
+  and `traced_<id>.json`. Ids are permanent. `check_art.py` exits 0.
 
-## What we searched before drawing Dewbble
+## What we searched before the plates arrived
 
 `tools/reference_art/`, `assets/`, `tools/traced_dewbble.json`, every git
 ref (`git log --all -- '*dewbble*'`), and twelve stashes. Result: JSON
-only. Sproutle, Emberkit, and the Dewbble evos already had masters. Do
-not invent a Dewbble PNG from the indexed grid.
+only for Dewbble; tiny pixel-sheet masters for Sproutle and Emberkit.
+The attached plates closed that gap. Do not invent a Dewbble PNG from
+the indexed grid.
 
 ## How to verify
 
@@ -76,8 +90,8 @@ node --check server/index.js
 EXPO_OFFLINE=1 CI=1 npx expo export --platform android --output-dir /tmp/cq
 ```
 
-Read `tools/sprite_preview.png`. The checkers cannot see whether a face
-is good.
+Read `tools/sprite_preview.png` and `tools/reference_art/lineups/firstbond.png`.
+The checkers cannot see whether a face is good.
 
 ## What this debrief is not
 
