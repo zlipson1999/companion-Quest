@@ -26,3 +26,4 @@ export { default as TileImage } from './TileImage';
 export { default as WorldScreen, worldTileFor, MenuButton, TOP_INSET } from './WorldScreen';
 export { default as CompanionStatus } from './CompanionStatus';
 export { default as CardioConsole } from './CardioConsole';
+export { default as GrowthCeremony } from './GrowthCeremony';

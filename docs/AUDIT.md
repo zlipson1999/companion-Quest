@@ -505,16 +505,18 @@ someone next edits the bible; do not change the behavior).
 
 ---
 
-## 7. Feature proposals (parking lot only)
+## 7. Feature proposals
 
 Do **not** change progression numbers. Fit the existing plugin / history /
-world / friends / coach paths. **Not this PR.**
+world / friends / coach paths.
+
+Implemented on `cursor/new-features-e7e6` (Part 5). F4–F8 stay parked.
 
 | # | idea | why it fits | implement? |
 |---|---|---|---|
-| F1 | Coach proposes a Forge plan the player can import | `coach/context.js` already briefs neglected muscles and saved plans; Forge already `MODULE_PATCH`es plans. Deterministic template from analysis, not an LLM writing numbers. | later |
-| F2 | Weekly friend challenge (shared, one metric, Monday reset) | Boards already week-scoped; `friendIdsOf` is the privacy function; server already validates days. One extra challenge row, no new currency. | later |
-| F3 | Evolution / bond ceremony that is not a strobe+swap | `EVOLVE` already fires from Battle/Forge; motion tokens have `ceremony: 620`. Reduced-motion path required (bible gap 11). | later |
+| F1 | Coach proposes a Forge plan the player can import | `src/modules/forge/suggest.js` builds a deterministic bodyweight plan from `neglectedMuscles`. Coach chat and the Forge list can import it via `MODULE_PATCH`. An LLM never writes the numbers. | **done** |
+| F2 | Weekly friend challenge (shared, one metric, Monday reset) | `src/state/weekChallenge.js` rotates Miles / Days / Sessions by local Monday. Board ribbon and a cork card name it. Display only — no extra XP, bond or Trail Credit. | **done** |
+| F3 | Evolution / bond ceremony that is not a strobe+swap | `src/components/GrowthCeremony.js` uses `motion.ceremony` (620ms) once each way. Battle and Forge wait to dispatch `EVOLVE` until it settles. Reduced-motion names both forms and skips the fade. | **done** |
 | F4 | Per-movement PR sparkline on plan detail | `forge/history.js` already stores PRs. Charts only. | later |
 | F5 | Reading / chores / social check-in modules | Phase 6 idea; registry is the install step. | later |
 | F6 | History export (local JSON) | `state/history.js` is already the substrate. | later |
