@@ -66,23 +66,39 @@ loses the design.
 the filenames. They must say "that's a kid, that's a teen, that's the
 grown one" without being told.
 
-### Worked fails
+### Worked fails (historical — remade)
 
-- Stillcup / Dewbasin / Rainhold — same moss bowl, mouth tweak only
+These used to fail the stage bar. They have been redrawn. The list
+stays so nobody ships the old pose three times again.
+
+- Stillcup / Dewbasin / Rainhold — same moss bowl, mouth tweak only;
+  remade as cabbage-crown moss-kid → bowl-shouldered sleeper →
+  walking basin (face in the chest, overflowing water, pink rim flowers)
 - Kitefin / Ribbonsail / Skysheet — same kite, stage 2 is bigger, stage 3 is stage 1
 - Whistlet / Reedgale — identical flute-bird
 - Lanternbud line — closed bud never opens
 - Chockit / Crackwedge / Cliffchock — same wedge plus an outline
-- Dapple / Leaflight — stage 3 is stage 1 again
+- Dapple / Glimmoth / Leaflight — stage 3 was stage 1 again; remade as
+  rotund kawaii moth → slender camo flyer → four-leaf moth
+- Loftburr / Driftpuff / Cloudburr — three 1024 regenerations of one parachute
 
 ### Worked passes
 
+- Sproutle (two-leaf baby) → Bloomtail (opened flower) → Groveheart
+  (standing grove)
+- Emberkit (sitting cub) → Pyrelynx (standing flame-ear lynx) →
+  Cindermane (fire-mane beast)
+- Dewbble (dewdrop) → Tidewade → Maelstride
+- Stillcup (moss-kid, cabbage crown, rain pearl) → Dewbasin
+  (bowl-shoulders, oblong sleeper head) → Rainhold (walking basin,
+  face in the chest). Never a tinted bowl.
+- Dapple (rotund kawaii moth) → Glimmoth (slender tattered-leaf flyer) →
+  Leaflight (four serrated leaf-wings, banded abdomen). Never the same round puff.
 - Spinseed (winged seed) → Whirlkey (same seed, walking legs) → Samaraile
   (stacked key-sail stalk, no longer a hovering bulb)
 - Bramblet (vine knot) → Briarthicket (walking thicket, four roots) →
   Hedgeroot (rooted hedge)
-- Rubblet (three stones) → … → Dolmenhold (walking doorway) — but note
-  Cairnstack failed because it was still three stones
+- Rubblet (three stones) → … → Dolmenhold (walking doorway)
 
 `check_art.py` fails a family whose masters or traced grids are
 near-identical (silhouette IoU + colour difference). If the check fails
@@ -105,7 +121,8 @@ Every companion `traced_<id>.json` is either:
 ```
 
 `make_sprites.py` ignores extra keys. `check_art.py` does not ignore a missing
-master without this block. Today the only allowed gap is **Dewbble**.
+master without this block. Dewbble no longer uses a gap block — it has a
+committed isolated master that reproduces the traced JSON.
 
 ## Companions — worked example (Maple Trail, already shipped)
 

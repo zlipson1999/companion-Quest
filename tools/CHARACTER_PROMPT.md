@@ -62,27 +62,75 @@ build fails.
 
 ## Worked fails (do not ship these)
 
-These families already exist in the repo and **fail the stage bar**.
-They are the reason this rule is a hard reject, not a suggestion.
+These were committed as the same pose three times. They were remade
+as baby / adolescent / adult. The gate still uses the same thresholds
+— do not loosen it. If the next agent ships three copies of one pose,
+they have not read this file.
 
-- **Stillcup / Dewbasin / Rainhold** — same moss bowl, mouth tweak only
-- **Kitefin / Ribbonsail / Skysheet** — same kite, stage 2 is bigger,
-  stage 3 is stage 1
-- **Whistlet / Reedgale** — identical flute-bird
-- **Lanternbud line** — closed bud never opens
-- **Chockit / Crackwedge / Cliffchock** — same wedge plus an outline
-- **Dapple / Leaflight** — stage 3 is stage 1 again
+- **Stillcup / Dewbasin / Rainhold** — was the same moss bowl.
+  Remade: cabbage-crown moss-kid with a rain pearl → bowl-shouldered
+  sleeper (oblong head from the water) → walking basin, face in the
+  chest, overflowing water, pink rim flowers.
+- **Kitefin / Ribbonsail / Skysheet** — was the same kite; stage 3
+  snapped back. Remade: diamond kite → swimming ray → living sky-sheet.
+- **Whistlet / Reedgale** — was an identical flute-bird
+- **Lanternbud line** — closed bud never opened
+- **Chockit / Crackwedge / Cliffchock** — was the same wedge plus an
+  outline; remade as conical chock → standing plate-humanoid →
+  cliff-golem (diagonal bands)
+- **Dapple / Glimmoth / Leaflight** — stage 3 snapped back to stage 1.
+  Remade: rotund kawaii moth → slender tattered flyer → four-leaf moth.
+- **Loftburr / Driftpuff / Cloudburr** — was three 1024 regenerations
+  of one parachute; remade as brown-bulb seed → releasing seedlets →
+  lofted sky-burr (not a bigger 8-lobe puff)
 
 A tinted or scaled copy is not a stage. Three 1024×1024 regenerations
-of one prompt are not a family. If the next agent ships three copies
-of one pose, they have not read this file.
+of one prompt are not a family.
 
 ## Worked passes
 
-- **Spinseed** (winged seed) → **Whirlkey** (same seed, walking legs)
-  → **Samaraile** (stacked key-sail stalk, no longer a hovering bulb)
-- **Bramblet** (vine knot) → **Briarthicket** (walking thicket, four
-  roots) → **Hedgeroot** (rooted hedge)
+- **Sproutle** (two-leaf baby) → **Bloomtail** (opened flower) →
+  **Groveheart** (standing grove)
+- **Emberkit** (sitting cub) → **Pyrelynx** (standing flame-ear lynx)
+  → **Cindermane** (fire-mane beast)
+- **Dewbble** (dewdrop) → **Tidewade** → **Maelstride**
+- **Stillcup** (squat moss-kid, cabbage crown, rain pearl) →
+  **Dewbasin** (bowl-shouldered sleeper, oblong head from the pool,
+  six hovering droplets) → **Rainhold** (walking basin, face in the
+  chest, overflowing water, pink rim flowers). Never a tinted bowl.
+- **Dapple** (rotund kawaii moth, cream/chocolate split, camo scalloped
+  wings) → **Glimmoth** (slender tattered-leaf flyer, pointed abdomen,
+  glowing green eyes) → **Leaflight** (four serrated leaf-wings, banded
+  abdomen, yellow eyes). Never the same round puff as stage 1.
+- **Fernap** (pear + cream belly + one tight fiddlehead stalk) →
+  **Fiddlefrond** (unfurled plant humanoid, two-frond heart crest) →
+  **Frondrest** (walking canopy / palm headdress). Not a taller coil.
+- **Loftburr** (brown bulb, 8-lobe cotton boll, six root-tendrils) →
+  **Driftpuff** (pear body releasing seedlets) → **Cloudburr**
+  (sleepy brown teardrop under a seed-cloud, five floating tufts).
+  Not Dapple (shade-moth). Not a snap-back 8-lobe puff.
+- **Kitefin** (diamond kite, hooded face, two ribbons) → **Ribbonsail**
+  (swimming manta/ray, four ribbons) → **Skysheet** (betta/manta sky
+  canvas). Never a bigger diamond or a snapback kite.
+- **Chockit** (conical banded chock) → **Crackwedge** (stood up,
+  cracked into plates) → **Cliffchock** (cliff given limbs, diagonal
+  strata). Not an outlined wedge.
+- **Pebblepup** (sitting mosaic puppy) → **Cairnhound** (standing
+  dry-stone wolf) → **Monolithound** (jagged dolmen-beast). Not the
+  trail Rubblet / Dolmenhold line.
+- **Sporelet** (toadstool kid + sparkles) → **Mycobloom** (plated
+  scout, cracked loaf-cap, shoulder fruiting) → **Canopore**
+  (rooted canopy, bark legs in moss — not a bigger spotted kid)
+- **Spinseed** (tan ribbed seed-kid, fan samara crest) → **Whirlkey**
+  (upright veined torso, leaf-wings, three vine legs) → **Samaraile**
+  (leaf-armor standing sail, eight golden key-wings — not a bigger seed)
+- **Facetel** (incomplete geode, face in the largest crystal) →
+  **Prismore** (shard-humanoid, face only in the pink heart-chest) →
+  **Quartzspire** (standing prism, closed-eye face on the crown and
+  a second in the heart — not a simpler cluster than the baby)
+- **Bramblet** (vine knot: berries, pink buds, leaf-hands) →
+  **Briarthicket** (walking thicket: humanoid, grapes, four roots) →
+  **Hedgeroot** (rooted hedge golem: orange-dot eyes, antlers, bark arms)
 - **Rubblet** (three stones) → … → **Dolmenhold** (walking doorway) —
   but note **Cairnstack** failed because it was still three stones
 
@@ -195,7 +243,7 @@ an isolated master.
 | Maple | Spinseed, Bramblet, Lanternbud | Seed between paper samara wings; walking thorn-knot; closed bud that holds sap-light. |
 | Cairn | Rubblet, Chockit, Facetel | Three stacked cairn stones; sedimentary climbing wedge; quartz cluster with a face in the heart facet. |
 | Gale | Whistlet, Kitefin, Loftburr | Reed-flute bird; diamond kite-ray with ribbon tails; seed-down parachute on thread legs. |
-| Canopy | Fernap, Dapple, Stillcup | Coiled fiddlehead; shade-moth with dappled wings; moss bowl holding still water. |
+| Canopy | Fernap, Dapple, Stillcup | Coiled fiddlehead; shade-moth with dappled wings; moss-kid holding a rain pearl. |
 
 Those are **stage-1 objects**. Their evolutions must become something
 else (see Worked passes). Several of the committed stage-2/3 masters

@@ -6,22 +6,32 @@ file over anything drawn; a `traced_*.json` that reaches no sprite fails
 the build. A trail face without a master fails the build. There is no
 `sphere()` stand-in.
 
-**53 transparent masters** are committed in `tools/reference_art/`
+**54 transparent masters** are committed in `tools/reference_art/`
 (top-level `*.png` only; approval lineups sit in `lineups/` and are not
-counted). That is the original 17 of 18 plus all 36 trail-family forms.
-**`dewbble` still has no master** — stage 1 stays the shipped teardrop.
+counted). That is all 18 original-six forms plus all 36 trail-family forms.
+The three first-bond families are complete first-rendition lines
+(magenta keyed out, not a re-render of an old indexed grid):
+Sproutle → Bloomtail → Groveheart, Emberkit → Pyrelynx → Cindermane,
+Dewbble → Tidewade → Maelstride. Pebblepup → Cairnhound →
+Monolithound is the next original-six family on that same path
+(sitting mosaic puppy / standing dry-stone hound / jagged
+dolmen-beast). Sporelet → Mycobloom → Canopore is the same kind of
+first-rendition line (magenta keyed; stage-1 sparkles and stage-3
+spore sparks stay). Ids are permanent.
 `python3 tools/check_art.py` verifies that each master still REPRODUCES
 the art the game ships, and **fails a family whose stages are too
 similar** (silhouette IoU + colour difference). That second gate exists
 because a visual audit found seven trail families that were the same
-pose three times. The art is already wrong; the check refuses to
-accept it. Do not loosen the thresholds so the current blobs pass.
+pose three times. Those families were remade as baby / adolescent /
+adult. The check still uses the same thresholds. Do not loosen them.
 
-The quality bar is the approved trail lineups in
-`tools/reference_art/lineups/` (Maple, Cairn, Gale, Canopy). Maple and
-Cairn sit on a flat field and split cleanly. Gale and Canopy are scenic
-plates — their ship masters were re-generated isolated, not split out of
-the forest/sky.
+The quality bar is the approved lineups in
+`tools/reference_art/lineups/` (first-bond, Maple, Cairn, Gale, Canopy).
+Maple and Cairn sit on a flat field and split cleanly. Gale and Canopy
+are scenic plates — their ship masters were re-generated isolated, not
+split out of the forest/sky. The first-bond plate is Sproutle / Emberkit
+/ Dewbble. The original-six stage-1 plate is `lineups/originalsix.png`.
+The Sporelet family plate is `lineups/sporelet_family.png`.
 
 The authored world-material atlas lives in `assets/textures/masters/`.
 `tools/convert_texture_atlas.py` turns its cells into indexed runtime tiles.
@@ -340,15 +350,16 @@ difference map to tell them apart.
 the filenames. They must say "that's a kid, that's a teen, that's the
 grown one" without being told.
 
-Worked fails: Stillcup / Dewbasin / Rainhold (same moss bowl); Kitefin /
-Ribbonsail / Skysheet (same kite, stage 3 is stage 1); Whistlet /
-Reedgale (identical flute-bird); Lanternbud line (closed bud never
-opens); Chockit / Crackwedge / Cliffchock (same wedge plus an outline);
-Dapple / Leaflight (stage 3 is stage 1 again).
+Worked fails (historical — remade, thresholds unchanged): Stillcup line
+(same moss bowl — remade moss-kid / bowl-sleeper / walking basin);
+Kitefin line (same kite); Whistlet line (identical
+flute-bird); Lanternbud line (closed bud); Chockit line (same wedge);
+Dapple line (stage 3 snap-back — remade moth / camo flyer / four-leaf);
+Loftburr line (1024 regenerations).
 
 Worked passes: Spinseed → Whirlkey → Samaraile; Bramblet → Briarthicket
-→ Hedgeroot; Rubblet → … → Dolmenhold (Cairnstack failed — still three
-stones).
+→ Hedgeroot; Rubblet → Cairnstack → Dolmenhold; and the remade families
+above.
 
 `creatures.js` requires a complete three-stage family or none at all.
 

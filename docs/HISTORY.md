@@ -685,11 +685,11 @@ quietly; a doc a script rewrites goes stale loudly and still nobody notices.
 and differed in every sample — meaning "run the generator and diff" could
 prove the art was current but never the audio.
 
-**One gap is written down rather than closed.** ART_KIT claimed all 18
-companion masters are committed; 17 are. `dewbble` still has no master —
-stage 1 stays the shipped teardrop, and its chain starts at the indexed
-output. `sproutle` and `emberkit` now have pixel-sheet masters. The remaining
-gap is stated here, and `check_docs.py` counts the masters.
+**The Dewbble gap is closed.** ART_KIT claimed all 18 companion masters;
+only 17 were committed. The player attached the missing first-rendition
+Dewbble plate (plus Sproutle and Emberkit) on a magenta field. Those
+three are now isolated masters and the first-bond approval lineup.
+`check_docs.py` still counts the masters.
 
 ### Phase 14b — the second pass: config, server, tooling
 
