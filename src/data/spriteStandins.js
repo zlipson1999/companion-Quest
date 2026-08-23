@@ -1,8 +1,8 @@
-// Horizon families have no traced pixel masters yet. Until plates land in
-// tools/reference_art/ and make_sprites emits them, PixelSprite looks here
-// so a missing key still draws — same palette family, matching stage.
+// Fallback only. When a spriteKey is missing from sprites.js, PixelSprite
+// maps Horizon forms to a same-palette Grove stage so the UI never blanks.
 //
-// A stand-in is not a new drawing. Traced art always wins when present.
+// Traced masters in sprites.js / horizonSprites always win. After Horizon
+// plates ship, this file should not be hit for those ids in normal play.
 
 import { HORIZON_CREATURES } from './horizonCreatures';
 
@@ -26,26 +26,13 @@ const STAGE_KEYS = {
   grove: ['sproutle', 'bloomtail', 'groveheart'],
   samara: ['spinseed', 'whirlkey', 'samaraile'],
   scorch: ['emberkit', 'pyrelynx', 'cindermane'],
-  spore: ['sporelet', 'mycobloom', 'canopore'],
-  dapple: ['dapple', 'glimmoth', 'leaflight'],
-  brine: ['dewbble', 'tidewade', 'maelstride'],
-  shore: ['dewbble', 'tidewade', 'maelstride'],
-  pyre: ['emberkit', 'pyrelynx', 'cindermane'],
 };
 
-const BY_KEY = {};
-Object.keys(HORIZON_CREATURES).forEach((id) => {
-  const c = HORIZON_CREATURES[id];
-  const row = STAGE_KEYS[c.palette] || STAGE_KEYS.sprout;
-  const i = Math.max(0, Math.min(2, (c.stage || 1) - 1));
-  BY_KEY[c.sprite || id] = row[i] || row[0];
-});
-
 export function standinSprite(spriteKey, palette, stage) {
-  if (BY_KEY[spriteKey]) return BY_KEY[spriteKey];
-  const row = STAGE_KEYS[palette] || STAGE_KEYS.sprout;
-  const i = Math.max(0, Math.min(2, (stage || 1) - 1));
-  return row[i] || row[0];
+  const creature = HORIZON_CREATURES[spriteKey];
+  const pal = palette || (creature && creature.palette) || 'sprout';
+  const st = stage || (creature && creature.stage) || 1;
+  const row = STAGE_KEYS[pal] || STAGE_KEYS.sprout;
+  const i = Math.max(0, Math.min(2, (st | 0) - 1));
+  return row[i];
 }
-
-export default STAGE_KEYS;
