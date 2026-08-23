@@ -50,7 +50,7 @@ biome — a different field, a different two companions, a harder Warden, the
 region badge.
 
 Visuals reuse existing tile art (grass / earth / turf / mats / cave floor)
-under a unique sky per trail. No new screens.
+under a unique sky per trail. No new pixel art plates required for biomes.
 
 ## Data
 
@@ -58,3 +58,18 @@ under a unique sky per trail. No new screens.
 - `src/data/sceneSky.js` — one tone per trail
 - `src/components/TileMap.js` — floor by `mapId`
 - `src/data/routes.js` — Grove biomes named; extra `trailRow` edges
+
+## World Map screen
+
+`src/screens/WorldMapScreen.js` is the journal entry point for the 11 regions.
+
+- Hub → **Trails** opens the World Map (not the raw Route sheet).
+- World lists every region with locked / open / complete state, pin counts,
+  and a biome colour strip from `sceneSky`.
+- Region view shows Quest Pins earned, companion silhouettes (unknown until
+  seen), landmarks, and the trails of that region.
+- Picking an unlocked trail sets it active and opens the existing Route screen.
+- Route's on-trail menu also links back to the World Map.
+
+No new art plates. Stand-in faces and sky bands are intentional until Horizon
+masters are traced.

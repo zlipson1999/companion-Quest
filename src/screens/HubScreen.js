@@ -17,7 +17,7 @@ import { HUB, isWalkable, tileAt, triggerForCode, interactionForCode } from '../
 import { recallSpot, rememberSpot } from './placeMemory';
 
 const MENU = [
-  { label: 'Trails', value: 'route', sublabel: 'real miles, Wardens' },
+  { label: 'Trails', value: 'world', sublabel: 'regions, pins, Wardens' },
   { label: 'Quest Fitness', value: 'gym', sublabel: 'train, cardio, coach' },
   { label: 'Go Home', value: 'rest', sublabel: 'sleep upstairs' },
   { label: 'Team', value: 'party', sublabel: 'companions' },
