@@ -438,4 +438,13 @@ if (unlisted.length) {
   throw new Error(`creatures: ${unlisted.join(', ')} reach no Index entry`);
 }
 
+// A companion ships as a complete 3-stage family or not at all. A two-stage
+// line used to pass INDEX_ORDER (both ids listed) and still ship unfinished.
+const shortFamily = WILD_COMPANION_IDS.filter((id) => familyChain(id).length !== 3);
+if (shortFamily.length) {
+  throw new Error(
+    `creatures: ${shortFamily.join(', ')} must be a 3-stage family or not ship`
+  );
+}
+
 export default CREATURES;
