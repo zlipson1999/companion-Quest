@@ -7,6 +7,7 @@ is the three attached Create Your Companion faces, isolated from magenta.
 | File | Trail | Faces | Backdrop |
 |---|---|---|---|
 | `firstbond.png` | First bond | Sproutle, Emberkit, Dewbble | Ground strip — lineup only |
+| `originalsix.png` | Original six stage-1s | Sproutle, Emberkit, Dewbble, Pebblepup, Wispurr, Sporelet | Ground strip — lineup only |
 | `maple.png` | Maple | Spinseed, Bramblet, Lanternbud | Flat field — splits |
 | `cairn.png` | Cairn | Rubblet, Chockit, Facetel | Flat field — splits |
 | `gale.png` | Gale | Whistlet, Kitefin, Loftburr | Scenic sky — lineup only |

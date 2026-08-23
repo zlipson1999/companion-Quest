@@ -88,10 +88,12 @@ of one prompt are not a family.
 - **Emberkit** (sitting cub) → **Pyrelynx** (standing flame-ear lynx)
   → **Cindermane** (fire-mane beast)
 - **Dewbble** (dewdrop) → **Tidewade** → **Maelstride**
-- **Spinseed** (winged seed) → **Whirlkey** (same seed, walking legs)
-  → **Samaraile** (stacked key-sail stalk, no longer a hovering bulb)
-- **Bramblet** (vine knot) → **Briarthicket** (walking thicket, four
-  roots) → **Hedgeroot** (rooted hedge)
+- **Spinseed** (tan ribbed seed-kid, fan samara crest) → **Whirlkey**
+  (upright veined torso, leaf-wings, three vine legs) → **Samaraile**
+  (leaf-armor standing sail, eight golden key-wings — not a bigger seed)
+- **Bramblet** (vine knot: berries, pink buds, leaf-hands) →
+  **Briarthicket** (walking thicket: humanoid, grapes, four roots) →
+  **Hedgeroot** (rooted hedge golem: orange-dot eyes, antlers, bark arms)
 - **Rubblet** (three stones) → … → **Dolmenhold** (walking doorway) —
   but note **Cairnstack** failed because it was still three stones
 
