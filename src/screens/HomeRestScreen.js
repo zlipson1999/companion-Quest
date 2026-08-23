@@ -4,7 +4,7 @@ import { Screen, WorldScreen, DialogueBox, CompanionStatus } from '../components
 import { palette, screen, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
-import { BEDROOM, DOWNSTAIRS, isWalkable, interactionForCode } from '../data/maps';
+import { BEDROOM, DOWNSTAIRS, isWalkable, interactionForCode, tileAt } from '../data/maps';
 import { forgetSpot, recallSpot, rememberSpot } from './placeMemory';
 import { playSfx } from '../audio';
 
@@ -19,16 +19,22 @@ const FLOORS = {
     // room sat you down on it instead of walking.
     spawn: { x: 7, y: 13 },
     stairs: { x: 11, y: 1 },
-    hint: 'Sleep is upstairs. Walk to the stairs.',
+    // Just south of the stairs so going down does not immediately send you back up.
+    fromStairs: { x: 11, y: 2, facing: 'down' },
+    hint: 'Sleep is upstairs. The front door goes back to the lane.',
   },
   upstairs: {
     ...BEDROOM,
     name: 'Home — Bedroom',
     spawn: { x: 9, y: 10 },
+    stairs: { x: 9, y: 11 },
     bed: { x: 1, y: 2 },
-    hint: 'Walk to your bed and sleep.',
+    hint: 'Walk to your bed and sleep. The stairs go back down.',
   },
 };
+
+// Same doorstep HomeIntro uses so walking out is the reverse of walking in.
+const LANE_FROM_HOUSE = { x: 2, y: 6, facing: 'down' };
 
 export default function HomeRestScreen() {
   const { state, dispatch } = useGame();
@@ -59,13 +65,23 @@ export default function HomeRestScreen() {
     return out;
   }, [companionName]);
 
-  const changeFloor = () => {
+  const changeFloor = (nextId) => {
     playSfx('confirm');
-    setFloorId('upstairs');
-    rememberSpot('home:floor', 'upstairs');
-    playerRef.current = { ...FLOORS.upstairs.spawn, facing: 'left' };
-    setPlayer(playerRef.current);
-    rememberSpot('home:upstairs', playerRef.current);
+    const next = FLOORS[nextId];
+    const spot = nextId === 'upstairs'
+      ? { ...next.spawn, facing: 'left' }
+      : { ...next.fromStairs };
+    setFloorId(nextId);
+    rememberSpot('home:floor', nextId);
+    playerRef.current = spot;
+    setPlayer(spot);
+    rememberSpot(`home:${nextId}`, spot);
+  };
+
+  const leaveHouse = () => {
+    playSfx('confirm');
+    rememberSpot('hub', LANE_FROM_HOUSE);
+    navigate('hub');
   };
   const sleep = () => {
     dispatch({ type: 'HEAL_FULL' });
@@ -87,7 +103,12 @@ export default function HomeRestScreen() {
     playerRef.current = next; setPlayer(next);
     rememberSpot('home:floor', floorId);
     rememberSpot(`home:${floorId}`, next);
-    if (floorId === 'downstairs' && next.x === floor.stairs.x && next.y === floor.stairs.y) setTimeout(changeFloor, 120);
+    if (floor.stairs && next.x === floor.stairs.x && next.y === floor.stairs.y) {
+      setTimeout(() => changeFloor(floorId === 'downstairs' ? 'upstairs' : 'downstairs'), 120);
+    }
+    if (floorId === 'downstairs' && tileAt(floor, next.x, next.y) === 'D') {
+      setTimeout(leaveHouse, 120);
+    }
 
     // The bed is a solid prop, so you cannot stand on it — walking into it is
     // what puts you to sleep. Coming home to rest, the bed means sleep rather

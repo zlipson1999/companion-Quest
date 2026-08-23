@@ -77,6 +77,7 @@ python3 -m pip install -r tools/requirements.txt
 python3 tools/make_sprites.py
 python3 tools/make_audio.py
 python3 tools/check_docs.py      # docs still agree with the code
+python3 tools/check_art.py       # masters reproduce, and stages are not clones
 ```
 
 ## What's in this build

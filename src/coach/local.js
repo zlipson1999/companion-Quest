@@ -24,6 +24,7 @@ import { getMovement } from '../data/movements';
 import { MUSCLES } from '../data/muscles';
 import { analysePlan } from '../modules/forge/analysis';
 import { formatRecord, unitLabel, weightOf } from '../modules/forge/weight';
+import { suggestPlan } from '../modules/forge/suggest';
 import { neglectedMuscles } from './context';
 
 const RECENT_DAYS = 14;
@@ -231,6 +232,22 @@ const INTENTS = [
         return a.sets ? `"${p.name}" — ${a.focus}, ${a.sets} sets, about ${a.minutes} min` : `"${p.name}" — empty`;
       });
       return `${bits.join('\n')}\nOpen one to see what it trains on the body map, or Start Session to log it.`;
+    },
+  },
+  {
+    id: 'propose',
+    test: /\b(propose|suggest|write me|make me a|coach session|import).*(plan|session|workout|routine)|\b(propose|suggest) a (plan|session|workout)\b/i,
+    answer: (f) => {
+      const stale = neglectedMuscles(f.log, f.today);
+      const { plan, already } = suggestPlan(stale, f.plans, f.today);
+      const a = analysePlan(plan);
+      const names = (plan.blocks || [])
+        .map((b) => (getMovement(b.movementId) || {}).name || b.movementId)
+        .join(', ');
+      const where = already
+        ? `It is already in your Forge as "${plan.name}".`
+        : `Ask the Forge to import it — same card, no extra XP for writing it down.`;
+      return `Here is a session from what has gone quiet, not from a model inventing numbers: ${plan.note} ${a.sets} sets, about ${a.minutes} min. ${names}. ${where}`;
     },
   },
   {

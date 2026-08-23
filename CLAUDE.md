@@ -71,10 +71,12 @@ thing this game is built not to have.
   `tools/make_sprites.py`. **Companions are not.** A new face is designed as
   reference art, isolated, and traced. The first trail pass composed
   `sphere()` + `eye()` blobs; those read as the same creature in twelve
-  palettes and are forbidden for any new companion. The quality bar is the
-  approved trail lineups in `tools/reference_art/lineups/` — designed
-  silhouettes (maple-key, crystal cluster, kite-ray), not a lit ball.
-  See `tools/CHARACTER_PROMPT.md` and `docs/ART_KIT.md`.
+  palettes and are forbidden for any new companion. Each family is
+  baby / adolescent / adult — three different creatures that read as
+  one life, not a tinted or scaled copy of one pose. The quality bar
+  is the approved trail lineups in `tools/reference_art/lineups/` and
+  the hard reject in `tools/CHARACTER_PROMPT.md`. See also
+  `docs/CREATING_CHARACTERS.md` and `docs/ART_KIT.md`.
   - **Sizes,** as RENDERED (authored art is often smaller and scaled): creatures
     96×96, the traced per-character hero sets 26×48 (Coach 30×48) at 4 facings
     × 3 frames, items and module icons 24×24, tiles 32px (`TILE_SCALE = 2` over
@@ -87,14 +89,18 @@ thing this game is built not to have.
     creature art needed more than 35.) The script emits
     `SPRITE_PALETTES` into `src/data/sprites.js` alongside the art — **nothing is
     mirrored into `colors.js` by hand any more.**
-  - To add a person or a companion: the first rendition type. Three
-    faces on one plate (the player card, Sproutle's family, the approved
-    trail lineups), then extract one figure and trace it. People:
-    `convert_character.py --figure N` from `assets/characters/`.
-    Companions: `tools/CHARACTER_PROMPT.md` + `split_lineup.py` /
-    `convert_reference.py`. Do not invent a `sphere()` stand-in. The
-    onboarding screens follow that type too — character creation and
-    companion creation are the same plate.
+  - To add a companion: three **different** creatures that read as one
+    life — baby / adolescent / adult. A tint, scale, crop, or outline
+    of the same pose is not a stage. Three 1024×1024 regenerations of
+    one prompt are not a family. The skill is
+    `tools/CHARACTER_PROMPT.md` (hard reject at the top);
+    `docs/CREATING_CHARACTERS.md` is the how-to;
+    `python3 tools/check_art.py` **fails** a family whose stages are
+    too similar. Do not invent a `sphere()` stand-in. People still
+    use `convert_character.py --figure N` from `assets/characters/`.
+    Character creation and companion creation are the same plate
+    type; a companion family plate is baby / teen / grown, not three
+    tints.
   - `<PixelArt>`/`<PixelSprite>` honour the requested `size` **exactly**
     (fractional cells). Rounding to whole pixels was harmless at 16×16 and
     snapped a 30px request up to 48px once sprites got bigger.

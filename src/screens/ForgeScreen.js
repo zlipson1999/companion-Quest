@@ -9,7 +9,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import { Screen, Window, DialogueBox, BodyMap3D, PixelText, PixelButton, PixelSprite, Triangle } from '../components';
+import { Screen, Window, DialogueBox, BodyMap3D, PixelText, PixelButton, PixelSprite, Triangle, GrowthCeremony } from '../components';
 import { palette, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { levelFromXp } from '../state/leveling';
@@ -19,6 +19,8 @@ import { evolveLines } from '../coach';
 import { moduleStateFor, getModule, todayKey, logModuleAction } from '../modules';
 import { analysePlan, suggestionsFor } from '../modules/forge/analysis';
 import { emptyPlan } from '../modules/forge';
+import { suggestPlan } from '../modules/forge/suggest';
+import { neglectedMuscles } from '../coach/context';
 import { agoLabel, historyFor, lastSession, prTargets, prsSetBy, progressionFor, recordSession, sessionEntry } from '../modules/forge/history';
 import { MAX_WEIGHT, WEIGHT_STEP, beatsRecord, formatRecord, formatSet, unitLabel, weightOf } from '../modules/forge/weight';
 import { loadOf } from '../state/recovery';
@@ -154,6 +156,7 @@ export default function ForgeScreen({ params }) {
   // Empty means "exactly as written", which is the common case.
   const [actual, setActual] = useState(resume ? resume.actual || {} : {});
   const [resultLines, setResultLines] = useState([]);
+  const [ceremony, setCeremony] = useState(null);
 
   const plan = plans.find((p) => p.id === selectedId) || null;
   const analysis = useMemo(() => (plan ? analysePlan(plan) : null), [plan]);
@@ -172,6 +175,23 @@ export default function ForgeScreen({ params }) {
     const fresh = emptyPlan();
     dispatch({ type: 'MODULE_PATCH', payload: { moduleId: FORGE_ID, patch: { plans: [...plans, fresh] } } });
     navigate('forgeEdit', { planId: fresh.id });
+  };
+
+  const coachIdea = useMemo(() => {
+    const stale = neglectedMuscles(modState.log || [], todayKey());
+    return suggestPlan(stale, plans, todayKey());
+  }, [modState.log, plans]);
+
+  const importCoachPlan = () => {
+    playSfx('item');
+    if (!coachIdea.already) {
+      dispatch({
+        type: 'MODULE_PATCH',
+        payload: { moduleId: FORGE_ID, patch: { plans: [...plans, coachIdea.plan] } },
+      });
+    }
+    setSelectedId(coachIdea.plan.id);
+    setPhase('detail');
   };
 
   const deletePlan = () => {
@@ -258,10 +278,14 @@ export default function ForgeScreen({ params }) {
       };
       const creature = getCreature(companion.id);
       if (canEvolve(projected, creature, after)) {
-        const evoLines = evolveLines(creature.name, getCreature(creature.evolvesTo).name);
+        const next = getCreature(creature.evolvesTo);
+        const evoLines = evolveLines(creature.name, next.name);
         lines.push(evoLines[0], evoLines[2]);
         playSfx('evolve');
-        dispatch({ type: 'EVOLVE', payload: { newId: creature.evolvesTo } });
+        setCeremony({ from: creature, to: next, newId: creature.evolvesTo });
+        setResultLines(lines);
+        setPhase('ceremony');
+        return;
       }
     } else {
       lines.push({ speaker: 'Narration', text: 'Meet Coach Maple in the gym — then this work has someone to grow.' });
@@ -269,6 +293,23 @@ export default function ForgeScreen({ params }) {
     setResultLines(lines);
     setPhase('result');
   };
+
+  // ------------------------------------------------------------ ceremony
+  if (phase === 'ceremony' && ceremony) {
+    return (
+      <Screen style={{ padding: space.md, justifyContent: 'center', backgroundColor: palette.ink }}>
+        <GrowthCeremony
+          fromCreature={ceremony.from}
+          toCreature={ceremony.to}
+          onDone={() => {
+            dispatch({ type: 'EVOLVE', payload: { newId: ceremony.newId } });
+            setCeremony(null);
+            setPhase('result');
+          }}
+        />
+      </Screen>
+    );
+  }
 
   // ---------------------------------------------------------------- result
   if (phase === 'result') {
@@ -504,6 +545,18 @@ export default function ForgeScreen({ params }) {
       </PixelText>
 
       <ScrollView showsVerticalScrollIndicator={false}>
+        <Window tone="dark" pad={12} style={{ marginBottom: space.sm }}>
+          <PixelText size="tiny" color={palette.secondary}>COACH SESSION</PixelText>
+          <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6, lineHeight: 14 }}>
+            {coachIdea.plan.note}
+          </PixelText>
+          <PixelButton
+            label={coachIdea.already ? 'Open today\'s Coach Session' : 'Import Coach Session'}
+            tone="gold"
+            style={{ marginTop: space.sm }}
+            onPress={importCoachPlan}
+          />
+        </Window>
         {plans.map((p) => {
           const a = analysePlan(p);
           return (

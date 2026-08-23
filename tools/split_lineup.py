@@ -13,6 +13,10 @@ not split them into `tools/reference_art/<id>.png`. Re-generate each
 face alone with the "Ship master" prompt in tools/CHARACTER_PROMPT.md
 (flat #000000, no ground). `--force` will split a scenic plate anyway
 and the result will be muddy; do not commit those files.
+
+Each family still needs three different life-stage masters (baby /
+adolescent / adult). Splitting one pose three times is not a family.
+See the hard reject at the top of tools/CHARACTER_PROMPT.md.
 """
 from __future__ import annotations
 

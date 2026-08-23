@@ -1,6 +1,6 @@
 // Your companion's condition, at a glance, wherever you are standing.
 //
-// This used to be a strip that only Maple Lane bothered to draw, so the moment
+// This used to be a strip that only Sunkist Lane bothered to draw, so the moment
 // you stepped indoors you lost sight of the thing the whole game is about. It
 // belongs on every walkable screen: the panel under the world is exactly the
 // space for it, and it is the reason that space is not empty.

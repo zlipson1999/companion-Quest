@@ -12,7 +12,7 @@
 // Distance out here is where the game happens TO you. Neither is a walk button.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Modal, Pressable, ScrollView, View } from 'react-native';
+import { Animated, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Screen, Window, ProgressBar, PixelText, PixelSprite, PixelButton, TrailAction, CardioConsole, Tile, MenuButton, TOP_INSET } from '../components';
 import { palette, space, screen, tokens } from '../theme';
@@ -133,7 +133,12 @@ export default function RouteScreen({ params = {} }) {
   const { route, progress } = trailOf(state.trails);
   const ready = trailReady(route, progress);
 
-  const [message, setMessage] = useState('The trail opens up ahead. Every real step carries you forward!');
+  const onWeb = Platform.OS === 'web';
+  const [message, setMessage] = useState(
+    Platform.OS === 'web'
+      ? 'A browser can show the trail. It cannot walk it. Open this on a phone — real steps are the only input.'
+      : 'The trail opens up ahead. Every real step carries you forward!'
+  );
   const [encMeter, setEncMeter] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -399,6 +404,11 @@ export default function RouteScreen({ params = {} }) {
               {message}
             </PixelText>
           </Window>
+          {onWeb && dist.source === 'none' && !dist.running && !dist.showInjector ? (
+            <PixelText size="tiny" color={palette.secondary} style={{ marginTop: space.sm, lineHeight: 14 }}>
+              Published web cannot count steps, and there are no walk buttons. GPS on a desktop almost never works. The engine lives on a phone.
+            </PixelText>
+          ) : null}
           {dist.gpsError ? (
             <PixelText size="tiny" color={palette.danger} style={{ marginTop: space.sm }}>
               {dist.gpsError}
