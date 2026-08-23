@@ -1,3 +1,5 @@
+**Horizon.** Mireblink → Lunareed → Fenoracle is the Moonfen / Silver Reed Walk line (marsh firefly-frog). Named masters, magenta keyed. Stage-1 reeds and the lime throat orb stay. Stage 2 is a four-legged leaf-stag; stage 3 is a moon-cape walker with six orbiting lights. The approval plate is `lineups/mireblink_family.png`.
+
 # Companion-family reference art
 
 Top-level `*.png` files are isolated **ship masters**.

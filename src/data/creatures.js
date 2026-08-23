@@ -351,6 +351,29 @@ export const CREATURES = {
     evolvesTo: null,
   },
 
+  // --- Spec expansion: Moonfen / Silver Reed Walk ---
+  mireblink: {
+    id: 'mireblink', stage: 1, name: 'Mireblink', sprite: 'mireblink', palette: 'art_mireblink',
+    species: 'Reed-Glow Companion', kind: 'wild', type: 'rest',
+    baseHp: 56, catchable: true, catchRate: 0.54,
+    flavor: 'A pudgy frog-kid with a lime throat orb and reeds at its back. Still nights suit it.',
+    evolvesTo: 'lunareed', evolveLevel: 5, evolvePoints: 30,
+  },
+  lunareed: {
+    id: 'lunareed', stage: 2, name: 'Lunareed', sprite: 'lunareed', palette: 'art_lunareed',
+    species: 'Luminous Jumper Companion', kind: 'evolution', type: 'rest',
+    baseHp: 96, scale: 1.18, catchable: false,
+    flavor: 'Four long reed-legs and a star-set gem. The fen is how it learned to jump.',
+    evolvesTo: 'fenoracle', evolveLevel: 14, evolvePoints: 110,
+  },
+  fenoracle: {
+    id: 'fenoracle', stage: 3, name: 'Fenoracle', sprite: 'fenoracle', palette: 'art_fenoracle',
+    species: 'Moonfen Guardian Companion', kind: 'evolution', type: 'rest',
+    baseHp: 148, scale: 1.32, catchable: false,
+    flavor: 'A moon-cape walker. Six floating lights keep the walk honest.',
+    evolvesTo: null,
+  },
+
   // --- Obstacle creatures (bad habits — cleared, not caught) ---
   sludgewad: {
     id: 'sludgewad', name: 'Sludgewad', sprite: 'sludgewad', palette: 'sludge',

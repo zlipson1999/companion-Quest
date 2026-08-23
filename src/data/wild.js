@@ -7,6 +7,7 @@ import { ENCOUNTERS, pickEncounter } from './obstacles';
 // Encounter stats for trail companions (tuned so bonding is
 // realistic). xp/bond are the rewards for befriending (or defeating).
 export const WILD_COMPANIONS = {
+  mireblink: { hp: 40, xp: 32, bond: 8 },
   sproutle: { hp: 42, xp: 26, bond: 6 },
   emberkit: { hp: 44, xp: 26, bond: 6 },
   dewbble: { hp: 40, xp: 26, bond: 6 },

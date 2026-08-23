@@ -25,7 +25,8 @@ first-rendition line (magenta keyed; stage-1 sparkles and stage-3
 spore sparks stay). The Pinepuff family plate is
 `lineups/pinepuff_family.png`. First-rendition plates, magenta keyed
 out; white snow and ice-blue eyes stay (they are the creature, not
-the backdrop). Ids are permanent.
+the backdrop). Mireblink → Lunareed → Fenoracle is the Moonfen / Silver Reed Walk horizon line (magenta keyed; stage-1 lime orb and dark reeds stay; stage 2 is the four-legged leaf-stag; stage 3 is the moon-cape walker). The family plate is `lineups/mireblink_family.png`.
+Ids are permanent.
 `python3 tools/check_art.py` verifies that each master still REPRODUCES
 the art the game ships, and **fails a family whose stages are too
 similar** (silhouette IoU + colour difference). That second gate exists
