@@ -151,8 +151,9 @@ the other eight destinations it used to list are things you now WALK to.
 Quest Fitness: every piece of iron opens the Forge, Coach hands you a session
 off the shelf, treadmill and rower are cardio in the room, the turf and the
 mats each open the routine they are FOR, the mirror is form check, lockers are
-your bag, reception is your record, the whiteboard is your week, the bar spends
-credit. Your house: the bed sleeps or logs last night, the desk is your habits,
+your bag, reception is your record, the cork noticeboard (`G`) is this week
+among friends, the whiteboard is your week, the bar spends credit. Your house:
+the bed sleeps or logs last night, the desk is your habits,
 the kitchen counters log a meal, the kitchen shelf is the cookbook, the sofa is
 stillness, the wardrobe is your bag.
 
@@ -208,6 +209,8 @@ clears it.
 | `formcheck` | FormCheckScreen | front camera as a MIRROR + cue ticker; explicitly NOT pose analysis; session state rides through `params.resume` |
 | `week` | WeekScreen | this week vs the same elapsed days last week, honest verdict sentence |
 | `coach` | CoachChatScreen | chat; local data-driven answers first (§10) |
+| `friends` | FriendsScreen | who can see your training: account, add-by-code, circle, what-is-shared, leave. Off the hub menu. |
+| `board` | BoardScreen | cork noticeboard (gym `G`). This week among people you chose; FieldCards, no rank/race. Same screen Friends opens. |
 | `options` | OptionsScreen | SFX/BGM toggles, lb/kg units, control mode, body weight (§5.7), erase save |
 
 ## 4b. The three places (`data/maps.js`)

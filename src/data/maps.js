@@ -255,6 +255,9 @@ const INTERACTIONS = {
   q: { cardio: 'rower', label: 'Rower — cardio, no interruptions' },
   Z: { screen: 'week', label: "Whiteboard — this week's work" },
   L: { screen: 'bag', label: 'Lockers — your supplies' },
+  // Reception is the record. The cork noticeboard is the friends board — the
+  // same BoardScreen Friends opens. Do not cork Summary, and do not move the
+  // boards onto N.
   N: { screen: 'summary', label: 'Reception — your record so far' },
   G: { screen: 'board', label: 'Noticeboard — how your friends are doing' },
   // Front of house. The bar is the one place credit is spent, and credit is

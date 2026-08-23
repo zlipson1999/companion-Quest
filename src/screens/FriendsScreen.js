@@ -4,11 +4,15 @@
 // numbers — so this screen is mostly about consent: what gets shared, with
 // whom, and how to take it back. Signing out and deleting are both one tap from
 // here, and neither touches your game.
+//
+// Chrome is the Trailkeeper set (ObjectiveRibbon, FieldCard, TrailAction).
+// Friends stays off the six-item hub menu; you walk to the noticeboard or
+// open this from there. See the boards opens the same cork BoardScreen.
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, TextInput, View } from 'react-native';
-import { Screen, Window, PixelText, PixelButton } from '../components';
-import { palette, space, tokens } from '../theme';
+import { Screen, PixelText, FieldCard, TrailAction, ObjectiveRibbon } from '../components';
+import { space, tokens, scale } from '../theme';
 import { useGame } from '../state';
 import { useAccount } from '../state/account';
 import { useNav } from './navContext';
@@ -34,7 +38,7 @@ function GoogleButton({ onToken, disabled }) {
   }, [response]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <PixelButton
+    <TrailAction
       label="Sign in with Google"
       tone="primary"
       disabled={disabled}
@@ -44,11 +48,11 @@ function GoogleButton({ onToken, disabled }) {
   );
 }
 
-function Line({ label, value, color }) {
+function Line({ label, value }) {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
-      <PixelText size="tiny" color={palette.windowTextDim}>{label}</PixelText>
-      <PixelText size="tiny" color={color || palette.windowText}>{value}</PixelText>
+      <PixelText size="tiny" color={tokens.textOnPaperDim}>{label}</PixelText>
+      <PixelText size="tiny" color={tokens.textOnPaper}>{value}</PixelText>
     </View>
   );
 }
@@ -85,6 +89,7 @@ export default function FriendsScreen() {
   };
 
   const share = async () => {
+    playSfx('confirm');
     const out = await acc.push(state);
     if (out) {
       const flagged = (out.flagged || []).length;
@@ -111,11 +116,13 @@ export default function FriendsScreen() {
   };
 
   const accept = async (f) => {
+    playSfx('confirm');
     await acc.run(() => api.acceptFriend(acc.token, f.id));
     refresh();
   };
 
   const remove = async (f) => {
+    playSfx('confirm');
     await acc.run(() => api.removeFriend(acc.token, f.id));
     refresh();
   };
@@ -124,171 +131,193 @@ export default function FriendsScreen() {
 
   return (
     <Screen style={{ padding: space.md }}>
-      <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
-        Trail Friends
-      </PixelText>
+      <ObjectiveRibbon
+        place="Trail Friends"
+        objective="who can see your training"
+        style={{ marginBottom: space.sm }}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {!acc.available ? (
-          <Window tone="cream" pad={12}>
-            <PixelText size="tiny" color={palette.windowText} style={{ lineHeight: 15 }}>
+          <FieldCard tone="paper" title="Account" caption="No server on this copy">
+            <PixelText size="tiny" color={tokens.textOnPaper} style={{ lineHeight: 15 }}>
               This copy of Companion Quest has no server set up, so friends and boards are
               off. Everything else works exactly as it does now — the game has never needed
               an account.
             </PixelText>
-          </Window>
+          </FieldCard>
         ) : !acc.signedIn ? (
-          <>
-            <Window tone="cream" pad={12}>
-              <PixelText size="small" color={palette.accentDark}>Sign in to compare</PixelText>
-              <PixelText size="tiny" color={palette.windowText} style={{ marginTop: 8, lineHeight: 15 }}>
-                An account shares your TRAINING with friends you choose: the days you were
-                active, the miles you walked, the sessions you did, and your personal bests.
-              </PixelText>
-              <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 8, lineHeight: 15 }}>
-                It does not share your companion, your goal, your bag or anything else, and
-                nobody sees any of it until you both agree. You can sign out or delete the
-                account here at any time — neither touches your game.
-              </PixelText>
-            </Window>
-
-            {appleOk ? (
-              <PixelButton label="Sign in with Apple" tone="primary" onPress={onApple} style={{ marginTop: space.md }} />
-            ) : null}
-            {googleConfigured() ? (
-              <GoogleButton onToken={(idToken) => acc.signIn('google', idToken)} disabled={acc.busy} />
-            ) : null}
+          <FieldCard
+            tone="paper"
+            title="Account"
+            caption="Sign in to compare. An account shares only the training you choose."
+          >
+            <PixelText size="tiny" color={tokens.textOnPaper} style={{ lineHeight: 15 }}>
+              An account shares your TRAINING with friends you choose: the days you were
+              active, the miles you walked, the sessions you did, and your personal bests.
+            </PixelText>
+            <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 8, lineHeight: 15 }}>
+              It does not share your companion, your goal, your bag or anything else, and
+              nobody sees any of it until you both agree. You can sign out or delete the
+              account here at any time — neither touches your game.
+            </PixelText>
             {!appleOk && !googleConfigured() ? (
-              <Window tone="cream" pad={12} style={{ marginTop: space.md }}>
-                <PixelText size="tiny" color={palette.windowTextDim} style={{ lineHeight: 15 }}>
-                  No sign-in method is available on this device. Apple sign-in needs an iPhone;
-                  Google needs a client id set for this platform.
-                </PixelText>
-              </Window>
+              <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 8, lineHeight: 15 }}>
+                No sign-in method is available on this device. Apple sign-in needs an iPhone;
+                Google needs a client id set for this platform.
+              </PixelText>
             ) : null}
-          </>
+          </FieldCard>
         ) : (
           <>
-            <Window tone="cream" pad={12}>
-              <PixelText size="small" color={palette.accentDark}>{acc.me.name}</PixelText>
-              <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6 }}>
-                Your trail code — read it to a friend
-              </PixelText>
-              <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: 10 }}>
+            <FieldCard tone="paper" title="Account" caption="Your trail code — read it to a friend">
+              <PixelText size="tiny" color={tokens.textOnPaperDim}>{acc.me.name}</PixelText>
+              <PixelText size="heading" color={tokens.textOnPaper} align="center" style={{ marginVertical: 10 }}>
                 {acc.me.code}
               </PixelText>
-            </Window>
+            </FieldCard>
 
-            <Window tone="cream" pad={12} style={{ marginTop: space.md }}>
-              <PixelText size="small" color={palette.accentDark}>Add a friend</PixelText>
+            <FieldCard tone="paper" title="Add by code" style={{ marginTop: space.md }}>
               <TextInput
                 value={code}
                 onChangeText={(t) => setCode(t.toUpperCase())}
                 placeholder="THEIR-CODE"
-                placeholderTextColor={palette.windowTextDim}
+                placeholderTextColor={tokens.textOnPaperDim}
                 autoCapitalize="characters"
                 autoCorrect={false}
                 maxLength={8}
                 style={{
-                  marginTop: 8,
+                  marginTop: 4,
                   borderWidth: 2,
-                  borderColor: palette.windowText,
-                  color: palette.windowText,
+                  borderColor: tokens.sheetEdge,
+                  color: tokens.textOnPaper,
                   paddingHorizontal: 10,
-                  paddingVertical: 10,
+                  minHeight: scale.touchMin,
                   fontSize: 16,
                   letterSpacing: 2,
                 }}
               />
-              <PixelButton
-                label={acc.busy ? 'Asking...' : 'Ask to connect'}
-                tone="primary"
-                size="small"
-                onPress={add}
-                style={{ marginTop: 8 }}
-              />
-            </Window>
+            </FieldCard>
 
-            <Window tone="cream" pad={12} style={{ marginTop: space.md }}>
-              <PixelText size="small" color={palette.accentDark}>
-                {friends.length ? 'Your circle' : 'Nobody yet'}
-              </PixelText>
+            <FieldCard
+              tone="paper"
+              title="Circle"
+              caption={friends.length ? undefined : 'Nobody yet'}
+              style={{ marginTop: space.md }}
+            >
               {friends.map((f) => (
                 <View key={f.id} style={{ marginTop: 10 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <PixelText size="tiny" color={palette.windowText}>{f.name}</PixelText>
-                    <PixelText size="tiny" color={f.state === 'accepted' ? palette.success : palette.accentDark}>
+                    <PixelText size="tiny" color={tokens.textOnPaper}>{f.name}</PixelText>
+                    <PixelText size="tiny" color={f.state === 'accepted' ? tokens.success : tokens.caution}>
                       {f.state === 'accepted' ? 'connected' : f.incoming ? 'wants to connect' : 'waiting'}
                     </PixelText>
                   </View>
                   <View style={{ flexDirection: 'row', marginTop: 6 }}>
                     {f.incoming ? (
-                      <PixelButton label="Accept" tone="primary" size="small"
-                        onPress={() => accept(f)} style={{ flex: 1, marginRight: 6 }} />
+                      <TrailAction
+                        label="Accept"
+                        tone="primary"
+                        onPress={() => accept(f)}
+                        style={{ flex: 1, marginRight: 6 }}
+                      />
                     ) : null}
-                    <PixelButton label={f.state === 'accepted' ? 'Disconnect' : 'Cancel'} tone="plain" size="small"
-                      onPress={() => remove(f)} style={{ flex: 1 }} />
+                    <TrailAction
+                      label={f.state === 'accepted' ? 'Disconnect' : 'Cancel'}
+                      tone="quiet"
+                      onPress={() => remove(f)}
+                      style={{ flex: 1 }}
+                    />
                   </View>
                 </View>
               ))}
               {!friends.length ? (
-                <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 8, lineHeight: 15 }}>
+                <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ lineHeight: 15 }}>
                   Swap codes with someone you actually train near. A board of strangers is
                   a scoreboard; a board of four friends is a reason to go out.
                 </PixelText>
               ) : null}
-            </Window>
+            </FieldCard>
 
-            <Window tone="cream" pad={12} style={{ marginTop: space.md }}>
-              <PixelText size="small" color={palette.accentDark}>What gets shared</PixelText>
+            <FieldCard tone="paper" title="What is shared" style={{ marginTop: space.md }}>
               <Line label="Days of training" value={String(payload.days.length)} />
               <Line label="Personal bests" value={String(payload.records.length)} />
-              <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 8, lineHeight: 14 }}>
+              <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 8, lineHeight: 14 }}>
                 One row per day — miles, steps, sessions and sets. Never a running total, so
                 the server can check a day against what a person can actually do.
               </PixelText>
-              <PixelButton
-                label={acc.busy ? 'Sharing...' : 'Share my training'}
-                tone="primary" size="small" onPress={share} style={{ marginTop: 8 }} />
-            </Window>
+            </FieldCard>
 
-            <PixelButton label="See the boards" tone="primary"
-              onPress={() => navigate('board')} style={{ marginTop: space.md }} />
-
-            <Window tone="cream" pad={12} style={{ marginTop: space.md }}>
-              <PixelButton label="Sign out" tone="plain" size="small" onPress={acc.signOut} />
-              <PixelButton
+            <FieldCard tone="paper" title="Leave" style={{ marginTop: space.md }}>
+              <TrailAction label="Sign out" tone="quiet" onPress={() => { playSfx('confirm'); acc.signOut(); }} />
+              <TrailAction
                 label={confirmDelete ? 'Really delete everything' : 'Delete my account'}
-                tone="plain"
-                size="small"
+                tone="quiet"
                 style={{ marginTop: 8 }}
                 onPress={() => {
                   if (!confirmDelete) return setConfirmDelete(true);
+                  playSfx('confirm');
                   acc.forget();
                   setConfirmDelete(false);
                 }}
               />
-              <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 8, lineHeight: 14 }}>
+              <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 8, lineHeight: 14 }}>
                 Deleting removes your days, your bests and your friendships from the server
                 for good. Your game on this phone is untouched.
               </PixelText>
-            </Window>
+            </FieldCard>
           </>
         )}
 
         {acc.error ? (
-          <PixelText size="tiny" color={palette.danger} style={{ marginTop: space.md, lineHeight: 14 }}>
+          <PixelText size="tiny" color={tokens.danger} style={{ marginTop: space.md, lineHeight: 14 }}>
             {acc.error}
           </PixelText>
         ) : null}
         {note ? (
-          <PixelText size="tiny" color={palette.success} style={{ marginTop: space.sm, lineHeight: 14 }}>
+          <PixelText size="tiny" color={tokens.success} style={{ marginTop: space.sm, lineHeight: 14 }}>
             {note}
           </PixelText>
         ) : null}
       </ScrollView>
 
-      <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
+      <View style={{ marginTop: space.sm }}>
+        {acc.available && !acc.signedIn && appleOk ? (
+          <TrailAction label="Sign in with Apple" tone="primary" onPress={onApple} />
+        ) : null}
+        {acc.available && !acc.signedIn && googleConfigured() ? (
+          <GoogleButton onToken={(idToken) => acc.signIn('google', idToken)} disabled={acc.busy} />
+        ) : null}
+        {acc.signedIn ? (
+          <TrailAction
+            label={acc.busy ? 'Asking...' : 'Ask to connect'}
+            tone="primary"
+            onPress={add}
+          />
+        ) : null}
+        {acc.signedIn ? (
+          <TrailAction
+            label={acc.busy ? 'Sharing...' : 'Share my training'}
+            tone="primary"
+            onPress={share}
+            style={{ marginTop: space.sm }}
+          />
+        ) : null}
+        {acc.signedIn ? (
+          <TrailAction
+            label="See the boards"
+            tone="accent"
+            onPress={() => { playSfx('confirm'); navigate('board'); }}
+            style={{ marginTop: space.sm }}
+          />
+        ) : null}
+        <TrailAction
+          label={back.label}
+          tone="quiet"
+          onPress={() => { playSfx('cancel'); goBack(); }}
+          style={{ marginTop: space.sm }}
+        />
+      </View>
     </Screen>
   );
 }
