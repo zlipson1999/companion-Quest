@@ -6,13 +6,12 @@ file over anything drawn; a `traced_*.json` that reaches no sprite fails
 the build. A trail face without a master fails the build. There is no
 `sphere()` stand-in.
 
-**63 transparent masters** are committed in `tools/reference_art/`
+**174 transparent masters** are committed in `tools/reference_art/`
 (top-level `*.png` only; approval lineups sit in `lineups/` and are not
-counted). That is all 18 original-six forms plus all 36 trail-family forms
-plus Dusthorn → Mesaquill → Suncerast, Brineling / Shoregleam /
-Tidecrown (Tideglass Coast), and Pinepuff / Rimecone / Frostbough
-(Frostpine Reach). Magenta is chroma; coral limbs, lavender growths,
-white snow and ice-blue eyes stay. Family plates:
+counted). That is all 18 original-six and trail families (54 forms) plus
+all 40 horizon families (120 forms; see `docs/HORIZON_FAMILIES.md`).
+Dusthorn, Brineling, and Pinepuff landed first as first-rendition
+plates; magenta is chroma. Family plates:
 `lineups/dusthorn_family.png`, `lineups/brineling_family.png`,
 `lineups/pinepuff_family.png`.
 The three first-bond families are complete first-rendition lines
