@@ -13,6 +13,7 @@ import React, { useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StatusBar, View } from 'react-native';
 import TileMap from './TileMap';
 import MoveControl from './MoveControl';
+import FaceButtons from './FaceButtons';
 import ObjectiveRibbon from './ObjectiveRibbon';
 import TrailAction from './TrailAction';
 import PixelText from './PixelText';
@@ -40,32 +41,6 @@ function reachableThing(map, player) {
     if (thing) return { dir, thing };
   }
   return null;
-}
-
-// The one button that touches the world. Gold, like every "do the thing"
-// button in the game, with the verb big and the thing named under it.
-function InteractButton({ verb, name, onPress }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${verb}: ${name}`}
-      style={({ pressed }) => ({
-        minHeight: scale.touchMin,
-        paddingHorizontal: space.lg,
-        paddingVertical: 8,
-        backgroundColor: pressed ? '#c79a2e' : palette.secondary,
-        borderWidth: 3,
-        borderColor: palette.ink,
-        alignItems: 'center',
-      })}
-    >
-      <PixelText size="small" color={palette.ink}>{verb.toUpperCase()}</PixelText>
-      <PixelText size="tiny" color={palette.inkSoft} style={{ marginTop: 2 }}>
-        {name}
-      </PixelText>
-    </Pressable>
-  );
 }
 
 // You should be able to see the whole place you are standing in.
@@ -138,6 +113,10 @@ export default function WorldScreen({
   // The panel under the world. Screens pass their companion card; anything
   // falsy just leaves the place and objective.
   status,
+  // Spoken lines (a tour stop, a challenge, a briefing). All TEXT sits
+  // together directly under the world — ribbon first, dialogue beneath it —
+  // with the companion card under that and the controls last.
+  dialogue,
   showControl = true,
   // A guided NPC (the gym tour's Coach Maple) rendered on the map.
   walker,
@@ -208,15 +187,6 @@ export default function WorldScreen({
         <View style={{ width: worldW, height: worldH }}>
           <TileMap map={map} player={player} tileSize={tile} viewport={{ width: worldW, height: worldH }} walker={walker} />
         </View>
-        {reach && showControl ? (
-          <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: space.sm, alignItems: 'center' }}>
-            <InteractButton
-              verb={reach.thing.verb || 'Use'}
-              name={(reach.thing.label || '').split(' — ')[0]}
-              onPress={() => onMove(reach.dir)}
-            />
-          </View>
-        ) : null}
         {menu.length ? (
           <View style={{ position: 'absolute', top: TOP_INSET, right: space.sm }}>
             <MenuButton onPress={() => setMenuOpen(true)} />
@@ -233,10 +203,14 @@ export default function WorldScreen({
           somebody forgot to fill. */}
       <View style={{ backgroundColor: palette.bgAlt, paddingHorizontal: space.md, paddingBottom: space.lg, paddingTop: space.sm }}>
         <ObjectiveRibbon place={place} objective={objective} />
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: space.md }}>
-          {showControl ? <MoveControl onMove={onMove} /> : null}
-          <View style={{ flex: 1, marginLeft: showControl ? space.md : 0 }}>{status}</View>
-        </View>
+        {dialogue ? <View style={{ marginTop: space.sm }}>{dialogue}</View> : null}
+        {status ? <View style={{ marginTop: space.sm }}>{status}</View> : null}
+        {showControl ? (
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: space.md }}>
+            <MoveControl onMove={onMove} />
+            <FaceButtons onA={reach ? () => onMove(reach.dir) : null} onB={null} />
+          </View>
+        ) : null}
       </View>
 
       {sheet}

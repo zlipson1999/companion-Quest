@@ -400,18 +400,19 @@ export default function GymScreen() {
       menu={cardio || tour || rush ? [] : MENU}
       onSelect={(item) => navigate(item.value)}
       showControl={!cardio && !tour && !rush}
+      dialogue={
+        tour && tour.talking ? (
+          <DialogueBox key={tour.stop} lines={TOUR_STOPS[tour.stop].lines} onComplete={advanceTour} />
+        ) : rush && rush.talking ? (
+          <DialogueBox
+            lines={ROWAN_CHALLENGE}
+            onComplete={() => { setRush(null); playSfx('confirm'); toBattle({ ...SPAR_PARAMS }); }}
+          />
+        ) : null
+      }
       status={
-        tour ? (
-          tour.talking ? (
-            <DialogueBox key={tour.stop} lines={TOUR_STOPS[tour.stop].lines} onComplete={advanceTour} />
-          ) : null
-        ) : rush ? (
-          rush.talking ? (
-            <DialogueBox
-              lines={ROWAN_CHALLENGE}
-              onComplete={() => { setRush(null); playSfx('confirm'); toBattle({ ...SPAR_PARAMS }); }}
-            />
-          ) : null
+        tour || rush ? (
+          <CompanionStatus companion={companion} stats={state.stats} />
         ) : cardio ? (
           <>
             <KeepAwakeOnDeck />

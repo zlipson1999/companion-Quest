@@ -186,11 +186,8 @@ export default function HomeRestScreen() {
       place={floor.name}
       objective={homeTour ? TOUR_HINTS[Math.min(tourStep, 2)] : facing ? facing.label : floor.hint}
       showControl={briefed}
-      status={
-        !briefed
-          ? <DialogueBox lines={BRIEFING} onComplete={() => setBriefed(true)} />
-          : <CompanionStatus companion={companion} stats={state.stats} />
-      }
+      dialogue={!briefed ? <DialogueBox lines={BRIEFING} onComplete={() => setBriefed(true)} /> : null}
+      status={<CompanionStatus companion={companion} stats={state.stats} />}
     />
   );
 }
