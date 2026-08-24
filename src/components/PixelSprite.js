@@ -115,7 +115,7 @@ export default function PixelSprite({
     accessibilityLabel,
   };
 
-  // Painted plates (charms, knot) — full isolated PNG, not the 96-cell trace.
+  // Painted plates (charms, knot, shop food) — full isolated PNG, not the 96-cell trace.
   if (png) {
     return (
       <Animated.View {...a11y} style={[{ width: size, height: size }, ...motionStyle]}>

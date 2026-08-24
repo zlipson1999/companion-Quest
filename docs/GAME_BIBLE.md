@@ -91,9 +91,9 @@ as an EAS dev build. State is one reducer + AsyncStorage. There is no
 navigation or state library. **Almost no raster image assets**: pixel art is
 stored as generated grid/palette data, including converted traced references
 (§8.4). Two exceptions ship as real PNGs: the tile atlas under `assets/tiles/`,
-and the 16 painted item plates under `assets/items/` (15 Trail Charms + the
-Kinship Knot) that `PixelSprite` prefers over their 96-cell traces via
-`data/itemImages.js` — a charm in the bag is the actual object, isolated on
+and the 23 painted item plates under `assets/items/` (15 Trail Charms, the
+Kinship Knot, 3 smoothie blends, water, apple, energy bar, and Bond Charm) that `PixelSprite` prefers over their 96-cell traces via
+`data/itemImages.js` — a charm or snack in the bag is the actual object, isolated on
 transparency, not a crushed downsample. Audio too: the 16 generated WAV files
 are committed under `assets/sfx/` and loaded by the app.
 
