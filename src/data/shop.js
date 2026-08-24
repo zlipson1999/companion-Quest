@@ -55,11 +55,14 @@ export const SHELVES = [
   {
     id: 'trail-gear',
     name: 'Trail Gear',
-    blurb: 'Charms Maple has seen. Beat a Guardian once and she can keep it stocked.',
+    blurb: 'Worn charms from the Guardian trails. Clear a Guardian once and Maple can restock its charm — each one steadies the habit that trail tests.',
+    // The note is the charm's actual battle effect, not just its theme: a
+    // shelf that says "Fatigue" sells a mood; one that says what the charm
+    // DOES sells a decision.
     stock: TRAIL_CHARMS.map((c) => ({
       itemId: c.id,
       price: MILES(c.miles),
-      note: c.theme,
+      note: `${c.theme} — ${c.effect}`,
     })),
   },
 ];
