@@ -51,6 +51,7 @@ function StockLine({ line, owned, credits, onBuy }) {
           backgroundColor: palette.windowFill,
           borderWidth: 2,
           borderColor: palette.windowBorder,
+          overflow: 'hidden',
           alignItems: 'center',
           justifyContent: 'center',
           marginRight: space.sm,
