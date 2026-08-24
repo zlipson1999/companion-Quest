@@ -56,6 +56,7 @@ export const FRESH = {
     streak: 1,
   },
   bag: {},
+  discoveredCharms: {},
   dex: {},
   modules: {},
   history: {},
@@ -75,7 +76,7 @@ export const FRESH = {
 // not invent days of history nobody logged.
 export const HYDRATE_KEYS = [
   'version', 'started', 'playerOutfit', 'playerGender', 'goalId',
-  'party', 'activeIndex', 'credits', 'stats', 'bag', 'dex',
+  'party', 'activeIndex', 'credits', 'stats', 'bag', 'discoveredCharms', 'dex',
   'modules', 'history', 'settings', 'meta', 'trails',
 ];
 
@@ -88,6 +89,7 @@ export function hydrateSave(saved) {
     goalId: migrateGoalId(saved.goalId) || null,
     stats: { ...FRESH.stats, ...(saved.stats || {}), exercises: { ...((saved.stats || {}).exercises || {}) } },
     bag: { ...(saved.bag || {}) },
+    discoveredCharms: { ...(saved.discoveredCharms || {}) },
     dex: { ...(saved.dex || {}) },
     settings: { ...FRESH.settings, ...(saved.settings || {}) },
     meta: { ...FRESH.meta, ...(saved.meta || {}) },

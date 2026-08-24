@@ -10,6 +10,7 @@ import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { getCreature } from '../data/creatures';
 import { getItem } from '../data/items';
 import { priceOf } from '../data/shop';
+import { charmForTrail } from '../data/charms';
 import { pacingForGoal } from '../data/route';
 import {
   addTrailMiles,
@@ -305,12 +306,22 @@ function reducer(state, action) {
       const clear = warden && routeId
         ? awardPin(state.trails, routeId)
         : { trails: state.trails, first: false };
+      const bag = { ...(withHeart.bag || state.bag) };
+      let discoveredCharms = { ...(state.discoveredCharms || {}) };
+      if (regionalWarden && clear.first) {
+        bag.knot = (bag.knot || 0) + 1;
+      } else if (warden && !regionalWarden && clear.first && routeId) {
+        const charm = charmForTrail(routeId);
+        if (charm) {
+          bag[charm.id] = (bag[charm.id] || 0) + 1;
+          discoveredCharms = { ...discoveredCharms, [charm.id]: true };
+        }
+      }
       return {
         ...withHeart,
         trails: clear.trails,
-        bag: regionalWarden && clear.first
-          ? { ...state.bag, knot: (state.bag.knot || 0) + 1 }
-          : state.bag,
+        bag,
+        discoveredCharms,
         credits: won.credits,
         history: remember(state, { xp, bond, battles: 1, load: LOAD_PER_BATTLE }),
         stats: {
