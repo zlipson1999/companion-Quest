@@ -140,8 +140,8 @@ refractory gap, foreground-only. See `docs/STEP_COUNTING.md`.
 
 **State shape** (persisted to AsyncStorage, auto-migrated by `version`, currently
 **10**): `{ started, goalId, playerOutfit, playerGender, party:[{id,baseId,xp,
-bond,evo,hp}], activeIndex, credits, stats, bag, dex, modules, history,
-settings, meta, trails }`. Companion XP is a lifetime total; level/HP are derived
+bond,evo,hp,charm}], activeIndex, credits, stats, bag, discoveredCharms, dex,
+modules, history, settings, meta, trails }`. Companion XP is a lifetime total; level/HP are derived
 (`src/state/leveling.js`). `useCompanion()` returns the active party member;
 `useParty()` returns the whole team. Distance is in miles (`stats.distanceMi`).
 **Trail quotas** (miles + challenge reps) live in `state.trails` and only

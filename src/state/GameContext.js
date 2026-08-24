@@ -10,6 +10,7 @@ import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { getCreature } from '../data/creatures';
 import { getItem } from '../data/items';
 import { priceOf } from '../data/shop';
+import { charmForTrail, CHARM_BY_ID } from '../data/charms';
 import { pacingForGoal } from '../data/route';
 import {
   addTrailMiles,
@@ -254,6 +255,34 @@ function reducer(state, action) {
       };
     }
 
+    // A companion wears at most one Trail Charm. Equipping moves the charm
+    // OUT of the bag onto the member (and any worn one back in), so a single
+    // charm can never be worn by two companions at once.
+    case 'EQUIP_CHARM': {
+      const { charmId } = action.payload;
+      if (!CHARM_BY_ID[charmId] || !state.party.length) return state;
+      if ((state.bag[charmId] || 0) <= 0) return state;
+      const member = state.party[state.activeIndex];
+      if (!member || member.charm === charmId) return state;
+      const bag = { ...state.bag, [charmId]: state.bag[charmId] - 1 };
+      if (member.charm) bag[member.charm] = (bag[member.charm] || 0) + 1;
+      return {
+        ...state,
+        bag,
+        party: state.party.map((m, i) => (i === state.activeIndex ? { ...m, charm: charmId } : m)),
+      };
+    }
+
+    case 'UNEQUIP_CHARM': {
+      const member = state.party[state.activeIndex];
+      if (!member || !member.charm) return state;
+      return {
+        ...state,
+        bag: { ...state.bag, [member.charm]: (state.bag[member.charm] || 0) + 1 },
+        party: state.party.map((m, i) => (i === state.activeIndex ? { ...m, charm: null } : m)),
+      };
+    }
+
     case 'CONSUME_ITEM': {
       const { itemId } = action.payload;
       if (!state.bag[itemId] || state.bag[itemId] <= 0) return state;
@@ -305,12 +334,22 @@ function reducer(state, action) {
       const clear = warden && routeId
         ? awardPin(state.trails, routeId)
         : { trails: state.trails, first: false };
+      const bag = { ...(withHeart.bag || state.bag) };
+      let discoveredCharms = { ...(state.discoveredCharms || {}) };
+      if (regionalWarden && clear.first) {
+        bag.knot = (bag.knot || 0) + 1;
+      } else if (warden && !regionalWarden && clear.first && routeId) {
+        const charm = charmForTrail(routeId);
+        if (charm) {
+          bag[charm.id] = (bag[charm.id] || 0) + 1;
+          discoveredCharms = { ...discoveredCharms, [charm.id]: true };
+        }
+      }
       return {
         ...withHeart,
         trails: clear.trails,
-        bag: regionalWarden && clear.first
-          ? { ...state.bag, knot: (state.bag.knot || 0) + 1 }
-          : state.bag,
+        bag,
+        discoveredCharms,
         credits: won.credits,
         history: remember(state, { xp, bond, battles: 1, load: LOAD_PER_BATTLE }),
         stats: {
@@ -484,6 +523,22 @@ function reducer(state, action) {
 
     case 'MARK_META':
       return { ...state, meta: { ...state.meta, ...action.payload } };
+
+    // Maple's starter package, handed over once at the end of her guided first
+    // session. Flag and grant are one action so a re-dispatch (a re-render, a
+    // replayed session, a hand-crafted call) can never mint a second package.
+    case 'CLAIM_STARTER_PACK': {
+      if (state.meta.mapleSessionDone) return state;
+      return {
+        ...state,
+        meta: { ...state.meta, mapleSessionDone: true },
+        bag: {
+          ...state.bag,
+          knot: (state.bag.knot || 0) + 5,
+          berryblend: (state.bag.berryblend || 0) + 1,
+        },
+      };
+    }
 
     default:
       return state;

@@ -4,10 +4,11 @@
 // incrementing `hitCount`.
 
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing } from 'react-native';
+import { Animated, Easing, Image } from 'react-native';
 import PixelArt from './PixelArt';
 import { SPRITES } from '../data/sprites';
 import { standinSprite } from '../data/spriteStandins';
+import { ITEM_IMAGES } from '../data/itemImages';
 
 export default function PixelSprite({
   spriteKey,
@@ -35,6 +36,7 @@ export default function PixelSprite({
   const lunge = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const firstHit = useRef(true);
   const firstLunge = useRef(true);
+  const png = ITEM_IMAGES[spriteKey];
 
   useEffect(() => {
     if (!bob) {
@@ -94,6 +96,39 @@ export default function PixelSprite({
     }
   }, [fainting, faint]);
 
+  const faintTranslate = faint.interpolate({ inputRange: [0, 1], outputRange: [0, 14] });
+  const faintOpacity = faint.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
+  const motionStyle = [
+    {
+      opacity: faintOpacity,
+      transform: [
+        { translateX: Animated.add(shakeX, lunge.x) },
+        { translateY: Animated.add(lunge.y, Animated.add(bobY, faintTranslate)) },
+        { scaleX: flip ? -1 : 1 },
+      ],
+    },
+    style,
+  ];
+  const a11y = {
+    accessible: accessibilityLabel ? true : undefined,
+    accessibilityRole: accessibilityLabel ? 'image' : undefined,
+    accessibilityLabel,
+  };
+
+  // Painted plates (charms, knot, shop food) — full isolated PNG, not the 96-cell trace.
+  if (png) {
+    return (
+      <Animated.View {...a11y} style={[{ width: size, height: size }, ...motionStyle]}>
+        <Image
+          source={png}
+          resizeMode="contain"
+          fadeDuration={0}
+          style={{ width: size, height: size }}
+        />
+      </Animated.View>
+    );
+  }
+
   if (!sprite) return null;
   const pal = palette || sprite.palette;
   const cols = sprite.grid[0].length;
@@ -102,33 +137,13 @@ export default function PixelSprite({
   const px = size / cols;
   const w = cols * px;
   const h = rows * px;
-
-  const faintTranslate = faint.interpolate({ inputRange: [0, 1], outputRange: [0, 14] });
-  const faintOpacity = faint.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
   // Must cover the full 90-index alphabet: at 8 entries the flash overlay
   // resolved to transparent for almost every pixel of a modern sprite, which
   // made the hit flash invisible.
   const whitePal = Array(96).fill('#ffffff');
 
   return (
-    <Animated.View
-      accessible={accessibilityLabel ? true : undefined}
-      accessibilityRole={accessibilityLabel ? 'image' : undefined}
-      accessibilityLabel={accessibilityLabel}
-      style={[
-        {
-          width: w,
-          height: h,
-          opacity: faintOpacity,
-          transform: [
-            { translateX: Animated.add(shakeX, lunge.x) },
-            { translateY: Animated.add(lunge.y, Animated.add(bobY, faintTranslate)) },
-            { scaleX: flip ? -1 : 1 },
-          ],
-        },
-        style,
-      ]}
-    >
+    <Animated.View {...a11y} style={[{ width: w, height: h }, ...motionStyle]}>
       <PixelArt grid={sprite.grid} palette={pal} pixelSize={px} />
       <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, opacity: flash }}>
         <PixelArt grid={sprite.grid} palette={whitePal} pixelSize={px} />

@@ -15,6 +15,7 @@
 
 import { CREDIT_PER_MILE } from '../state/economy';
 import { getItem } from './items';
+import { TRAIL_CHARMS } from './charms';
 
 // Priced in miles, converted once. Written this way so the intent survives a
 // balance pass: "a knot is worth about two and a half miles" is a design
@@ -51,7 +52,28 @@ export const SHELVES = [
       { itemId: 'charm', price: MILES(1.5), note: 'For the companion you already have.' },
     ],
   },
+  {
+    id: 'trail-gear',
+    name: 'Trail Gear',
+    blurb: 'Worn charms from the Guardian trails. Clear a Guardian once and Maple can restock its charm — each one steadies the habit that trail tests.',
+    // The note is the charm's actual battle effect, not just its theme: a
+    // shelf that says "Fatigue" sells a mood; one that says what the charm
+    // DOES sells a decision.
+    stock: TRAIL_CHARMS.map((c) => ({
+      itemId: c.id,
+      price: MILES(c.miles),
+      note: `${c.theme} — ${c.effect}`,
+    })),
+  },
 ];
+
+export function shelvesFor(discoveredCharms) {
+  const seen = discoveredCharms || {};
+  return SHELVES.map((shelf) => {
+    if (shelf.id !== 'trail-gear') return shelf;
+    return { ...shelf, stock: shelf.stock.filter((line) => seen[line.itemId]) };
+  }).filter((shelf) => shelf.stock.length);
+}
 
 // Flat view, for lookups that do not care which shelf something sits on.
 export const STOCK = SHELVES.flatMap((shelf) => shelf.stock);

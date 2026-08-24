@@ -30,6 +30,27 @@ export const WORKOUTS = [
     steps: ['Jumping jacks — 30', 'High knees — 30 seconds', 'Burpees — 8', 'Rest — 30 seconds, then repeat once'],
     reward: { xp: 60, bond: 14 },
   },
+  // Maple's Guided First Session — the one she leads herself, the morning
+  // after your first night home. MapleSessionScreen runs it interactively
+  // (real timers, real rep taps) and completes it through the same
+  // COMPLETE_WORKOUT everything else uses: the first workout is a real
+  // workout, not a tutorial pretending to be one.
+  {
+    id: 'firstsession',
+    name: "Maple's First Session",
+    guided: true,   // run by its own screen; kept off the shelf list
+    intensity: 'Easy',
+    minutes: 8,
+    description: 'Five gentle movements, coached one at a time. Where every journey starts.',
+    steps: [
+      'March in place — 60 seconds',
+      'Squats or sit-to-stands — 8 reps',
+      'Wall push-ups — 8 reps',
+      'Alternating knee raises — 10 reps',
+      'Stretch and breathe — 60 seconds',
+    ],
+    reward: { xp: 30, bond: 10 },
+  },
   // The gym's turf lane opens straight into this one. Walking stretches are
   // what a turf lane is FOR — you need the length to do them, which is why the
   // lane is a lane and not a mat.

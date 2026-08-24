@@ -42,6 +42,7 @@ export const FRESH = {
     battlesLost: 0,
     caught: 0,
     workoutsDone: 0,
+    prs: 0,
     itemsCollected: 0,
     habitLogs: 0,
     habitGoalsHit: 0,
@@ -56,6 +57,7 @@ export const FRESH = {
     streak: 1,
   },
   bag: {},
+  discoveredCharms: {},
   dex: {},
   modules: {},
   history: {},
@@ -64,7 +66,9 @@ export const FRESH = {
   // Options toggle away for anyone who prefers to glide.
   // bodyWeightLb is stored in pounds whatever the display unit is, so the
   // number never has to be reinterpreted when someone switches units.
-  settings: { muted: false, bgmMuted: false, units: 'lb', control: 'dpad', bodyWeightLb: DEFAULT_BODY_WEIGHT_LB },
+  // bodyWeightLogged distinguishes the cardio default from a number the
+  // player actually entered; the Phone can honestly say "Not logged yet."
+  settings: { muted: false, bgmMuted: false, units: 'lb', control: 'dpad', bodyWeightLb: DEFAULT_BODY_WEIGHT_LB, bodyWeightLogged: false },
   // Rowan is only in the gym until the push-up contest is done.
   meta: { createdAt: todayKey(), lastPlayedDate: todayKey(), sparDone: false },
   // Per-trail miles, challenge reps, and Quest Pins. Gym miles never land here.
@@ -75,7 +79,7 @@ export const FRESH = {
 // not invent days of history nobody logged.
 export const HYDRATE_KEYS = [
   'version', 'started', 'playerOutfit', 'playerGender', 'goalId',
-  'party', 'activeIndex', 'credits', 'stats', 'bag', 'dex',
+  'party', 'activeIndex', 'credits', 'stats', 'bag', 'discoveredCharms', 'dex',
   'modules', 'history', 'settings', 'meta', 'trails',
 ];
 
@@ -88,6 +92,7 @@ export function hydrateSave(saved) {
     goalId: migrateGoalId(saved.goalId) || null,
     stats: { ...FRESH.stats, ...(saved.stats || {}), exercises: { ...((saved.stats || {}).exercises || {}) } },
     bag: { ...(saved.bag || {}) },
+    discoveredCharms: { ...(saved.discoveredCharms || {}) },
     dex: { ...(saved.dex || {}) },
     settings: { ...FRESH.settings, ...(saved.settings || {}) },
     meta: { ...FRESH.meta, ...(saved.meta || {}) },

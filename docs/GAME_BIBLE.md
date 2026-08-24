@@ -42,6 +42,13 @@ created their character: three first-rendition faces on one plate. The
 ceremony still names the bond; it is no longer a surprise reveal.
 Recovery is spatial too: the
 player returns home, walks upstairs, and sleeps to restore Resolve.
+The morning after the first sleep at home, Maple calls (a beat in the sleep
+dialogue) and the return to the gym is her guided first session
+(`mapleSession`): five easy interactive movements, an easier version and a
+skip on each, completed through the normal `COMPLETE_WORKOUT` and paid a
+one-time starter package (5 Kinship Knots + 1 Bramble Blend,
+`CLAIM_STARTER_PACK`). Only then does the loop open out: trails, Keepers,
+the regional Warden.
 
 The complete reference: every system, every screen, every number, every sprite.
 Built by auditing the code, not from memory — where this document and the code
@@ -81,17 +88,21 @@ Hard rules, never traded away:
 
 Expo SDK 52 / React Native 0.76, runs in Expo Go, as a web SPA, and (pending)
 as an EAS dev build. State is one reducer + AsyncStorage. There is no
-navigation or state library. There are **no raster image assets**: pixel art is
+navigation or state library. **Almost no raster image assets**: pixel art is
 stored as generated grid/palette data, including converted traced references
-(§8.4). Audio is different: the 16 generated WAV files are committed under
-`assets/sfx/` and loaded by the app.
+(§8.4). Two exceptions ship as real PNGs: the tile atlas under `assets/tiles/`,
+and the 23 painted item plates under `assets/items/` (15 Trail Charms, the
+Kinship Knot, 3 smoothie blends, water, apple, energy bar, and Bond Charm) that `PixelSprite` prefers over their 96-cell traces via
+`data/itemImages.js` — a charm or snack in the bag is the actual object, isolated on
+transparency, not a crushed downsample. Audio too: the 16 generated WAV files
+are committed under `assets/sfx/` and loaded by the app.
 
 ```
 src/
   theme/       colors (palette + shade()), typography (PressStart2P), metrics
   data/        creatures, goals, exercises(+learnset/tiers/breakdown), items,
-               wild, obstacles, workouts(6), maps(4 places + zones),
-               movements(210), muscles(14), recipes(74), shop, characters,
+               wild, obstacles, workouts(34), maps(4 places + zones),
+               movements(214), muscles(14), recipes(74), shop, characters,
                outfits, route(pacing), routes(six trails / Wardens / Quest Pins),
                sprites.js + tileAtlas.js
                (BOTH GENERATED — never edit by hand)
@@ -158,7 +169,7 @@ the bed sleeps or logs last night, the desk is your habits,
 the kitchen counters log a meal, the kitchen shelf is the cookbook, the sofa is
 stillness, the wardrobe is your bag.
 
-## 4. Screens (all 30, registered in `screens/Router.js`)
+## 4. Screens (all 31, registered in `screens/Router.js`)
 
 Router holds the `SCREENS` map, `navigate(name, params)`, `toBattle(params)`
 (which plays the `BattleTransition` flash/wipe first), a `TOWN_BGM` set — every
@@ -194,12 +205,13 @@ clears it.
 | `hub` | HubScreen | Sunkist Lane (13×17). Walk-around town, bump-to-use, 6-entry menu — the other destinations are places you WALK to |
 | `gym` | GymScreen | Quest Fitness (17×19). Equipment IS the menu; also runs the in-room cardio session (§5.7) |
 | `sparIntro` | SparIntroScreen | safety redirect; live path is bumping Rowan, who sends Pebblepup |
+| `mapleSession` | MapleSessionScreen | Maple's guided first session: 5 interactive movements (real start/pause timers, tap-per-rep counters, left/right alternator), each with an easier version and a skip, no speed scoring. Completes `firstsession` through the normal `COMPLETE_WORKOUT`, then `CLAIM_STARTER_PACK` (once: 5 knots + 1 berryblend, reducer-gated on `meta.mapleSessionDone`). Entered by bumping Coach (`C`) once `homeTourDone` and until `mapleSessionDone` |
 | `cookbook` | CookbookScreen | the kitchen shelf: 74 recipes, 18 categories, search over names/blurbs/tags/ingredients |
 | `smoothiebar` | SmoothieBarScreen | the gym's bar; spends Trail Credit (§5.6) |
 | `route` | RouteScreen | six trails — §5.4 |
 | `world` | WorldMapScreen | region journey journal: the 11 regions, pins and Wardens per trail. Opened from the hub menu's Trails entry |
 | `battle` | BattleScreen | §6 |
-| `workout` | WorkoutScreen | 33 preset routines (data/workouts.js), pay ×`workoutXpMult`; a station can pin one via `params.workoutId` |
+| `workout` | WorkoutScreen | 34 preset routines (data/workouts.js), pay ×`workoutXpMult`; a station can pin one via `params.workoutId`; the `guided: true` routine (`firstsession`) is kept off the shelf list — MapleSessionScreen runs it |
 | `rest` | HomeRestScreen | your house (13×15 downstairs, 11×13 bedroom); the bed sleeps (`HEAL_FULL`) |
 | `summary` | SummaryScreen | Status: companion, stats, daily habits block, recovery |
 | `index` | IndexScreen | Creature Index: owned/seen/silhouetted-unknown |
@@ -539,6 +551,38 @@ milestone count) → `toBattle` flash → BattleScreen.
 - Defeat → `LOSE_BATTLE`, hub. Swap preserves per-member HP. Evolution beat:
   white strobe, sprite morph, EVOLVE action.
 
+### 6.1 Trail Charm battle effects (`state/charmBattle.js`)
+
+The shelf copy is enforced in code: all 15 charms have a live battle hook. A
+companion wears at most ONE charm (`member.charm`, moved between the bag and
+the member by `EQUIP_CHARM` / `UNEQUIP_CHARM` so a single charm can never be
+worn twice; equipped from Backpack → Trail Gear), so effects never stack —
+and Rowan's scripted push-up contest ignores charms entirely, because losing
+it is the lesson. Every number lives in `CHARM_TUNING` and nowhere else:
+
+| Charm | Live effect |
+|---|---|
+| Second Wind Band | once per battle, a lethal hit leaves exactly 1 Resolve |
+| Steady Cord | ×1.2 on the first confirmed move |
+| Hydration Bead | +2 Resolve after every confirmed move, before the counter |
+| Restleaf Charm | arrives with 15% of max Resolve recovered |
+| Focus Stone | ×1.08 on every confirmed move |
+| Momentum Feather | +5% power per prior confirmed move, capped at +25% |
+| Fuelseed | arrives with 8% of max Resolve recovered |
+| Breath Bell | ×1.15 on hold (timed) moves |
+| Form Ribbon | ×1.1 on every fully confirmed move |
+| Pace Token | every incoming hit ×0.88 |
+| Morning Dew | first incoming hit ×0.5 |
+| Trail Spark | ×1.5 on the first confirmed move |
+| Balance Root | once per battle, a refused Knot offer draws no backlash |
+| Recovery Shell | recovers 12% of max Resolve on felling the opponent |
+| Kinship Thread | power ×(1 + min(0.15, bond/2000)) |
+
+Failed-Knot counters run through the same incoming hooks (and Second Wind);
+arrival heals are announced in the battle intro; Second Wind and Balance
+Root say their trigger out loud. Damage after a multiplier is rounded and
+never below 1.
+
 ## 7. Life modules (the plugin system)
 
 **Everything grows the companion through the same reducer path** — a module
@@ -570,7 +614,7 @@ never learns how progression works.
 
 ### 7.4 Workout Forge (`modules/forge/`)
 
-- **Movements** (`data/movements.js`): 210 movements, 8 patterns (incl. carry),
+- **Movements** (`data/movements.js`): 214 movements, 8 patterns (incl. carry),
   8 equipment kinds, each with muscles (primary/secondary), relative `load`
   1–3, 3–4 cues. **Movement ids are permanent** (saved plans store them).
   `searchMovements(q, {pattern, equipment})` matches names, muscle display
@@ -629,7 +673,12 @@ faint.
 4. `backlight()` (rim opposite the key light) and `spec()` (hotspots) are what
    read as "modern".
 
-### 8.3 Sprite inventory (259 runtime sprites + 416 atlas cells)
+### 8.3 Sprite inventory (295 runtime sprites + 416 atlas cells)
+
+The count includes the traced regalia set landed with the Warden/badge/charm
+plates: 10 unique Warden bodies (the Horizon Wardens no longer wear recolored
+stand-in sprites), 11 regional badges, 15 Trail Charms, and the retraced
+Kinship Knot.
 
 - Creatures 48×48 authored @2× = 96 px: **54 companions — 18 families of 3
   stages**. The first six families are TRACED (sproutle→bloomtail→groveheart,
@@ -768,7 +817,9 @@ early calls). BGM switching lives in Router via TOWN_BGM.
 ```js
 { version: 10, started, goalId,                    // 'muscle'|'lean'|'root'
   playerOutfit, playerGender,                     // one-time, v6
-  party: [{ id, baseId, xp, bond, evo, hp }],     // ≤6
+  party: [{ id, baseId, xp, bond, evo, hp,
+            charm }],                             // ≤6; charm = worn Trail
+                                                  // Charm id or absent (§6.1)
   activeIndex,
   credits,                                        // Trail Credit, v7
   stats: { totalSteps, distanceMi, routeMi, xpCarry, creditCarry,
@@ -788,7 +839,12 @@ early calls). BGM switching lives in Router via TOWN_BGM.
                                                   // for the Forge); control
                                                   // 'stick'|'dpad';
                                                   // bodyWeightLb always POUNDS
-  meta: { createdAt, lastPlayedDate, sparDone },
+  meta: { createdAt, lastPlayedDate,
+          coachIntroDone, sparDone,               // gym tour seen; contest lost
+          homeTourStep, homeTourDone,             // kitchen→desk→bed homework
+          mapleSessionDone },                     // guided first session +
+                                                  // starter pack claimed (set
+                                                  // ONLY by CLAIM_STARTER_PACK)
   trails: { activeId, progress: { [routeId]: { miles, reps, pin } } } }  // v9
 ```
 

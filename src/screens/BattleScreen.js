@@ -18,6 +18,11 @@ import { isGrownForm } from '../data/wild';
 import { canEvolve } from '../state/evolution';
 import { evolveChecklist } from '../state/companionLife';
 import { battleMovesFor, movesLearnedBetween } from '../data/exercises';
+import { CHARM_BY_ID } from '../data/charms';
+import {
+  charmArrivalHeal, charmOutgoingMult, charmIncoming,
+  charmAfterMoveHeal, charmVictoryHeal, charmSurvivesLethal, charmShrugsKnotBacklash,
+} from '../state/charmBattle';
 import {
   wildIntro,
   sparIntro, trainerSparLines, wardenTrainerLines, movePrompt, moveLanded, victoryLines, defeatLines, levelUpLine, evolveLines,
@@ -83,20 +88,36 @@ export default function BattleScreen({ params }) {
   const knots = state.bag.knot || 0;
   const teamFull = party.members.length >= 6;
 
+  // The active companion's worn Trail Charm (Backpack → Trail Gear). The
+  // scripted push-up contest ignores charms entirely — losing IS the lesson.
+  const charmId = !params.sparIntro && companion ? companion.charm : null;
+  const charmName = charmId && CHARM_BY_ID[charmId] ? CHARM_BY_ID[charmId].name : null;
+  // Battle-scoped charm memory: confirmed moves (Momentum Feather's streak,
+  // Steady Cord / Trail Spark's "first"), hits taken (Morning Dew's "first"),
+  // and the once-per-battle triggers.
+  const charmRef = useRef({ moves: 0, hits: 0, secondWind: false, balanceRoot: false });
+
+  // Fuelseed / Restleaf arrive already part-recovered; the intro says so.
+  const arrival = companion
+    ? charmArrivalHeal(charmId, Math.max(1, Math.round(companion.hp || 1)), companion.maxHp, charmName)
+    : { hp: 1, note: null };
+
   const [wildHp, setWildHp] = useState(target.hp);
-  const [companionHp, setCompanionHp] = useState(Math.max(1, Math.round((companion && companion.hp) || 1)));
+  const [companionHp, setCompanionHp] = useState(() => arrival.hp);
   const [phase, setPhase] = useState('message');
   const [lines, setLines] = useState(() => {
     if (!companion) {
       return [{ speaker: 'Narration', text: 'Meet Coach Maple in the gym — then the trail has someone to stand with you.' }];
     }
-    return params.regionalWarden && params.trainerBattle
+    const arrivalNote = arrival.note ? [{ speaker: 'Narration', text: arrival.note }] : [];
+    const intro = params.regionalWarden && params.trainerBattle
       ? wardenTrainerLines(companion.creature.name, params.trainer || 'Warden', wild.name, params.trainerLine)
       : params.trainerBattle || params.trainer
       ? trainerSparLines(companion.creature.name, params.trainer || 'Keeper', wild.name)
       : params.opponent
         ? sparIntro(companion.creature.name, wild.name)
         : wildIntro(companion.creature.name, wild.name, target.isCompanion, isGrownForm(wild.id));
+    return [...intro, ...arrivalNote];
   });
   const thenRef = useRef(() => setPhase('menu'));
   const [selectedMove, setSelectedMove] = useState(null);
@@ -196,13 +217,28 @@ export default function BattleScreen({ params }) {
   const confirmMove = () => {
     const move = getMove(selectedMove);
     dispatch({ type: 'LOG_EXERCISE', payload: { id: move.id, kind: move.kind, target: move.target, routeId: params.routeId } });
-    const dmg = move.power + Math.floor((companion.level - 1) * 2);
+    // The worn charm shapes the confirmed move: Trail Spark / Steady Cord on
+    // the first, Momentum Feather per streak, Breath Bell on holds, Focus
+    // Stone / Form Ribbon / Kinship Thread on all of them. One charm worn,
+    // so nothing stacks.
+    const base = move.power + Math.floor((companion.level - 1) * 2);
+    const outMult = charmOutgoingMult(charmId, {
+      hold: move.kind === 'hold',
+      moveIndex: charmRef.current.moves,
+      bond: companion.bond,
+    });
+    const dmg = Math.max(1, Math.round(base * outMult));
+    charmRef.current.moves += 1;
     // Rowan's push-up contest is a LESSON, not a fight you can win: Pebblepup
     // has months on a first-morning companion, so it never quite goes down,
     // and after a few honest turns it puts you down instead. Losing is the
     // point - it is what sends you home to learn the other half of the game.
     const scripted = !!params.sparIntro;
     const newWildHp = scripted ? Math.max(1, wildHp - dmg) : Math.max(0, wildHp - dmg);
+    // Hydration Bead pays its sip the moment the movement is done — before
+    // any counter lands, and before a victory is banked.
+    const sipped = clamp(companionHp + charmAfterMoveHeal(charmId), 0, companion.maxHp);
+    if (sipped !== companionHp) later(300, () => setCompanionHp(sipped));
     setCompanionLunge((n) => n + 1);
     later(140, () => {
       setWildHp(newWildHp);
@@ -214,11 +250,19 @@ export default function BattleScreen({ params }) {
     if (newWildHp <= 0) {
       later(430, () => setWildFaint(true));
       const beforeLevel = companion.level;
+      // Recovery Shell breathes some Resolve back the moment the opponent
+      // goes down; the healed value is what the save keeps.
+      const shellHeal = charmVictoryHeal(charmId, companion.maxHp);
+      const standingHp = clamp(sipped + shellHeal, 1, companion.maxHp);
+      if (standingHp !== sipped) later(600, () => setCompanionHp(standingHp));
+      const shellNote = shellHeal && standingHp > sipped
+        ? [{ speaker: 'Narration', text: `${charmName} hums — ${companion.creature.name} recovers ${standingHp - sipped} Resolve.` }]
+        : [];
       if (target.isCompanion) {
         const half = Math.max(6, Math.floor(target.xp / 2));
         const afterXp = companion.xp + half;
-        dispatch({ type: 'WIN_BATTLE', payload: { xp: half, bond: 0, targetId: target.targetId, companionHp } });
-        say([{ speaker: companion.creature.name, text: moveLanded(companion.creature.name, move) }, ...companionFledLines(wild.name)], () =>
+        dispatch({ type: 'WIN_BATTLE', payload: { xp: half, bond: 0, targetId: target.targetId, companionHp: standingHp } });
+        say([{ speaker: companion.creature.name, text: moveLanded(companion.creature.name, move) }, ...companionFledLines(wild.name), ...shellNote], () =>
           runLevelEvolveThen(beforeLevel, afterXp, finish)
         );
       } else {
@@ -237,7 +281,7 @@ export default function BattleScreen({ params }) {
             xp: target.xp,
             bond: target.bond,
             targetId: target.targetId,
-            companionHp,
+            companionHp: standingHp,
             spar: !!(params.opponent || params.sparIntro || (params.trainerBattle && !params.warden)),
             warden: !!params.warden,
             regionalWarden: !!params.regionalWarden,
@@ -247,11 +291,11 @@ export default function BattleScreen({ params }) {
         playSfx('victory');
         if (firstPin) {
           say(
-            pinLines(params.trainer || wild.name, params.pinName || 'Quest Pin', params.nextTrail),
+            [...pinLines(params.trainer || wild.name, params.pinName || 'Quest Pin', params.nextTrail), ...shellNote],
             () => runLevelEvolveThen(beforeLevel, afterXp, finish)
           );
         } else {
-          say(victoryLines(companion.creature.name, wild.name, target.xp), () => runLevelEvolveThen(beforeLevel, afterXp, finish));
+          say([...victoryLines(companion.creature.name, wild.name, target.xp), ...shellNote], () => runLevelEvolveThen(beforeLevel, afterXp, finish));
         }
       }
       return;
@@ -261,10 +305,26 @@ export default function BattleScreen({ params }) {
     // round three ends it whatever your Resolve was.
     const sparRound = sparTurns.current + 1;
     if (scripted) sparTurns.current = sparRound;
-    const counter = scripted
+    // Pace Token thins every counter, Morning Dew halves the first; the
+    // scripted contest takes neither excuse.
+    let counter = scripted
       ? (sparRound >= 3 ? companionHp : Math.max(10, Math.ceil(companion.maxHp * 0.35)))
       : wildCounter();
-    const newCompHp = Math.max(0, companionHp - counter);
+    let charmNotes = [];
+    if (!scripted) {
+      const inc = charmIncoming(charmId, counter, charmRef.current.hits, charmName);
+      counter = inc.dmg;
+      charmRef.current.hits += 1;
+      if (inc.note) charmNotes.push({ speaker: 'Narration', text: inc.note });
+    }
+    let newCompHp = Math.max(0, sipped - counter);
+    // Second Wind Band: once per battle, a hit that would drop you leaves
+    // exactly 1 Resolve instead.
+    if (!scripted && newCompHp <= 0 && charmSurvivesLethal(charmId) && !charmRef.current.secondWind) {
+      charmRef.current.secondWind = true;
+      newCompHp = 1;
+      charmNotes.push({ speaker: 'Narration', text: `${charmName} holds! ${companion.creature.name} stands at 1 Resolve.` });
+    }
     later(650, () => setWildLunge((n) => n + 1));
     later(790, () => {
       setCompanionHp(newCompHp);
@@ -280,6 +340,7 @@ export default function BattleScreen({ params }) {
               ? 'And... down! Pebblepup barely broke a sweat.'
               : `Not bad! But Pebblepup has months on you two. (-${counter})` }
           : { speaker: 'Narration', text: `${wild.name} pushes back! Your resolve dips. (-${counter})` },
+        ...charmNotes,
       ],
       () => {
         if (newCompHp <= 0) {
@@ -318,8 +379,27 @@ export default function BattleScreen({ params }) {
       playSfx('catch');
       say(catchSuccessLines(wild.name), () => runLevelEvolveThen(beforeLevel, afterXp, finish));
     } else {
-      const counter = wildCounter();
-      const newCompHp = Math.max(0, companionHp - counter);
+      // Balance Root's promise: once per battle, a refused Knot draws no
+      // backlash at all — the moment stays calm.
+      if (charmShrugsKnotBacklash(charmId) && !charmRef.current.balanceRoot) {
+        charmRef.current.balanceRoot = true;
+        say([
+          { speaker: 'Narration', text: catchFailLine(wild.name) },
+          { speaker: 'Narration', text: `${charmName} steadies the moment — no backlash comes.` },
+        ], () => setPhase('menu'));
+        return;
+      }
+      let counter = wildCounter();
+      const inc = charmIncoming(charmId, counter, charmRef.current.hits, charmName);
+      counter = inc.dmg;
+      charmRef.current.hits += 1;
+      let newCompHp = Math.max(0, companionHp - counter);
+      const notes = inc.note ? [{ speaker: 'Narration', text: inc.note }] : [];
+      if (newCompHp <= 0 && charmSurvivesLethal(charmId) && !charmRef.current.secondWind) {
+        charmRef.current.secondWind = true;
+        newCompHp = 1;
+        notes.push({ speaker: 'Narration', text: `${charmName} holds! ${companion.creature.name} stands at 1 Resolve.` });
+      }
       setWildLunge((n) => n + 1);
       later(140, () => {
         setCompanionHp(newCompHp);
@@ -327,7 +407,7 @@ export default function BattleScreen({ params }) {
         setCompPop((p) => ({ id: p.id + 1, amount: counter }));
         playSfx('hit');
       });
-      say([{ speaker: 'Narration', text: catchFailLine(wild.name) + ` (-${counter})` }], () => {
+      say([{ speaker: 'Narration', text: catchFailLine(wild.name) + ` (-${counter})` }, ...notes], () => {
         if (newCompHp <= 0) {
           setCompanionFaint(true);
           setTimeout(doDefeat, 500);

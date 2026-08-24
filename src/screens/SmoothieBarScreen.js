@@ -15,7 +15,7 @@ import { palette, space, tokens, scale } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
-import { SHELVES } from '../data/shop';
+import { shelvesFor } from '../data/shop';
 import { getItem } from '../data/items';
 import { CREDIT_PER_MILE, CREDIT_PER_SESSION, CREDIT_PER_GOAL } from '../state/economy';
 
@@ -44,7 +44,21 @@ function StockLine({ line, owned, credits, onBuy }) {
     : `${line.price} credit · ${line.note}`;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: space.sm }}>
-      <PixelSprite spriteKey={item.sprite} palette={item.palette} size={34} />
+      <View
+        style={{
+          width: 56,
+          height: 56,
+          backgroundColor: palette.windowFill,
+          borderWidth: 2,
+          borderColor: palette.windowBorder,
+          overflow: 'hidden',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: space.sm,
+        }}
+      >
+        <PixelSprite spriteKey={item.sprite} palette={item.palette} size={48} />
+      </View>
       <View style={{ flex: 1, marginLeft: space.sm }}>
         <TrailAction
           label={`${item.name}${owned ? `  (${owned})` : ''}`}
@@ -62,6 +76,7 @@ export default function SmoothieBarScreen() {
   const companion = useCompanion();
   const { navigate, goBack, back } = useNav();
   const credits = state.credits || 0;
+  const shelves = shelvesFor(state.discoveredCharms);
   const [toast, setToast] = useState(
     'Blended to order. Your companion drinks half of everything, which is the arrangement.'
   );
@@ -99,7 +114,7 @@ export default function SmoothieBarScreen() {
       </Window>
 
       <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: space.sm }}>
-        {SHELVES.map((shelf) => (
+        {shelves.map((shelf) => (
           <View key={shelf.id} style={{ marginBottom: space.md }}>
             <PixelText size="tiny" color={tokens.textOnDark} style={{ letterSpacing: 1, marginBottom: 4 }}>
               {shelf.name.toUpperCase()}

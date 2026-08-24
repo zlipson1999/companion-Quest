@@ -348,13 +348,11 @@ export default function GymScreen() {
           beginStop(0, { x: 10, y: 15 });
           return;
         }
-        // After the home lesson Maple calls you back in. Walking up to her and
-        // pressing A opens the guided first session itself — no black-screen
-        // handoff — and mapleSessionDone means it only routes there the once;
-        // afterwards she is the chat again.
-        if (code === 'C' && state.meta.mapleSessionReady && !state.meta.mapleSessionDone) {
-          playSfx('confirm');
-          setTimeout(() => navigate('workout', { guided: 'maple' }), 140);
+        // The morning after the home lesson she is not the chat yet: she
+        // called you back for your first guided session, so walking up to
+        // her IS that session until it is in the book.
+        if (code === 'C' && state.meta.homeTourDone && !state.meta.mapleSessionDone) {
+          setTimeout(() => navigate('mapleSession'), 140);
           return;
         }
         const target = station.screen;
@@ -402,10 +400,10 @@ export default function GymScreen() {
                 ? 'Walk up to Coach Maple — she is waiting on the floor'
                 : !state.meta.sparDone
                   ? 'Rowan wants a challenge — walk up to him'
-                  : state.meta.mapleSessionReady && !state.meta.mapleSessionDone
-                    ? 'Coach Maple is ready — walk up to her and press A for your first session'
-                    : state.meta.coachIntroDone && !state.meta.homeTourDone
-                      ? 'Head home — how you eat, sleep and live counts too'
+                  : state.meta.coachIntroDone && !state.meta.homeTourDone
+                    ? 'Head home — how you eat, sleep and live counts too'
+                    : state.meta.homeTourDone && !state.meta.mapleSessionDone
+                      ? 'Maple called you in — walk up to her for your first guided session'
                       : 'Walk into any equipment to use it'
       }
       menu={cardio || tour || rush ? [] : MENU}
