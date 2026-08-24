@@ -44,7 +44,20 @@ function StockLine({ line, owned, credits, onBuy }) {
     : `${line.price} credit · ${line.note}`;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: space.sm }}>
-      <PixelSprite spriteKey={item.sprite} palette={item.palette} size={34} />
+      <View
+        style={{
+          width: 56,
+          height: 56,
+          backgroundColor: palette.windowFill,
+          borderWidth: 2,
+          borderColor: palette.windowBorder,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: space.sm,
+        }}
+      >
+        <PixelSprite spriteKey={item.sprite} palette={item.palette} size={48} />
+      </View>
       <View style={{ flex: 1, marginLeft: space.sm }}>
         <TrailAction
           label={`${item.name}${owned ? `  (${owned})` : ''}`}
