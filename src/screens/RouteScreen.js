@@ -1,15 +1,6 @@
 // Route 1. Real distance moves you: steps become miles (or GPS on a run), your
 // character advances, milestones drop items, and trail markers reveal
 // encounters — companions to meet and bad habits to work through.
-//
-// This screen used to carry a second mode for the gym's cardio deck. That was
-// always a slightly odd fit — an indoor deck rendered as a scrolling outdoor
-// strip that happened to have its trees turned off — and it took over the whole
-// phone for something you do standing on one spot. The deck lives in the gym
-// now, on the machine, with a console (see CardioConsole). What the two share
-// is `useCardio`, which is the only path real distance takes into the game.
-//
-// Distance out here is where the game happens TO you. Neither is a walk button.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
@@ -28,6 +19,7 @@ import {
   ROUTES,
   getRoute,
   isTrailUnlocked,
+  isRegionalWarden,
   trailOf,
   trailReady,
   trailRow,
@@ -44,22 +36,12 @@ import useCardio from './useCardio';
 import { forgetSpot, recallSpot, rememberSpot } from './placeMemory';
 import { DEFAULT_BODY_WEIGHT_LB } from '../state/cardioMaths';
 
-// The trail itself.
-//
-// This used to be three flat rectangles with a dashed centre line — it read as
-// a road-safety diagram, and it was the last screen in the app still drawing
-// scenery out of coloured Views. It is a real tile field now: the same grass,
-// path, tall grass and tree tiles the overworld uses, scrolling past you.
 const ROUTE_TS = 22;
 
 function ScrollingScene({ width, height, moving, trailId }) {
   const offset = useRef(new Animated.Value(0)).current;
   const route = getRoute(trailId);
   const scene = sceneTone(route.stageTone || trailId);
-  // Tiles used to cover the whole phone, so the sky never showed and the
-  // four trails read as one slab with the sign swapped. The ground starts at
-  // the trail's own horizon — Gale is mostly sky, Canopy almost none.
-  // HorizonSky is the same painter the challenge stage uses.
   const skyH = Math.round(height * (route.horizon || 0.16));
   const groundH = Math.max(ROUTE_TS * 4, height - skyH);
   const cols = Math.ceil(width / ROUTE_TS);
@@ -84,21 +66,19 @@ function ScrollingScene({ width, height, moving, trailId }) {
   }, []);
 
   const translate = offset.interpolate({ inputRange: [0, 1], outputRange: [0, ROUTE_TS] });
-
   const sceneMap = useMemo(() => {
     const grid = Array.from({ length: rows * 2 }, (_, r) => trailRow(trailId, r % rows, cols));
     return { id: route.mapId, cols, rows: rows * 2, grid };
   }, [rows, cols, trailId, route.mapId]);
 
   const strip = useMemo(
-    () =>
-      sceneMap.grid.map((row, r) => (
-        <View key={r} style={{ flexDirection: 'row' }}>
-          {row.split('').map((code, x) => (
-            <Tile key={x} code={code} s={ROUTE_TS} frame={frame} x={x} y={r} map={sceneMap} />
-          ))}
-        </View>
-      )),
+    () => sceneMap.grid.map((row, r) => (
+      <View key={r} style={{ flexDirection: 'row' }}>
+        {row.split('').map((code, x) => (
+          <Tile key={x} code={code} s={ROUTE_TS} frame={frame} x={x} y={r} map={sceneMap} />
+        ))}
+      </View>
+    )),
     [sceneMap, frame]
   );
 
@@ -120,6 +100,8 @@ export default function RouteScreen({ params = {} }) {
   const pacing = pacingForGoal(state.goalId);
   const { route, progress } = trailOf(state.trails);
   const ready = trailReady(route, progress);
+  const regionalWarden = isRegionalWarden(route);
+  const gateTitle = regionalWarden ? 'Warden' : 'Keeper';
 
   const onWeb = Platform.OS === 'web';
   const [message, setMessage] = useState(
@@ -129,17 +111,7 @@ export default function RouteScreen({ params = {} }) {
   );
   const [encMeter, setEncMeter] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
-
-  // The runner's legs. playerSprite has always had walk frames per facing; the
-  // trail was drawing the standing one, so a scrolling scene carried a
-  // motionless figure across it.
   const [stride, setStride] = useState(0);
-  // This walk, as opposed to every walk you have ever taken.
-  //
-  // Taken from the LIFETIME stats rather than from the pedometer's own
-  // counters, because a challenge unmounts this screen and useDistance
-  // restarts from zero with it. The baseline is parked in placeMemory so a
-  // battle in the middle of a walk does not end the walk.
   const session = useRef(
     recallSpot('route:session', null) || {
       miles: state.stats.distanceMi,
@@ -151,18 +123,11 @@ export default function RouteScreen({ params = {} }) {
       startedAt: Date.now(),
     }
   );
-  useEffect(() => {
-    rememberSpot('route:session', session.current);
-  }, []);
+  useEffect(() => { rememberSpot('route:session', session.current); }, []);
 
-  const [seconds, setSeconds] = useState(
-    Math.floor((Date.now() - session.current.startedAt) / 1000)
-  );
+  const [seconds, setSeconds] = useState(Math.floor((Date.now() - session.current.startedAt) / 1000));
   useEffect(() => {
-    const t = setInterval(
-      () => setSeconds(Math.floor((Date.now() - session.current.startedAt) / 1000)),
-      1000
-    );
+    const t = setInterval(() => setSeconds(Math.floor((Date.now() - session.current.startedAt) / 1000)), 1000);
     return () => clearInterval(t);
   }, []);
 
@@ -173,17 +138,10 @@ export default function RouteScreen({ params = {} }) {
   const trailRef = useRef(route);
   trailRef.current = route;
 
-  // Real distance becomes progress through the one shared path; the trail adds
-  // the only thing that is its own, which is having somebody to meet.
-  // routeId is required: gym cardio uses this same hook WITHOUT one, so indoor
-  // miles never fill a trail quota.
   const { dist, moving } = useCardio({
     routeId: route.id,
     onDelta: (dM) => {
-      if (dM <= 0 || busyRef.current) return;
-      // A trail encounter is a shared challenge. Before pairing there is
-      // nobody to stand with you, and BattleScreen reads companion.creature.
-      if (!companion) return;
+      if (dM <= 0 || busyRef.current || !companion) return;
       encMiRef.current += dM;
       const current = trailRef.current;
       const ctx = encounterContext(state, {
@@ -234,9 +192,6 @@ export default function RouteScreen({ params = {} }) {
     })),
     [state.stats.exercises]
   );
-  // How much bodyweight work this walk contained, as one number. Each challenge
-  // move you confirm is one bout; a routine counts its own. The breakdown below
-  // the console names what they actually were, so the count does not have to.
   const sessionWorkouts = Math.max(0, state.stats.sets - session.current.sets);
 
   useEffect(() => {
@@ -247,14 +202,7 @@ export default function RouteScreen({ params = {} }) {
     const legs = setInterval(() => setStride((s) => (s + 1) % 3), 150);
     return () => clearInterval(legs);
   }, [running]);
-
-  useEffect(
-    () => () => {
-      if (encTimer.current) clearTimeout(encTimer.current);
-    },
-    []
-  );
-
+  useEffect(() => () => { if (encTimer.current) clearTimeout(encTimer.current); }, []);
 
   const toggleRun = async () => {
     if (dist.running) {
@@ -278,7 +226,7 @@ export default function RouteScreen({ params = {} }) {
   const challengeWarden = () => {
     if (!ready || busyRef.current) return;
     if (!companion) {
-      setMessage('Meet Coach Maple in the gym — then the Warden has someone to meet.');
+      setMessage(`Meet Coach Maple in the gym — then the ${gateTitle} has someone to meet.`);
       return;
     }
     busyRef.current = true;
@@ -289,8 +237,8 @@ export default function RouteScreen({ params = {} }) {
     playSfx('encounter');
     setMessage(
       keeper
-        ? `${keeper.name} sends ${c.name} out. The Warden of ${route.name} takes the path.`
-        : `${c.name} — the Warden of ${route.name} — takes the path.`
+        ? `${keeper.name} sends ${c.name} out. ${battle.regionalWarden ? `The Warden of ${route.region} guards the way forward.` : `Clear this Keeper challenge to open the next trail.`}`
+        : `${c.name} takes the path.`
     );
     encTimer.current = setTimeout(() => toBattle(battle), 550);
   };
@@ -307,32 +255,23 @@ export default function RouteScreen({ params = {} }) {
       moving={running}
       onInject={dist.showInjector ? dist.injectSteps : null}
     >
-      {dist.running ? (
-        <PixelText size="tiny" color={palette.hpHigh} style={{ marginTop: space.sm }}>
-          ● GPS RUN
-        </PixelText>
-      ) : null}
-      <ProgressBar value={progress.miles} max={route.miles} color={palette.hpHigh} height={12} label={`${route.miles} mi for the Warden`} showText={false} style={{ marginTop: space.sm }} />
+      {dist.running ? <PixelText size="tiny" color={palette.hpHigh} style={{ marginTop: space.sm }}>● GPS RUN</PixelText> : null}
+      <ProgressBar value={progress.miles} max={route.miles} color={palette.hpHigh} height={12} label={`${route.miles} mi for the ${gateTitle}`} showText={false} style={{ marginTop: space.sm }} />
       <ProgressBar value={progress.reps} max={route.reps} color={palette.accent} height={8} label={`${route.reps} reps in challenges`} showText={false} style={{ marginTop: 6 }} />
       <ProgressBar value={encMeter} max={1} color={palette.secondary} height={6} label="Trail signs" showText={false} style={{ marginTop: 6 }} />
       <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6 }}>
         {formatMiles(progress.miles)} / {route.miles} mi · {progress.reps}/{route.reps} reps
-        {progress.pin ? ` · ${route.pinName}` : ''}
+        {progress.pin ? ` · ${regionalWarden ? route.pinName : 'trail cleared'}` : ''}
       </PixelText>
     </CardioConsole>
   );
 
-  // Everything that explains the step counter rather than showing the trail.
-  // It matters — "it doesn't work" is not something anyone can act on — but it
-  // is reference, not scenery, so it lives behind the menu button now instead
-  // of taking half the screen.
   const stepPanel = dist.showInjector ? (
     <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
       <PixelText size="tiny" color={palette.danger}>No step counter available</PixelText>
       {dist.pedDiag ? (
         <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 5, lineHeight: 13 }}>
-          {dist.pedDiag.host} · {dist.pedDiag.platform}
-          {'\n'}permission: {dist.pedDiag.permission || 'unknown'}
+          {dist.pedDiag.host} · {dist.pedDiag.platform}{'\n'}permission: {dist.pedDiag.permission || 'unknown'}
           {dist.pedDiag.error ? `\nerror: ${dist.pedDiag.error}` : ''}
         </PixelText>
       ) : null}
@@ -354,16 +293,10 @@ export default function RouteScreen({ params = {} }) {
           ? 'Looking for a step counter...'
           : 'Counting your steps — keep the app open and walk!'}
       </PixelText>
-      {dist.source === 'motion' ? (
-        <PixelText size="small" color={palette.secondary} style={{ marginTop: 6 }}>
-          {dist.motionSteps} steps detected
-        </PixelText>
-      ) : null}
+      {dist.source === 'motion' ? <PixelText size="small" color={palette.secondary} style={{ marginTop: 6 }}>{dist.motionSteps} steps detected</PixelText> : null}
       {dist.motionSlow ? (
         <PixelText size="tiny" color={palette.hpMid} style={{ marginTop: 5, lineHeight: 12 }}>
-          This phone reports motion at {dist.motionHz} Hz, which is too slow to catch every
-          footfall — your real step count is higher than this. A development build fixes it
-          properly; see docs/STEP_COUNTING.md.
+          This phone reports motion at {dist.motionHz} Hz, which is too slow to catch every footfall — your real step count is higher than this. A development build fixes it properly; see docs/STEP_COUNTING.md.
         </PixelText>
       ) : null}
       <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 12 }}>
@@ -377,23 +310,10 @@ export default function RouteScreen({ params = {} }) {
   return (
     <Screen padTop={false} style={{ padding: 0 }}>
       <View style={{ flex: 1, backgroundColor: palette.grass }}>
-        {/* The trail is the screen now, not a window at the top of it. */}
-        <ScrollingScene
-          width={screen.width}
-          height={screen.height}
-          moving={running}
-          trailId={route.id}
-        />
-
-        {/* You and your companion, standing clear of the panel below. */}
+        <ScrollingScene width={screen.width} height={screen.height} moving={running} trailId={route.id} />
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: screen.height * 0.30, alignItems: 'center' }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-            <PixelSprite
-              spriteKey={playerSprite(state.playerGender, 'down', stride)}
-              palette={outfitPalette(state.playerOutfit, state.playerGender)}
-              size={40}
-              bob={running}
-            />
+            <PixelSprite spriteKey={playerSprite(state.playerGender, 'down', stride)} palette={outfitPalette(state.playerOutfit, state.playerGender)} size={40} bob={running} />
             {companion ? (
               <>
                 <View style={{ width: 10 }} />
@@ -405,37 +325,24 @@ export default function RouteScreen({ params = {} }) {
 
         <View style={{ position: 'absolute', top: TOP_INSET, left: space.sm, right: space.sm, flexDirection: 'row', alignItems: 'flex-start' }}>
           <View style={{ flex: 1 }}>{trailPanel}</View>
-          <View style={{ marginLeft: space.sm }}>
-            <MenuButton onPress={() => setSheetOpen(true)} />
-          </View>
+          <View style={{ marginLeft: space.sm }}><MenuButton onPress={() => setSheetOpen(true)} /></View>
         </View>
 
         <View style={{ position: 'absolute', left: space.sm, right: space.sm, bottom: space.lg }}>
           <Window tone="cream" pad={12} innerStyle={{ minHeight: 56 }}>
-            <PixelText size="small" color={palette.windowText} style={{ lineHeight: 18 }}>
-              {message}
-            </PixelText>
+            <PixelText size="small" color={palette.windowText} style={{ lineHeight: 18 }}>{message}</PixelText>
           </Window>
           {onWeb && dist.source === 'none' && !dist.running && !dist.showInjector ? (
             <PixelText size="tiny" color={palette.secondary} style={{ marginTop: space.sm, lineHeight: 14 }}>
               Published web cannot count steps, and there are no walk buttons. GPS on a desktop almost never works. The engine lives on a phone.
             </PixelText>
           ) : null}
-          {dist.gpsError ? (
-            <PixelText size="tiny" color={palette.danger} style={{ marginTop: space.sm }}>
-              {dist.gpsError}
-            </PixelText>
-          ) : null}
+          {dist.gpsError ? <PixelText size="tiny" color={palette.danger} style={{ marginTop: space.sm }}>{dist.gpsError}</PixelText> : null}
           {ready ? (
-            <PixelButton
-              label={`Challenge the Warden`}
-              tone="gold"
-              style={{ marginTop: space.sm }}
-              onPress={challengeWarden}
-            />
+            <PixelButton label={`Challenge the ${gateTitle}`} tone="gold" style={{ marginTop: space.sm }} onPress={challengeWarden} />
           ) : progress.pin ? (
             <PixelText size="tiny" color={palette.secondary} style={{ marginTop: space.sm }} align="center">
-              {route.pinName} earned
+              {regionalWarden ? `${route.pinName} earned · next region open` : 'Trail cleared · next trail open'}
             </PixelText>
           ) : null}
           <PixelButton
@@ -451,9 +358,7 @@ export default function RouteScreen({ params = {} }) {
       <Modal visible={sheetOpen} transparent animationType="fade" onRequestClose={() => setSheetOpen(false)}>
         <Pressable style={{ flex: 1, backgroundColor: '#000000cc' }} onPress={() => setSheetOpen(false)}>
           <Pressable onPress={() => {}} style={{ marginTop: 'auto', backgroundColor: tokens.surface, borderTopColor: tokens.line, borderTopWidth: 3, padding: space.md, maxHeight: '78%' }}>
-            <PixelText size="small" color={tokens.textOnDark} style={{ marginBottom: space.sm }}>
-              ON THE TRAIL
-            </PixelText>
+            <PixelText size="small" color={tokens.textOnDark} style={{ marginBottom: space.sm }}>ON THE TRAIL</PixelText>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: space.sm }}>
               {ROUTES.map((r) => {
                 const unlocked = isTrailUnlocked(r.id, state.trails);
