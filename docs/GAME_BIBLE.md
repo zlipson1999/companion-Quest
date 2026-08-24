@@ -88,10 +88,14 @@ Hard rules, never traded away:
 
 Expo SDK 52 / React Native 0.76, runs in Expo Go, as a web SPA, and (pending)
 as an EAS dev build. State is one reducer + AsyncStorage. There is no
-navigation or state library. There are **no raster image assets**: pixel art is
+navigation or state library. **Almost no raster image assets**: pixel art is
 stored as generated grid/palette data, including converted traced references
-(§8.4). Audio is different: the 16 generated WAV files are committed under
-`assets/sfx/` and loaded by the app.
+(§8.4). Two exceptions ship as real PNGs: the tile atlas under `assets/tiles/`,
+and the 16 painted item plates under `assets/items/` (15 Trail Charms + the
+Kinship Knot) that `PixelSprite` prefers over their 96-cell traces via
+`data/itemImages.js` — a charm in the bag is the actual object, isolated on
+transparency, not a crushed downsample. Audio too: the 16 generated WAV files
+are committed under `assets/sfx/` and loaded by the app.
 
 ```
 src/
