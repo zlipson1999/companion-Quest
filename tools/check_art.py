@@ -102,7 +102,7 @@ def _expand_id_array(src, name, seen=None):
         return []
     seen.add(name)
     ids = []
-    for spread, lit in re.findall(r"\.\.\.(\w+)|'(\w+)'", _array_block(src, name)):
+    for spread, lit in re.findall(r"\.\.\.(\w+)|['\"](\w+)['\"]", _array_block(src, name)):
         if spread:
             ids.extend(_expand_id_array(src, spread, seen))
         else:
@@ -117,7 +117,7 @@ def family_chains():
     HORIZON_COMPANION_IDS (the last lives in horizonCreatures.js).
     """
     src = roster_src()
-    evolves = dict(re.findall(r"^  (\w+): \{$\n(?:.*\n)*?    evolvesTo: '?(\w+)'?,", src, re.M))
+    evolves = dict(re.findall(r"^  (\w+): \{$\n(?:.*\n)*?    evolvesTo: ['\"]?(\w+)['\"]?,", src, re.M))
     roots = _expand_id_array(src, 'WILD_COMPANION_IDS')
     seen, uniq = set(), []
     for root in roots:

@@ -21,6 +21,59 @@ silhouettes, materials, motifs, and identities of the existing roster.
     intentional palette, strong readable silhouette, transparent/clean
     background when needed for asset creation.
 
+## Master status (2026-08-24)
+
+All 40 families / 120 forms now have isolated transparent masters in
+`tools/reference_art/<id>.png` (designed family plates, split per stage).
+Original Grove 18 families were not retouched.
+
+`python3 tools/check_art.py` passes with the family-stage bar applied to
+**all 58 families** (Horizon ids are now parsed; thresholds unchanged).
+Approval lineups: `tools/reference_art/lineups/<root>_family.png`.
+
+| # | ids | status | reason |
+|---|-----|--------|--------|
+| 01 | brineling / shoregleam / tidecrown | approved | sea-glass hermit; growth from nub-shell to crowned guardian |
+| 02 | dusthorn / mesaquill / suncerast | approved | horned-lizard; toad → runner → solar-frill adult |
+| 03 | mireblink / lunareed / fenoracle | approved | firefly-frog; lantern-tad → reed-frog → oracle |
+| 04 | pinepuff / rimecone / frostbough | approved | pinecone-snow; puff → armored cone → bough-tree |
+| 05 | clinket / bellstride / canyonchime | approved | copper bell armadillo; bell-body → segmented → canyon chimes |
+| 06 | glintfoal / astramare / cometmane | approved | starlight foal → constellation mare → comet horse |
+| 07 | propfin / mangrusk / rootback | approved | mudskipper; prop-fin → mangrove armor → grove-back |
+| 08 | zapram / voltibex / stormhorn | approved | spark-kid → volt ibex → storm goat |
+| 09 | nectlet / combwing / apiarch | approved | bee-deer; fawn → comb-wings → hive-antler stag |
+| 10 | chipmagma / shardscale / obsidrake | approved | magma pebble → glass-shard salamander → sail-crest adult |
+| 11 | bellbun / chimehare / bloomrunner | approved | bluebell rabbit, distinct from tinkid antelope |
+| 12 | nailnut / ferracorn / ironstag | approved | ironwood acorn stag (quadruped, not a tree-kid) |
+| 13 | pipolyp / reeframble / coralith | approved | coral polyp octopus |
+| 14 | veilisk / duneshade / mirajinn | approved | desert veil gecko, not a pebble |
+| 15 | plinkbat / cavernwing / rainvault | approved | cave bat / stalactite vault |
+| 16 | burrcalf / thistlebuck / prairieguard | approved | thistle bison |
+| 17 | prismink / aurorermine / polarveil | approved | aurora mink, slender mustelid |
+| 18 | kneebit / swampstride / cypressage | approved | cypress-knee TURTLE (not a moth) |
+| 19 | mumblewool / heatheram / moorwarden | approved | heather sheep |
+| 20 | skiprock / basalisk / breakwater | approved | skipping-stone seal |
+| 21 | glimrice / paddyglow / terracelume | approved | rice-paddy crane |
+| 22 | roseling / facetram / quartzibex | approved | rose-quartz sheep / ibex |
+| 23 | wicklet / willowisp / mereweaver | approved | willow dragonfly |
+| 24 | sootfinch / ashlark / emberchorus | approved | ash-and-ember songbird |
+| 25 | budice / petalfloe / glacibloom | approved | ice-flower penguin |
+| 26 | niblet / cacaocrest / canopycacao | approved | cacao monkey |
+| 27 | siltip / marshcoil / estuaryn | approved | eelgrass otter |
+| 28 | mistyak / cloudyak / skyburden | approved | cloud yak |
+| 29 | twigglypt / ringback / chronotree | approved | tree-ring pangolin |
+| 30 | glyphish / runefin / tideglyph | approved | rune nautilus |
+| 31 | knockit / bamboar / canebrute | approved | bamboo boar |
+| 32 | pepkit / capsiclaw / scovlion | approved | pepper-maned lion |
+| 33 | pebbloom / selencore / moonvault | approved | moonstone mole |
+| 34 | lotadpole / bloomnewt / lotosaur | approved | lotus newt |
+| 35 | kernelit / millwing / harvestail | approved | grain moth / windmill (not Kneebit) |
+| 36 | conecko / barkglide / redwoodrake | approved | redwood flying gecko |
+| 37 | bloopot / vaportoise / geyshell | approved | geyser tortoise |
+| 38 | figbat / orchardusk / noctifera | approved | fig fruit-bat |
+| 39 | ammonip / spiralisk / aeoncoil | approved | desert ammonite |
+| 40 | tinkid / alpengait / summitbell | approved | bellflower antelope (not Bellbun) |
+
 ## 01. BRINELING → SHOREGLEAM → TIDECROWN
 
 **ROUTE:** Tideglass Coast\
