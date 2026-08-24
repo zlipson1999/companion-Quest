@@ -1,13 +1,15 @@
 // The trails. Each is a different place: its own terrain, its own
-// companions, its own Warden, and a Quest Pin for the first time you clear it.
-// Later trails keep a bigger random pool — Maple 3, Cairn 6, Gale 10,
+// companions, its own Keeper challenge, and one true Warden at the end of
+// each region. Intermediate wins clear the next trail; only a region's final
+// Warden awards the regional Quest Pin / badge and opens the next region.
+// Later Grove trails keep a bigger random pool — Maple 3, Cairn 6, Gale 10,
 // Canopy 15, then the two long trails past eight miles.
 //
 // Gym cardio MUST NOT pass a routeId into ADD_DISTANCE — indoor miles are
 // real, but they are not trail miles, and a treadmill must never fill a
 // quota you are supposed to walk.
 //
-// Original terms only: trail, Warden, Quest Pin. This file may import
+// Original terms only: trail, Keeper, Warden, Quest Pin. This file may import
 // creatures.js; creatures.js must never import this file.
 
 import { familyChain, getCreature, STARTER_IDS } from './creatures';
@@ -15,8 +17,6 @@ import { SCENE_TONES } from './sceneSky';
 import { HORIZON_ROUTES } from './regions';
 import { getWarden } from './wardens';
 
-// Cumulative pools. A longer walk can meet anyone you have already unlocked,
-// plus the new faces that trail introduces. Wild pick is random from this list.
 const MAPLE_MEET = ['spinseed', 'bramblet', 'lanternbud'];
 const CAIRN_MEET = [...MAPLE_MEET, 'rubblet', 'chockit', 'facetel'];
 const GALE_MEET = [...CAIRN_MEET, 'whistlet', 'kitefin', 'loftburr', 'wispurr'];
@@ -26,185 +26,79 @@ const EMBER_MEET = [...RILL_MEET, 'pyrelynx', 'cairnhound', 'galegait', 'mycoblo
 
 export const ROUTES = [
   {
-    id: 'maple',
-    name: 'Maple Trail',
-    unlock: null,
-    region: 'The Grove',
-    regionId: 'grove',
-    biomeId: 'maple-woods',
-    biomeName: 'Maple Woods',
-    miles: 1.5,
-    reps: 30,
-    companions: MAPLE_MEET,
-    warden: 'sludgewad',
-    wardenHp: 55,
-    wardenXp: 45,
-    wardenBond: 10,
-    pinId: 'maple',
-    pinName: 'Maple Pin',
-    stageTone: 'maple',
-    // Horizon fraction is the trail's; sky colours live in sceneSky.js.
-    horizon: 0.18,
-    mapId: 'route_maple',
-    // Green lane, trees, grass.
-    laneFrac: 0.3,
-    laneMin: 3,
-    edge: 'trees',
-    tallgrassChance: 14,
-    flowerChance: 22,
-    scatterTrees: 0,
+    id: 'maple', name: 'Maple Trail', unlock: null, region: 'The Grove', regionId: 'grove',
+    biomeId: 'maple-woods', biomeName: 'Maple Woods', miles: 1.5, reps: 30,
+    companions: MAPLE_MEET, warden: 'sludgewad', wardenHp: 55, wardenXp: 45, wardenBond: 10,
+    pinId: 'maple', pinName: 'Maple Pin', stageTone: 'maple', horizon: 0.18, mapId: 'route_maple',
+    laneFrac: 0.3, laneMin: 3, edge: 'trees', tallgrassChance: 14, flowerChance: 22, scatterTrees: 0,
   },
   {
-    id: 'cairn',
-    unlock: 'maple',
-    name: 'Cairn Cut',
-    region: 'The Grove',
-    regionId: 'grove',
-    biomeId: 'cairn-cut',
-    biomeName: 'Packed Earth',
-    miles: 3,
-    reps: 60,
-    companions: CAIRN_MEET,
-    warden: 'snoozeghoul',
-    wardenHp: 72,
-    wardenXp: 60,
-    wardenBond: 12,
-    pinId: 'stone',
-    pinName: 'Stone Pin',
-    stageTone: 'cairn',
-    horizon: 0.2,
-    mapId: 'route_cairn',
-    // Packed earth, stone, cairns — no tree line. Trees here made this the
-    // same woodland strip as Maple with the floor swapped.
-    laneFrac: 0.22,
-    laneMin: 2,
-    edge: 'stone',
-    tallgrassChance: 0,
-    flowerChance: 0,
-    scatterTrees: 0,
-    scatterStone: 16,
+    id: 'cairn', unlock: 'maple', name: 'Cairn Cut', region: 'The Grove', regionId: 'grove',
+    biomeId: 'cairn-cut', biomeName: 'Packed Earth', miles: 3, reps: 60,
+    companions: CAIRN_MEET, warden: 'snoozeghoul', wardenHp: 72, wardenXp: 60, wardenBond: 12,
+    pinId: 'stone', pinName: 'Stone Pin', stageTone: 'cairn', horizon: 0.2, mapId: 'route_cairn',
+    laneFrac: 0.22, laneMin: 2, edge: 'stone', tallgrassChance: 0, flowerChance: 0, scatterTrees: 0, scatterStone: 16,
   },
   {
-    id: 'gale',
-    unlock: 'cairn',
-    name: 'Gale Reach',
-    region: 'The Grove',
-    regionId: 'grove',
-    biomeId: 'gale-reach',
-    biomeName: 'Open Country',
-    miles: 5,
-    reps: 100,
-    companions: GALE_MEET,
-    warden: 'achefang',
-    wardenHp: 90,
-    wardenXp: 80,
-    wardenBond: 14,
-    pinId: 'gale',
-    pinName: 'Gale Pin',
-    stageTone: 'gale',
-    horizon: 0.42,
-    mapId: 'route_gale',
-    // Open country, sky, a thin track.
-    laneFrac: 0.1,
-    laneMin: 1,
-    edge: 'open',
-    tallgrassChance: 4,
-    flowerChance: 18,
-    scatterTrees: 3,
+    id: 'gale', unlock: 'cairn', name: 'Gale Reach', region: 'The Grove', regionId: 'grove',
+    biomeId: 'gale-reach', biomeName: 'Open Country', miles: 5, reps: 100,
+    companions: GALE_MEET, warden: 'achefang', wardenHp: 90, wardenXp: 80, wardenBond: 14,
+    pinId: 'gale', pinName: 'Gale Pin', stageTone: 'gale', horizon: 0.42, mapId: 'route_gale',
+    laneFrac: 0.1, laneMin: 1, edge: 'open', tallgrassChance: 4, flowerChance: 18, scatterTrees: 3,
   },
   {
-    id: 'canopy',
-    unlock: 'gale',
-    name: 'Canopy Run',
-    region: 'The Grove',
-    regionId: 'grove',
-    biomeId: 'canopy-shade',
-    biomeName: 'Deep Shade',
-    miles: 8,
-    reps: 160,
-    companions: CANOPY_MEET,
-    warden: 'couchlurk',
-    wardenHp: 115,
-    wardenXp: 100,
-    wardenBond: 18,
-    pinId: 'canopy',
-    pinName: 'Canopy Pin',
-    stageTone: 'canopy',
-    horizon: 0.14,
-    mapId: 'route_canopy',
-    // Dense shade, undergrowth.
-    laneFrac: 0.18,
-    laneMin: 2,
-    edge: 'canopy',
-    tallgrassChance: 28,
-    flowerChance: 0,
-    scatterTrees: 20,
+    id: 'canopy', unlock: 'gale', name: 'Canopy Run', region: 'The Grove', regionId: 'grove',
+    biomeId: 'canopy-shade', biomeName: 'Deep Shade', miles: 8, reps: 160,
+    companions: CANOPY_MEET, warden: 'couchlurk', wardenHp: 115, wardenXp: 100, wardenBond: 18,
+    pinId: 'canopy', pinName: 'Canopy Pin', stageTone: 'canopy', horizon: 0.14, mapId: 'route_canopy',
+    laneFrac: 0.18, laneMin: 2, edge: 'canopy', tallgrassChance: 28, flowerChance: 0, scatterTrees: 20,
   },
   {
-    id: 'rill',
-    unlock: 'canopy',
-    name: 'Rill Crossing',
-    region: 'The Grove',
-    regionId: 'grove',
-    biomeId: 'rill-water',
-    biomeName: 'Stream Crossing',
-    miles: 12,
-    reps: 220,
-    companions: RILL_MEET,
-    warden: 'brinegnash',
-    wardenHp: 140,
-    wardenXp: 120,
-    wardenBond: 20,
-    pinId: 'tide',
-    pinName: 'Tide Pin',
-    stageTone: 'rill',
-    horizon: 0.28,
-    mapId: 'route_rill',
-    laneFrac: 0.16,
-    laneMin: 2,
-    edge: 'rill',
-    tallgrassChance: 6,
-    flowerChance: 10,
-    scatterTrees: 2,
-    scatterWater: 18,
+    id: 'rill', unlock: 'canopy', name: 'Rill Crossing', region: 'The Grove', regionId: 'grove',
+    biomeId: 'rill-water', biomeName: 'Stream Crossing', miles: 12, reps: 220,
+    companions: RILL_MEET, warden: 'brinegnash', wardenHp: 140, wardenXp: 120, wardenBond: 20,
+    pinId: 'tide', pinName: 'Tide Pin', stageTone: 'rill', horizon: 0.28, mapId: 'route_rill',
+    laneFrac: 0.16, laneMin: 2, edge: 'rill', tallgrassChance: 6, flowerChance: 10, scatterTrees: 2, scatterWater: 18,
   },
   {
-    id: 'ember',
-    unlock: 'rill',
-    name: 'Ember Grade',
-    region: 'The Grove',
-    regionId: 'grove',
-    biomeId: 'ember-grade',
-    biomeName: 'Cinder Grade',
-    miles: 18,
-    reps: 320,
-    companions: EMBER_MEET,
-    warden: 'cindergrind',
-    wardenHp: 170,
-    wardenXp: 150,
-    wardenBond: 24,
-    pinId: 'ember',
-    pinName: 'Ember Pin',
-    stageTone: 'ember',
-    horizon: 0.22,
-    mapId: 'route_ember',
-    laneFrac: 0.2,
-    laneMin: 2,
-    edge: 'ember',
-    tallgrassChance: 0,
-    flowerChance: 8,
-    scatterTrees: 0,
-    scatterStone: 14,
+    id: 'ember', unlock: 'rill', name: 'Ember Grade', region: 'The Grove', regionId: 'grove',
+    biomeId: 'ember-grade', biomeName: 'Cinder Grade', miles: 18, reps: 320,
+    companions: EMBER_MEET, warden: 'cindergrind', wardenHp: 170, wardenXp: 150, wardenBond: 24,
+    pinId: 'ember', pinName: 'Ember Pin', stageTone: 'ember', horizon: 0.22, mapId: 'route_ember',
+    laneFrac: 0.2, laneMin: 2, edge: 'ember', tallgrassChance: 0, flowerChance: 8, scatterTrees: 0, scatterStone: 14,
   },
   ...HORIZON_ROUTES,
 ];
 
 export const ROUTE_ORDER = ROUTES.map((r) => r.id);
-
 const BY_ID = Object.fromEntries(ROUTES.map((r) => [r.id, r]));
+const REGION_IDS = [...new Set(ROUTES.map((r) => r.regionId))];
+
+function routesInRegion(regionId) {
+  return ROUTES.filter((r) => r.regionId === regionId);
+}
 
 export function getRoute(id) {
   return BY_ID[id] || ROUTES[0];
+}
+
+export function isRegionalWarden(routeOrId) {
+  const route = typeof routeOrId === 'string' ? BY_ID[routeOrId] : routeOrId;
+  if (!route) return false;
+  const siblings = routesInRegion(route.regionId);
+  return siblings.length > 0 && siblings[siblings.length - 1].id === route.id;
+}
+
+export function trailGateRoute(routeId) {
+  const route = BY_ID[routeId];
+  if (!route) return null;
+  const siblings = routesInRegion(route.regionId);
+  const i = siblings.findIndex((r) => r.id === route.id);
+  if (i > 0) return siblings[i - 1];
+  const regionIndex = REGION_IDS.indexOf(route.regionId);
+  if (regionIndex <= 0) return null;
+  const previous = routesInRegion(REGION_IDS[regionIndex - 1]);
+  return previous.length ? previous[previous.length - 1] : null;
 }
 
 function blankProgress() {
@@ -236,12 +130,10 @@ export function normalizeTrails(raw) {
 export function isTrailUnlocked(routeId, trails) {
   const route = BY_ID[routeId];
   if (!route) return false;
-  // Grove trails and horizon trails both name the pin that opens them.
-  // Maple (unlock: null) is always open. Do not fall back to "previous in
-  // the array" — that would lock Tideglass Coast behind Ember Grade.
-  if (!route.unlock) return true;
+  const gate = trailGateRoute(routeId);
+  if (!gate) return true;
   const t = normalizeTrails(trails);
-  return !!(t.progress[route.unlock] && t.progress[route.unlock].pin);
+  return !!(t.progress[gate.id] && t.progress[gate.id].pin);
 }
 
 export function trailOf(trails) {
@@ -259,10 +151,7 @@ export function addTrailMiles(trails, routeId, mi) {
   const t = normalizeTrails(trails);
   if (!BY_ID[routeId] || !(mi > 0)) return t;
   const p = t.progress[routeId];
-  return {
-    ...t,
-    progress: { ...t.progress, [routeId]: { ...p, miles: p.miles + mi } },
-  };
+  return { ...t, progress: { ...t.progress, [routeId]: { ...p, miles: p.miles + mi } } };
 }
 
 export function addTrailReps(trails, routeId, n) {
@@ -270,23 +159,19 @@ export function addTrailReps(trails, routeId, n) {
   const add = Math.max(0, Math.floor(n || 0));
   if (!BY_ID[routeId] || !add) return t;
   const p = t.progress[routeId];
-  return {
-    ...t,
-    progress: { ...t.progress, [routeId]: { ...p, reps: p.reps + add } },
-  };
+  return { ...t, progress: { ...t.progress, [routeId]: { ...p, reps: p.reps + add } } };
 }
 
-// First win only. Caller grants the Kinship Knot when `first` is true.
+// `pin` remains the persisted first-clear bit for backwards compatibility.
+// `first` means "first regional badge" so callers only mint Warden rewards at
+// capstones; intermediate Keeper clears still flip the bit and open the next trail.
 export function awardPin(trails, routeId) {
   const t = normalizeTrails(trails);
   const p = t.progress[routeId];
   if (!p || p.pin) return { trails: t, first: false };
   return {
-    trails: {
-      ...t,
-      progress: { ...t.progress, [routeId]: { ...p, pin: true } },
-    },
-    first: true,
+    trails: { ...t, progress: { ...t.progress, [routeId]: { ...p, pin: true } } },
+    first: isRegionalWarden(routeId),
   };
 }
 
@@ -298,22 +183,16 @@ export function setActiveTrail(trails, routeId) {
 
 export function earnedPins(trails) {
   const t = normalizeTrails(trails);
-  return ROUTES.filter((r) => t.progress[r.id].pin);
+  return ROUTES.filter((r) => isRegionalWarden(r) && t.progress[r.id].pin);
 }
 
-// Which trail a creature belongs to — Index uses this to silhouette anyone
-// whose trail is still locked. Built here so creatures.js never imports us.
 const CREATURE_TRAIL = {};
-// First-bond families are never silhouetted. They belong to Maple even
-// though the wild pool there is the three new grove faces.
 STARTER_IDS.forEach((id) => {
   familyChain(id).forEach((cid) => { CREATURE_TRAIL[cid] = 'maple'; });
 });
 ROUTES.forEach((route) => {
   route.companions.forEach((root) => {
     familyChain(root).forEach((id) => {
-      // First trail that names them owns the lock. Later cumulative pools
-      // must not re-lock Spinseed to Canopy.
       if (!CREATURE_TRAIL[id]) CREATURE_TRAIL[id] = route.id;
     });
   });
@@ -341,15 +220,21 @@ export function isCreatureLocked(creatureId, trails) {
 export function nextRoute(routeId) {
   const route = BY_ID[routeId];
   if (!route) return null;
-  const siblings = ROUTES.filter((r) => r.regionId === route.regionId);
+  const siblings = routesInRegion(route.regionId);
   const i = siblings.findIndex((r) => r.id === routeId);
   if (i >= 0 && i < siblings.length - 1) return siblings[i + 1];
+  const regionIndex = REGION_IDS.indexOf(route.regionId);
+  if (regionIndex >= 0 && regionIndex < REGION_IDS.length - 1) {
+    const nextRegion = routesInRegion(REGION_IDS[regionIndex + 1]);
+    return nextRegion.length ? nextRegion[0] : null;
+  }
   return null;
 }
 
 export function wardenBattle(route) {
   const next = nextRoute(route.id);
   const keeper = getWarden(route.id);
+  const regionalWarden = isRegionalWarden(route);
   return {
     creatureId: route.warden,
     isCompanion: false,
@@ -360,19 +245,18 @@ export function wardenBattle(route) {
     from: 'route',
     routeId: route.id,
     warden: true,
+    regionalWarden,
     trainerBattle: true,
-    trainer: keeper ? keeper.name : 'Warden',
+    trainer: keeper ? keeper.name : (regionalWarden ? 'Warden' : 'Keeper'),
     trainerKit: keeper ? keeper.kit : 'hero_man',
     trainerLine: keeper ? keeper.line : null,
     stageTone: route.stageTone,
     horizon: route.horizon,
-    pinName: route.pinName,
+    pinName: regionalWarden ? route.pinName : null,
     nextTrail: next ? next.name : null,
   };
 }
 
-// A deterministic strip per trail, so each one is a different place rather
-// than one shared grass field with the sign swapped.
 export function trailRow(routeId, r, cols) {
   const route = getRoute(routeId);
   const laneW = Math.max(route.laneMin, Math.round(cols * route.laneFrac));
@@ -381,10 +265,7 @@ export function trailRow(routeId, r, cols) {
   let row = '';
   for (let x = 0; x < cols; x += 1) {
     const n = ((h ^ (x * 2246822519)) >>> 0) % 100;
-    if (x >= lane0 && x < lane0 + laneW) {
-      row += '#';
-      continue;
-    }
+    if (x >= lane0 && x < lane0 + laneW) { row += '#'; continue; }
     if (route.edge === 'trees') {
       if (x < 1 || x > cols - 2) { row += 'T'; continue; }
       if (x < 2 || x > cols - 3) { row += n < 62 ? 'T' : '^'; continue; }
@@ -434,9 +315,7 @@ export function trailRow(routeId, r, cols) {
 }
 
 ROUTES.forEach((route) => {
-  if (!getCreature(route.warden)) {
-    throw new Error(`routes: Warden ${route.warden} is not a creature`);
-  }
+  if (!getCreature(route.warden)) throw new Error(`routes: Warden ${route.warden} is not a creature`);
   route.companions.forEach((id) => {
     if (!getCreature(id)) throw new Error(`routes: companion ${id} is not a creature`);
   });

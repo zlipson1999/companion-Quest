@@ -29,12 +29,6 @@ function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
 }
 
-// Accept either a Phase-1.5 encounter {targetId,isCompanion,...} or a legacy
-// {encounterId} pointing at an obstacle.
-//
-// A sparring partner used to be a PERSON passed in as `opponent`. Rowan
-// now sends his own companion: looked up like any creature, but
-// `trainerBattle` keeps it out of the Index and off the Knot.
 function resolveTarget(params) {
   const id = params.targetId || params.creatureId;
   if (id) {
@@ -52,8 +46,6 @@ function resolveTarget(params) {
   return { targetId: e.creatureId, isCompanion: false, hp: e.hp, xp: e.xp, bond: e.bond, catchRate: 0 };
 }
 
-// A floating damage number over whoever was struck. Keyed by an incrementing
-// id so a rapid second hit restarts the animation rather than being swallowed.
 function DamagePop({ pop, color }) {
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -73,9 +65,7 @@ function DamagePop({ pop, color }) {
         transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, -26] }) }],
       }}
     >
-      <PixelText size="small" color={color}>
-        -{pop.amount}
-      </PixelText>
+      <PixelText size="small" color={color}>-{pop.amount}</PixelText>
     </Animated.View>
   );
 }
@@ -88,7 +78,6 @@ export default function BattleScreen({ params }) {
   const { navigate } = useNav();
 
   const target = resolveTarget(params);
-  // A sparring partner is supplied whole; everything else is a creature.
   const wild = params.opponent || getCreature(target.targetId);
   const returnTo = params.from === 'route' ? 'route' : params.from === 'gym' ? 'gym' : 'hub';
   const knots = state.bag.knot || 0;
@@ -96,45 +85,34 @@ export default function BattleScreen({ params }) {
 
   const [wildHp, setWildHp] = useState(target.hp);
   const [companionHp, setCompanionHp] = useState(Math.max(1, Math.round((companion && companion.hp) || 1)));
-
   const [phase, setPhase] = useState('message');
   const [lines, setLines] = useState(() => {
     if (!companion) {
       return [{ speaker: 'Narration', text: 'Meet Coach Maple in the gym — then the trail has someone to stand with you.' }];
     }
-    return params.warden && params.trainerBattle
+    return params.regionalWarden && params.trainerBattle
       ? wardenTrainerLines(companion.creature.name, params.trainer || 'Warden', wild.name, params.trainerLine)
       : params.trainerBattle || params.trainer
-      ? trainerSparLines(companion.creature.name, params.trainer || 'Rowan', wild.name)
+      ? trainerSparLines(companion.creature.name, params.trainer || 'Keeper', wild.name)
       : params.opponent
         ? sparIntro(companion.creature.name, wild.name)
         : wildIntro(companion.creature.name, wild.name, target.isCompanion, isGrownForm(wild.id));
   });
   const thenRef = useRef(() => setPhase('menu'));
-
   const [selectedMove, setSelectedMove] = useState(null);
   const [hold, setHold] = useState(0);
-
-  // Moves come from the companion's level and evolution stage, already
-  // decorated with tier scaling — never from the raw exercise table, or a
-  // Tier III companion would fight with Tier I numbers.
   const battleMoves = companion ? battleMovesFor(companion.level, companion.creature.stage || 1) : [];
   const getMove = (id) => battleMoves.find((m) => m.id === id) || null;
-
   const [wildHit, setWildHit] = useState(0);
   const [companionHit, setCompanionHit] = useState(0);
   const [wildLunge, setWildLunge] = useState(0);
   const [companionLunge, setCompanionLunge] = useState(0);
   const [wildPop, setWildPop] = useState({ id: 0, amount: 0 });
   const [compPop, setCompPop] = useState({ id: 0, amount: 0 });
-  // Timers for the strike choreography; cleared on unmount so a fled battle
-  // does not set state on a dead screen.
   const timersRef = useRef([]);
   const later = (ms, fn) => timersRef.current.push(setTimeout(fn, ms));
   useEffect(() => () => timersRef.current.forEach(clearTimeout), []);
 
-  // The two sides enter from opposite trail edges, establishing a meeting
-  // rather than reproducing a franchise-signature battle reveal.
   const wildEnter = useRef(new Animated.Value(90)).current;
   const compEnter = useRef(new Animated.Value(-110)).current;
   useEffect(() => {
@@ -145,7 +123,6 @@ export default function BattleScreen({ params }) {
   }, [wildEnter, compEnter]);
   const [wildFaint, setWildFaint] = useState(false);
   const [companionFaint, setCompanionFaint] = useState(false);
-
   const [ceremony, setCeremony] = useState(null);
 
   const say = (ls, then) => {
@@ -167,8 +144,6 @@ export default function BattleScreen({ params }) {
     return () => clearTimeout(id);
   }, [phase, selectedMove, hold]);
 
-  // Route encounters and the gym spar both assume a party. If this screen
-  // is opened without one, do not read companion.creature.
   if (!companion) {
     return (
       <Screen style={{ padding: space.md, justifyContent: 'flex-end' }}>
@@ -181,9 +156,6 @@ export default function BattleScreen({ params }) {
 
   const maybeEvolve = (level, done) => {
     const creature = getCreature(companion.id);
-    // Level is no longer the whole gate: evolve points have to be there too,
-    // so a companion evolves because of what you did in the real world and not
-    // only because you fought enough obstacles.
     if (canEvolve(companion, creature, level)) {
       const evolved = getCreature(creature.evolvesTo);
       const evo = evolveLines(creature.name, evolved.name);
@@ -221,13 +193,9 @@ export default function BattleScreen({ params }) {
 
   const confirmMove = () => {
     const move = getMove(selectedMove);
-    // You just did the exercise. Record it before anything else happens to it.
     dispatch({ type: 'LOG_EXERCISE', payload: { id: move.id, kind: move.kind, target: move.target, routeId: params.routeId } });
     const dmg = move.power + Math.floor((companion.level - 1) * 2);
     const newWildHp = Math.max(0, wildHp - dmg);
-    // Choreography: the companion steps INTO the strike, and only then does the
-    // wild flinch — cause before effect, ~140ms apart. Damage numbers ride the
-    // flinch, not the tap.
     setCompanionLunge((n) => n + 1);
     later(140, () => {
       setWildHp(newWildHp);
@@ -237,8 +205,6 @@ export default function BattleScreen({ params }) {
     });
 
     if (newWildHp <= 0) {
-      // Faint AFTER the flinch, not with it: lunge at 0ms, hit at 140, and the
-      // drop starts once the flash has read.
       later(430, () => setWildFaint(true));
       const beforeLevel = companion.level;
       if (target.isCompanion) {
@@ -257,8 +223,20 @@ export default function BattleScreen({ params }) {
           && state.trails.progress[params.routeId]
           && state.trails.progress[params.routeId].pin
         );
-        const firstPin = !!params.warden && !alreadyPinned;
-        dispatch({ type: 'WIN_BATTLE', payload: { xp: target.xp, bond: target.bond, targetId: target.targetId, companionHp, spar: !!(params.opponent || params.sparIntro || (params.trainerBattle && !params.warden)), warden: !!params.warden, routeId: params.routeId } });
+        const firstPin = !!params.regionalWarden && !alreadyPinned;
+        dispatch({
+          type: 'WIN_BATTLE',
+          payload: {
+            xp: target.xp,
+            bond: target.bond,
+            targetId: target.targetId,
+            companionHp,
+            spar: !!(params.opponent || params.sparIntro || (params.trainerBattle && !params.warden)),
+            warden: !!params.warden,
+            regionalWarden: !!params.regionalWarden,
+            routeId: params.routeId,
+          },
+        });
         playSfx('victory');
         if (firstPin) {
           say(
@@ -307,12 +285,6 @@ export default function BattleScreen({ params }) {
       return;
     }
     dispatch({ type: 'CONSUME_ITEM', payload: { itemId: 'knot' } });
-    // You do not wear a companion down and take it home. It ties the other
-    // loop when it has watched you do the work AND you are still going — so
-    // the chance rides on how far through the shared challenge you are and on
-    // YOUR OWN remaining Resolve, not on how weak it has become. That inverts
-    // the incentive on purpose: finishing strong is what earns the knot, where
-    // grinding something into the ground at any cost earns nothing.
     const shared = 1 - wildHp / target.hp;
     const standing = companionHp / companion.maxHp;
     const chance = clamp(
@@ -373,10 +345,6 @@ export default function BattleScreen({ params }) {
   const move = selectedMove ? getMove(selectedMove) : null;
   const holdReady = move && move.kind === 'hold' ? hold <= 0 : true;
   const companionMax = companion.maxHp;
-
-  // A balanced field-console composition: both participants receive matched
-  // instruments and share one trail plane. Do not tune this against another
-  // title's diagonal cards or platform layout.
   const stageTone = params.stageTone
     || ((params.opponent || params.trainerBattle) ? 'hall' : (params.from === 'route' ? 'grass' : 'trail'));
   const stageHorizon = params.horizon != null ? params.horizon : 0.16;
@@ -553,9 +521,7 @@ export default function BattleScreen({ params }) {
             }}
           />
         ) : (
-          <PixelText size="label" color={palette.secondary}>
-            . . .
-          </PixelText>
+          <PixelText size="label" color={palette.secondary}>. . .</PixelText>
         )}
       </View>
     );
@@ -573,4 +539,3 @@ export default function BattleScreen({ params }) {
     </Screen>
   );
 }
-

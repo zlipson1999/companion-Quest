@@ -1,13 +1,8 @@
 // World Map / Region Journey.
 //
-// The 11 regions are data in regions.js, but until now the only way to pick a
-// trail was a flat chip list inside the Route menu. That list does not show
-// locked vs open, regional Quest Pins, biomes, or which companions live where.
-//
-// This screen is the journal for the wider world:
-//   World → Region → Trail
-// Selecting an unlocked trail sets it active and opens the existing Route
-// screen. Nothing here changes how walking, Wardens, or pins work.
+// The world now reads as one sequential journey: clear trails inside a region,
+// defeat the Warden on that region's final trail, earn the regional badge, then
+// move into the next region.
 
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
@@ -22,6 +17,7 @@ import {
 } from '../data/regions';
 import {
   getRoute, isTrailUnlocked, normalizeTrails, creatureTrailId,
+  isRegionalWarden, trailGateRoute,
 } from '../data/routes';
 import { getCreature } from '../data/creatures';
 import { sceneTone } from '../data/sceneSky';
@@ -34,9 +30,7 @@ const SILHOUETTE = [
 
 function trailIdsOf(region) {
   if (!region) return [];
-  if (region.generated && Array.isArray(region.trails)) {
-    return region.trails.map((t) => t.id);
-  }
+  if (region.generated && Array.isArray(region.trails)) return region.trails.map((t) => t.id);
   return region.trailIds || [];
 }
 
@@ -44,8 +38,7 @@ function regionOpen(region, trails) {
   if (!region) return false;
   if (region.id === 'grove') return true;
   const ids = trailIdsOf(region);
-  if (!ids.length) return false;
-  return isTrailUnlocked(ids[0], trails);
+  return !!ids.length && isTrailUnlocked(ids[0], trails);
 }
 
 function regionStatus(region, trails) {
@@ -55,7 +48,7 @@ function regionStatus(region, trails) {
 }
 
 function statusLabel(status) {
-  if (status === 'complete') return 'PIN EARNED';
+  if (status === 'complete') return 'BADGE EARNED';
   if (status === 'open') return 'OPEN';
   return 'LOCKED';
 }
@@ -68,9 +61,10 @@ function statusColor(status) {
 
 function unlockHint(region) {
   if (!region || region.id === 'grove') return 'Always open.';
-  const pinTrail = region.unlock ? getRoute(region.unlock) : null;
-  if (pinTrail) return `Opens with the ${pinTrail.pinName}.`;
-  return region.progress && region.progress.open ? region.progress.open : 'Not yet open.';
+  const ids = trailIdsOf(region);
+  const gate = ids.length ? trailGateRoute(ids[0]) : null;
+  if (gate) return `Defeat the ${gate.region} Warden and earn ${gate.pinName}.`;
+  return 'Not yet open.';
 }
 
 function BiomeStrip({ toneId }) {
@@ -78,27 +72,14 @@ function BiomeStrip({ toneId }) {
   const bands = [tone.zenith, tone.sky, tone.haze, tone.groundFar, tone.ground];
   return (
     <View style={{ flexDirection: 'row', height: 10, borderRadius: 2, overflow: 'hidden', borderWidth: 1, borderColor: tokens.line }}>
-      {bands.map((c, i) => (
-        <View key={i} style={{ flex: 1, backgroundColor: c }} />
-      ))}
+      {bands.map((c, i) => <View key={i} style={{ flex: 1, backgroundColor: c }} />)}
     </View>
   );
 }
 
 function PinChip({ earned, name }) {
   return (
-    <View
-      style={{
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        marginRight: 6,
-        marginBottom: 6,
-        borderWidth: 2,
-        borderColor: earned ? tokens.accent : tokens.line,
-        backgroundColor: earned ? tokens.surfaceRaised : tokens.surfaceSunken,
-        borderRadius: scale.radius.small,
-      }}
-    >
+    <View style={{ paddingHorizontal: 8, paddingVertical: 4, marginRight: 6, marginBottom: 6, borderWidth: 2, borderColor: earned ? tokens.accent : tokens.line, backgroundColor: earned ? tokens.surfaceRaised : tokens.surfaceSunken, borderRadius: scale.radius.small }}>
       <PixelText size="tiny" color={earned ? tokens.accent : tokens.disabledInk}>
         {earned ? name : '· · ·'}
       </PixelText>
@@ -118,11 +99,7 @@ function FaceRow({ familyIds, dex, trails }) {
         const locked = !!(trailId && !isTrailUnlocked(trailId, trails) && !known);
         return (
           <View key={id} style={{ width: 48, alignItems: 'center', marginRight: 4, marginBottom: 6 }}>
-            <PixelSprite
-              spriteKey={c.sprite}
-              palette={known ? c.palette : SILHOUETTE}
-              size={40}
-            />
+            <PixelSprite spriteKey={c.sprite} palette={known ? c.palette : SILHOUETTE} size={40} />
             <PixelText size="tiny" color={tokens.textOnPaperDim} numberOfLines={1}>
               {known ? c.name : locked ? '···' : '???'}
             </PixelText>
@@ -136,10 +113,10 @@ function FaceRow({ familyIds, dex, trails }) {
 function WorldView({ trails, currentRegionId, onOpenRegion }) {
   return (
     <View>
-      <FieldCard tone="ink" title="The wider walk" caption="Eleven regions. Pins open the next gate.">
+      <FieldCard tone="ink" title="The wider walk" caption="Eleven regions. One Warden guards each gate.">
         <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ lineHeight: 14 }}>
-          The Grove is home. Horizon regions open from Grove pins. Clear a region's
-          Warden for its Quest Badge.
+          Clear a region's trails in order. Its final trail belongs to the Warden.
+          Win there, earn the regional badge, and the next region opens.
         </PixelText>
       </FieldCard>
 
@@ -150,7 +127,7 @@ function WorldView({ trails, currentRegionId, onOpenRegion }) {
         const badgeEarned = regionBadgeEarned(trails, region.id);
         const toneId = (region.visual && region.visual.stageTone) || 'maple';
         const ids = trailIdsOf(region);
-        const pinsEarned = ids.filter((tid) => trails.progress[tid] && trails.progress[tid].pin).length;
+        const trailsCleared = ids.filter((tid) => trails.progress[tid] && trails.progress[tid].pin).length;
 
         return (
           <View key={region.id}>
@@ -182,8 +159,8 @@ function WorldView({ trails, currentRegionId, onOpenRegion }) {
                     {statusLabel(status)}{here ? ' · HERE' : ''}
                   </PixelText>
                   <PixelText size="tiny" color={tokens.textOnPaperDim}>
-                    {pinsEarned}/{ids.length || 0} pins
-                    {badge ? ` · ${badgeEarned ? badge.name : '—'}` : ''}
+                    {trailsCleared}/{ids.length || 0} trails
+                    {badge ? ` · ${badgeEarned ? badge.name : 'badge —'}` : ''}
                   </PixelText>
                 </View>
               </FieldCard>
@@ -210,26 +187,21 @@ function RegionView({ region, trails, dex, currentTrailId, onPickTrail, onBack }
           {region.visual && region.visual.palette ? `Palette · ${region.visual.palette}` : ''}
         </PixelText>
         <PixelText size="tiny" color={statusColor(status)} style={{ marginTop: 6 }}>
-          {statusLabel(status)}
-          {status === 'locked' ? ` · ${unlockHint(region)}` : ''}
+          {statusLabel(status)}{status === 'locked' ? ` · ${unlockHint(region)}` : ''}
         </PixelText>
-        {region.progress && region.progress.finish ? (
-          <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 4, lineHeight: 14 }}>
-            {region.progress.finish}
-          </PixelText>
-        ) : null}
+        <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 4, lineHeight: 14 }}>
+          Clear the trails in order. The final trail's Warden awards {region.badge ? region.badge.name : 'the regional badge'}.
+        </PixelText>
       </FieldCard>
 
-      <FieldCard tone="ink" title="Quest pins" style={{ marginTop: space.sm }}>
+      <FieldCard tone="ink" title="Region progress" style={{ marginTop: space.sm }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
           {ids.map((tid) => {
             const route = getRoute(tid);
-            const earned = !!(trails.progress[tid] && trails.progress[tid].pin);
-            return <PinChip key={tid} earned={earned} name={route.pinName || route.name} />;
+            const cleared = !!(trails.progress[tid] && trails.progress[tid].pin);
+            return <PinChip key={tid} earned={cleared} name={`${route.name} ✓`} />;
           })}
-          {region.badge ? (
-            <PinChip earned={badgeEarned} name={region.badge.name} />
-          ) : null}
+          {region.badge ? <PinChip earned={badgeEarned} name={region.badge.name} /> : null}
         </View>
       </FieldCard>
 
@@ -242,9 +214,7 @@ function RegionView({ region, trails, dex, currentTrailId, onPickTrail, onBack }
           {region.landmarks.map((lm) => (
             <View key={`${lm.trail}-${lm.name}`} style={{ marginBottom: 8 }}>
               <PixelText size="tiny" color={tokens.textOnDark}>{lm.name}</PixelText>
-              <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ lineHeight: 13 }}>
-                {lm.note}
-              </PixelText>
+              <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ lineHeight: 13 }}>{lm.note}</PixelText>
             </View>
           ))}
         </FieldCard>
@@ -256,10 +226,12 @@ function RegionView({ region, trails, dex, currentTrailId, onPickTrail, onBack }
           const unlocked = isTrailUnlocked(tid, trails);
           const prog = trails.progress[tid] || { miles: 0, reps: 0, pin: false };
           const active = tid === currentTrailId;
+          const gate = trailGateRoute(tid);
+          const final = isRegionalWarden(route);
           const sub = unlocked
-            ? `${route.miles} mi · ${route.reps} reps${prog.pin ? ` · ${route.pinName}` : ''}${route.biomeName ? ` · ${route.biomeName}` : ''}`
-            : route.unlock
-              ? `Needs ${getRoute(route.unlock).pinName}`
+            ? `${route.miles} mi · ${route.reps} reps${prog.pin ? ` · ${final ? `${route.pinName} earned` : 'cleared'}` : ` · ${final ? 'Warden' : 'Keeper'}`}${route.biomeName ? ` · ${route.biomeName}` : ''}`
+            : gate
+              ? `Clear ${gate.name} first`
               : 'Locked';
           return (
             <TrailAction
@@ -286,19 +258,15 @@ export default function WorldMapScreen({ params = {} }) {
   const { navigate, goBack, back } = useNav();
   const trails = useMemo(() => normalizeTrails(state.trails), [state.trails]);
   const currentRegionId = regionIdForTrail(trails.activeId) || 'grove';
-
-  const initialRegion = params.regionId && getRegion(params.regionId)
-    ? params.regionId
-    : null;
+  const initialRegion = params.regionId && getRegion(params.regionId) ? params.regionId : null;
   const [focus, setFocus] = useState(initialRegion);
-
   const region = focus ? getRegion(focus) : null;
 
   const objective = region
     ? regionStatus(region, trails) === 'locked'
       ? unlockHint(region)
-      : 'Pick a trail to walk'
-    : 'Choose a region. Open trails lead on.';
+      : 'Clear each trail. The Warden waits at the region end.'
+    : 'Choose a region. Regional badges open the next gate.';
 
   const pickTrail = (tid) => {
     if (!isTrailUnlocked(tid, trails)) return;
@@ -309,35 +277,16 @@ export default function WorldMapScreen({ params = {} }) {
 
   return (
     <Screen style={{ padding: space.md }}>
-      <ObjectiveRibbon
-        place={region ? region.name : 'World Map'}
-        objective={objective}
-        tone={region && region.id === 'redmesa' ? 'ember' : 'grove'}
-      />
-
+      <ObjectiveRibbon place={region ? region.name : 'World Map'} objective={objective} tone={region && region.id === 'redmesa' ? 'ember' : 'grove'} />
       <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: space.md }}>
         {region ? (
-          <RegionView
-            region={region}
-            trails={trails}
-            dex={state.dex}
-            currentTrailId={trails.activeId}
-            onPickTrail={pickTrail}
-            onBack={() => setFocus(null)}
-          />
+          <RegionView region={region} trails={trails} dex={state.dex} currentTrailId={trails.activeId} onPickTrail={pickTrail} onBack={() => setFocus(null)} />
         ) : (
-          <WorldView
-            trails={trails}
-            currentRegionId={currentRegionId}
-            onOpenRegion={(id) => setFocus(id)}
-          />
+          <WorldView trails={trails} currentRegionId={currentRegionId} onOpenRegion={(id) => setFocus(id)} />
         )}
         <View style={{ height: space.sm }} />
       </ScrollView>
-
-      {!region ? (
-        <TrailAction label={back.label} tone="quiet" onPress={goBack} style={{ marginTop: space.sm }} />
-      ) : null}
+      {!region ? <TrailAction label={back.label} tone="quiet" onPress={goBack} style={{ marginTop: space.sm }} /> : null}
     </Screen>
   );
 }
