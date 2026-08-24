@@ -10,7 +10,7 @@ import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { getCreature } from '../data/creatures';
 import { getItem } from '../data/items';
 import { priceOf } from '../data/shop';
-import { charmForTrail } from '../data/charms';
+import { charmForTrail, CHARM_BY_ID } from '../data/charms';
 import { pacingForGoal } from '../data/route';
 import {
   addTrailMiles,
@@ -252,6 +252,34 @@ function reducer(state, action) {
         ...state,
         credits: state.credits - price,
         bag: { ...state.bag, [itemId]: (state.bag[itemId] || 0) + 1 },
+      };
+    }
+
+    // A companion wears at most one Trail Charm. Equipping moves the charm
+    // OUT of the bag onto the member (and any worn one back in), so a single
+    // charm can never be worn by two companions at once.
+    case 'EQUIP_CHARM': {
+      const { charmId } = action.payload;
+      if (!CHARM_BY_ID[charmId] || !state.party.length) return state;
+      if ((state.bag[charmId] || 0) <= 0) return state;
+      const member = state.party[state.activeIndex];
+      if (!member || member.charm === charmId) return state;
+      const bag = { ...state.bag, [charmId]: state.bag[charmId] - 1 };
+      if (member.charm) bag[member.charm] = (bag[member.charm] || 0) + 1;
+      return {
+        ...state,
+        bag,
+        party: state.party.map((m, i) => (i === state.activeIndex ? { ...m, charm: charmId } : m)),
+      };
+    }
+
+    case 'UNEQUIP_CHARM': {
+      const member = state.party[state.activeIndex];
+      if (!member || !member.charm) return state;
+      return {
+        ...state,
+        bag: { ...state.bag, [member.charm]: (state.bag[member.charm] || 0) + 1 },
+        party: state.party.map((m, i) => (i === state.activeIndex ? { ...m, charm: null } : m)),
       };
     }
 

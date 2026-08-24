@@ -201,26 +201,43 @@ export default function BagScreen() {
       <Window tone="dark" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="body" color={palette.secondary}>Trail Gear</PixelText>
         <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 4, lineHeight: 13 }}>
-          Guardian Charms you have discovered. First clear gives one; Maple stocks extras afterward.
+          Guardian Charms you have discovered. First clear gives one; Maple stocks extras afterward. Your active companion wears ONE — its effect is live in every battle.
         </PixelText>
       </Window>
-      {ownedCharms.length ? ownedCharms.map((charm) => (
-        <Window key={charm.id} tone="cream" pad={10} style={{ marginBottom: space.sm }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ width: 64, height: 64, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
-              <PixelSprite spriteKey={charm.id} palette={`art_${charm.id}`} size={64} accessibilityLabel={charm.name} />
-            </View>
-            <View style={{ flex: 1, marginLeft: space.md }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <PixelText size="body" color={palette.windowText}>{charm.name}</PixelText>
-                <PixelText size="tiny" color={palette.accentDark}>{`x${state.bag[charm.id] || 0}`}</PixelText>
+      {ownedCharms.length ? ownedCharms.map((charm) => {
+        const count = state.bag[charm.id] || 0;
+        const worn = !!(companion && companion.charm === charm.id);
+        return (
+          <Window key={charm.id} tone="cream" pad={10} style={{ marginBottom: space.sm }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ width: 64, height: 64, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
+                <PixelSprite spriteKey={charm.id} palette={`art_${charm.id}`} size={64} accessibilityLabel={charm.name} />
               </View>
-              <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4 }}>{charm.theme}</PixelText>
-              <PixelText size="tiny" color={palette.windowText} style={{ marginTop: 4, lineHeight: 13 }}>{charm.effect}</PixelText>
+              <View style={{ flex: 1, marginLeft: space.md }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <PixelText size="body" color={palette.windowText}>{charm.name}</PixelText>
+                  <PixelText size="tiny" color={worn ? palette.success : palette.accentDark}>{worn ? 'WORN' : `x${count}`}</PixelText>
+                </View>
+                <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4 }}>{charm.theme}</PixelText>
+                <PixelText size="tiny" color={palette.windowText} style={{ marginTop: 4, lineHeight: 13 }}>{charm.effect}</PixelText>
+              </View>
             </View>
-          </View>
-        </Window>
-      )) : (
+            {companion && worn ? (
+              <PixelButton
+                label={`Take off ${companion.creature.name}'s charm`}
+                tone="plain" size="small" sound="cancel" style={{ marginTop: space.sm }}
+                onPress={() => { dispatch({ type: 'UNEQUIP_CHARM' }); setToast(`${charm.name} goes back in the pack.`); }}
+              />
+            ) : companion && count > 0 ? (
+              <PixelButton
+                label={`Equip on ${companion.creature.name}`}
+                tone="gold" size="small" style={{ marginTop: space.sm }}
+                onPress={() => { dispatch({ type: 'EQUIP_CHARM', payload: { charmId: charm.id } }); setToast(`${companion.creature.name} wears the ${charm.name}.`); }}
+              />
+            ) : null}
+          </Window>
+        );
+      }) : (
         <Window tone="cream" pad={16}>
           <PixelText size="small" color={palette.windowTextDim} align="center">No Trail Gear discovered yet.</PixelText>
         </Window>

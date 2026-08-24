@@ -551,6 +551,38 @@ milestone count) → `toBattle` flash → BattleScreen.
 - Defeat → `LOSE_BATTLE`, hub. Swap preserves per-member HP. Evolution beat:
   white strobe, sprite morph, EVOLVE action.
 
+### 6.1 Trail Charm battle effects (`state/charmBattle.js`)
+
+The shelf copy is enforced in code: all 15 charms have a live battle hook. A
+companion wears at most ONE charm (`member.charm`, moved between the bag and
+the member by `EQUIP_CHARM` / `UNEQUIP_CHARM` so a single charm can never be
+worn twice; equipped from Backpack → Trail Gear), so effects never stack —
+and Rowan's scripted push-up contest ignores charms entirely, because losing
+it is the lesson. Every number lives in `CHARM_TUNING` and nowhere else:
+
+| Charm | Live effect |
+|---|---|
+| Second Wind Band | once per battle, a lethal hit leaves exactly 1 Resolve |
+| Steady Cord | ×1.2 on the first confirmed move |
+| Hydration Bead | +2 Resolve after every confirmed move, before the counter |
+| Restleaf Charm | arrives with 15% of max Resolve recovered |
+| Focus Stone | ×1.08 on every confirmed move |
+| Momentum Feather | +5% power per prior confirmed move, capped at +25% |
+| Fuelseed | arrives with 8% of max Resolve recovered |
+| Breath Bell | ×1.15 on hold (timed) moves |
+| Form Ribbon | ×1.1 on every fully confirmed move |
+| Pace Token | every incoming hit ×0.88 |
+| Morning Dew | first incoming hit ×0.5 |
+| Trail Spark | ×1.5 on the first confirmed move |
+| Balance Root | once per battle, a refused Knot offer draws no backlash |
+| Recovery Shell | recovers 12% of max Resolve on felling the opponent |
+| Kinship Thread | power ×(1 + min(0.15, bond/2000)) |
+
+Failed-Knot counters run through the same incoming hooks (and Second Wind);
+arrival heals are announced in the battle intro; Second Wind and Balance
+Root say their trigger out loud. Damage after a multiplier is rounded and
+never below 1.
+
 ## 7. Life modules (the plugin system)
 
 **Everything grows the companion through the same reducer path** — a module
@@ -785,7 +817,9 @@ early calls). BGM switching lives in Router via TOWN_BGM.
 ```js
 { version: 10, started, goalId,                    // 'muscle'|'lean'|'root'
   playerOutfit, playerGender,                     // one-time, v6
-  party: [{ id, baseId, xp, bond, evo, hp }],     // ≤6
+  party: [{ id, baseId, xp, bond, evo, hp,
+            charm }],                             // ≤6; charm = worn Trail
+                                                  // Charm id or absent (§6.1)
   activeIndex,
   credits,                                        // Trail Credit, v7
   stats: { totalSteps, distanceMi, routeMi, xpCarry, creditCarry,

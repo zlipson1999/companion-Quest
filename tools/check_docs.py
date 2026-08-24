@@ -90,6 +90,19 @@ def build_checks():
          first(r"itemId: 'knot', price: MILES\(([\d.]+)\)", read('src/data/shop.js'), 'knot price')),
     ]
 
+    charms_src = read('src/data/charms.js')
+    charm_battle = read('src/state/charmBattle.js')
+    checks += [
+        ('trail charms', r'(\d+) Trail Charms',
+         str(len(re.findall(r"^  \{ id: '", charms_src, re.M)))),
+        ('charm battle hooks', r'all (\d+) charms have a live battle hook',
+         str(len(re.findall(r"^  '[\w-]+': \{", charm_battle, re.M)))),
+        ('Trail Spark first-move bonus', r'Trail Spark \| ×([\d.]+) on the first confirmed move',
+         first(r"'trail-spark': \{ firstMoveMult: ([\d.]+)", charm_battle, 'trail spark mult')),
+        ('Pace Token incoming multiplier', r'Pace Token \| every incoming hit ×([\d.]+)',
+         first(r"'pace-token': \{ incomingMult: ([\d.]+)", charm_battle, 'pace token mult')),
+    ]
+
     for const, label in (('CREDIT_PER_MILE', 'a walked mile'),
                          ('CREDIT_PER_SESSION', 'a completed session'),
                          ('CREDIT_PER_WIN', 'a challenge won'),
