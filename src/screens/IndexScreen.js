@@ -1,4 +1,4 @@
-// Creature Index — collection as family rows (three forms each).
+// Creature Index — collection as family rows (three forms each), grouped by region.
 // Uses the existing handheld chrome (Screen, Window, PixelText, PixelSprite).
 // Does not restyle Hub, Title, Battle, or any other screen.
 
@@ -10,12 +10,12 @@ import { useGame } from '../state';
 import { useNav } from './navContext';
 import {
   INDEX_ORDER,
-  WILD_COMPANION_IDS,
   OBSTACLE_IDS,
   getCreature,
   CREATURE_TYPES,
   familyChain,
 } from '../data/creatures';
+import { REGIONS } from '../data/regions';
 import { isCreatureLocked, getRoute, creatureTrailId } from '../data/routes';
 import { personalityOf, bondMilestone } from '../data/personality';
 
@@ -143,6 +143,18 @@ function FamilyRow({ rootId, dex, trails, expanded, onToggle, partyBond }) {
   );
 }
 
+function SectionHeader({ label }) {
+  return (
+    <PixelText
+      size="body"
+      color={palette.secondary}
+      style={{ marginTop: space.md, marginBottom: space.sm }}
+    >
+      {label}
+    </PixelText>
+  );
+}
+
 export default function IndexScreen() {
   const { state } = useGame();
   const { goBack, back } = useNav();
@@ -156,8 +168,6 @@ export default function IndexScreen() {
     if (m && m.id) bondById[m.id] = m.bond;
   });
 
-  const families = [...WILD_COMPANION_IDS, ...OBSTACLE_IDS];
-
   return (
     <Screen style={{ padding: space.md }}>
       <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
@@ -167,7 +177,25 @@ export default function IndexScreen() {
         Owned {owned} · Seen {seen} · Total {order.length} · tap a family
       </PixelText>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {families.map((rootId) => (
+        {REGIONS.map((region) => (
+          <View key={region.id}>
+            <SectionHeader label={region.name} />
+            {region.ecology.families.map((rootId) => (
+              <FamilyRow
+                key={rootId}
+                rootId={rootId}
+                dex={state.dex}
+                trails={state.trails}
+                expanded={open === rootId}
+                onToggle={() => setOpen(open === rootId ? null : rootId)}
+                partyBond={bondById[rootId]}
+              />
+            ))}
+          </View>
+        ))}
+
+        <SectionHeader label="Habit Beasts" />
+        {OBSTACLE_IDS.map((rootId) => (
           <FamilyRow
             key={rootId}
             rootId={rootId}
