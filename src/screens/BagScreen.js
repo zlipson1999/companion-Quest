@@ -207,7 +207,7 @@ export default function BagScreen() {
       {ownedCharms.length ? ownedCharms.map((charm) => (
         <Window key={charm.id} tone="cream" pad={10} style={{ marginBottom: space.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <PixelSprite spriteKey={charm.id} palette={`art_${charm.id}`} size={48} accessibilityLabel={charm.name} />
+            <PixelSprite spriteKey={charm.id} palette={`art_${charm.id}`} size={64} accessibilityLabel={charm.name} />
             <View style={{ flex: 1, marginLeft: space.md }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <PixelText size="body" color={palette.windowText}>{charm.name}</PixelText>
