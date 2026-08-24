@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-23
 **Verdict authority:** Project owner sign-off
-**Owner decision:** **All pass** — all 58 families / 174 forms accepted for ship
+**Owner decision:** **All pass** — all 58 families / 174 companion forms accepted for ship
 
 ## Summary
 
@@ -17,8 +17,8 @@
 🟢 **58 / 58 families visually approved (owner sign-off)**
 
 Pipeline + mapping (on `main`):
-- 174 masters in `tools/reference_art`
-- 174 forms registered in `src/data/sprites.js`
+- 180 masters in `tools/reference_art` (174 companion forms + 6 habit beasts)
+- 174 companion forms registered in `src/data/sprites.js`
 - No companion stand-in dependence for normal play
 
 ## Grove (18) — PASS

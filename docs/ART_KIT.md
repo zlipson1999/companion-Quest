@@ -6,7 +6,7 @@ file over anything drawn; a `traced_*.json` that reaches no sprite fails
 the build. A trail face without a master fails the build. There is no
 `sphere()` stand-in.
 
-**174 transparent masters** are committed in `tools/reference_art/`
+**180 transparent masters** are committed in `tools/reference_art/`
 (top-level `*.png` only; approval lineups sit in `lineups/` and are not
 counted). That is all 18 original-six forms plus all 36 trail-family forms.
 The three first-bond families are complete first-rendition lines
