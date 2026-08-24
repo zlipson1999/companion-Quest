@@ -111,6 +111,8 @@ export default function BattleScreen({ params }) {
   const [compPop, setCompPop] = useState({ id: 0, amount: 0 });
   const timersRef = useRef([]);
   const later = (ms, fn) => timersRef.current.push(setTimeout(fn, ms));
+  // How many rounds of Rowan's contest you have survived (spar only).
+  const sparTurns = useRef(0);
   useEffect(() => () => timersRef.current.forEach(clearTimeout), []);
 
   const wildEnter = useRef(new Animated.Value(90)).current;
@@ -195,7 +197,12 @@ export default function BattleScreen({ params }) {
     const move = getMove(selectedMove);
     dispatch({ type: 'LOG_EXERCISE', payload: { id: move.id, kind: move.kind, target: move.target, routeId: params.routeId } });
     const dmg = move.power + Math.floor((companion.level - 1) * 2);
-    const newWildHp = Math.max(0, wildHp - dmg);
+    // Rowan's push-up contest is a LESSON, not a fight you can win: Pebblepup
+    // has months on a first-morning companion, so it never quite goes down,
+    // and after a few honest turns it puts you down instead. Losing is the
+    // point - it is what sends you home to learn the other half of the game.
+    const scripted = !!params.sparIntro;
+    const newWildHp = scripted ? Math.max(1, wildHp - dmg) : Math.max(0, wildHp - dmg);
     setCompanionLunge((n) => n + 1);
     later(140, () => {
       setWildHp(newWildHp);
@@ -250,7 +257,13 @@ export default function BattleScreen({ params }) {
       return;
     }
 
-    const counter = wildCounter();
+    // In the contest his counters GROW - round one stings, round two hurts,
+    // round three ends it whatever your Resolve was.
+    const sparRound = sparTurns.current + 1;
+    if (scripted) sparTurns.current = sparRound;
+    const counter = scripted
+      ? (sparRound >= 3 ? companionHp : Math.max(10, Math.ceil(companion.maxHp * 0.35)))
+      : wildCounter();
     const newCompHp = Math.max(0, companionHp - counter);
     later(650, () => setWildLunge((n) => n + 1));
     later(790, () => {
@@ -262,7 +275,11 @@ export default function BattleScreen({ params }) {
     say(
       [
         { speaker: companion.creature.name, text: moveLanded(companion.creature.name, move) },
-        { speaker: 'Narration', text: `${wild.name} pushes back! Your resolve dips. (-${counter})` },
+        scripted
+          ? { speaker: 'Rowan', text: sparRound >= 3
+              ? 'And... down! Pebblepup barely broke a sweat.'
+              : `Not bad! But Pebblepup has months on you two. (-${counter})` }
+          : { speaker: 'Narration', text: `${wild.name} pushes back! Your resolve dips. (-${counter})` },
       ],
       () => {
         if (newCompHp <= 0) {
@@ -333,6 +350,21 @@ export default function BattleScreen({ params }) {
   const doDefeat = () => {
     playSfx('lowhp');
     dispatch({ type: 'LOSE_BATTLE', payload: { targetId: target.targetId } });
+    // Losing the push-up contest IS the intro's ending: Rowan sends you home,
+    // the contest is marked done (he got what he wanted), and the house tour
+    // picks up the story - rest and food are the half of training the gym
+    // cannot teach.
+    if (params.sparIntro) {
+      dispatch({ type: 'MARK_META', payload: { sparDone: true } });
+      say(
+        [
+          { speaker: 'Rowan', text: 'Good contest! Nobody beats Pebblepup on day one - that is months of showing up, not talent.' },
+          { speaker: 'Coach Maple', text: 'And that is the last lesson of your first morning: losing to yesterday’s work is how you find tomorrow’s. Go home - eat something real, and sleep. I will show you how.' },
+        ],
+        () => navigate('rest')
+      );
+      return;
+    }
     say(defeatLines(companion.creature.name), () => navigate(returnTo));
   };
 
