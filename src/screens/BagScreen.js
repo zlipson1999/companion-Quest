@@ -311,7 +311,7 @@ export default function BagScreen() {
         <PixelText size="tiny" color={palette.windowTextDim}>{toast}</PixelText>
       </Window>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: space.md }}>
         {!pocket ? (
           POCKETS.map((p) => (
             <Window key={p.id} tone="cream" pad={10} style={{ marginBottom: space.sm }}>
