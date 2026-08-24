@@ -348,6 +348,13 @@ export default function GymScreen() {
           beginStop(0, { x: 10, y: 15 });
           return;
         }
+        // The morning after the home lesson she is not the chat yet: she
+        // called you back for your first guided session, so walking up to
+        // her IS that session until it is in the book.
+        if (code === 'C' && state.meta.homeTourDone && !state.meta.mapleSessionDone) {
+          setTimeout(() => navigate('mapleSession'), 140);
+          return;
+        }
         const target = station.screen;
         setTimeout(() => navigate(target, station.params || {}), 140);
       }
@@ -395,7 +402,9 @@ export default function GymScreen() {
                   ? 'Rowan wants a challenge — walk up to him'
                   : state.meta.coachIntroDone && !state.meta.homeTourDone
                     ? 'Head home — how you eat, sleep and live counts too'
-                    : 'Walk into any equipment to use it'
+                    : state.meta.homeTourDone && !state.meta.mapleSessionDone
+                      ? 'Maple called you in — walk up to her for your first guided session'
+                      : 'Walk into any equipment to use it'
       }
       menu={cardio || tour || rush ? [] : MENU}
       onSelect={(item) => navigate(item.value)}

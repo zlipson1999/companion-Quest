@@ -485,6 +485,22 @@ function reducer(state, action) {
     case 'MARK_META':
       return { ...state, meta: { ...state.meta, ...action.payload } };
 
+    // Maple's starter package, handed over once at the end of her guided first
+    // session. Flag and grant are one action so a re-dispatch (a re-render, a
+    // replayed session, a hand-crafted call) can never mint a second package.
+    case 'CLAIM_STARTER_PACK': {
+      if (state.meta.mapleSessionDone) return state;
+      return {
+        ...state,
+        meta: { ...state.meta, mapleSessionDone: true },
+        bag: {
+          ...state.bag,
+          knot: (state.bag.knot || 0) + 5,
+          berryblend: (state.bag.berryblend || 0) + 1,
+        },
+      };
+    }
+
     default:
       return state;
   }

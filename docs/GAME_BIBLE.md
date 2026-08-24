@@ -42,6 +42,13 @@ created their character: three first-rendition faces on one plate. The
 ceremony still names the bond; it is no longer a surprise reveal.
 Recovery is spatial too: the
 player returns home, walks upstairs, and sleeps to restore Resolve.
+The morning after the first sleep at home, Maple calls (a beat in the sleep
+dialogue) and the return to the gym is her guided first session
+(`mapleSession`): five easy interactive movements, an easier version and a
+skip on each, completed through the normal `COMPLETE_WORKOUT` and paid a
+one-time starter package (5 Kinship Knots + 1 Bramble Blend,
+`CLAIM_STARTER_PACK`). Only then does the loop open out: trails, Keepers,
+the regional Warden.
 
 The complete reference: every system, every screen, every number, every sprite.
 Built by auditing the code, not from memory — where this document and the code
@@ -90,8 +97,8 @@ stored as generated grid/palette data, including converted traced references
 src/
   theme/       colors (palette + shade()), typography (PressStart2P), metrics
   data/        creatures, goals, exercises(+learnset/tiers/breakdown), items,
-               wild, obstacles, workouts(6), maps(4 places + zones),
-               movements(210), muscles(14), recipes(74), shop, characters,
+               wild, obstacles, workouts(34), maps(4 places + zones),
+               movements(214), muscles(14), recipes(74), shop, characters,
                outfits, route(pacing), routes(six trails / Wardens / Quest Pins),
                sprites.js + tileAtlas.js
                (BOTH GENERATED — never edit by hand)
@@ -158,7 +165,7 @@ the bed sleeps or logs last night, the desk is your habits,
 the kitchen counters log a meal, the kitchen shelf is the cookbook, the sofa is
 stillness, the wardrobe is your bag.
 
-## 4. Screens (all 30, registered in `screens/Router.js`)
+## 4. Screens (all 31, registered in `screens/Router.js`)
 
 Router holds the `SCREENS` map, `navigate(name, params)`, `toBattle(params)`
 (which plays the `BattleTransition` flash/wipe first), a `TOWN_BGM` set — every
@@ -194,12 +201,13 @@ clears it.
 | `hub` | HubScreen | Sunkist Lane (13×17). Walk-around town, bump-to-use, 6-entry menu — the other destinations are places you WALK to |
 | `gym` | GymScreen | Quest Fitness (17×19). Equipment IS the menu; also runs the in-room cardio session (§5.7) |
 | `sparIntro` | SparIntroScreen | safety redirect; live path is bumping Rowan, who sends Pebblepup |
+| `mapleSession` | MapleSessionScreen | Maple's guided first session: 5 interactive movements (real start/pause timers, tap-per-rep counters, left/right alternator), each with an easier version and a skip, no speed scoring. Completes `firstsession` through the normal `COMPLETE_WORKOUT`, then `CLAIM_STARTER_PACK` (once: 5 knots + 1 berryblend, reducer-gated on `meta.mapleSessionDone`). Entered by bumping Coach (`C`) once `homeTourDone` and until `mapleSessionDone` |
 | `cookbook` | CookbookScreen | the kitchen shelf: 74 recipes, 18 categories, search over names/blurbs/tags/ingredients |
 | `smoothiebar` | SmoothieBarScreen | the gym's bar; spends Trail Credit (§5.6) |
 | `route` | RouteScreen | six trails — §5.4 |
 | `world` | WorldMapScreen | region journey journal: the 11 regions, pins and Wardens per trail. Opened from the hub menu's Trails entry |
 | `battle` | BattleScreen | §6 |
-| `workout` | WorkoutScreen | 33 preset routines (data/workouts.js), pay ×`workoutXpMult`; a station can pin one via `params.workoutId` |
+| `workout` | WorkoutScreen | 34 preset routines (data/workouts.js), pay ×`workoutXpMult`; a station can pin one via `params.workoutId`; the `guided: true` routine (`firstsession`) is kept off the shelf list — MapleSessionScreen runs it |
 | `rest` | HomeRestScreen | your house (13×15 downstairs, 11×13 bedroom); the bed sleeps (`HEAL_FULL`) |
 | `summary` | SummaryScreen | Status: companion, stats, daily habits block, recovery |
 | `index` | IndexScreen | Creature Index: owned/seen/silhouetted-unknown |
@@ -570,7 +578,7 @@ never learns how progression works.
 
 ### 7.4 Workout Forge (`modules/forge/`)
 
-- **Movements** (`data/movements.js`): 210 movements, 8 patterns (incl. carry),
+- **Movements** (`data/movements.js`): 214 movements, 8 patterns (incl. carry),
   8 equipment kinds, each with muscles (primary/secondary), relative `load`
   1–3, 3–4 cues. **Movement ids are permanent** (saved plans store them).
   `searchMovements(q, {pattern, equipment})` matches names, muscle display
@@ -788,7 +796,12 @@ early calls). BGM switching lives in Router via TOWN_BGM.
                                                   // for the Forge); control
                                                   // 'stick'|'dpad';
                                                   // bodyWeightLb always POUNDS
-  meta: { createdAt, lastPlayedDate, sparDone },
+  meta: { createdAt, lastPlayedDate,
+          coachIntroDone, sparDone,               // gym tour seen; contest lost
+          homeTourStep, homeTourDone,             // kitchen→desk→bed homework
+          mapleSessionDone },                     // guided first session +
+                                                  // starter pack claimed (set
+                                                  // ONLY by CLAIM_STARTER_PACK)
   trails: { activeId, progress: { [routeId]: { miles, reps, pin } } } }  // v9
 ```
 

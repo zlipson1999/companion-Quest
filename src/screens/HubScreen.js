@@ -70,9 +70,11 @@ export default function HubScreen() {
 
   const objective = facingThing ? facingThing.label : !companion
     ? 'Walk with the stick. Meet Coach Maple inside Quest Fitness'
-    : state.stats.distanceMi < 0.1
-      ? 'The stick is for the lane. Through the north gate, only real walking moves you'
-      : 'Train at the gym, or walk a trail for more distance';
+    : state.meta.homeTourDone && !state.meta.mapleSessionDone
+      ? 'Maple called — she is waiting at Quest Fitness with your first session'
+      : state.stats.distanceMi < 0.1
+        ? 'The stick is for the lane. Through the north gate, only real walking moves you'
+        : 'Train at the gym, or walk a trail for more distance';
 
   return (
     <WorldScreen
