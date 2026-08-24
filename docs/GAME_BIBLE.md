@@ -532,6 +532,15 @@ milestone count) → `toBattle` flash → BattleScreen.
   used to pay its damage and then vanish — so nothing in the app could say how
   many push-ups you had ever done, which is the one number a fitness game must
   not lose.
+- **The bag opens mid-battle** — the promise in Maple's locker-room tour line
+  ("same bag whether you open it here, at home, or mid-battle") is real. The
+  menu's Item button lists everything carried that has an `effect`; using one
+  runs the normal `USE_ITEM` (bag decrement, member effect, a smoothie still
+  logs as your real Nourish check-in), lands its heal on the battle's live
+  Resolve, and costs the turn — the wild counters through the same charm
+  hooks as any hit. Knots stay their own button; held Trail Charms are worn,
+  not consumed, so they never appear in the list. Hidden during Rowan's
+  scripted contest.
 - **Rowan challenges with his companion.** Walking up to him (`A`) starts a
   trainer battle against Pebblepup (`SPAR_PARAMS` in `SparIntroScreen.js`):
   `trainerBattle`, `catchRate: 0`, no Knot, no Index stamp. Winning sets

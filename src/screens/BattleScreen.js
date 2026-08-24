@@ -13,6 +13,7 @@ import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { ENCOUNTERS } from '../data/obstacles';
 import { getCreature } from '../data/creatures';
+import { getItem } from '../data/items';
 import { wardenSprite } from '../data/characters';
 import { isGrownForm } from '../data/wild';
 import { canEvolve } from '../state/evolution';
@@ -418,6 +419,66 @@ export default function BattleScreen({ params }) {
     }
   };
 
+  // The bag mid-battle, exactly as Maple's tour promises: any item with an
+  // effect can be shared, its heal lands on the battle's own Resolve, a
+  // smoothie still logs as your real meal (USE_ITEM does all of that), and
+  // taking the moment costs the turn — the wild answers, charms and all.
+  const usableItems = Object.keys(state.bag)
+    .filter((id) => (state.bag[id] || 0) > 0)
+    .map((id) => getItem(id))
+    .filter((item) => item && item.effect);
+
+  const useBattleItem = (itemId) => {
+    const item = getItem(itemId);
+    if (!item || !item.effect) return;
+    dispatch({ type: 'USE_ITEM', payload: { itemId } });
+    const heal = item.effect.heal || 0;
+    const healed = clamp(companionHp + heal, 1, companion.maxHp);
+    playSfx('heal');
+    setCompanionHp(healed);
+    const gains = [
+      heal ? `+${healed - companionHp} Resolve` : null,
+      item.effect.xp ? `+${item.effect.xp} XP` : null,
+      item.effect.bond ? `+${item.effect.bond} bond` : null,
+    ].filter(Boolean).join('  ');
+    let counter = wildCounter();
+    const notes = [];
+    if (!params.sparIntro) {
+      const inc = charmIncoming(charmId, counter, charmRef.current.hits, charmName);
+      counter = inc.dmg;
+      charmRef.current.hits += 1;
+      if (inc.note) notes.push({ speaker: 'Narration', text: inc.note });
+    }
+    let newCompHp = Math.max(0, healed - counter);
+    if (!params.sparIntro && newCompHp <= 0 && charmSurvivesLethal(charmId) && !charmRef.current.secondWind) {
+      charmRef.current.secondWind = true;
+      newCompHp = 1;
+      notes.push({ speaker: 'Narration', text: `${charmName} holds! ${companion.creature.name} stands at 1 Resolve.` });
+    }
+    later(650, () => setWildLunge((n) => n + 1));
+    later(790, () => {
+      setCompanionHp(newCompHp);
+      setCompanionHit((h) => h + 1);
+      setCompPop((p) => ({ id: p.id + 1, amount: counter }));
+      playSfx('hit');
+    });
+    say(
+      [
+        { speaker: 'Narration', text: `You share ${item.name} with ${companion.creature.name}.${gains ? `  ${gains}` : ''}` },
+        { speaker: 'Narration', text: `${wild.name} presses the opening! (-${counter})` },
+        ...notes,
+      ],
+      () => {
+        if (newCompHp <= 0) {
+          setCompanionFaint(true);
+          setTimeout(doDefeat, 500);
+        } else {
+          setPhase('menu');
+        }
+      }
+    );
+  };
+
   const doSwap = (index) => {
     dispatch({ type: 'SET_HP', payload: { hp: companionHp } });
     dispatch({ type: 'SWAP_ACTIVE', payload: { index } });
@@ -569,6 +630,9 @@ export default function BattleScreen({ params }) {
           {params.sparIntro || params.warden ? null : (
             <PixelButton label="Flee" tone="plain" sound="cancel" style={{ flex: 1, marginRight: 5 }} onPress={flee} />
           )}
+          {params.sparIntro ? null : (
+            <PixelButton label="Item" tone="dark" sound="cursor" disabled={!usableItems.length} style={{ flex: 1, marginRight: 5 }} onPress={() => setPhase('items')} />
+          )}
           {party.members.length > 1 ? (
             <PixelButton label="Rotate" tone="dark" sound="cursor" style={{ flex: 1, marginRight: 5 }} onPress={() => setPhase('swap')} />
           ) : null}
@@ -576,6 +640,29 @@ export default function BattleScreen({ params }) {
             <PixelButton label={`Tie a Knot (${knots})`} tone="gold" disabled={bondDisabled} style={{ flex: 1 }} onPress={attemptCatch} />
           ) : null}
         </View>
+      </View>
+    );
+  } else if (phase === 'items') {
+    bottom = (
+      <View style={{ flex: 1, padding: space.md }}>
+        <PixelText size="tiny" color={palette.windowTextDim} style={{ marginBottom: 6 }}>
+          Share something from the bag — the moment costs your turn.
+        </PixelText>
+        <Menu
+          tone="cream"
+          columns={2}
+          options={usableItems.map((item) => ({
+            label: `${item.name} x${state.bag[item.id]}`,
+            value: item.id,
+            sublabel: [
+              item.effect.heal ? `+${item.effect.heal} Resolve` : null,
+              item.effect.xp ? `+${item.effect.xp} XP` : null,
+              item.effect.bond ? `+${item.effect.bond} bond` : null,
+            ].filter(Boolean).join(' '),
+          }))}
+          onSelect={(opt) => useBattleItem(opt.value)}
+        />
+        <PixelButton label="Back" tone="plain" sound="cancel" style={{ marginTop: space.sm }} onPress={() => setPhase('menu')} />
       </View>
     );
   } else if (phase === 'swap') {
