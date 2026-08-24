@@ -107,7 +107,11 @@ export default function HomeRestScreen() {
   };
 
   if (sleeping) {
-    return <Screen style={{ padding: space.md, justifyContent: 'flex-end' }}><DialogueBox lines={lines} onComplete={() => navigate(mapleCall ? 'workout' : 'hub', mapleCall ? { guided: 'maple' } : {})} /></Screen>;
+    // The phone rings inside the sleep dialogue itself (see `lines`). Rather
+    // than a black-screen handoff into the session, it drops you back on the
+    // lane so you WALK to the gym and start it by talking to Maple — the gym
+    // reads mapleSessionReady off her tile.
+    return <Screen style={{ padding: space.md, justifyContent: 'flex-end' }}><DialogueBox lines={lines} onComplete={() => navigate('hub')} /></Screen>;
   }
 
   return (

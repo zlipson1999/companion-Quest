@@ -348,6 +348,15 @@ export default function GymScreen() {
           beginStop(0, { x: 10, y: 15 });
           return;
         }
+        // After the home lesson Maple calls you back in. Walking up to her and
+        // pressing A opens the guided first session itself — no black-screen
+        // handoff — and mapleSessionDone means it only routes there the once;
+        // afterwards she is the chat again.
+        if (code === 'C' && state.meta.mapleSessionReady && !state.meta.mapleSessionDone) {
+          playSfx('confirm');
+          setTimeout(() => navigate('workout', { guided: 'maple' }), 140);
+          return;
+        }
         const target = station.screen;
         setTimeout(() => navigate(target, station.params || {}), 140);
       }
@@ -393,9 +402,11 @@ export default function GymScreen() {
                 ? 'Walk up to Coach Maple — she is waiting on the floor'
                 : !state.meta.sparDone
                   ? 'Rowan wants a challenge — walk up to him'
-                  : state.meta.coachIntroDone && !state.meta.homeTourDone
-                    ? 'Head home — how you eat, sleep and live counts too'
-                    : 'Walk into any equipment to use it'
+                  : state.meta.mapleSessionReady && !state.meta.mapleSessionDone
+                    ? 'Coach Maple is ready — walk up to her and press A for your first session'
+                    : state.meta.coachIntroDone && !state.meta.homeTourDone
+                      ? 'Head home — how you eat, sleep and live counts too'
+                      : 'Walk into any equipment to use it'
       }
       menu={cardio || tour || rush ? [] : MENU}
       onSelect={(item) => navigate(item.value)}
