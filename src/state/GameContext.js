@@ -58,23 +58,16 @@ function memberMaxHp(member) {
   return maxHpFor(getCreature(member.id), levelFromXp(member.xp));
 }
 
-// Map a change over the active party member.
 function updateActive(state, fn) {
   if (!state.party.length) return state;
   const party = state.party.map((m, i) => (i === state.activeIndex ? fn(m) : m));
   return { ...state, party };
 }
 
-// Training load from the non-Forge sources. Recovery reads one number, so a
-// battle or a walked mile has to contribute to it — otherwise three days of real
-// exercise reported "Nothing logged recently" beside a 3-day streak.
 const LOAD_PER_BATTLE = 2.5;
 const LOAD_PER_MILE = 1.2;
 const LOAD_PER_WORKOUT_XP = 0.06;
 
-// Everything worth remembering lands in state.history through here: recovery,
-// personal records and the weekly rollup all read from it, and none of them can
-// see anything an action did not record.
 function remember(state, patch) {
   const today_ = today();
   return trim(stamp(state.history, today_, patch), today_);
@@ -85,9 +78,6 @@ function applyEffect(member, effect) {
   const next = { ...member };
   if (effect.xp) next.xp += effect.xp;
   if (effect.bond) next.bond += effect.bond;
-  // Evolve points ride the same path as XP and bond, so a new source only has
-  // to name a reward — it never learns how progression works. Points are per
-  // companion: the one that did the work is the one that grows.
   if (effect.evo) next.evo = (next.evo || 0) + effect.evo;
   if (effect.heal) {
     const maxHp = memberMaxHp(next);
@@ -96,15 +86,6 @@ function applyEffect(member, effect) {
   return next;
 }
 
-// A module log, as a function rather than only a reducer case: a smoothie
-// bought at the bar records a Nourish check-in when you drink it, and it has to
-// go down the SAME path a tap on the log screen does. Two implementations of
-// "log a habit" is how a daily cap ends up applying on one of them.
-//
-// `mintCredit` is false when something you already paid for triggered the log.
-// The goal bonus is small and the drink costs more than it pays, so it was
-// never a real loop, but a shop that can refund part of its own price is a
-// thing to not have at all.
 function logModule(state, payload, { mintCredit = true } = {}) {
   const { moduleId, actionId, capped } = payload || {};
   const module = getModule(moduleId);
@@ -137,9 +118,6 @@ function logModule(state, payload, { mintCredit = true } = {}) {
       bond: result.reward.bond || 0,
       habitLogs: 1,
       goalsMet: result.goalJustHit ? 1 : 0,
-      // `training` is a module flag, not a hardcoded id — the reducer still
-      // knows nothing about any specific module. Counted whether or not it
-      // paid: a second session on the same day still happened.
       sessions: module.training ? 1 : 0,
       load: payload.load || 0,
     }),
@@ -152,8 +130,6 @@ function logModule(state, payload, { mintCredit = true } = {}) {
   };
 }
 
-// Record a battle target as seen, but only if it IS one of the roster. A
-// sparring partner is a person handed in whole by the scene, not a creature id.
 function seenDex(dex, targetId) {
   if (!getCreature(targetId)) return dex;
   return { ...dex, [targetId]: dex[targetId] || 'seen' };
@@ -207,9 +183,6 @@ function reducer(state, action) {
         milestonesReached += 1;
         hitMilestones += 1;
       }
-      // Walking pays XP now. Distance arrives a thousandth of a mile at a
-      // time, so the fraction is carried between dispatches — rounding each
-      // step's worth on its own would floor every one of them to zero.
       const carry = (state.stats.xpCarry || 0) + mi * XP_PER_MILE * (pacing.mileXpMult || 1);
       const walkXp = Math.floor(carry);
       const active = state.party[state.activeIndex];
@@ -231,19 +204,12 @@ function reducer(state, action) {
         }, state);
         return mem;
       });
-      // Walking is where credit comes from. Minted on the same fractional carry
-      // as the XP above, for the same reason.
       const earned = mint(state, mi * CREDIT_PER_MILE);
-      // Only outdoor trail distance fills a trail quota. The gym's deck
-      // dispatches the same action without a routeId on purpose.
       const trails = addTrailMiles(state.trails, action.payload.routeId, trailMi);
       return {
         ...withEvo,
         trails,
         credits: earned.credits,
-        // Steps are recorded per day as well as lifetime: a friends board can
-        // only check that a day's distance and its step count agree with each
-        // other if it has both. See server/validate.js.
         history: remember(state, { steps, distanceMi: mi, load: mi * LOAD_PER_MILE, xp: walkXp }),
         stats: {
           ...state.stats,
@@ -273,16 +239,9 @@ function reducer(state, action) {
       if (!item.effect) return state;
       let next = updateActive(state, (m) => applyEffect(m, item.effect));
       next = { ...next, bag: { ...state.bag, [itemId]: state.bag[itemId] - 1 } };
-      // A smoothie is a two-part item: the blend does something for your
-      // companion, and drinking it is your own check-in. The log goes down the
-      // module's normal path, so the daily cap applies exactly as it would if
-      // you had tapped it on the habit screen.
       return item.logAs ? logModule(next, item.logAs, { mintCredit: false }) : next;
     }
 
-    // Buying is the ONLY way credit leaves the wallet, and the price is looked
-    // up here rather than passed in: a screen that could name its own price is
-    // one bug away from a free shop.
     case 'BUY_ITEM': {
       const { itemId } = action.payload;
       const price = priceOf(itemId);
@@ -304,9 +263,6 @@ function reducer(state, action) {
     case 'GAIN_XP':
       return updateActive(state, (m) => ({ ...m, xp: m.xp + (action.payload.amount || 0) }));
 
-    // No caller today: rewards reach bond through applyEffect. It stays
-    // because CLAUDE.md offers it to life modules as part of the
-    // module-agnostic progression contract.
     case 'GAIN_BOND':
       return updateActive(state, (m) => ({ ...m, bond: m.bond + (action.payload.amount || 0) }));
 
@@ -317,14 +273,28 @@ function reducer(state, action) {
       return { ...state, activeIndex: clamp(action.payload.index, 0, state.party.length - 1) };
 
     case 'WIN_BATTLE': {
-      const { xp = 0, bond = 0, targetId, companionHp, spar, warden, routeId } = action.payload;
+      const {
+        xp = 0,
+        bond = 0,
+        targetId,
+        companionHp,
+        spar,
+        warden,
+        regionalWarden,
+        routeId,
+      } = action.payload;
       const next = updateActive(state, (m) => ({
         ...applyEffect(m, { evo: pointsFor('battle') }),
         xp: m.xp + xp,
         bond: m.bond + bond,
         hp: clamp(companionHp != null ? companionHp : (m.hp == null ? memberMaxHp(m) : m.hp), 0, memberMaxHp(m)),
       }));
-      const afterLife = warden && routeId
+
+      // Every route-end Keeper/Warden win clears its trail, but only the final
+      // Warden of a region creates a badge memory and grants the progression
+      // Knot reward. This keeps Knots meaningful rather than paying one on all
+      // 26 trails.
+      const afterLife = regionalWarden && routeId
         ? updateActive(next, (m) => liveOnMember(m, 'pin', {
           routeId,
           pinName: (getRoute(routeId) && getRoute(routeId).pinName) || routeId,
@@ -332,13 +302,13 @@ function reducer(state, action) {
         : next;
       const withHeart = applyHeartstone(afterLife, bond);
       const won = mint(state, CREDIT_PER_WIN);
-      const pin = warden && routeId ? awardPin(state.trails, routeId) : { trails: state.trails, first: false };
+      const clear = warden && routeId
+        ? awardPin(state.trails, routeId)
+        : { trails: state.trails, first: false };
       return {
         ...withHeart,
-        trails: pin.trails,
-        // First Warden win: the pin is on the trail record; a Knot is the
-        // invitation that trail just opened.
-        bag: pin.first
+        trails: clear.trails,
+        bag: regionalWarden && clear.first
           ? { ...state.bag, knot: (state.bag.knot || 0) + 1 }
           : state.bag,
         credits: won.credits,
@@ -348,20 +318,13 @@ function reducer(state, action) {
           creditCarry: won.creditCarry,
           battlesWon: state.stats.battlesWon + 1,
         },
-        // A trainer's companion is on the roster, but this fight is not how
-        // you meet it. Stamping seen here leaked Pebblepup into the Index
-        // before Cairn Cut was open.
         dex: spar ? state.dex : seenDex(state.dex, targetId),
-        // Winning the spar is the end of that scene: Rowan has finished his
-        // session and gone.
         meta: spar ? { ...state.meta, sparDone: true } : state.meta,
       };
     }
 
     case 'CATCH': {
       const { creatureId, xp = 0, bond = 0, hp } = action.payload;
-      // Full Circle: a no-op. Do not spend a Knot (the screen must not
-      // CONSUME either), do not stamp the Index, do not leave the fight.
       if (state.party.length >= MAX_PARTY) return state;
       const dex = { ...state.dex, [creatureId]: 'owned' };
       const maxHp = maxHpFor(getCreature(creatureId), levelFromXp(xp));
@@ -378,9 +341,8 @@ function reducer(state, action) {
       return { ...state, party: [...state.party, member], dex, stats: { ...state.stats, caught: state.stats.caught + 1 } };
     }
 
-    case 'SET_TRAIL': {
+    case 'SET_TRAIL':
       return { ...state, trails: setActiveTrail(state.trails, action.payload.routeId) };
-    }
 
     case 'LOSE_BATTLE': {
       const { targetId } = action.payload;
@@ -398,16 +360,9 @@ function reducer(state, action) {
       return { ...state, dex: { ...state.dex, [id]: 'seen' } };
     }
 
-    // --- Phase 3: life modules ---------------------------------------------
-    // A module log is just another way to earn. It updates state.modules[id]
-    // and then hands its reward to the SAME xp/bond path a workout uses, so no
-    // module ever needs to know how progression works.
     case 'MODULE_LOG':
       return logModule(state, action.payload);
 
-    // Merge a module's OWN data (not the daily counters) — the Forge storing
-    // the player's saved plans, for example. Generic on purpose: a module can
-    // persist whatever it needs without the reducer learning about it.
     case 'MODULE_PATCH': {
       const { moduleId, patch } = action.payload;
       if (!getModule(moduleId) || !patch) return state;
@@ -415,9 +370,6 @@ function reducer(state, action) {
       return { ...state, modules: { ...state.modules, [moduleId]: { ...current, ...patch } } };
     }
 
-    // Roll stale module days over to today. Fired on HYDRATE via rollAllModules
-    // and again by the Habits screens, so a session left open past midnight
-    // still starts the new day clean (streaks intact).
     case 'MODULE_RESET_DAY': {
       const { moduleId } = action.payload || {};
       if (moduleId) {
@@ -427,9 +379,6 @@ function reducer(state, action) {
       return { ...state, modules: rollAllModules(state.modules, today()) };
     }
 
-    // Taking a rest day is a real training decision, so it is a real action.
-    // It pays bond and healing and NEVER xp: resting is not effort, and paying
-    // xp for it would make "rest" a button you press for progress.
     case 'REST_DAY': {
       const day = (state.history || {})[today()];
       if (day && day.rested) return state;
@@ -441,9 +390,6 @@ function reducer(state, action) {
       return { ...next, history: remember(state, { rested: true, bond: 6 }) };
     }
 
-    // A challenge move IS an exercise you actually did. It paid damage and XP
-    // and then vanished, so nothing in the app could ever tell you how many
-    // push-ups you had done — the one number a fitness game should never lose.
     case 'LOG_EXERCISE': {
       const { id, kind, target = 0, routeId } = action.payload || {};
       if (target <= 0) return state;
@@ -455,8 +401,6 @@ function reducer(state, action) {
         history: remember(state, { sets: 1, reps, holdSec }),
         stats: {
           ...state.stats,
-          // One confirmed move is one set, whether it was counted in reps or
-          // held for time.
           sets: state.stats.sets + 1,
           reps: state.stats.reps + reps,
           holdSec: state.stats.holdSec + holdSec,
@@ -505,9 +449,6 @@ function reducer(state, action) {
       };
     }
 
-    // Hitting a new max is the clearest evidence in the app that something
-    // actually changed, so it is worth the most and gets its own action rather
-    // than being folded into the session that contained it.
     case 'RECORD_PR': {
       const n = Math.max(0, action.payload.count || 0);
       if (!n) return state;
@@ -541,8 +482,6 @@ function reducer(state, action) {
     case 'SET_SETTING':
       return { ...state, settings: { ...state.settings, [action.payload.key]: action.payload.value } };
 
-    // One-way story flags (coachIntroDone, ...). Settings are choices a person
-    // can change back; meta records that a moment has happened.
     case 'MARK_META':
       return { ...state, meta: { ...state.meta, ...action.payload } };
 
@@ -563,18 +502,13 @@ export function GameProvider({ children }) {
     (async () => {
       const saved = await loadGame();
       if (mounted && saved) dispatch({ type: 'HYDRATE', payload: saved });
-      // A phone with no journey but a remembered sign-in is a reinstall or a
-      // new device: the account carries the save, so bring it home. A started
-      // local save always wins — the cloud only ever fills an empty device.
       if (!saved || !saved.started) {
         const cloud = await pullCloudSave();
         if (mounted && cloud) dispatch({ type: 'HYDRATE', payload: cloud });
       }
       if (mounted) setHydrated(true);
     })();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
   useEffect(() => {
@@ -583,7 +517,6 @@ export function GameProvider({ children }) {
     (async () => {
       const ok = await saveGame(state);
       if (!cancelled) setSaveError(ok ? null : 'Could not save your progress.');
-      // Signed in? The same save rides up to the account, debounced.
       if (ok) pushCloudSaveSoon(state);
     })();
     return () => { cancelled = true; };
@@ -614,7 +547,6 @@ function decorate(member) {
   };
 }
 
-// The active companion (backwards-compatible selector).
 export function useCompanion() {
   const { state } = useGame();
   if (!state.party.length) return null;
@@ -632,12 +564,6 @@ export function useParty() {
 export function decorateMember(member) {
   return decorate(member);
 }
-
-// --- Life-module selectors -------------------------------------------------
-// The Habits UI never reads state.modules directly: these hand back the module
-// definition, its (normalized) state and today's standing together, so a screen
-// can render any module — including ones added after this file was written —
-// without special-casing.
 
 export function useModuleState(moduleId) {
   const { state } = useGame();
