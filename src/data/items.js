@@ -8,6 +8,8 @@
 // daily-goal cap applies and buying one can never pay more than showing up
 // would have.
 
+import { TRAIL_CHARMS } from './charms';
+
 export const ITEMS = {
   apple: {
     id: 'apple', name: 'Crisp Apple', sprite: 'item_apple', palette: 'item',
@@ -30,7 +32,7 @@ export const ITEMS = {
     effect: { bond: 15, xp: 5 },
   },
   knot: {
-    id: 'knot', name: 'Kinship Knot', sprite: 'item_knot', palette: 'cord',
+    id: 'knot', name: 'Kinship Knot', sprite: 'item_knot', palette: 'art_item_knot',
     description: 'A braided cord with two loops. Offer one, keep one, and you have agreed to keep going together. Used on the trail.',
     catchItem: true,
   },
@@ -53,6 +55,17 @@ export const ITEMS = {
     logAs: { moduleId: 'diet', actionId: 'balanced' },
   },
 };
+
+TRAIL_CHARMS.forEach((charm) => {
+  ITEMS[charm.id] = {
+    id: charm.id,
+    name: charm.name,
+    sprite: charm.id,
+    palette: 'art_' + charm.id,
+    description: `${charm.theme}. ${charm.effect} Equip one on your active companion. Maple stocks extras after you have seen one.`,
+    held: true,
+  };
+});
 
 // Weighted pool for milestone pickups. Knots show up so the trail keeps
 // offering you the chance to travel with somebody new.

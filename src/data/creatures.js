@@ -378,59 +378,59 @@ export const CREATURES = {
     flavor: 'Salt and skipped water, grinding in the calves. Drink, then move through it.',
   },
   cindergrind: {
-    id: 'cindergrind', name: 'Cindergrind', sprite: 'cindergrind', palette: 'scorch',
+    id: 'cindergrind', name: 'Cindergrind', sprite: 'cindergrind', palette: 'art_cindergrind',
     species: 'The Overwork', kind: 'obstacle', type: 'ember', baseHp: 120, catchable: false,
     flavor: 'The grind that will not sit down. Hard days without recovery, given teeth.',
   },
 
   // --- Horizon region Wardens' companions (cleared, not caught) ---
   saltcramp: {
-    id: 'saltcramp', name: 'Saltcramp', sprite: 'brinegnash', palette: 'shore',
+    id: 'saltcramp', name: 'Saltcramp', sprite: 'saltcramp', palette: 'art_saltcramp',
     species: 'Skipped Water', kind: 'obstacle', type: 'tide', baseHp: 88, catchable: false,
     flavor: 'A coastal cramp made of a dry bottle. Drink, then the blackwave yields.',
   },
   heatgrind: {
-    id: 'heatgrind', name: 'Heatgrind', sprite: 'cindergrind', palette: 'pyre',
+    id: 'heatgrind', name: 'Heatgrind', sprite: 'heatgrind', palette: 'art_heatgrind',
     species: 'Sun Overwork', kind: 'obstacle', type: 'ember', baseHp: 128, catchable: false,
     flavor: 'Mesa heat with no pause. The plates remember the set you skipped resting.',
   },
   mirelurk: {
-    id: 'mirelurk', name: 'Mirelurk', sprite: 'couchlurk', palette: 'bloom',
+    id: 'mirelurk', name: 'Mirelurk', sprite: 'mirelurk', palette: 'art_mirelurk',
     species: 'Marsh Slump', kind: 'obstacle', type: 'rest', baseHp: 92, catchable: false,
     flavor: 'The fen\'s couch. It sits in the reeds and will not float unless you rest honestly.',
   },
   nightsnooze: {
-    id: 'nightsnooze', name: 'Nightsnooze', sprite: 'snoozeghoul', palette: 'air',
+    id: 'nightsnooze', name: 'Nightsnooze', sprite: 'nightsnooze', palette: 'art_nightsnooze',
     species: 'Winter Snooze', kind: 'obstacle', type: 'rest', baseHp: 96, catchable: false,
     flavor: 'Five more minutes in a snow cave. Night already did the work — you have to let it.',
   },
   muterail: {
-    id: 'muterail', name: 'Muterail', sprite: 'sludgewad', palette: 'chock',
+    id: 'muterail', name: 'Muterail', sprite: 'muterail', palette: 'art_muterail',
     species: 'Broken Streak', kind: 'obstacle', type: 'stone', baseHp: 100, catchable: false,
     flavor: 'A copper bell that stopped ringing. Showing up unmutes it — skipping does not.',
   },
   stillhoof: {
-    id: 'stillhoof', name: 'Stillhoof', sprite: 'achefang', palette: 'samara',
+    id: 'stillhoof', name: 'Stillhoof', sprite: 'stillhoof', palette: 'art_stillhoof',
     species: 'Unwalked Mile', kind: 'obstacle', type: 'wind', baseHp: 104, catchable: false,
     flavor: 'A prairie that never left the gate. The first honest mile is the fight.',
   },
   skipcomb: {
-    id: 'skipcomb', name: 'Skipcomb', sprite: 'sludgewad', palette: 'lantern',
+    id: 'skipcomb', name: 'Skipcomb', sprite: 'skipcomb', palette: 'art_skipcomb',
     species: 'Skipped Meal', kind: 'obstacle', type: 'grove', baseHp: 98, catchable: false,
     flavor: 'A coffee-only day given a body. The orchard will not run on air.',
   },
   flathorn: {
-    id: 'flathorn', name: 'Flathorn', sprite: 'achefang', palette: 'spore',
+    id: 'flathorn', name: 'Flathorn', sprite: 'flathorn', palette: 'art_flathorn',
     species: 'Unmoved Heart', kind: 'obstacle', type: 'wind', baseHp: 110, catchable: false,
     flavor: 'A ridge with no heartbeat. Cardio is the weather it cannot stand.',
   },
   rootrush: {
-    id: 'rootrush', name: 'Rootrush', sprite: 'cindergrind', palette: 'moss',
+    id: 'rootrush', name: 'Rootrush', sprite: 'rootrush', palette: 'art_rootrush',
     species: 'Skipped Recovery', kind: 'obstacle', type: 'tide', baseHp: 108, catchable: false,
     flavor: 'A mangrove that will not stop. Rest is the training it refuses.',
   },
   voidglyph: {
-    id: 'voidglyph', name: 'Voidglyph', sprite: 'brinegnash', palette: 'quartz',
+    id: 'voidglyph', name: 'Voidglyph', sprite: 'voidglyph', palette: 'art_voidglyph',
     species: 'Erased Day', kind: 'obstacle', type: 'stone', baseHp: 132, catchable: false,
     flavor: 'A ruin with the date scraped off. Kept days are the only thing that fills it.',
   },
