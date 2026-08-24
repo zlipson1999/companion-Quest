@@ -1,0 +1,34 @@
+# Gate: every companion master still reproduces shipped art, every family
+# has three distinct stages, and the bible figures still match the code.
+# Local equivalent: python3 tools/check_docs.py && python3 tools/check_art.py
+
+name: Art validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-art:
+    name: check_art.py + check_docs.py
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Pillow
+        run: pip install pillow
+
+      - name: Docs still agree with the code
+        run: python3 tools/check_docs.py
+
+      - name: Masters reproduce and stages are not clones
+        run: python3 tools/check_art.py
