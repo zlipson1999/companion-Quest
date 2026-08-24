@@ -6,9 +6,11 @@ file over anything drawn; a `traced_*.json` that reaches no sprite fails
 the build. A trail face without a master fails the build. There is no
 `sphere()` stand-in.
 
-**180 transparent masters** are committed in `tools/reference_art/`
-(top-level `*.png` only; approval lineups sit in `lineups/` and are not
-counted). That is all 18 original-six forms plus all 36 trail-family forms.
+**191 transparent masters** are committed in `tools/reference_art/`
+(top-level `*.png` only; approval lineups sit in `lineups/`, and the badge
+and charm masters sit in `badges/` and `charms/`, none of which are
+counted). That is all 18 original-six forms plus all 36 trail-family forms,
+plus the 10 unique Warden bodies and the retraced Kinship Knot.
 The three first-bond families are complete first-rendition lines
 (magenta keyed out, not a re-render of an old indexed grid):
 Sproutle → Bloomtail → Groveheart, Emberkit → Pyrelynx → Cindermane,

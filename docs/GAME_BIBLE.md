@@ -637,7 +637,12 @@ faint.
 4. `backlight()` (rim opposite the key light) and `spec()` (hotspots) are what
    read as "modern".
 
-### 8.3 Sprite inventory (259 runtime sprites + 416 atlas cells)
+### 8.3 Sprite inventory (295 runtime sprites + 416 atlas cells)
+
+The count includes the traced regalia set landed with the Warden/badge/charm
+plates: 10 unique Warden bodies (the Horizon Wardens no longer wear recolored
+stand-in sprites), 11 regional badges, 15 Trail Charms, and the retraced
+Kinship Knot.
 
 - Creatures 48×48 authored @2× = 96 px: **54 companions — 18 families of 3
   stages**. The first six families are TRACED (sproutle→bloomtail→groveheart,
