@@ -1,6 +1,6 @@
-// Creature Index — your collection, styled like a handheld data readout.
-// Owned entries expand: habitat, evolution line, discovery, personality.
-// The chrome is still Window + PixelText. Nothing here restyles the rest of the game.
+// Creature Index — collection as family rows (three forms each).
+// Uses the existing handheld chrome (Screen, Window, PixelText, PixelSprite).
+// Does not restyle Hub, Title, Battle, or any other screen.
 
 import React, { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
@@ -8,7 +8,14 @@ import { Screen, Window, PixelText, PixelButton, PixelSprite } from '../componen
 import { palette, space } from '../theme';
 import { useGame } from '../state';
 import { useNav } from './navContext';
-import { INDEX_ORDER, getCreature, CREATURE_TYPES, familyOf } from '../data/creatures';
+import {
+  INDEX_ORDER,
+  WILD_COMPANION_IDS,
+  OBSTACLE_IDS,
+  getCreature,
+  CREATURE_TYPES,
+  familyChain,
+} from '../data/creatures';
 import { isCreatureLocked, getRoute, creatureTrailId } from '../data/routes';
 import { personalityOf, bondMilestone } from '../data/personality';
 
@@ -25,19 +32,26 @@ function habitatOf(id) {
   return [route.region, route.name, route.biomeName].filter(Boolean).join(' · ');
 }
 
-function nodeShown(cid, id, status, dex) {
-  if (cid === id && (status === 'owned' || status === 'seen')) return true;
-  const s = dex && dex[cid];
-  return s === 'owned' || s === 'seen';
+function nodeKnown(cid, dex, trails) {
+  const status = (dex && dex[cid]) || 'unknown';
+  const locked = isCreatureLocked(cid, trails) && status !== 'owned';
+  return !locked && (status === 'owned' || status === 'seen');
 }
 
-function Entry({ id, status, locked, expanded, onToggle, partyBond, dex }) {
-  const c = getCreature(id);
-  const known = !locked && (status === 'owned' || status === 'seen');
+function FamilyRow({ rootId, dex, trails, expanded, onToggle, partyBond }) {
+  const chain = familyChain(rootId);
+  const root = getCreature(rootId);
+  const anyKnown = chain.some((cid) => nodeKnown(cid, dex, trails));
+  const familyLocked = chain.every((cid) => {
+    const status = (dex && dex[cid]) || 'unknown';
+    return isCreatureLocked(cid, trails) && status !== 'owned';
+  });
+  const focus = chain.find((cid) => nodeKnown(cid, dex, trails)) || rootId;
+  const c = getCreature(focus);
+  const status = (dex && dex[focus]) || 'unknown';
   const typeLabel = c.type && CREATURE_TYPES[c.type];
-  const chain = familyOf(id);
-  const p = known ? personalityOf(c) : null;
-  const habitat = habitatOf(id);
+  const p = anyKnown ? personalityOf(c) : null;
+  const habitat = habitatOf(focus);
 
   return (
     <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
@@ -45,77 +59,47 @@ function Entry({ id, status, locked, expanded, onToggle, partyBond, dex }) {
         accessible
         accessibilityRole="button"
         accessibilityLabel={
-          locked
+          familyLocked
             ? 'A later trail. Not yet unlocked.'
-            : known
-              ? `${c.name}. ${status === 'owned' ? 'Owned' : 'Seen'}. ${c.species || ''}. Tap for details.`
-              : 'Unknown companion. Not yet discovered. Tap for a hint.'
+            : anyKnown
+              ? `${c.name} family. Tap for details.`
+              : 'Unknown companion family.'
         }
         onPress={onToggle}
-        style={{ flexDirection: 'row', alignItems: 'center' }}
+        style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}
       >
-        <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center' }}>
-          <PixelSprite spriteKey={c.sprite} palette={known ? c.palette : SILHOUETTE} size={56} />
-        </View>
-        <View style={{ flex: 1, marginLeft: space.md }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <PixelText size="body" color={palette.windowText}>
-              {known ? c.name : '???'}
-            </PixelText>
-            {locked ? (
-              <PixelText size="tiny" color={palette.windowTextDim}>LOCKED</PixelText>
-            ) : status === 'owned' ? (
-              <PixelText size="tiny" color={palette.success}>OWNED</PixelText>
-            ) : status === 'seen' ? (
-              <PixelText size="tiny" color={palette.accentDark}>SEEN</PixelText>
-            ) : (
-              <PixelText size="tiny" color={palette.windowTextDim}>UNKNOWN</PixelText>
-            )}
-          </View>
-          {known ? (
-            <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6 }}>
-              {c.species}{typeLabel ? ` · ${typeLabel}` : ''}
-            </PixelText>
-          ) : (
-            <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6 }}>
-              {locked ? 'a later trail' : 'not yet discovered'}
-            </PixelText>
-          )}
-          {known && habitat ? (
-            <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4 }}>
-              {habitat}
-            </PixelText>
-          ) : null}
-        </View>
+        {chain.map((cid) => {
+          const node = getCreature(cid);
+          const known = nodeKnown(cid, dex, trails);
+          return (
+            <View key={cid} style={{ alignItems: 'center', flex: 1 }}>
+              <View style={{ width: 72, height: 72, alignItems: 'center', justifyContent: 'center' }}>
+                <PixelSprite
+                  spriteKey={node.sprite}
+                  palette={known ? node.palette : SILHOUETTE}
+                  size={64}
+                />
+              </View>
+              <PixelText size="tiny" color={palette.windowTextDim} numberOfLines={1}>
+                {known ? node.name : ' '}
+              </PixelText>
+            </View>
+          );
+        })}
       </Pressable>
 
-      {expanded && !locked ? (
+      {expanded && !familyLocked ? (
         <View style={{ marginTop: space.sm, paddingTop: space.sm, borderTopWidth: 1, borderTopColor: palette.windowFrame }}>
-          {chain.length > 1 ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-              {chain.map((cid, i) => {
-                const node = getCreature(cid);
-                const show = nodeShown(cid, id, status, dex);
-                return (
-                  <View key={cid} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    {i > 0 ? (
-                      <PixelText size="tiny" color={palette.windowTextDim} style={{ marginHorizontal: 4 }}>→</PixelText>
-                    ) : null}
-                    <View style={{ alignItems: 'center', width: 52 }}>
-                      <PixelSprite
-                        spriteKey={node.sprite}
-                        palette={show ? node.palette : SILHOUETTE}
-                        size={40}
-                      />
-                      <PixelText size="tiny" color={palette.windowTextDim} numberOfLines={1}>
-                        {show ? node.name : '???'}
-                      </PixelText>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          ) : null}
+          {anyKnown ? (
+            <PixelText size="tiny" color={palette.windowTextDim} style={{ marginBottom: 6 }}>
+              {c.species}{typeLabel ? ` · ${typeLabel}` : ''}
+              {habitat ? ` · ${habitat}` : ''}
+            </PixelText>
+          ) : (
+            <PixelText size="tiny" color={palette.windowTextDim}>
+              not yet discovered
+            </PixelText>
+          )}
 
           {status === 'owned' && c.flavor ? (
             <PixelText size="tiny" color={palette.windowTextDim} style={{ lineHeight: 14, marginBottom: 6 }}>
@@ -148,7 +132,7 @@ function Entry({ id, status, locked, expanded, onToggle, partyBond, dex }) {
             </PixelText>
           ) : null}
 
-          {!known && c.encounter && c.encounter.hint ? (
+          {!anyKnown && c.encounter && c.encounter.hint ? (
             <PixelText size="tiny" color={palette.windowTextDim} style={{ lineHeight: 14 }}>
               Hint: {c.encounter.hint}
             </PixelText>
@@ -172,31 +156,28 @@ export default function IndexScreen() {
     if (m && m.id) bondById[m.id] = m.bond;
   });
 
+  const families = [...WILD_COMPANION_IDS, ...OBSTACLE_IDS];
+
   return (
     <Screen style={{ padding: space.md }}>
       <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
         Creature Index
       </PixelText>
       <PixelText size="tiny" color={palette.windowTextDim} align="center" style={{ marginBottom: space.md }}>
-        Owned {owned} · Seen {seen} · Total {order.length} · tap a row
+        Owned {owned} · Seen {seen} · Total {order.length} · tap a family
       </PixelText>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {order.map((id) => {
-          const status = state.dex[id] || 'unknown';
-          const locked = isCreatureLocked(id, state.trails) && status !== 'owned';
-          return (
-            <Entry
-              key={id}
-              id={id}
-              status={status}
-              locked={locked}
-              expanded={open === id}
-              onToggle={() => setOpen(open === id ? null : id)}
-              partyBond={bondById[id]}
-              dex={state.dex}
-            />
-          );
-        })}
+        {families.map((rootId) => (
+          <FamilyRow
+            key={rootId}
+            rootId={rootId}
+            dex={state.dex}
+            trails={state.trails}
+            expanded={open === rootId}
+            onToggle={() => setOpen(open === rootId ? null : rootId)}
+            partyBond={bondById[rootId]}
+          />
+        ))}
       </ScrollView>
       <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
     </Screen>
