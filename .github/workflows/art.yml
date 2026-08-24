@@ -1,6 +1,10 @@
 # Gate: every companion master still reproduces shipped art, every family
 # has three distinct stages, and the bible figures still match the code.
 # Local equivalent: python3 tools/check_docs.py && python3 tools/check_art.py
+#
+# Failures ping you:
+#   PR  → comment on the pull request
+#   main → open an issue assigned to zlipson1999
 
 name: Art validation
 
@@ -12,6 +16,8 @@ on:
 
 permissions:
   contents: read
+  issues: write
+  pull-requests: write
 
 jobs:
   check-art:
@@ -32,3 +38,39 @@ jobs:
 
       - name: Masters reproduce and stages are not clones
         run: python3 tools/check_art.py
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const sha = (context.payload.after || context.sha).slice(0, 7);
+            const body = [
+              '**Art validation failed.**',
+              '',
+              `Run: ${runUrl}`,
+              `Commit: \`${sha}\``,
+              '',
+              'Local:',
+              '```',
+              'python3 tools/check_docs.py && python3 tools/check_art.py',
+              '```',
+            ].join('\n');
+
+            if (context.eventName === 'pull_request') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `CI failed: art validation (${sha})`,
+                body,
+                assignees: ['zlipson1999'],
+              });
+            }
