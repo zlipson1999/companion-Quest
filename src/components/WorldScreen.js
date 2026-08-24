@@ -123,7 +123,15 @@ export default function WorldScreen({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const reach = showControl ? reachableThing(map, player) : null;
-  const tile = worldTileFor(map);
+  // The band under the world grew (text, then the card, then the controls),
+  // so a tile size guessed from a fixed share of the screen overflowed and
+  // clipped the room around the player. Measure the space the world actually
+  // gets and fit the WHOLE map inside it; the guess only covers the first
+  // frame before onLayout answers.
+  const [avail, setAvail] = useState(null);
+  const tile = avail
+    ? Math.max(10, Math.floor(Math.min(avail.w / map.cols, avail.h / map.rows)))
+    : worldTileFor(map);
   const worldW = map.cols * tile;
   const worldH = map.rows * tile;
   const outdoor = OUTDOOR_MAPS.has(map.id);
@@ -172,6 +180,10 @@ export default function WorldScreen({
       {/* Outdoors the map sits on the ground and the slack above the trees
           is sky. Indoors stay centred in the room's own tone. */}
       <View
+        onLayout={(e) => {
+          const { width, height } = e.nativeEvent.layout;
+          if (width && height) setAvail({ w: width, h: height });
+        }}
         style={{
           flex: 1,
           backgroundColor: voidColor,
