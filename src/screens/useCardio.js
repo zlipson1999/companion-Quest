@@ -26,15 +26,45 @@ export function movementHoldMs(gpsOnly) {
   return gpsOnly ? GPS_MOVING_MS : STEP_MOVING_MS;
 }
 
+// The ANIMATION hold above and the PAYMENT lease below are deliberately two
+// different numbers, because they answer two different questions.
+//
+// 900ms is right for animation: a character who keeps running for a second
+// after you stop looks wrong, and a brief freeze between footfalls does not.
+// It is far too tight to decide whether a second of real work gets PAID.
+// `Pedometer.watchStepCount` batches its callbacks — roughly one a second on
+// both platforms — and the accelerometer fallback fires once per detected
+// step, which for a slow walk on a stair climber is also about a second. A
+// 900ms lease against a ~1000ms delivery cadence expires in the gap and banks
+// genuine exercise as unpaid, and the machine most at risk is the elliptical,
+// whose stride keeps a foot on the pedal and gives a pedometer very little to
+// hear.
+//
+// So payment gets a lease long enough to bridge the sensor's own silence:
+// three seconds for step machines, and the same 3.2s the bike already uses
+// for GPS. This cannot become an exploit — the lease only ever refreshes on a
+// real measured delta, so standing still still stops paying, three seconds
+// later. Erring by three seconds at the end of a set is honest; erring by
+// dropping one second in ten of a real workout is not.
+export const STEP_PAY_LEASE_MS = 3000;
+export const GPS_PAY_LEASE_MS = GPS_MOVING_MS;
+
+export function payLeaseMs(gpsOnly) {
+  return gpsOnly ? GPS_PAY_LEASE_MS : STEP_PAY_LEASE_MS;
+}
+
 export default function useCardio({ active = true, gpsOnly = false, activity, onDelta, onMilestone, routeId } = {}) {
   const { state, dispatch } = useGame();
   const dist = useDistance();
   const [moving, setMoving] = useState(false);
+  // Separate from `moving`: this one decides whether a second is PAID.
+  const [paying, setPaying] = useState(false);
 
   const lastMiles = useRef(0);
   const lastSteps = useRef(0);
   const prevMilestones = useRef(state.stats.milestonesReached);
   const moveTimer = useRef(null);
+  const payTimer = useRef(null);
   const cbs = useRef({ onDelta, onMilestone, routeId, activity });
   cbs.current = { onDelta, onMilestone, routeId, activity };
 
@@ -67,6 +97,10 @@ export default function useCardio({ active = true, gpsOnly = false, activity, on
     if (moveTimer.current) clearTimeout(moveTimer.current);
     moveTimer.current = setTimeout(() => setMoving(false), movementHoldMs(gpsOnly));
 
+    setPaying(true);
+    if (payTimer.current) clearTimeout(payTimer.current);
+    payTimer.current = setTimeout(() => setPaying(false), payLeaseMs(gpsOnly));
+
     if (cbs.current.onDelta) cbs.current.onDelta(dM, dS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dist.miles, dist.steps, dist.running, active, gpsOnly]);
@@ -86,7 +120,22 @@ export default function useCardio({ active = true, gpsOnly = false, activity, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.stats.milestonesReached]);
 
-  useEffect(() => () => moveTimer.current && clearTimeout(moveTimer.current), []);
+  useEffect(() => () => {
+    if (moveTimer.current) clearTimeout(moveTimer.current);
+    if (payTimer.current) clearTimeout(payTimer.current);
+  }, []);
 
-  return { dist, moving };
+  // A machine that goes inactive must stop paying as well as stop animating,
+  // so both leases are dropped the moment the console leaves its running
+  // state — otherwise a lease started just before a pause would keep paying
+  // into it.
+  useEffect(() => {
+    if (active) return;
+    if (moveTimer.current) clearTimeout(moveTimer.current);
+    if (payTimer.current) clearTimeout(payTimer.current);
+    setMoving(false);
+    setPaying(false);
+  }, [active]);
+
+  return { dist, moving, paying };
 }

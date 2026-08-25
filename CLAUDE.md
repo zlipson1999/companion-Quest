@@ -154,7 +154,9 @@ pays Quest Credits
 at `economy.cardioCredits` (1 per 4 active minutes, 5-minute minimum, 15
 cap), identically on every machine. Step/GPS deltas gate the first four
 machines and recent logged strokes gate the rower; a stationary running
-console banks inactive time and earns nothing. Payment happens once by
+console banks inactive time and earns nothing. The payment lease is
+deliberately longer than the animation hold (`screens/useCardio.js`): a
+pedometer reports about once a second, so a 900ms gate would drop real work. Payment happens once by
 `COMPLETE_CARDIO` — which
 refuses a session id it already stored, so no reload or double-tap can pay
 twice. Gym cardio (`activity: 'gym-cardio'` or `'ride'`) still never advances

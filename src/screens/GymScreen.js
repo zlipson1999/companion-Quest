@@ -297,7 +297,7 @@ export default function GymScreen() {
   }, [!!cardio]);
 
   const machine = cardio ? getCardioMachine(cardio.machineId) : null;
-  const { dist, moving } = useCardio({
+  const { dist, moving, paying } = useCardio({
     // The sensor only feeds machines that can honestly use it, and only while
     // the session is actually running: a paused console counts nothing.
     active: !!(cardio && cardio.phase === 'running' && machine && machine.tracking !== 'timer'),
@@ -319,9 +319,16 @@ export default function GymScreen() {
   };
   useEffect(() => () => tapTimer.current && clearTimeout(tapTimer.current), []);
   const machineMoving = machine && machine.tracking === 'timer' ? tapPulse : moving;
+  // Animation follows `moving` (tight, so the character stops when you do).
+  // Payment follows `paying`, a longer lease that bridges the sensor's own
+  // reporting gaps — see useCardio for why the two are different numbers.
+  // The rower's stroke lease already spans a rowing cadence, so it serves
+  // both.
+  const machinePaying = machine && machine.tracking === 'timer' ? tapPulse : paying;
   const sessionLive = !!(cardio && cardio.phase === 'running' && machineMoving);
+  const sessionPaying = !!(cardio && cardio.phase === 'running' && machinePaying);
   const movementRef = useRef(false);
-  movementRef.current = sessionLive;
+  movementRef.current = sessionPaying;
 
   // A running phase is permission to track, not proof of work. Only a live
   // sensor/GPS delta or a recent rowing stroke banks an ACTIVE second.

@@ -103,7 +103,10 @@ export default function BagScreen() {
   const checkIns = gymCheckInStats(state.gymCheckIns);
   const cardio = cardioTotals(state.cardioSessions);
 
-  const useItem = (id) => {
+  // Named consumeItem, not useItem: a plain function whose name starts with
+  // `use` reads as a React hook to both a reviewer and the hooks lint rule,
+  // and this is a tap handler that eats an apple.
+  const consumeItem = (id) => {
     const item = getItem(id);
     if (!item || !item.effect) {
       setToast(`${item ? item.name : 'That item'} is not used from this pocket.`);
@@ -357,7 +360,7 @@ export default function BagScreen() {
                 <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 13 }}>{item.description}</PixelText>
               </View>
             </View>
-            {item.effect ? <PixelButton label="Use" tone="gold" size="small" style={{ marginTop: space.sm }} onPress={() => useItem(id)} /> : null}
+            {item.effect ? <PixelButton label="Use" tone="gold" size="small" style={{ marginTop: space.sm }} onPress={() => consumeItem(id)} /> : null}
           </Window>
         );
       }) : (

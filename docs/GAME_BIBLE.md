@@ -491,6 +491,16 @@ movement arrives; rower seconds become ACTIVE only while logged strokes keep
 the movement lease alive. When those signals stop, animation and the paid clock
 both stop automatically while the console remains open.
 
+**The animation hold and the payment lease are different numbers**
+(`screens/useCardio.js`). Animation uses 900ms for steps so the character
+stops when the player does. Payment uses a longer lease — 3s for step
+machines, 3.2s for GPS, and the rower's 5s stroke lease — because a pedometer
+batches its callbacks about once a second, and a 900ms payment gate expires
+in the sensor's own silence and banks real exercise as unpaid. The elliptical
+is the worst case: its stride keeps a foot on the pedal and gives a pedometer
+very little to hear. The lease still only ever refreshes on a real measured
+delta, so standing still stops paying — three seconds later.
+
 **There is no discard control once a session is running.** A button beside
 Finish is a way to lose a hard workout to one tired thumb, and there is
 nothing worth throwing away: a session under the minimum already pays zero
@@ -1018,11 +1028,14 @@ early calls). BGM switching lives in Router via TOWN_BGM.
             refundApplied },                      // v12 one-time refund flag
   cardioSessions: [{ id, station, startedAt,      // gym cardio history only,
                      endedAt, activeSeconds,      // last 120. v13 unified the
-                     pausedSeconds, miles, steps, // record across all five
-                     strokes, floors, strides,    // machines; `source` says
-                     level, machineMiles, kcal,   // whether a figure was
-                     creditsAwarded, source,      // sensed, GPS'd, timed or
-                     completion }],               // typed in by hand.
+                     inactiveSeconds,             // record across all five
+                     pausedSeconds, miles, steps, // machines. Only
+                     strokes, floors, strides,    // activeSeconds is paid;
+                     level, cadence, machineMiles,// inactive is running-but-
+                     machineMeters, kcal,         // still, paused is stopped.
+                     creditsAwarded, source,      // `source` says whether a
+                     completion }],               // figure was sensed, GPS'd,
+                                                  // timed or typed by hand.
   gymCheckIns: [{ day: 'YYYY-MM-DD',              // reception attendance:
                   checkedAt }],                   // first arrival per day (v12)
   modules: { [id]: { date, count, entries, goalHit, streak, bestStreak,
