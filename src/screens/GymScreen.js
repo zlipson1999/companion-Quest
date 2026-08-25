@@ -92,7 +92,11 @@ const TOUR_STOPS = [
     { speaker: 'Coach Maple', text: 'The deck. Step on and the console starts: time, distance, pace, calories from your real body weight. It counts your phone steps - only REAL movement moves the number. There is no button that walks for you, here or anywhere in your life.' },
     { speaker: 'Coach Maple', text: 'Deck miles are real miles - they pay XP and ten credit each - but they do not fill a TRAIL. Trails want you outside; the Wardens can tell the difference.' },
   ] },
-  { at: { x: 14, y: 10 }, face: 'right', lines: [
+  { at: { x: 14, y: 9 }, face: 'right', lines: [
+    { speaker: 'Coach Maple', text: 'The bikes. This one stays here; you do not. Start a ride, secure your phone, then take your real bicycle outside. GPS measures the miles while your person pedals here with you.' },
+    { speaker: 'Coach Maple', text: 'Ride miles pay the same distance XP and Trail Credit as honest cardio, and the Phone keeps them as cycling miles. They never fill a walking trail. Start and stop only while the real bike is parked.' },
+  ] },
+  { at: { x: 14, y: 11 }, face: 'right', lines: [
     { speaker: 'Coach Maple', text: 'The rowers. Same console, same rule: it counts what your body actually does, and stepping off ends the session honestly.' },
   ] },
   { at: { x: 14, y: 12 }, face: 'right', lines: [
@@ -266,26 +270,31 @@ export default function GymScreen() {
 
   // The console's own clock. Only ticks while somebody is standing on the deck.
   useEffect(() => {
-    if (!cardio) return undefined;
+    if (!cardio || (cardio.station === 'bike' && !cardio.gpsStarted)) return undefined;
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, [cardio]);
 
   const { dist, moving } = useCardio({
     active: !!cardio,
+    gpsOnly: !!(cardio && cardio.station === 'bike'),
+    activity: cardio && cardio.station === 'bike' ? 'ride' : 'gym-cardio',
     onMilestone: (item) => setNote(`Milestone — you picked up ${item.name}.`),
   });
 
   const stepOn = (code, at, kind) => {
     playSfx('confirm');
     setNote(
-      Platform.OS === 'web'
+      kind === 'bike'
+        ? 'The in-game bike starts a real outdoor bicycle ride. GPS begins only when you press Start.'
+        : Platform.OS === 'web'
         ? 'A browser cannot count steps on this deck. Use a phone — there are no walk buttons.'
         : null
     );
     setSeconds(0);
     setCardio({
       station: kind,
+      gpsStarted: false,
       from: { ...playerRef.current },
       base: {
         miles: state.stats.distanceMi,
@@ -302,9 +311,26 @@ export default function GymScreen() {
     apply({ x: at.x, y: at.y, facing: 'up' });
   };
 
+  const startBikeRide = async () => {
+    if (!cardio || cardio.station !== 'bike' || cardio.gpsStarted) return;
+    setNote('Requesting GPS — stay parked until the ride says LIVE.');
+    const ok = await dist.startRun();
+    if (!ok) return;
+    setSeconds(0);
+    setCardio((cur) => (cur ? { ...cur, gpsStarted: true } : cur));
+    setNote('GPS is live. Secure the phone and ride — the character pedals only when real distance arrives.');
+  };
+
   const stepOff = () => {
     playSfx('cancel');
-    if (cardio) apply({ ...cardio.from });
+    if (cardio) {
+      const miles = Math.max(0, state.stats.distanceMi - cardio.base.miles);
+      if (cardio.station === 'bike') {
+        if (dist.running) dist.stopRun();
+        dispatch({ type: 'COMPLETE_CARDIO', payload: { station: 'bike', miles, seconds } });
+      }
+      apply({ ...cardio.from });
+    }
     setCardio(null);
     setNote(null);
   };
@@ -393,7 +419,9 @@ export default function GymScreen() {
           : rush
             ? 'Rowan is coming over'
             : cardio
-            ? `On the ${cardio.station === 'rower' ? 'rower' : 'deck'} — only real movement counts`
+            ? cardio.station === 'bike'
+              ? (cardio.gpsStarted ? 'Outdoor ride live — GPS movement turns the pedals' : 'Bike ready — start GPS while your real bicycle is parked')
+              : `On the ${cardio.station === 'rower' ? 'rower' : 'deck'} — only real movement counts`
             : facingStation
               ? facingStation.label
               : !companion
@@ -419,6 +447,10 @@ export default function GymScreen() {
           />
         ) : null
       }
+      playerActivity={cardio ? {
+        type: cardio.station,
+        active: cardio.station === 'bike' ? !!(cardio.gpsStarted && moving) : !!moving,
+      } : null}
       status={
         tour || rush ? (
           <CompanionStatus companion={companion} stats={state.stats} />
@@ -433,8 +465,11 @@ export default function GymScreen() {
               breakdown={breakdown}
               bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}
               moving={moving}
+              gpsActive={!!(cardio.gpsStarted && dist.running)}
+              gpsError={cardio.station === 'bike' ? dist.gpsError : null}
               note={note}
-              onInject={dist.showInjector ? dist.injectSteps : null}
+              onStartGps={cardio.station === 'bike' ? startBikeRide : null}
+              onInject={cardio.station !== 'bike' && dist.showInjector ? dist.injectSteps : null}
               onStop={stepOff}
             />
           </>

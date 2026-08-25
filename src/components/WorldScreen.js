@@ -120,6 +120,10 @@ export default function WorldScreen({
   showControl = true,
   // A guided NPC (the gym tour's Coach Maple) rendered on the map.
   walker,
+  // A real-world cardio station can animate the player in place while the
+  // measured activity arrives. The room stays visible; only the player's pose
+  // changes from walking the floor to using the machine.
+  playerActivity,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const reach = showControl ? reachableThing(map, player) : null;
@@ -197,7 +201,14 @@ export default function WorldScreen({
           </View>
         ) : null}
         <View style={{ width: worldW, height: worldH }}>
-          <TileMap map={map} player={player} tileSize={tile} viewport={{ width: worldW, height: worldH }} walker={walker} />
+          <TileMap
+            map={map}
+            player={player}
+            tileSize={tile}
+            viewport={{ width: worldW, height: worldH }}
+            walker={walker}
+            playerActivity={playerActivity}
+          />
         </View>
         {menu.length ? (
           <View style={{ position: 'absolute', top: TOP_INSET, right: space.sm }}>

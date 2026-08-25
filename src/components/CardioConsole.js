@@ -15,7 +15,16 @@ import PixelText from './PixelText';
 import PixelButton from './PixelButton';
 import TrailAction from './TrailAction';
 import { palette, tokens, scale, space } from '../theme';
-import { formatClock, formatPace, kcalFor, lapsFor, paceFor } from '../state/cardioMaths';
+import {
+  formatClock,
+  formatPace,
+  formatSpeed,
+  kcalFor,
+  kcalForBike,
+  lapsFor,
+  paceFor,
+  speedFor,
+} from '../state/cardioMaths';
 
 function Readout({ label, value, unit, big, live }) {
   return (
@@ -63,8 +72,11 @@ export default function CardioConsole({
   breakdown,
   bodyWeightLb,
   moving = false,
+  gpsActive = false,
+  gpsError,
   note,
   onStop,
+  onStartGps,
   // Only passed when nothing on the device can count a step. The trail already
   // offers these; without them here the deck is a console that can never move,
   // which is worse than no console.
@@ -74,14 +86,24 @@ export default function CardioConsole({
   children,
   style,
 }) {
+  const bike = station === 'bike';
   const pace = paceFor(miles, seconds);
-  const kcal = kcalFor(miles, seconds, bodyWeightLb);
+  const speed = speedFor(miles, seconds);
+  const kcal = bike
+    ? kcalForBike(miles, seconds, bodyWeightLb)
+    : kcalFor(miles, seconds, bodyWeightLb);
 
   const cells = [
-    { label: 'LAPS', value: lapsFor(miles).toFixed(1) },
-    { label: 'PACE', value: formatPace(pace), unit: '/mi' },
-    { label: 'KCAL', value: String(Math.round(kcal)) },
-    { label: 'STEPS', value: steps.toLocaleString() },
+    ...(bike ? [
+      { label: 'SPEED', value: formatSpeed(speed), unit: 'mph' },
+      { label: 'KCAL', value: String(Math.round(kcal)) },
+      { label: 'GPS', value: gpsActive ? 'LIVE' : 'READY' },
+    ] : [
+      { label: 'LAPS', value: lapsFor(miles).toFixed(1) },
+      { label: 'PACE', value: formatPace(pace), unit: '/mi' },
+      { label: 'KCAL', value: String(Math.round(kcal)) },
+      { label: 'STEPS', value: steps.toLocaleString() },
+    ]),
     // The work, as opposed to the walking. Challenges are real sets of real
     // exercises; they used to pay their damage and then vanish uncounted.
     ...(workouts == null ? [] : [{ label: 'WORKOUTS', value: String(workouts) }]),
@@ -108,11 +130,11 @@ export default function CardioConsole({
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ letterSpacing: 1 }}>
-          {title || (station === 'rower' ? 'ROWER' : 'TREADMILL')}
+          {title || (bike ? 'OUTDOOR BIKE RIDE' : station === 'rower' ? 'ROWER' : 'TREADMILL')}
         </PixelText>
         {/* The one moving part of a console you are not touching. */}
-        <PixelText size="tiny" color={moving ? palette.secondary : tokens.disabledInk}>
-          {moving ? '- RUNNING -' : '- READY -'}
+        <PixelText size="tiny" color={moving || gpsActive ? palette.secondary : tokens.disabledInk}>
+          {bike ? (gpsActive ? (moving ? '- RIDING -' : '- GPS LIVE -') : '- GPS READY -') : (moving ? '- RUNNING -' : '- READY -')}
         </PixelText>
       </View>
 
@@ -153,8 +175,25 @@ export default function CardioConsole({
 
       {/* Which of these the machine actually knows. */}
       <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: space.sm, lineHeight: 13 }}>
-        {'Laps are quarter miles. Kcal is an estimate from your distance, pace and body weight — set it in Options.'}
+        {bike
+          ? 'GPS measures the outdoor ride. Kcal is an estimate from time, average speed and body weight — set it in Options.'
+          : 'Laps are quarter miles. Kcal is an estimate from your distance, pace and body weight — set it in Options.'}
       </PixelText>
+
+      {bike && !gpsActive && onStartGps ? (
+        <View style={{ marginTop: space.sm }}>
+          <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ lineHeight: 13 }}>
+            Start while stopped, secure the phone, then ride. Do not use the screen while the bicycle is moving.
+          </PixelText>
+          <TrailAction label="Start outdoor ride" tone="primary" style={{ marginTop: space.sm }} onPress={onStartGps} />
+        </View>
+      ) : null}
+
+      {gpsError ? (
+        <PixelText size="tiny" color={palette.danger} style={{ marginTop: space.sm, lineHeight: 13 }}>
+          {gpsError}
+        </PixelText>
+      ) : null}
 
       {onInject ? (
         <View style={{ marginTop: space.sm }}>
@@ -189,7 +228,7 @@ export default function CardioConsole({
           onStop and keeps its own way back. */}
       {onStop ? (
         <TrailAction
-          label={station === 'rower' ? 'Off the rower' : 'Step off the deck'}
+          label={bike ? (gpsActive ? 'End ride' : 'Step off the bike') : station === 'rower' ? 'Off the rower' : 'Step off the deck'}
           tone="primary"
           style={{ marginTop: space.sm }}
           onPress={onStop}

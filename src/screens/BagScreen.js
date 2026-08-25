@@ -133,6 +133,8 @@ export default function BagScreen() {
         <PixelText size="small" color={palette.windowText}>Mileage</PixelText>
         {statRow('Today', `${(today.distanceMi || 0).toFixed(1)} mi`)}
         {statRow('Lifetime', `${(state.stats.distanceMi || 0).toFixed(1)} mi`)}
+        {statRow('Cycling', `${(state.stats.cyclingMi || 0).toFixed(1)} mi`)}
+        {statRow('Bike Rides', state.stats.ridesDone || 0)}
         {statRow('Steps', state.stats.totalSteps || 0)}
         {statRow('Streak', `${state.stats.streak || 0}d`)}
         {statRow('Active Days', state.stats.daysActive || 0)}
@@ -153,7 +155,7 @@ export default function BagScreen() {
           <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6 }}>No gym exercises logged yet.</PixelText>
         )}
         <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: space.sm, lineHeight: 13 }}>
-          Runs, lifts, and true max/PR records will appear here as those sources expose structured records. We do not fabricate a PR from total reps.
+          Bike rides, runs, lifts, and true max/PR records appear as those sources expose structured records. We do not fabricate a PR from total reps.
         </PixelText>
       </Window>
     </>

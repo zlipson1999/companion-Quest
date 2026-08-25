@@ -18,7 +18,7 @@ import { playSfx } from '../audio';
 // How long the walking pulse stays lit after the last step arrives.
 const MOVING_MS = 900;
 
-export default function useCardio({ active = true, onDelta, onMilestone, routeId } = {}) {
+export default function useCardio({ active = true, gpsOnly = false, activity, onDelta, onMilestone, routeId } = {}) {
   const { state, dispatch } = useGame();
   const dist = useDistance();
   const [moving, setMoving] = useState(false);
@@ -27,17 +27,33 @@ export default function useCardio({ active = true, onDelta, onMilestone, routeId
   const lastSteps = useRef(0);
   const prevMilestones = useRef(state.stats.milestonesReached);
   const moveTimer = useRef(null);
-  const cbs = useRef({ onDelta, onMilestone, routeId });
-  cbs.current = { onDelta, onMilestone, routeId };
+  const cbs = useRef({ onDelta, onMilestone, routeId, activity });
+  cbs.current = { onDelta, onMilestone, routeId, activity };
 
   useEffect(() => {
-    if (!active) return;
+    // Starting a machine must start at zero. The distance sensor remains live
+    // while somebody walks around the room, so park the baseline whenever the
+    // console is inactive. A bike is GPS-only for the same reason: walking to
+    // the gym cannot become the first hundred metres of a ride.
+    if (!active || (gpsOnly && !dist.running)) {
+      lastMiles.current = dist.miles;
+      lastSteps.current = dist.steps;
+      return;
+    }
     const dM = dist.miles - lastMiles.current;
     const dS = dist.steps - lastSteps.current;
     if (dM <= 0 && dS <= 0) return;
     lastMiles.current = dist.miles;
     lastSteps.current = dist.steps;
-    dispatch({ type: 'ADD_DISTANCE', payload: { miles: dM, steps: dS, routeId: cbs.current.routeId } });
+    dispatch({
+      type: 'ADD_DISTANCE',
+      payload: {
+        miles: dM,
+        steps: gpsOnly ? 0 : dS,
+        routeId: cbs.current.routeId,
+        activity: cbs.current.activity,
+      },
+    });
 
     setMoving(true);
     if (moveTimer.current) clearTimeout(moveTimer.current);
@@ -45,7 +61,7 @@ export default function useCardio({ active = true, onDelta, onMilestone, routeId
 
     if (cbs.current.onDelta) cbs.current.onDelta(dM, dS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dist.miles, dist.steps, active]);
+  }, [dist.miles, dist.steps, dist.running, active, gpsOnly]);
 
   // Milestones are counted by the reducer, so watching the stat is the honest
   // way to notice one: it cannot report a milestone that was not actually paid.

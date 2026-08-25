@@ -38,13 +38,28 @@ eq('token folded to knot', next.bag.knot, 2);
 eq('token gone', next.bag.token, undefined);
 eq('existing bag item kept', next.bag.potion, 1);
 eq('history empty (days not invented)', Object.keys(next.history).length, 0);
-eq('settings.control', next.settings.control, 'stick');
+eq('settings.control', next.settings.control, 'dpad');
 eq('settings.bodyWeightLb present', typeof next.settings.bodyWeightLb, 'number');
 eq('stats.exercises present', typeof next.stats.exercises, 'object');
 eq('stats.xpCarry', typeof next.stats.xpCarry, 'number');
+eq('stats.cyclingMi default', next.stats.cyclingMi, 0);
+eq('stats.ridesDone default', next.stats.ridesDone, 0);
 eq('meta.sparDone', next.meta.sparDone, false);
 eq('trails present', typeof next.trails, 'object');
 eq('maple miles not back-credited', next.trails.progress.maple.miles, 0);
+
+const V10 = {
+  ...V1,
+  version: 10,
+  companion: undefined,
+  party: [{ id: 'emberkit', xp: 40, bond: 8, hp: 30 }],
+  stats: { totalSteps: 12000, distanceMi: 6 },
+  bag: { knot: 2 },
+};
+const fromV10 = hydrateSave(V10);
+eq('v10 lifetime distance preserved', fromV10.stats.distanceMi, 6);
+eq('v10 cycling miles not invented', fromV10.stats.cyclingMi, 0);
+eq('v10 rides not invented', fromV10.stats.ridesDone, 0);
 
 for (const id of MODULE_IDS) {
   if (!next.modules[id]) fail.push(`module ${id} missing after hydrate`);

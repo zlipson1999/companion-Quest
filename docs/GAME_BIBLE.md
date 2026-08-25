@@ -161,7 +161,7 @@ up to Rowan, who challenges with his companion → free roam.
 (your front door, the gym door, the trail carrying on north) and a 6-entry menu;
 the other eight destinations it used to list are things you now WALK to.
 Quest Fitness: every piece of iron opens the Forge, Coach hands you a session
-off the shelf, treadmill and rower are cardio in the room, the turf and the
+off the shelf, treadmills, GPS-linked bikes and rowers are cardio in the room, the turf and the
 mats each open the routine they are FOR, the mirror is form check, lockers are
 your bag, reception is your record, the cork noticeboard (`G`) is this week
 among friends, the whiteboard is your week, the bar spends credit. Your house:
@@ -251,7 +251,8 @@ material does.
 The gym: **racks along the north wall** on the lifting platform (a power rack is
 bolted to a wall in every gym that owns one), **free weights down the west
 wall** with the whole wall mirrored behind them, **cardio down the east wall**
-in one unbroken line, **selectorised machines in the middle** in two rows with
+in one unbroken line — three treadmills, two stationary bikes and two rowers —
+**selectorised machines in the middle** in two rows with
 an aisle, the **functional end at the south** — turf one side, matting the
 other — and **front of house at the door**.
 
@@ -324,7 +325,7 @@ are grown, never knotted.
 
 ### 5.4 The Route & distance (`screens/RouteScreen.js`, `state/useDistance.js`)
 
-- `STEPS_PER_MILE = 2000`. `ADD_DISTANCE` accrues miles, pays walking XP with
+- `STEPS_PER_MILE = 2000`. `ADD_DISTANCE` accrues miles, pays distance XP with
   the fractional carry, advances `routeMi`, and fires milestones
   (item from `PICKUP_POOL`: apple×2, water×2, energybar, charm, knot×2 —
   knots recur so befriending stays possible).
@@ -336,8 +337,12 @@ are grown, never knotted.
   game can afford to let drift. Encounters stay with the trail — indoors there
   is nothing to meet — so the hook hands back the delta and the caller decides.
   **Gym cardio must not pass `routeId`.** Indoor miles still count as real
-  walking (XP, credit, lifetime stats) but they do not fill a trail quota.
-- **Six trails** (`src/data/routes.js`), save `version: 10`. Maple Trail is
+  movement (XP, credit, lifetime stats) but they do not fill a trail quota.
+  The gym bike is the deliberate hybrid: the in-game machine stays indoors,
+  but Start begins a real outdoor bicycle ride through the same GPS watcher as
+  a run. Those deltas carry `activity: 'ride'`, add to `cyclingMi`, pay normal
+  distance rewards and never receive a `routeId`.
+- **Six trails** (`src/data/routes.js`), save `version: 11`. Maple Trail is
   unlocked from the start. Walk that trail's miles and confirm its reps in
   challenges, then Challenge the Warden. First win grants the Quest Pin, a
   Kinship Knot, and the next trail. Wild companion pick is random from that
@@ -384,9 +389,11 @@ are grown, never knotted.
      a throwaway build with the gate lifted, and the gate put back after.
   The Route names which source is live; `pedDiag` prints host/OS/permission/
   error in the failure box.
-- GPS runs: `watchPositionAsync` High accuracy, 5 m / 2 s; haversine per fix,
+- GPS runs and bicycle rides: `watchPositionAsync` High accuracy, 5 m / 2 s; haversine per fix,
   deltas outside 1–80 m discarded as jitter/jumps; step-miles suppressed while
-  running (no double count). Location is used for the delta and discarded.
+  GPS is live (no double count). Location is used for the delta and discarded.
+  A ride must be started and stopped while the real bicycle is parked; the
+  console tells the player to secure the phone and not use it while moving.
 
 ### 5.6 Trail Credit (`state/economy.js`, `data/shop.js`)
 
@@ -396,7 +403,7 @@ this one is minted by REAL EFFORT and nothing else.
 
 | source | credit |
 |---|---|
-| a walked mile (`CREDIT_PER_MILE`) | 10 |
+| a real distance mile (`CREDIT_PER_MILE`) | 10 |
 | a completed session (`CREDIT_PER_SESSION`) | 8 |
 | a challenge won (`CREDIT_PER_WIN`) | 6 |
 | a habit goal hit (`CREDIT_PER_GOAL`) | 4 |
@@ -442,7 +449,7 @@ showing up would have.
 ### 5.7 The cardio console (`components/CardioConsole.js`, `state/cardioMaths.js`)
 
 Cardio is a machine you stand ON, in the room, not a screen that takes over the
-phone. Walking into the treadmill moves you onto the tile — the same 120 ms
+phone. Walking into a treadmill or bike moves you onto the tile — the same 120 ms
 tween every other step in that room uses, so no bespoke mount animation was
 needed — the stick hides, movement is disabled (the button is how you get off,
 the way the bar is on a real one), and the gym stays on screen above.
@@ -460,10 +467,21 @@ meters) and no `onStop`, because outdoors there is no getting off a trail.
 | PACE | distance over time; prints `--:--` below 0.02 mi or 5 s |
 | KCAL | **the only ESTIMATE, and the console says so** |
 | STEPS / SETS / REPS | measured / counted |
+| SPEED (bike) | GPS distance over elapsed ride time; `--.-` below 0.02 mi or 5 s |
+| GPS (bike) | `READY` before permission/start, `LIVE` once the watcher is active |
 
 - `KCAL_PER_LB_MILE_WALK = 0.53`, `KCAL_PER_LB_MILE_RUN = 0.75`, chosen between
   by measured pace at `RUN_PACE_MIN_PER_MILE = 12`. About 82 and 116 kcal a
   mile at 155 lb; a 5K at 170 lb reads 395.
+- Bicycle kcal uses gross MET bands from average GPS speed: 4 below 10 mph,
+  6.8 below 12, 8 below 14, 10 below 16 and 12 above that. It is explicitly
+  labelled an estimate because the phone cannot see grade, wind or resistance.
+- Treadmill animation alternates the authored walk/run frames only when step
+  deltas arrive. The rider uses the side-on frames only when GPS distance
+  arrives. An idle sensor means an idle character; neither machine fakes work.
+- Completing a bike session of at least 0.01 mi and 5 s adds one to
+  `ridesDone` / that day's `rides`. Phone mileage and Reception show cycling
+  miles and ride count separately while lifetime distance keeps the common total.
 - That needs a body weight, which the app did not have.
   `settings.bodyWeightLb` is stored in POUNDS whatever the display unit is, set
   in Options, and read by nothing else.
@@ -682,7 +700,7 @@ faint.
 4. `backlight()` (rim opposite the key light) and `spec()` (hotspots) are what
    read as "modern".
 
-### 8.3 Sprite inventory (295 runtime sprites + 416 atlas cells)
+### 8.3 Sprite inventory (295 runtime sprites + 417 atlas cells)
 
 The count includes the traced regalia set landed with the Warden/badge/charm
 plates: 10 unique Warden bodies (the Horizon Wardens no longer wear recolored
@@ -821,17 +839,18 @@ board_update, friend_request, friend_accept + bgm_town / bgm_battle loops.
 `audio/sfx.js` wraps expo-av; every call degrades silently (web autoplay,
 early calls). BGM switching lives in Router via TOWN_BGM.
 
-## 12. Save format — `companionquest:save:v1` key, `version: 10`
+## 12. Save format — `companionquest:save:v1` key, `version: 11`
 
 ```js
-{ version: 10, started, goalId,                    // 'muscle'|'lean'|'root'
+{ version: 11, started, goalId,                    // 'muscle'|'lean'|'root'
   playerOutfit, playerGender,                     // one-time, v6
   party: [{ id, baseId, xp, bond, evo, hp,
             charm }],                             // ≤6; charm = worn Trail
                                                   // Charm id or absent (§6.1)
   activeIndex,
   credits,                                        // Trail Credit, v7
-  stats: { totalSteps, distanceMi, routeMi, xpCarry, creditCarry,
+  stats: { totalSteps, distanceMi, cyclingMi, ridesDone,
+           routeMi, xpCarry, creditCarry,
            milestonesReached, battlesWon, battlesLost, caught, workoutsDone,
            itemsCollected, habitLogs, habitGoalsHit, daysActive, streak,
            sets, reps, holdSec,                   // real exercise done
@@ -841,8 +860,9 @@ early calls). BGM switching lives in Router via TOWN_BGM.
                      lastGoalDate, goalDays, totalCount, totalLogs,
                      paid?, goalCredit?, bonusPaid?,        // replaces-modules
                      plans?, log?, records?, bests? } },    // forge-owned
-  history: { 'YYYY-MM-DD': { xp, bond, distanceMi, battles, workouts,
-             sessions, habitLogs, goalsMet, restDays→rested, load } },
+  history: { 'YYYY-MM-DD': { xp, bond, distanceMi, cyclingMi, rides,
+             battles, workouts, sessions, habitLogs, goalsMet,
+             restDays→rested, load } },
   settings: { muted, bgmMuted, units, control, bodyWeightLb },
                                                   // units 'lb'|'kg' (a LABEL
                                                   // for the Forge); control
@@ -869,6 +889,8 @@ Migrations, all in HYDRATE — and every one of them refuses to invent history:
 | v6→7 | `credits: 0` — NOT back-paid for miles the app was not minting on |
 | v7→8 | `bag.token` → `bag.knot`, carried across rather than voided: somebody's count is somebody's earned work |
 | v8→9 | `trails` — Maple Trail at zero miles/reps, no pins. Older miles are not back-credited: they were not trail-tagged, and gym miles must never fill a trail quota |
+| v9→10 | D-Pad becomes the default; a stored `stick` from before the choice existed migrates once |
+| v10→11 | `cyclingMi` / `ridesDone` default to zero, preserving all existing lifetime distance without inventing old bicycle history |
 
 Plus, every load: goal ids translated, `rollAllModules` day roll, and a
 `MODULE_RESET_DAY` self-heal from the Habits screens so a session left open past
@@ -1062,7 +1084,7 @@ A change is done only when all applicable items are true:
 6. **Privacy/safety/service operations are undocumented** — no privacy policy,
    coach retention/deletion contract, production rate limits or release safety
    language.
-7. **Lifecycle behavior is undefined** for interrupted GPS runs, battles and
+7. **Lifecycle behavior is undefined** for interrupted GPS runs/rides, battles and
    Forge sessions.
 8. **No performance/battery/device budgets or compatibility matrix.**
 
@@ -1110,4 +1132,3 @@ A change is done only when all applicable items are true:
 *Audited against the current codebase. Sections marked OPEN are deliberately
 unresolved; update them when the owner decides rather than letting code make the
 decision accidentally.*
-

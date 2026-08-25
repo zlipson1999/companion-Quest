@@ -7,7 +7,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "python3 tools/check_docs.py && python3 tools/check_art.py && node --check server/index.js && npm --prefix server run test:auth && node tools/run_friends_test.js"
+    "test": "python3 tools/check_docs.py && python3 tools/check_art.py && node --import ./tools/register-esm.mjs tools/test_hydrate.mjs && node --import ./tools/register-esm.mjs tools/test_cardio.mjs && node --check server/index.js && npm --prefix server run test:auth && node tools/run_friends_test.js"
   },
   "dependencies": {
     "@expo-google-fonts/press-start-2p": "^0.2.3",
