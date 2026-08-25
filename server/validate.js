@@ -33,7 +33,10 @@
 // records sit around 200. 75 is far above any real player and far below the
 // numbers you get from a fabricated total.
 const MAX_MILES_PER_DAY = 75;
+const MAX_CYCLING_MILES_PER_DAY = 300;
+const MAX_TOTAL_MILES_PER_DAY = MAX_MILES_PER_DAY + MAX_CYCLING_MILES_PER_DAY;
 const MAX_STEPS_PER_DAY = 150000;
+const MAX_RIDES_PER_DAY = 12;
 
 // Stride bounds, in miles per step. A short stride is ~1.5 ft, a running stride
 // ~5 ft. Outside this the two numbers did not come from the same activity.
@@ -81,7 +84,9 @@ function checkDay(raw, today) {
   const day = {
     date: raw.date,
     steps: Math.round(num(raw.steps, MAX_STEPS_PER_DAY * 10)),
-    distance_mi: Math.round(num(raw.distanceMi, MAX_MILES_PER_DAY * 10) * 1000) / 1000,
+    distance_mi: Math.round(num(raw.distanceMi, MAX_TOTAL_MILES_PER_DAY * 10) * 1000) / 1000,
+    cycling_mi: Math.round(num(raw.cyclingMi, MAX_CYCLING_MILES_PER_DAY * 10) * 1000) / 1000,
+    rides: Math.round(num(raw.rides, MAX_RIDES_PER_DAY * 10)),
     workouts: Math.round(num(raw.workouts, MAX_WORKOUTS_PER_DAY * 10)),
     sets: Math.round(num(raw.sets, MAX_SETS_PER_DAY * 10)),
     reps: Math.round(num(raw.reps, MAX_REPS_PER_DAY * 10)),
@@ -91,14 +96,20 @@ function checkDay(raw, today) {
   };
 
   let flagged = null;
-  if (day.distance_mi > MAX_MILES_PER_DAY) flagged = 'distance beyond a human day';
+  const footMi = Math.max(0, day.distance_mi - day.cycling_mi);
+  if (day.distance_mi > MAX_TOTAL_MILES_PER_DAY) flagged = 'distance beyond a human day';
+  else if (day.cycling_mi > day.distance_mi) flagged = 'cycling exceeds total distance';
+  else if (day.cycling_mi > MAX_CYCLING_MILES_PER_DAY) flagged = 'cycling beyond a human day';
+  else if (footMi > MAX_MILES_PER_DAY) flagged = 'foot distance beyond a human day';
+  else if (day.rides > MAX_RIDES_PER_DAY) flagged = 'more rides than a day holds';
   else if (day.steps > MAX_STEPS_PER_DAY) flagged = 'step count beyond a human day';
   else if (day.workouts > MAX_WORKOUTS_PER_DAY) flagged = 'more sessions than a day holds';
   else if (day.sets > MAX_SETS_PER_DAY || day.reps > MAX_REPS_PER_DAY) flagged = 'more work than a day holds';
   else if (day.hold_sec > MAX_HOLD_SEC_PER_DAY) flagged = 'more time held than a day holds';
-  else if (day.steps > 500 && day.distance_mi > 0.1) {
-    // Only worth checking once there is enough of both to have a ratio.
-    const perStep = day.distance_mi / day.steps;
+  else if (day.steps > 500 && footMi > 0.1) {
+    // Bicycle GPS miles have no steps. Compare the pedometer only with the
+    // non-cycling portion or a legitimate mixed walk/ride day looks fake.
+    const perStep = footMi / day.steps;
     if (perStep < MIN_MI_PER_STEP) flagged = 'too many steps for that distance';
     else if (perStep > MAX_MI_PER_STEP) flagged = 'too much distance for those steps';
   }
@@ -145,6 +156,7 @@ module.exports = {
   checkRecord,
   isDateKey,
   MAX_MILES_PER_DAY,
+  MAX_CYCLING_MILES_PER_DAY,
   MAX_STEPS_PER_DAY,
   MAX_BACKFILL_DAYS,
 };

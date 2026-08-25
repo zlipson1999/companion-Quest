@@ -176,8 +176,8 @@ export default function CardioConsole({
       {/* Which of these the machine actually knows. */}
       <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: space.sm, lineHeight: 13 }}>
         {bike
-          ? 'GPS measures the outdoor ride. Kcal is an estimate from time, average speed and body weight — set it in Options.'
-          : 'Laps are quarter miles. Kcal is an estimate from your distance, pace and body weight — set it in Options.'}
+          ? 'GPS measures the outdoor ride. Logged as bike cardio only: no trail progress or Trail Credit. Kcal is an estimate.'
+          : 'Gym cardio is recorded, but earns no trail progress or Trail Credit. Kcal is an estimate from pace and body weight.'}
       </PixelText>
 
       {bike && !gpsActive && onStartGps ? (

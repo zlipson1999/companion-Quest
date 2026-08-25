@@ -27,7 +27,7 @@ function Wallet({ credits }) {
         <PixelText size="tiny" color={tokens.textOnDarkDim}>Trail Credit</PixelText>
       </View>
       <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 6, lineHeight: 14 }}>
-        {`Earned by moving, never bought: ${CREDIT_PER_MILE} a mile, ${CREDIT_PER_SESSION} a session, ${CREDIT_PER_GOAL} for a habit goal you hit.`}
+        {`Earned by effort, never bought: ${CREDIT_PER_MILE} an outdoor trail mile, ${CREDIT_PER_SESSION} a session, ${CREDIT_PER_GOAL} for a habit goal. Gym cardio does not mint it.`}
       </PixelText>
     </FieldCard>
   );
@@ -40,7 +40,7 @@ function StockLine({ line, owned, credits, onBuy }) {
   // will not answer a tap tells you nothing; this one tells you exactly how
   // far short you are, in the unit you close the gap with.
   const sublabel = short > 0
-    ? `${line.price} credit · ${short} short, about ${(short / CREDIT_PER_MILE).toFixed(1)} miles`
+    ? `${line.price} credit · ${short} short, about ${(short / CREDIT_PER_MILE).toFixed(1)} trail miles`
     : `${line.price} credit · ${line.note}`;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: space.sm }}>
@@ -84,11 +84,12 @@ export default function SmoothieBarScreen() {
   const buy = (line, item) => {
     if (credits < line.price) {
       // Say what is missing rather than just refusing. The number is the whole
-      // answer to "why not", and it is also the distance you have to walk.
+      // answer to "why not", and it is also the outdoor trail distance that
+      // would close the gap. Gym cardio never enters this conversion.
       const short = line.price - credits;
       const miles = (short / CREDIT_PER_MILE).toFixed(1);
       playSfx('cancel');
-      setToast(`${short} credit short for the ${item.name}. That is about ${miles} more miles.`);
+      setToast(`${short} credit short for the ${item.name}. That is about ${miles} more outdoor trail miles.`);
       return;
     }
     dispatch({ type: 'BUY_ITEM', payload: { itemId: line.itemId } });

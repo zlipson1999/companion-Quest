@@ -761,9 +761,27 @@ button that needs it is now its own component, mounted only when configured.
 and a device. Everything downstream of the token is tested —
 `npm --prefix server run test:friends`, 21 checks over HTTP.
 
+## Phase 16 — DONE: gym cardio is recorded without becoming a trail
+
+The stationary bikes remain only on the Quest Fitness floor. Starting one
+measures a real outdoor bicycle ride with GPS, but the game character never
+leaves the in-gym machine. Treadmills continue to use real phone movement.
+
+The reducer now owns a single hard boundary for both: bike and treadmill miles
+may pay general companion distance XP and remain part of lifetime fitness/load,
+but they cannot carry a trail id, fill a trail quota, advance the trail
+milestone meter, roll an encounter, or mint Trail Credit. The console and
+Maple's full-floor tour say the same thing.
+
+Cycling data reaches every current cardio surface: daily history, lifetime
+stats, Phone, Reception, Week, Coach context, a local noticeboard card, and a
+fifth signed-in Bike board. The day-sync/database path now stores checked
+`cyclingMi` and ride count, with an additive database migration. A bounded
+120-row cardio-session log records machine, date, duration and mileage for the
+Phone and Reception; save v12 preserves old totals but invents no old sessions.
+
 ## Phase 6 — ideas, not committed
 
 Reading / chores / social check-in modules; per-movement progression charts off
 the PR data; exporting history; letting the Coach propose a plan the Forge can
 import.
-

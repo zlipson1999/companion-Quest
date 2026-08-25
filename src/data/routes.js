@@ -6,8 +6,8 @@
 // Canopy 15, then the two long trails past eight miles.
 //
 // Gym cardio MUST NOT pass a routeId into ADD_DISTANCE — indoor miles are
-// real, but they are not trail miles, and a treadmill must never fill a
-// quota you are supposed to walk.
+// real fitness history, but they are not trail miles, and a treadmill/bike
+// must never fill a quota, advance trail milestones, or mint Trail Credit.
 //
 // Original terms only: trail, Keeper, Warden, Quest Pin. This file may import
 // creatures.js; creatures.js must never import this file.

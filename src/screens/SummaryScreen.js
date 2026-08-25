@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { ScrollView, View } from 'react-native';
-import { Screen, Window, ProgressBar, HPBar, PixelText, PixelButton, PixelSprite } from '../components';
+import { Screen, Window, ProgressBar, HPBar, PixelText, PixelButton, PixelSprite, CardioHistoryList } from '../components';
 import { EVO_SOURCES, evolveHint, evolveProgress } from '../state/evolution';
 import { evolveChecklist, bondMilestoneText } from '../state/companionLife';
 import { palette, space } from '../theme';
@@ -13,7 +13,8 @@ import { getGoal } from '../data/goals';
 import { ROUTES, normalizeTrails } from '../data/routes';
 import { breakdownSince } from '../data/exercises';
 import { getWorkout } from '../data/workouts';
-import { moduleSprite } from '../modules';
+import { moduleSprite, todayKey } from '../modules';
+import { totals, weekOf } from '../state/history';
 
 function StatCell({ label, value, color }) {
   return (
@@ -43,6 +44,7 @@ export default function SummaryScreen() {
   const milestone = companion ? bondMilestoneText(companion.creature, companion.bond) : null;
   const memories = (companion && companion.memories) || [];
   const s = state.stats;
+  const thisWeek = React.useMemo(() => totals(weekOf(state.history, todayKey())), [state.history]);
   // The same diff the cardio console runs, against a zero baseline: the
   // console reports the walk you are on and forgets it when you go home, and
   // "how many push-ups have I ever done" is the one number a fitness game
@@ -164,9 +166,10 @@ export default function SummaryScreen() {
             Your Journey
           </PixelText>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            <StatCell label="Distance" value={`${(s.distanceMi || 0).toFixed(2)} mi`} color={palette.primaryDark} />
-            <StatCell label="Cycling" value={`${(s.cyclingMi || 0).toFixed(2)} mi`} color={palette.primaryDark} />
+            <StatCell label="Total distance" value={`${(s.distanceMi || 0).toFixed(2)} mi`} color={palette.primaryDark} />
+            <StatCell label="Bike distance" value={`${(s.cyclingMi || 0).toFixed(2)} mi`} color={palette.primaryDark} />
             <StatCell label="Bike rides" value={s.ridesDone || 0} color={palette.accentDark} />
+            <StatCell label="Bike this week" value={`${(thisWeek.cyclingMi || 0).toFixed(2)} mi`} color={palette.accentDark} />
             <StatCell label="Total steps" value={s.totalSteps.toLocaleString()} />
             <StatCell label="Milestones" value={s.milestonesReached} />
             <StatCell label="Companions" value={s.caught || 0} color={palette.success} />
@@ -183,6 +186,16 @@ export default function SummaryScreen() {
             <StatCell label="Day streak" value={`${s.streak} days`} color={palette.accentDark} />
             <StatCell label="Days active" value={s.daysActive} />
           </View>
+        </Window>
+
+        <Window tone="cream" pad={12} style={{ marginTop: space.md }}>
+          <PixelText size="small" color={palette.accentDark} style={{ marginBottom: 6 }}>
+            Recent Cardio
+          </PixelText>
+          <CardioHistoryList sessions={state.cardioSessions} limit={6} />
+          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: space.sm, lineHeight: 13 }}>
+            Gym bikes and treadmills are fitness records only. They add no trail progress or Trail Credit.
+          </PixelText>
         </Window>
 
         {everDone.length ? (

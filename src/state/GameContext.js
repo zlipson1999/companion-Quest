@@ -28,6 +28,8 @@ import { computeRecovery } from './recovery';
 import { XP_PER_MILE, pointsFor, xpFor } from './evolution';
 import { CREDIT_PER_GOAL, CREDIT_PER_MILE, CREDIT_PER_SESSION, CREDIT_PER_WIN, mint } from './economy';
 import { FRESH, hydrateSave } from './hydrate';
+import { appendCardioSession } from './cardioHistory';
+import { distancePolicy } from './distancePolicy';
 import {
   liveOnMember,
   applyHeartstone,
@@ -175,12 +177,16 @@ function reducer(state, action) {
       const mi = Math.max(0, action.payload.miles || 0);
       const steps = Math.max(0, Math.floor(action.payload.steps || 0));
       const ride = action.payload.activity === 'ride';
+      const policy = distancePolicy(action.payload);
       if (mi <= 0 && steps <= 0) return state;
       const pacing = pacingForGoal(state.goalId);
-      let routeMi = state.stats.routeMi + mi;
+      // Only a selected outdoor trail owns the encounter/milestone meter.
+      // Treadmill and bicycle miles remain fitness history without becoming a
+      // second route into trail rewards.
+      let routeMi = state.stats.routeMi + (policy.advancesTrailMilestones ? mi : 0);
       let milestonesReached = state.stats.milestonesReached;
       let hitMilestones = 0;
-      while (routeMi >= pacing.milestoneMi) {
+      while (policy.advancesTrailMilestones && routeMi >= pacing.milestoneMi) {
         routeMi -= pacing.milestoneMi;
         milestonesReached += 1;
         hitMilestones += 1;
@@ -190,7 +196,9 @@ function reducer(state, action) {
       const active = state.party[state.activeIndex];
       const activeCreature = active ? getCreature(active.id) : null;
       const lifeCtx = encounterContext(state, { trailId: action.payload.routeId, sessionMiles: mi });
-      const trailMi = trailMilesForPassive(activeCreature, mi, lifeCtx);
+      const trailMi = policy.advancesTrail
+        ? trailMilesForPassive(activeCreature, mi, lifeCtx)
+        : 0;
       const todayMi = ((state.history && state.history[today()] && state.history[today()].distanceMi) || 0) + mi;
       const withEvo = updateActive(state, (m) => {
         let mem = applyEffect(m, {
@@ -207,12 +215,14 @@ function reducer(state, action) {
         }, state);
         return mem;
       });
-      const earned = mint(state, mi * CREDIT_PER_MILE);
+      const earned = policy.earnsTrailCredit
+        ? mint(state, mi * CREDIT_PER_MILE)
+        : null;
       const trails = addTrailMiles(state.trails, action.payload.routeId, trailMi);
       return {
         ...withEvo,
         trails,
-        credits: earned.credits,
+        credits: earned ? earned.credits : state.credits,
         history: remember(state, {
           steps,
           distanceMi: mi,
@@ -223,7 +233,7 @@ function reducer(state, action) {
         stats: {
           ...state.stats,
           xpCarry: carry - walkXp,
-          creditCarry: earned.creditCarry,
+          creditCarry: earned ? earned.creditCarry : state.stats.creditCarry,
           totalSteps: state.stats.totalSteps + steps,
           distanceMi: state.stats.distanceMi + mi,
           cyclingMi: (state.stats.cyclingMi || 0) + (ride ? mi : 0),
@@ -234,14 +244,22 @@ function reducer(state, action) {
     }
 
     case 'COMPLETE_CARDIO': {
-      const { station, miles = 0, seconds = 0 } = action.payload || {};
-      if (station !== 'bike' || miles < 0.01 || seconds < 5) return state;
+      const { station, miles = 0, seconds = 0, endedAt } = action.payload || {};
+      const cardioSessions = appendCardioSession(state.cardioSessions, {
+        station,
+        miles,
+        seconds,
+        endedAt,
+      });
+      if (cardioSessions === state.cardioSessions) return state;
+      const ride = station === 'bike';
       return {
         ...state,
-        history: remember(state, { rides: 1 }),
+        cardioSessions,
+        history: remember(state, { cardioSessions: 1, rides: ride ? 1 : 0 }),
         stats: {
           ...state.stats,
-          ridesDone: (state.stats.ridesDone || 0) + 1,
+          ridesDone: (state.stats.ridesDone || 0) + (ride ? 1 : 0),
         },
       };
     }

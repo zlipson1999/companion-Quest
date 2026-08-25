@@ -49,11 +49,11 @@ const TOUR_STOPS = [
   ] },
   { at: { x: 7, y: 16 }, face: 'down', lines: [
     { speaker: 'Coach Maple', text: 'The cork noticeboard. This is where friends live. Sign in, read your trail code to someone you actually train near, and once you BOTH agree you can see each other.' },
-    { speaker: 'Coach Maple', text: 'Four boards: miles this week, days active, sessions done - those wipe clean every Monday so nobody wins on seniority - and personal bests, which stand until someone beats them. Only real, checked days make the board.' },
+    { speaker: 'Coach Maple', text: 'Five boards: total miles, bike miles, days active, sessions done - those wipe clean every Monday so nobody wins on seniority - and personal bests, which stand until someone beats them. Only real, checked days make the board.' },
   ] },
   { at: { x: 11, y: 16 }, face: 'down', lines: [
-    { speaker: 'Coach Maple', text: 'The smoothie bar. The one place in this world money gets spent - and the money is Trail Credit, minted by effort only: ten a mile walked, eight a session, four a habit goal hit. There is no other way to get it. None.' },
-    { speaker: 'Coach Maple', text: 'What it buys: blends that heal your companion, deepen the bond, or fuel a session - each one logs as a real meal choice. Water and apples for the trail. And Kinship Knots, about two and a half miles of walking each - you will need those to bond with wild companions.' },
+    { speaker: 'Coach Maple', text: 'The smoothie bar. The one place in this world money gets spent - and the money is Trail Credit, minted by effort only: ten an outdoor trail mile, eight a session, four a habit goal hit. Gym cardio never mints it. There is no other way to get it.' },
+    { speaker: 'Coach Maple', text: 'What it buys: blends that heal your companion, deepen the bond, or fuel a session - each one logs as a real meal choice. Water and apples for the trail. And Kinship Knots, about two and a half outdoor trail miles each - you will need those to bond with wild companions.' },
   ] },
   { at: { x: 2, y: 16 }, face: 'down', lines: [
     { speaker: 'Coach Maple', text: 'Lockers - your bag. Everything you buy or find on the trail lives here. Walk in to use an item: an apple heals a little, a blend heals more, a charm deepens bond. Same bag whether you open it here, at home, or mid-battle.' },
@@ -90,11 +90,11 @@ const TOUR_STOPS = [
   ] },
   { at: { x: 14, y: 6 }, face: 'right', lines: [
     { speaker: 'Coach Maple', text: 'The deck. Step on and the console starts: time, distance, pace, calories from your real body weight. It counts your phone steps - only REAL movement moves the number. There is no button that walks for you, here or anywhere in your life.' },
-    { speaker: 'Coach Maple', text: 'Deck miles are real miles - they pay XP and ten credit each - but they do not fill a TRAIL. Trails want you outside; the Wardens can tell the difference.' },
+    { speaker: 'Coach Maple', text: 'Deck miles stay in your cardio record. They can help your companion grow, but they never fill a trail, move its milestone meter, roll an encounter, or earn Trail Credit. Trail work starts only after you choose a trail outside.' },
   ] },
   { at: { x: 14, y: 9 }, face: 'right', lines: [
     { speaker: 'Coach Maple', text: 'The bikes. This one stays here; you do not. Start a ride, secure your phone, then take your real bicycle outside. GPS measures the miles while your person pedals here with you.' },
-    { speaker: 'Coach Maple', text: 'Ride miles pay the same distance XP and Trail Credit as honest cardio, and the Phone keeps them as cycling miles. They never fill a walking trail. Start and stop only while the real bike is parked.' },
+    { speaker: 'Coach Maple', text: 'The Phone, Reception, your Week and this noticeboard all keep the ride as cycling mileage. It never fills a trail, moves its milestones, rolls encounters, or earns Trail Credit. Start and stop only while the real bike is parked.' },
   ] },
   { at: { x: 14, y: 11 }, face: 'right', lines: [
     { speaker: 'Coach Maple', text: 'The rowers. Same console, same rule: it counts what your body actually does, and stepping off ends the session honestly.' },
@@ -279,7 +279,6 @@ export default function GymScreen() {
     active: !!cardio,
     gpsOnly: !!(cardio && cardio.station === 'bike'),
     activity: cardio && cardio.station === 'bike' ? 'ride' : 'gym-cardio',
-    onMilestone: (item) => setNote(`Milestone — you picked up ${item.name}.`),
   });
 
   const stepOn = (code, at, kind) => {
@@ -327,8 +326,11 @@ export default function GymScreen() {
       const miles = Math.max(0, state.stats.distanceMi - cardio.base.miles);
       if (cardio.station === 'bike') {
         if (dist.running) dist.stopRun();
-        dispatch({ type: 'COMPLETE_CARDIO', payload: { station: 'bike', miles, seconds } });
       }
+      dispatch({
+        type: 'COMPLETE_CARDIO',
+        payload: { station: cardio.station, miles, seconds, endedAt: new Date().toISOString() },
+      });
       apply({ ...cardio.from });
     }
     setCardio(null);

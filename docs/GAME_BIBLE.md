@@ -112,7 +112,7 @@ src/
   screens/     Router + 30 screens (§4), plus useCardio (the one path real
                distance takes into the game) and placeMemory (where you were
                standing in each place)
-  components/  30 building blocks (§9)
+  components/  31 building blocks (§9)
   modules/     the life-module plugin system + 5 modules + forge/ (§7)
   coach/       persona, guardrail, lines, context, local (offline brain), api
   audio/       sfx.js (expo-av wrapper, degrades silently)
@@ -337,12 +337,14 @@ are grown, never knotted.
   game can afford to let drift. Encounters stay with the trail — indoors there
   is nothing to meet — so the hook hands back the delta and the caller decides.
   **Gym cardio must not pass `routeId`.** Indoor miles still count as real
-  movement (XP, credit, lifetime stats) but they do not fill a trail quota.
+  movement (general distance XP, load and lifetime/cardio history), but they do
+  not fill a trail quota, advance its milestone meter, roll encounters, or
+  mint Trail Credit.
   The gym bike is the deliberate hybrid: the in-game machine stays indoors,
   but Start begins a real outdoor bicycle ride through the same GPS watcher as
-  a run. Those deltas carry `activity: 'ride'`, add to `cyclingMi`, pay normal
-  distance rewards and never receive a `routeId`.
-- **Six trails** (`src/data/routes.js`), save `version: 11`. Maple Trail is
+  a run. Those deltas carry `activity: 'ride'`, add to `cyclingMi`, may pay
+  general distance XP, and never receive a `routeId` or trail-only rewards.
+- **Six trails** (`src/data/routes.js`), save `version: 12`. Maple Trail is
   unlocked from the start. Walk that trail's miles and confirm its reps in
   challenges, then Challenge the Warden. First win grants the Quest Pin, a
   Kinship Knot, and the next trail. Wild companion pick is random from that
@@ -403,11 +405,14 @@ this one is minted by REAL EFFORT and nothing else.
 
 | source | credit |
 |---|---|
-| a real distance mile (`CREDIT_PER_MILE`) | 10 |
+| a selected outdoor trail mile (`CREDIT_PER_MILE`) | 10 |
 | a completed session (`CREDIT_PER_SESSION`) | 8 |
 | a challenge won (`CREDIT_PER_WIN`) | 6 |
 | a habit goal hit (`CREDIT_PER_GOAL`) | 4 |
 
+- Distance credit is minted only when `ADD_DISTANCE` carries a selected outdoor
+  `routeId`; gym bike/treadmill miles leave both `credits` and `creditCarry`
+  untouched.
 - Minted on the same fractional carry as walking XP (`stats.creditCarry`);
   rounding each thousandth-of-a-mile dispatch alone would floor every one of
   them to zero.
@@ -423,7 +428,7 @@ this one is minted by REAL EFFORT and nothing else.
 
 **The smoothie bar** (front of Quest Fitness). Prices are written in MILES and
 converted through `CREDIT_PER_MILE`, so every price reads as "this much real
-walking" and the whole board moves if the earn rate is retuned.
+outdoor trail walking" and the whole board moves if the earn rate is retuned.
 
 | shelf | item | price |
 |---|---|---|
@@ -482,6 +487,15 @@ meters) and no `onStop`, because outdoors there is no getting off a trail.
 - Completing a bike session of at least 0.01 mi and 5 s adds one to
   `ridesDone` / that day's `rides`. Phone mileage and Reception show cycling
   miles and ride count separately while lifetime distance keeps the common total.
+- Completing any bike/treadmill/rower session of at least 0.01 mi and 5 s adds
+  `{station,miles,seconds,endedAt}` to the bounded 120-row `cardioSessions`
+  list. Phone and Reception show the recent rows; v12 does not expand older
+  daily totals into invented sessions.
+- The Phone, Reception, Week and local noticeboard card expose cycling mileage.
+  Signed-in day sync sends `cyclingMi` / `rides`, and the fifth noticeboard tab
+  ranks checked weekly bike miles among accepted friends.
+- The machine fascia says the boundary in play: bicycle and treadmill mileage
+  never advances a trail or earns Trail Credit.
 - That needs a body weight, which the app did not have.
   `settings.bodyWeightLb` is stored in POUNDS whatever the display unit is, set
   in Options, and read by nothing else.
@@ -504,6 +518,8 @@ diffs that map against the session baseline exactly the way distance is diffed.
 
 - `history[dateKey]` day records, `KEEP_DAYS = 60`, written by one reducer
   helper (`remember`); numbers add, booleans OR.
+- Cardio day rows include `cyclingMi`, `rides` and `cardioSessions`; the separate
+  bounded session list preserves machine/date/duration/mileage detail.
 - Training load: battle 2.5, mile 1.2, workout-XP × 0.06, forge session =
   `loadOf(analysis)`.
 - Recovery: acute (7d) vs chronic (28d scaled to 7) ratio + consecutive
@@ -787,9 +803,9 @@ whose stages are too similar. The `sphere()` + `eye()` recipe is how
 the first trail pass came out as twelve interchangeable blobs and is
 not used again.
 
-## 9. UI components (30)
+## 9. UI components (31)
 
-`src/components/index.js` exports 30. HorizonSky is its own painter so the
+`src/components/index.js` exports 31. HorizonSky is its own painter so the
 stage and the walk cannot drift; GrowthCeremony is the evolution hold, not a
 flash. Both count.
 
@@ -839,10 +855,10 @@ board_update, friend_request, friend_accept + bgm_town / bgm_battle loops.
 `audio/sfx.js` wraps expo-av; every call degrades silently (web autoplay,
 early calls). BGM switching lives in Router via TOWN_BGM.
 
-## 12. Save format — `companionquest:save:v1` key, `version: 11`
+## 12. Save format — `companionquest:save:v1` key, `version: 12`
 
 ```js
-{ version: 11, started, goalId,                    // 'muscle'|'lean'|'root'
+{ version: 12, started, goalId,                    // 'muscle'|'lean'|'root'
   playerOutfit, playerGender,                     // one-time, v6
   party: [{ id, baseId, xp, bond, evo, hp,
             charm }],                             // ≤6; charm = worn Trail
@@ -861,8 +877,9 @@ early calls). BGM switching lives in Router via TOWN_BGM.
                      paid?, goalCredit?, bonusPaid?,        // replaces-modules
                      plans?, log?, records?, bests? } },    // forge-owned
   history: { 'YYYY-MM-DD': { xp, bond, distanceMi, cyclingMi, rides,
-             battles, workouts, sessions, habitLogs, goalsMet,
+             cardioSessions, battles, workouts, sessions, habitLogs, goalsMet,
              restDays→rested, load } },
+  cardioSessions: [{ id, station, miles, seconds, endedAt }], // latest 120, v12
   settings: { muted, bgmMuted, units, control, bodyWeightLb },
                                                   // units 'lb'|'kg' (a LABEL
                                                   // for the Forge); control
@@ -891,6 +908,7 @@ Migrations, all in HYDRATE — and every one of them refuses to invent history:
 | v8→9 | `trails` — Maple Trail at zero miles/reps, no pins. Older miles are not back-credited: they were not trail-tagged, and gym miles must never fill a trail quota |
 | v9→10 | D-Pad becomes the default; a stored `stick` from before the choice existed migrates once |
 | v10→11 | `cyclingMi` / `ridesDone` default to zero, preserving all existing lifetime distance without inventing old bicycle history |
+| v11→12 | bounded `cardioSessions` list starts empty; daily/lifetime totals cannot honestly be expanded into individual past sessions |
 
 Plus, every load: goal ids translated, `rollAllModules` day roll, and a
 `MODULE_RESET_DAY` self-heal from the Habits screens so a session left open past

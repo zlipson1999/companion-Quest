@@ -5,6 +5,8 @@ treadmills, two stationary bikes, and two rowers. The equipment remains the
 interface — walk into a machine to use it — and Coach Maple's full-floor tour
 now stops at the bikes and explains what crosses into the real world.
 
+![Gym cardio data flow and trail-reward boundary](previews/gym-cardio-data-flow.png)
+
 ![Quest Fitness cardio floor](previews/gym-cardio-floor.png)
 
 ## Outdoor bicycle rides
@@ -22,10 +24,15 @@ distance, average speed, GPS state, and a clearly labelled calorie estimate.
 
 ![Bike console receiving a simulated GPS delta during web QA](previews/gym-bike-gps-live.png)
 
-Ride miles earn the same distance XP, Trail Credit, milestones, and companion
-cardio progress as other honest mileage. They are recorded separately as
-cycling miles and completed bike rides in the Phone and Reception, but never
-receive a trail id, never fill a walking trail, and never roll trail encounters.
+Ride miles remain real cardio and can still pay general distance XP, but they
+never receive a trail id, fill a trail quota, move a trail milestone meter,
+roll an encounter, or mint Trail Credit. They are recorded separately as
+cycling miles and completed bike rides in the Phone, Reception, Week and the
+noticeboard's local/accepted-circle Bike board.
+
+Completed bike, treadmill and rower sessions also enter a bounded recent-cardio
+log with machine, date, duration and mileage. Existing saves keep all lifetime
+totals and begin that session-level list empty rather than inventing detail.
 
 ## Treadmills
 
@@ -37,5 +44,6 @@ injector for QA; release builds and the bike never expose manual distance.
 ![Treadmill console](previews/gym-treadmill-ready.png)
 
 The same save migration adds `cyclingMi` and `ridesDone` without inventing
-history for existing players. Cycling speed/MET calculations and both old-save
-migration paths have deterministic checks in `tools/`.
+history for existing players. Save v12 adds the bounded cardio-session log.
+Cycling speed/MET calculations, trail/credit isolation, noticeboard sync and
+old-save migration paths have deterministic checks in `tools/`.

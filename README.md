@@ -24,6 +24,9 @@ Scan the QR code with **Expo Go** (iOS/Android).
 
 - **On a real phone:** the pedometer drives walking, and GPS drives outdoor runs
   and bicycle rides started from the stationary bikes in Quest Fitness.
+- **Gym cardio stays gym cardio:** bicycle and treadmill miles are saved in the
+  Phone, Reception, Week, recent-session history and noticeboard sync, but never
+  advance a trail or its milestones and never earn Trail Credit.
 - **On desktop/simulator/web:** a **DEV-ONLY step injector** appears on the Route
   screen and the treadmill/rower deck (`+0.05mi / +0.25mi / +1mi`) so the loop can be
   tested where there is no pedometer. It is gated on `__DEV__`, which is false in
@@ -46,7 +49,7 @@ src/
   state/       game reducer + context (auto-persist), leveling, evolution,
                history, recovery, economy (Trail Credit), cardio maths,
                distance (pedometer / accelerometer / GPS)
-  components/  30 blocks — WorldScreen, HorizonSky, GrowthCeremony, TileMap/TileImage,
+  components/  31 blocks — WorldScreen, HorizonSky, GrowthCeremony, TileMap/TileImage,
                 CardioConsole, CompanionStatus, Joystick, the Trailkeeper primitives, ...
   modules/     the life-module plugin system + 5 modules (the Forge is one)
   coach/       the companion/Coach's warm, in-character dialogue

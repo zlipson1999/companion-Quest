@@ -5,7 +5,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Screen, Window, PixelText, PixelButton, PixelSprite } from '../components';
+import { Screen, Window, PixelText, PixelButton, PixelSprite, CardioHistoryList } from '../components';
 import { palette, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
@@ -131,13 +131,22 @@ export default function BagScreen() {
 
       <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="small" color={palette.windowText}>Mileage</PixelText>
-        {statRow('Today', `${(today.distanceMi || 0).toFixed(1)} mi`)}
-        {statRow('Lifetime', `${(state.stats.distanceMi || 0).toFixed(1)} mi`)}
-        {statRow('Cycling', `${(state.stats.cyclingMi || 0).toFixed(1)} mi`)}
+        {statRow('Today — all', `${(today.distanceMi || 0).toFixed(1)} mi`)}
+        {statRow('Today — bike', `${(today.cyclingMi || 0).toFixed(1)} mi`)}
+        {statRow('Lifetime — all', `${(state.stats.distanceMi || 0).toFixed(1)} mi`)}
+        {statRow('Lifetime — bike', `${(state.stats.cyclingMi || 0).toFixed(1)} mi`)}
         {statRow('Bike Rides', state.stats.ridesDone || 0)}
         {statRow('Steps', state.stats.totalSteps || 0)}
         {statRow('Streak', `${state.stats.streak || 0}d`)}
         {statRow('Active Days', state.stats.daysActive || 0)}
+      </Window>
+
+      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+        <PixelText size="small" color={palette.windowText}>Recent Cardio</PixelText>
+        <CardioHistoryList sessions={state.cardioSessions} limit={8} />
+        <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: space.sm, lineHeight: 13 }}>
+          Bike and treadmill miles stay in this fitness record. They do not advance trails or earn Trail Credit.
+        </PixelText>
       </Window>
 
       <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>

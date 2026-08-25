@@ -28,9 +28,10 @@ as it was, so a flaky connection cannot inflate anybody.
 
 | check | limit | why |
 |---|---|---|
-| distance in a day | 75 mi | 24h ultra records sit near 200; 75 is far above any player of a wellness game and far below a fabricated total |
+| non-cycling distance in a day | 75 mi | 24h ultra records sit near 200; 75 is far above any player of a wellness game and far below a fabricated foot total |
+| cycling distance in a day | 300 mi | separate GPS cycling cap; it must also be no greater than the day's total distance |
 | steps in a day | 150,000 | as above |
-| steps vs distance | 1.2–6.0 ft per step | 40,000 steps and half a mile is not a walk, it is two numbers that did not come from the same legs |
+| steps vs non-cycling distance | 1.2–6.0 ft per step | bike GPS miles are removed before checking stride, so a mixed walk/ride day remains valid |
 | future days | 1 day of grace | a player ahead of the server in time zone is not cheating |
 | editing the past | 14 days | a watch backfills; a board is not rewritten in March |
 
@@ -194,7 +195,7 @@ FRIENDS_DB=/tmp/cq-test.db FRIENDS_TEST_AUTH=1 PORT=8788 \
 npm --prefix server run test:friends
 ```
 
-21 more checks, asserting the privacy rule from the outside over HTTP: a
+23 more checks, asserting the privacy rule from the outside over HTTP: a
 stranger is invisible, a **pending** friend is invisible, you cannot accept your
 own request, unfriending re-hides, a deleted account is really gone, and the
 implausible-day checks fire.
@@ -238,12 +239,14 @@ needed.
 | `src/net/signin.js` | getting an ID token, and reporting honestly when it cannot. |
 | `src/state/account.js` | the session, under its own storage key, never in the save. |
 | `src/screens/FriendsScreen.js` | consent: what is shared, with whom, how to stop. |
-| `src/screens/BoardScreen.js` | the four boards. |
+| `src/screens/BoardScreen.js` | five tabs: total miles, bike miles, days, sessions and bests. |
 
 In the world: the noticeboard hangs on the front wall of Quest Fitness beside
-reception (`G` in the gym grid). `BoardScreen` is one cork skin — paper
+reception (`r` in the gym grid). `BoardScreen` is one cork skin — paper
 FieldCards pinned on the trail-wood ramp, 44px TrailAction tabs, name + this
-week's miles/days/sessions, bests as one-set cards. Reception (`N`) stays
+week's total miles/bike miles/days/sessions, bests as one-set cards. The Bike
+board comes from daily `cyclingMi`/`rides` sync fields, while the local cork
+card remains visible before sign-in. Reception (`N`) stays
 Summary. Friends "See the boards" opens this same screen. Cork with pinned
 cards, because that is the honest object — a board of your friends' weeks is a
 few notes somebody put up, not a stock ticker.

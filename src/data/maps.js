@@ -215,6 +215,19 @@ for (const [name, map] of Object.entries({ HUB, GYM, DOWNSTAIRS, BEDROOM })) {
   }
 }
 
+// The bicycle is a Quest Fitness station, never a portable world prop. The
+// house deliberately reuses `c` for its sink counter, so guard both the exact
+// gym count and the room-local override that prevents that counter becoming a
+// bicycle anywhere else.
+const gymBikeTiles = GYM.grid.reduce((n, row) => n + [...row].filter((c) => c === 'c').length, 0);
+const strayBikeCode = [HUB, DOWNSTAIRS, BEDROOM].find(
+  (map) => map.grid.some((row) => row.includes('c'))
+    && (!map.interactions || !map.interactions.c || map.interactions.c.cardio)
+);
+if (gymBikeTiles !== 2 || strayBikeCode) {
+  throw new Error('maps: the two bicycle stations must exist only in Quest Fitness');
+}
+
 const BLOCKED = new Set([
   'T', '~', 'h', 'H', 'y', 'Y',
   'W', '=', '|', 'M', 'R', 'b', 'K', 't', 'B', 'w', 'C', 'A', 'V', 'O', 'Z',
@@ -236,7 +249,8 @@ const BLOCKED = new Set([
 // The cardio deck is the one that needed a distinction rather than a link.
 // Treadmill, bike and rower share the room's cardio console. Treadmill/rower
 // listen for movement on the phone; the bike explicitly starts outdoor GPS.
-// None passes a route id, so gym effort never fills an outdoor trail quota.
+// None passes a route id, so gym effort never fills an outdoor trail quota,
+// advances trail milestones, or mints Trail Credit.
 const INTERACTIONS = {
   // The iron is where you WRITE a session. Ask Coach if you want one handed to
   // you. That split is the whole logic of the room: equipment is the work,
@@ -252,11 +266,11 @@ const INTERACTIONS = {
   z: { screen: 'forge', label: 'EZ-bar cradle — build your own session' },
   j: { screen: 'forge', label: 'Kettlebells — build your own session' },
   // Not a screen: you step ONTO these and the room stays around you.
-  t: { cardio: 'treadmill', label: 'Treadmill — cardio, no interruptions' },
+  t: { cardio: 'treadmill', label: 'Treadmill — gym cardio, no trail progress or credit' },
   // `c` is a kitchen counter at home, whose map-local interaction overrides
   // this one. In the gym it is the cycle station; TileMap has the matching
   // map-local prop override so the code cannot draw a counter on the cardio wall.
-  c: { cardio: 'bike', label: 'Bike — start a real outdoor GPS ride' },
+  c: { cardio: 'bike', label: 'Bike — GPS ride log, no trail progress or credit' },
   q: { cardio: 'rower', label: 'Rower — cardio, no interruptions' },
   Z: { screen: 'week', label: "Whiteboard — this week's work" },
   L: { screen: 'bag', label: 'Lockers — your supplies' },

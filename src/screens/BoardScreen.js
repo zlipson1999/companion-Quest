@@ -1,6 +1,6 @@
 // The noticeboard: how this week is going, among the people you chose.
 //
-// Three of the four boards reset every Monday, deliberately. An all-time board
+// Four of the five boards reset every Monday, deliberately. An all-time board
 // ranks seniority — whoever installed the app first wins for ever, and a friend
 // who joins in March is permanently last no matter how well they train. A week
 // gives everybody the same empty column on Monday morning.
@@ -23,9 +23,12 @@ import { getMovement } from '../data/movements';
 import { playSfx } from '../audio';
 import { weekChallenge } from '../state/weekChallenge';
 import { todayKey } from '../modules';
+import { useGame } from '../state';
+import { totals, weekOf } from '../state/history';
 
 const BOARDS = [
   { id: 'distance', tab: 'Miles' },
+  { id: 'cycling', tab: 'Bike' },
   { id: 'active', tab: 'Days' },
   { id: 'workouts', tab: 'Sessions' },
   { id: 'records', tab: 'Bests' },
@@ -57,8 +60,10 @@ function WeekRow({ row }) {
 
 export default function BoardScreen() {
   const { goBack, back, navigate } = useNav();
+  const { state } = useGame();
   const acc = useAccount();
   const challenge = weekChallenge(todayKey());
+  const localWeek = totals(weekOf(state.history, todayKey()));
   const [tab, setTab] = useState(challenge.id);
   const [board, setBoard] = useState(null);
   const [records, setRecords] = useState(null);
@@ -92,6 +97,19 @@ export default function BoardScreen() {
             {acc.available
               ? 'Sign in and swap codes with a friend, and this board fills with the week you have both actually had.'
               : 'This copy has no server set up, so the noticeboard is empty. Everything else works as it always has.'}
+          </PixelText>
+        </FieldCard>
+        <FieldCard
+          tone="paper"
+          title="Your bike log"
+          caption="saved on this phone"
+          style={{ marginTop: space.sm }}
+        >
+          <PixelText size="small" color={tokens.textOnPaper}>
+            {(localWeek.cyclingMi || 0).toFixed(1)} mi · {localWeek.rides || 0} {localWeek.rides === 1 ? 'ride' : 'rides'} this week
+          </PixelText>
+          <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 6, lineHeight: 15 }}>
+            Bike mileage is cardio history only. It never adds trail progress or Trail Credit.
           </PixelText>
         </FieldCard>
         <View style={{ marginTop: 'auto' }}>
@@ -141,6 +159,15 @@ export default function BoardScreen() {
         </PixelText>
       </FieldCard>
 
+      <FieldCard tone="paper" title="Your bike log" caption="saved on this phone" style={{ marginBottom: space.sm }}>
+        <PixelText size="small" color={tokens.textOnPaper}>
+          {(localWeek.cyclingMi || 0).toFixed(1)} mi · {localWeek.rides || 0} {localWeek.rides === 1 ? 'ride' : 'rides'} this week
+        </PixelText>
+        <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 6, lineHeight: 15 }}>
+          The Bike board shares checked cycling miles with your accepted circle. No bike mile advances a trail or earns Trail Credit.
+        </PixelText>
+      </FieldCard>
+
       <ScrollView showsVerticalScrollIndicator={false}>
         {tab === 'records' ? (
           <>
@@ -178,8 +205,8 @@ export default function BoardScreen() {
               caption={board ? `week of ${board.weekStart} · resets Monday` : undefined}
             >
               <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ lineHeight: 15 }}>
-                This week among people you chose. Miles, days and sessions only — no
-                lifetime total, no day-one score.
+                This week among people you chose. Total miles, bike miles, days and
+                sessions only — no lifetime total, no day-one score.
               </PixelText>
             </FieldCard>
             {board && board.rows.map((r) => <WeekRow key={r.id} row={r} />)}

@@ -60,6 +60,10 @@ When neither source exists at all (a desktop browser, a simulator), the trail
 and the treadmill/rower console offer `+0.05mi` / `+0.25mi` / `+1mi` buttons.
 The bike never does: its outdoor ride is GPS-only even in development.
 
+Regardless of sensor source, gym treadmill and bicycle deltas are tagged as gym
+cardio. They update fitness/cardio history but cannot carry a `routeId`, advance
+a trail or its milestone meter, roll an encounter, or mint Trail Credit.
+
 These are gated on three things: `__DEV__ && source === 'none' && !running`.
 The last one means they also disappear for the duration of a GPS run or ride,
 which is correct — GPS is already measuring real distance — but surprising enough that

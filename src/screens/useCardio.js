@@ -6,9 +6,9 @@
 // "real movement counts" is exactly the thing this game cannot afford to have
 // drift, so there is one.
 //
-// What it deliberately does NOT do is roll encounters. That belongs to the
-// trail and only to the trail — indoors there is nothing to meet — so the
-// caller gets the delta and decides.
+// What it deliberately does NOT do is decide rewards or roll encounters. The
+// reducer's distance policy reserves trail quota, milestones and Trail Credit
+// for a selected route; the trail caller alone decides encounters.
 
 import { useEffect, useRef, useState } from 'react';
 import { useGame, useDistance } from '../state';

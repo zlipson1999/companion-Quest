@@ -107,12 +107,13 @@ router.post('/sync', requireAuth, writeLimit, (req, res) => {
 
   const today = todayKey();
   const upsertDay = db.prepare(
-    `INSERT INTO day (player_id, date, steps, distance_mi, workouts, sets, reps, hold_sec,
+    `INSERT INTO day (player_id, date, steps, distance_mi, cycling_mi, rides, workouts, sets, reps, hold_sec,
                       active, source, flagged, updated_at)
-     VALUES (@player_id, @date, @steps, @distance_mi, @workouts, @sets, @reps, @hold_sec,
+     VALUES (@player_id, @date, @steps, @distance_mi, @cycling_mi, @rides, @workouts, @sets, @reps, @hold_sec,
              @active, @source, @flagged, @updated_at)
      ON CONFLICT(player_id, date) DO UPDATE SET
        steps = excluded.steps, distance_mi = excluded.distance_mi,
+       cycling_mi = excluded.cycling_mi, rides = excluded.rides,
        workouts = excluded.workouts, sets = excluded.sets, reps = excluded.reps,
        hold_sec = excluded.hold_sec, active = excluded.active,
        source = excluded.source, flagged = excluded.flagged,

@@ -104,6 +104,11 @@ const BOARDS = {
     sql: 'SUM(distance_mi)',
     format: (v) => `${v.toFixed(1)} mi`,
   },
+  cycling: {
+    label: 'Bike miles this week',
+    sql: 'SUM(cycling_mi)',
+    format: (v) => `${v.toFixed(1)} mi`,
+  },
   active: {
     label: 'Days active this week',
     sql: 'SUM(active)',

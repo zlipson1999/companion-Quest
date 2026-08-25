@@ -3,8 +3,8 @@
 // A shop needs something to spend, and the moment a game has a shop it has a
 // pressure to sell the currency. This one cannot be sold, gifted, granted at
 // the start, or awarded for opening the app. It is minted by REAL EFFORT and
-// nothing else: miles you actually walked, sessions you actually finished,
-// challenges you actually won, and habit goals you actually hit. That is the
+// nothing else: miles on a selected outdoor trail, sessions you actually
+// finished, challenges you actually won, and habit goals you actually hit. That is the
 // same rule the rest of the game runs on — there are no walk buttons, so there
 // is no wallet button either.
 //
@@ -15,7 +15,7 @@
 //     already only credits the portion inside the goal. A log button must never
 //     become a money button.
 
-// A walked mile is the reference unit; everything else is priced against it.
+// A selected outdoor trail mile is the reference unit; gym cardio is excluded.
 export const CREDIT_PER_MILE = 10;
 export const CREDIT_PER_SESSION = 8;
 export const CREDIT_PER_WIN = 6;
@@ -23,7 +23,7 @@ export const CREDIT_PER_GOAL = 4;
 
 // Credit arrives a thousandth of a mile at a time, so the fraction is carried
 // between dispatches. Rounding each dispatch on its own would floor every one
-// of them to zero and a walk would pay nothing at all — the same trap the
+// of them to zero and a trail walk would pay nothing at all — the same trap the
 // walking XP carry exists to avoid.
 export function mint(state, amount) {
   const carry = (state.stats.creditCarry || 0) + Math.max(0, amount || 0);

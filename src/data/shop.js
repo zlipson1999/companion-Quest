@@ -1,8 +1,8 @@
 // Quest Fitness' smoothie bar — what is on the board, and what it costs.
 //
-// Prices are set against ONE number: `CREDIT_PER_MILE`. A walked mile is the
-// reference unit, so every price here reads as "this many miles of real
-// walking", which is the honest way to price something in a game where the
+// Prices are set against ONE number: `CREDIT_PER_MILE`. A selected outdoor
+// trail mile is the reference unit, so every price here reads as "this many
+// miles on a real trail", which is the honest way to price something where the
 // currency can only be earned by moving. If the earn rate is ever retuned,
 // retune it there and the whole board moves with it.
 //
@@ -18,7 +18,7 @@ import { getItem } from './items';
 import { TRAIL_CHARMS } from './charms';
 
 // Priced in miles, converted once. Written this way so the intent survives a
-// balance pass: "a knot is worth about two and a half miles" is a design
+// balance pass: "a knot is worth about two and a half trail miles" is a design
 // decision, `25` is not.
 const MILES = (n) => Math.round(n * CREDIT_PER_MILE);
 
