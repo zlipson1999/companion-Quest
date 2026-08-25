@@ -130,7 +130,7 @@ export default function CardioConsole({
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ letterSpacing: 1 }}>
-          {title || (bike ? 'OUTDOOR BIKE RIDE' : station === 'rower' ? 'ROWER' : 'TREADMILL')}
+          {title || (bike ? 'BIKE RIDE' : station === 'rower' ? 'ROWER' : 'TREADMILL')}
         </PixelText>
         {/* The one moving part of a console you are not touching. */}
         <PixelText size="tiny" color={moving || gpsActive ? palette.secondary : tokens.disabledInk}>

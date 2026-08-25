@@ -137,7 +137,7 @@ export default function BoardScreen() {
 
       <FieldCard tone="paper" title="This week's trail" caption={`week of ${challenge.weekStart} · resets Monday`} style={{ marginBottom: space.sm }}>
         <PixelText size="tiny" color={tokens.textOnPaper} style={{ lineHeight: 15 }}>
-          {challenge.line} Display only — no extra XP, bond or Trail Credit. The {challenge.tab} column is the one that counts this week.
+          {challenge.line} Display only — no extra XP, bond or Quest Credits. The {challenge.tab} column is the one that counts this week.
         </PixelText>
       </FieldCard>
 

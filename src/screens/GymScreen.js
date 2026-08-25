@@ -45,14 +45,14 @@ const MENU = [
 const TOUR_STOPS = [
   { at: { x: 6, y: 16 }, face: 'down', lines: [
     { speaker: 'Coach Maple', text: 'Welcome to Quest Fitness. Everything in this room works one way: walk up to a thing and use it. Stay close - I will take you around every station and tell you what each one actually does.' },
-    { speaker: 'Coach Maple', text: 'Reception first. Walk into this desk and your whole record opens: lifetime miles, every session, battles, catches, streaks, credit. When you want the honest total of who you have been, it is here.' },
+    { speaker: 'Coach Maple', text: 'Reception first. Walk into this desk to check in your record — lifetime miles, every session, battles, catches, streaks, credit — and to purchase quests with your Quest Credits. When you want the honest total of who you have been, it is here.' },
   ] },
   { at: { x: 7, y: 16 }, face: 'down', lines: [
     { speaker: 'Coach Maple', text: 'The cork noticeboard. This is where friends live. Sign in, read your trail code to someone you actually train near, and once you BOTH agree you can see each other.' },
     { speaker: 'Coach Maple', text: 'Four boards: miles this week, days active, sessions done - those wipe clean every Monday so nobody wins on seniority - and personal bests, which stand until someone beats them. Only real, checked days make the board.' },
   ] },
   { at: { x: 11, y: 16 }, face: 'down', lines: [
-    { speaker: 'Coach Maple', text: 'The smoothie bar. The one place in this world money gets spent - and the money is Trail Credit, minted by effort only: ten a mile walked, eight a session, four a habit goal hit. There is no other way to get it. None.' },
+    { speaker: 'Coach Maple', text: 'The smoothie bar. The one place in this world money gets spent - and the money is Quest Credits, minted by effort only: ten a mile walked, eight a session, four a habit goal hit. There is no other way to get it. None.' },
     { speaker: 'Coach Maple', text: 'What it buys: blends that heal your companion, deepen the bond, or fuel a session - each one logs as a real meal choice. Water and apples for the trail. And Kinship Knots, about two and a half miles of walking each - you will need those to bond with wild companions.' },
   ] },
   { at: { x: 2, y: 16 }, face: 'down', lines: [
@@ -94,7 +94,7 @@ const TOUR_STOPS = [
   ] },
   { at: { x: 14, y: 9 }, face: 'right', lines: [
     { speaker: 'Coach Maple', text: 'The bikes. This one stays here; you do not. Start a ride, secure your phone, then take your real bicycle outside. GPS measures the miles while your person pedals here with you.' },
-    { speaker: 'Coach Maple', text: 'Ride miles pay the same distance XP and Trail Credit as honest cardio, and the Phone keeps them as cycling miles. They never fill a walking trail. Start and stop only while the real bike is parked.' },
+    { speaker: 'Coach Maple', text: 'Ride miles pay the same distance XP and Quest Credits as honest cardio, and the Phone keeps them as cycling miles. They never fill a walking trail. Start and stop only while the real bike is parked.' },
   ] },
   { at: { x: 14, y: 11 }, face: 'right', lines: [
     { speaker: 'Coach Maple', text: 'The rowers. Same console, same rule: it counts what your body actually does, and stepping off ends the session honestly.' },

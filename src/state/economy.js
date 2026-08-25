@@ -1,4 +1,4 @@
-// Trail Credit: the only currency, and there is no way to buy it.
+// Quest Credits: the only currency, and there is no way to buy it.
 //
 // A shop needs something to spend, and the moment a game has a shop it has a
 // pressure to sell the currency. This one cannot be sold, gifted, granted at

@@ -176,7 +176,7 @@ export default function SummaryScreen() {
             <StatCell label="Sets" value={(s.sets || 0).toLocaleString()} color={palette.accentDark} />
             <StatCell label="Reps" value={(s.reps || 0).toLocaleString()} color={palette.accentDark} />
             <StatCell label="Time held" value={`${s.holdSec || 0}s`} color={palette.accentDark} />
-            <StatCell label="Trail Credit" value={(state.credits || 0).toLocaleString()} color={palette.secondary} />
+            <StatCell label="Quest Credits" value={(state.credits || 0).toLocaleString()} color={palette.secondary} />
             <StatCell label="Items found" value={s.itemsCollected} />
             <StatCell label="Habit logs" value={s.habitLogs || 0} color={palette.primaryDark} />
             <StatCell label="Goals met" value={s.habitGoalsHit || 0} color={palette.success} />

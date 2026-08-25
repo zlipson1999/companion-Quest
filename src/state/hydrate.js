@@ -28,7 +28,7 @@ export const FRESH = {
   goalId: null,
   party: [],
   activeIndex: 0,
-  // Trail Credit. Starts at zero and is only ever minted by real effort — see
+  // Quest Credits. Starts at zero and is only ever minted by real effort — see
   // economy.js for why there is no other way in.
   credits: 0,
   stats: {
@@ -129,7 +129,7 @@ export function hydrateSave(saved) {
   merged.history = trim(saved.history || {}, todayKey());
   // v6 adds one-time outfit and gender choices. Their null defaults keep
   // older saves in setup until both choices have been recorded.
-  // v7 adds Trail Credit. Older saves start at zero rather than being
+  // v7 adds Quest Credits. Older saves start at zero rather than being
   // back-paid for the miles they walked: the app was not minting then, and
   // handing someone a balance for work it never counted is exactly the kind
   // of free currency this economy exists to not have.
