@@ -428,7 +428,9 @@ export default function BattleScreen({ params }) {
     .map((id) => getItem(id))
     .filter((item) => item && item.effect);
 
-  const useBattleItem = (itemId) => {
+  // consumeBattleItem, not useBattleItem — see BagScreen: a `use`-prefixed
+  // plain function is indistinguishable from a hook to tooling and readers.
+  const consumeBattleItem = (itemId) => {
     const item = getItem(itemId);
     if (!item || !item.effect) return;
     dispatch({ type: 'USE_ITEM', payload: { itemId } });
@@ -660,7 +662,7 @@ export default function BattleScreen({ params }) {
               item.effect.bond ? `+${item.effect.bond} bond` : null,
             ].filter(Boolean).join(' '),
           }))}
-          onSelect={(opt) => useBattleItem(opt.value)}
+          onSelect={(opt) => consumeBattleItem(opt.value)}
         />
         <PixelButton label="Back" tone="plain" sound="cancel" style={{ marginTop: space.sm }} onPress={() => setPhase('menu')} />
       </View>

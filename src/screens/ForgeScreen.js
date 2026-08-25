@@ -386,7 +386,7 @@ export default function ForgeScreen({ params }) {
               onEdit={(patch) => setActual((a) => ({ ...a, [i]: { ...(a[i] || {}), ...patch } }))}
               pr={records[b.movementId]}
               last={prev ? prev.blocks.filter((x) => x.movementId === b.movementId)[0] || null : null}
-              onForm={() => navigate('formcheck', { movementId: b.movementId, planId: plan.id, checked, actual, from })}
+              onForm={() => navigate('formcheck', { movementId: b.movementId, planId: plan.id, checked, actual })}
             />
           ))}
         </ScrollView>

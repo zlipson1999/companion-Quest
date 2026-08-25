@@ -330,6 +330,34 @@ check('the floor tile is captured before stepping onto the machine',
 check('AppState pauses a running session', /AppState\.addEventListener\('change'/.test(src('src/screens/GymScreen.js')));
 check('the pause uses the shared background transition', /backgroundSession\(cur\)/.test(src('src/screens/GymScreen.js')));
 
+// The PAYMENT lease and the ANIMATION hold are two different numbers on
+// purpose. A pedometer batches roughly one callback a second, so a 900ms
+// lease expires in the sensor's own silence and banks real exercise as
+// unpaid; the animation wants that same 900ms so the character stops when
+// the player does. Locking both in: the pay lease must comfortably outlast
+// a one-second reporting gap, and must never be the shorter of the two.
+// useCardio is a React module, so its numbers are read from source here the
+// same way the screen guards below are — importing it would drag JSX through
+// the plain-Node loader.
+const cardioHookSrc = src('src/screens/useCardio.js');
+const constOf = (name) => Number((cardioHookSrc.match(new RegExp(`${name} = (\\d+)`)) || [])[1]);
+const stepHold = constOf('STEP_MOVING_MS');
+const stepLease = constOf('STEP_PAY_LEASE_MS');
+const gpsHold = constOf('GPS_MOVING_MS');
+check(`the step pay lease outlasts a 1s sensor gap (${stepLease}ms)`, stepLease > 1000);
+check(`the step pay lease is longer than the animation hold (${stepLease} > ${stepHold})`, stepLease > stepHold);
+check(`the GPS pay lease bridges the 2s GPS sample interval (${gpsHold}ms)`, gpsHold > 2000);
+check('the bike reuses its GPS hold as its pay lease', /GPS_PAY_LEASE_MS = GPS_MOVING_MS/.test(cardioHookSrc));
+check('the pay lease picks per tracking method', /payLeaseMs\(gpsOnly\)/.test(cardioHookSrc));
+check('animation and payment are refreshed by the same real delta', /setPaying\(true\)/.test(cardioHookSrc));
+check('an inactive console drops both leases', /setPaying\(false\)[\s\S]*?\}, \[active\]\)/.test(cardioHookSrc));
+// The gym must gate the PAID clock on the lease and the character on the
+// tighter hold — swapping them is the regression this guards.
+const gymPay = src('src/screens/GymScreen.js');
+check('the paid clock is gated on the pay lease', /movementRef\.current = sessionPaying/.test(gymPay));
+check('the animation is gated on the movement hold', /const sessionLive = !!\(cardio && cardio\.phase === 'running' && machineMoving\)/.test(gymPay));
+check('the rower gates both on its stroke lease', /machine\.tracking === 'timer' \? tapPulse : paying/.test(gymPay));
+
 // ---- Surfaces ----
 const bagSrc = src('src/screens/BagScreen.js');
 ['Treadmill', 'Bike Ride', 'Rower', 'Stair Climber', 'Elliptical'].forEach((name) => {
