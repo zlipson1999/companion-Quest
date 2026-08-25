@@ -18,6 +18,7 @@ export { computeRecovery, loadOf, weeklyLoads } from './recovery';
 export { useDistance } from './useDistance';
 export { distancePolicy } from './distancePolicy';
 export { KEEP_CARDIO_SESSIONS, CARDIO_STATIONS, cardioSession, appendCardioSession, normalizeCardioSessions, cardioStationLabel } from './cardioHistory';
+export { localDayKey as gymLocalDayKey, normalizeGymCheckIns, appendGymCheckIn, gymCheckInStats } from './gymCheckIns';
 export {
   encounterContext,
   meetsEncounter,

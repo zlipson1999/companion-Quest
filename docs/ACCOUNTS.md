@@ -246,7 +246,8 @@ reception (`r` in the gym grid). `BoardScreen` is one cork skin — paper
 FieldCards pinned on the trail-wood ramp, 44px TrailAction tabs, name + this
 week's total miles/bike miles/days/sessions, bests as one-set cards. The Bike
 board comes from daily `cyclingMi`/`rides` sync fields, while the local cork
-card remains visible before sign-in. Reception (`N`) stays
-Summary. Friends "See the boards" opens this same screen. Cork with pinned
+card remains visible before sign-in. Reception (`N`) is a local attendance
+check-in only; it does not read or write friend-board stats. Friends "See the
+boards" opens this same screen. Cork with pinned
 cards, because that is the honest object — a board of your friends' weeks is a
 few notes somebody put up, not a stock ticker.

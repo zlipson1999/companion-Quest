@@ -139,13 +139,16 @@ counts steps off the accelerometer: peak detection with hysteresis and a
 refractory gap, foreground-only. See `docs/STEP_COUNTING.md`.
 
 **State shape** (persisted to AsyncStorage, auto-migrated by `version`, currently
-**12**): `{ started, goalId, playerOutfit, playerGender, party:[{id,baseId,xp,
+**13**): `{ started, goalId, playerOutfit, playerGender, party:[{id,baseId,xp,
 bond,evo,hp,charm}], activeIndex, credits, stats, bag, discoveredCharms, dex,
-modules, history, cardioSessions, settings, meta, trails }`. Companion XP is a lifetime total; level/HP are derived
+modules, history, cardioSessions, gymCheckIns, settings, meta, trails }`. Companion XP is a lifetime total; level/HP are derived
 (`src/state/leveling.js`). `useCompanion()` returns the active party member;
 `useParty()` returns the whole team. Distance is in miles (`stats.distanceMi`);
 outdoor bicycle work is also kept separately in `stats.cyclingMi` and
 `stats.ridesDone`.
+Reception is not a stats mirror: walking into its desk records one local-day
+arrival time in `gymCheckIns`. Attendance totals/streaks are shown in the
+Phone's Personal Tracker; pre-v13 saves invent no visits.
 **Trail quotas** (miles + challenge reps) live in `state.trails` and only
 increment when `ADD_DISTANCE` / `LOG_EXERCISE` carry a `routeId` — gym cardio
 must not pass one. Bike/treadmill miles remain fitness history and may pay

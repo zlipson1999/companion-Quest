@@ -28,4 +28,5 @@ export { default as HorizonSky } from './HorizonSky';
 export { default as CompanionStatus } from './CompanionStatus';
 export { default as CardioConsole } from './CardioConsole';
 export { default as CardioHistoryList } from './CardioHistoryList';
+export { default as GymCheckInList } from './GymCheckInList';
 export { default as GrowthCeremony } from './GrowthCeremony';

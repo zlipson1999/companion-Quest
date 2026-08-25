@@ -81,7 +81,7 @@ watches the count.
 | `battle` | `toBattle` from Route / Gym spar / SparIntro | ok |
 | `workout` | Turf `S`, mats `Q`, gym menu (`maps.js:282-283`) | ok |
 | `rest` | House door `D` / hub menu (`maps.js:323-324`) | ok |
-| `summary` | Reception `N` (`maps.js:261`) | ok |
+| `reception` | Reception `N` (`maps.js`) | ok — attendance confirmation; stats live in Phone → Personal Tracker |
 | `index` | Bedroom shelf `o` (`maps.js:193`) | ok |
 | `bag` | Wardrobe `P`, lockers `L` (`maps.js:195,257`) | ok |
 | `party` | Hub/gym menus (`HubScreen.js:23`, `GymScreen.js:35`) | ok |
@@ -161,10 +161,11 @@ floor but before pairing. Severity: **blocker**. Status: ****fixed** (#33)**.
 (`HubScreen.js:22`) is available the moment you step onto the lane.
 Severity: **blocker**. Status: ****fixed** (#33)**.
 
-**A29 — `SummaryScreen` crashes if opened before a companion.**
-`src/screens/SummaryScreen.js:37` calls
+**A29 — historical: `SummaryScreen` crashed if opened before a companion.**
+The old `src/screens/SummaryScreen.js` called
 `evolveProgress(companion, companion.creature, companion.level)` at render.
-Gym reception `N` (`maps.js:261`) is reachable before pairing.
+Gym reception `N` is reachable before pairing. It is now `ReceptionScreen`,
+which records attendance without reading companion state.
 Severity: **blocker**. Status: ****fixed** (#33)**.
 
 **A30 — Forge / Workout finish paths assume a companion.**

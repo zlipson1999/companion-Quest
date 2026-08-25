@@ -39,6 +39,7 @@ eq('token gone', next.bag.token, undefined);
 eq('existing bag item kept', next.bag.potion, 1);
 eq('history empty (days not invented)', Object.keys(next.history).length, 0);
 eq('cardio sessions empty (sessions not invented)', next.cardioSessions.length, 0);
+eq('gym check-ins empty (visits not invented)', next.gymCheckIns.length, 0);
 eq('settings.control', next.settings.control, 'dpad');
 eq('settings.bodyWeightLb present', typeof next.settings.bodyWeightLb, 'number');
 eq('stats.exercises present', typeof next.stats.exercises, 'object');
@@ -72,6 +73,16 @@ const fromV11 = hydrateSave(V11);
 eq('v11 lifetime cycling preserved', fromV11.stats.cyclingMi, 3);
 eq('v11 rides preserved', fromV11.stats.ridesDone, 1);
 eq('v11 session rows not invented from totals', fromV11.cardioSessions.length, 0);
+eq('v11 gym check-ins not invented', fromV11.gymCheckIns.length, 0);
+
+const V12 = {
+  ...V11,
+  version: 12,
+  cardioSessions: [{ id: 'bike:1', station: 'bike', miles: 2, seconds: 600, endedAt: '2026-08-20T12:00:00.000Z' }],
+};
+const fromV12 = hydrateSave(V12);
+eq('v12 cardio history preserved', fromV12.cardioSessions.length, 1);
+eq('v12 gym check-ins not invented', fromV12.gymCheckIns.length, 0);
 
 for (const id of MODULE_IDS) {
   if (!next.modules[id]) fail.push(`module ${id} missing after hydrate`);

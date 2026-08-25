@@ -10,7 +10,8 @@
 // rather than just a position.
 //
 // One cork skin. Gym tile G opens this screen; Friends "See the boards" opens
-// the same one. Reception (N) stays Summary — not corked, not moved here.
+// the same one. Reception (N) stays a separate local check-in desk — not
+// corked, not moved here, and not another fitness-stat surface.
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';

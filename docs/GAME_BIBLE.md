@@ -163,7 +163,7 @@ the other eight destinations it used to list are things you now WALK to.
 Quest Fitness: every piece of iron opens the Forge, Coach hands you a session
 off the shelf, treadmills, GPS-linked bikes and rowers are cardio in the room, the turf and the
 mats each open the routine they are FOR, the mirror is form check, lockers are
-your bag, reception is your record, the cork noticeboard (`G`) is this week
+your bag, reception records today's first check-in time, the cork noticeboard (`G`) is this week
 among friends, the whiteboard is your week, the bar spends credit. Your house:
 the bed sleeps or logs last night, the desk is your habits,
 the kitchen counters log a meal, the kitchen shelf is the cookbook, the sofa is
@@ -213,7 +213,7 @@ clears it.
 | `battle` | BattleScreen | §6 |
 | `workout` | WorkoutScreen | 34 preset routines (data/workouts.js), pay ×`workoutXpMult`; a station can pin one via `params.workoutId`; the `guided: true` routine (`firstsession`) is kept off the shelf list — MapleSessionScreen runs it |
 | `rest` | HomeRestScreen | your house (13×15 downstairs, 11×13 bedroom); the bed sleeps (`HEAL_FULL`) |
-| `summary` | SummaryScreen | Status: companion, stats, daily habits block, recovery |
+| `reception` | ReceptionScreen | walking into the gym desk records today's first local check-in time; reception shows confirmation only, while attendance stats/history live in Phone → Personal Tracker |
 | `index` | IndexScreen | Creature Index: owned/seen/silhouetted-unknown |
 | `bag` | BagScreen | items, use effects (heal/xp/bond) |
 | `party` | PartyScreen | team of ≤6, swap active |
@@ -344,7 +344,7 @@ are grown, never knotted.
   but Start begins a real outdoor bicycle ride through the same GPS watcher as
   a run. Those deltas carry `activity: 'ride'`, add to `cyclingMi`, may pay
   general distance XP, and never receive a `routeId` or trail-only rewards.
-- **Six trails** (`src/data/routes.js`), save `version: 12`. Maple Trail is
+- **Six trails** (`src/data/routes.js`), save `version: 13`. Maple Trail is
   unlocked from the start. Walk that trail's miles and confirm its reps in
   challenges, then Challenge the Warden. First win grants the Quest Pin, a
   Kinship Knot, and the next trail. Wild companion pick is random from that
@@ -485,15 +485,19 @@ meters) and no `onStop`, because outdoors there is no getting off a trail.
   deltas arrive. The rider uses the side-on frames only when GPS distance
   arrives. An idle sensor means an idle character; neither machine fakes work.
 - Completing a bike session of at least 0.01 mi and 5 s adds one to
-  `ridesDone` / that day's `rides`. Phone mileage and Reception show cycling
-  miles and ride count separately while lifetime distance keeps the common total.
+  `ridesDone` / that day's `rides`. Phone mileage shows cycling miles and ride
+  count separately while lifetime distance keeps the common total.
 - Completing any bike/treadmill/rower session of at least 0.01 mi and 5 s adds
   `{station,miles,seconds,endedAt}` to the bounded 120-row `cardioSessions`
-  list. Phone and Reception show the recent rows; v12 does not expand older
-  daily totals into invented sessions.
-- The Phone, Reception, Week and local noticeboard card expose cycling mileage.
+  list. The Phone shows the recent rows; v12 does not expand older daily totals
+  into invented sessions.
+- The Phone, Week and local noticeboard card expose cycling mileage.
   Signed-in day sync sends `cyclingMi` / `rides`, and the fifth noticeboard tab
   ranks checked weekly bike miles among accepted friends.
+- Reception tracks presence only. Walking into its desk records the first local
+  check-in time for that date, at most once per day. It shows confirmation but
+  no fitness stats; current/longest streak, total days and recent dated times
+  live under Phone → Personal Tracker. Check-ins grant no XP, credit or rewards.
 - The machine fascia says the boundary in play: bicycle and treadmill mileage
   never advances a trail or earns Trail Credit.
 - That needs a body weight, which the app did not have.
@@ -803,11 +807,12 @@ whose stages are too similar. The `sphere()` + `eye()` recipe is how
 the first trail pass came out as twelve interchangeable blobs and is
 not used again.
 
-## 9. UI components (31)
+## 9. UI components (32)
 
-`src/components/index.js` exports 31. HorizonSky is its own painter so the
+`src/components/index.js` exports 32. HorizonSky is its own painter so the
 stage and the walk cannot drift; GrowthCeremony is the evolution hold, not a
-flash. Both count.
+flash. Both count. GymCheckInList is the shared dated attendance list used by
+Phone → Personal Tracker.
 
 Window (bevelled + corner studs + paper highlight), Menu (selection FILL +
 cursor + sfx), DialogueBox (typewriter, blip every 2 chars, bobbing advance
@@ -828,7 +833,8 @@ draw it), **CardioConsole** (§5.7), **Joystick** / **MoveControl** (thumb stick
 by default; crossing a map one deliberate tap per square was the most tiring
 thing about the overworld), **FieldCard** / **TrailAction** / **ObjectiveRibbon**
 (the Trailkeeper primitives), **BodyMap3D**, **GrowthCeremony** (evolution
-held at `motion.ceremony`, with a reduced-motion text path — not a strobe).
+held at `motion.ceremony`, with a reduced-motion text path — not a strobe), and
+**GymCheckInList** (local date + first arrival time, newest first).
 
 ## 10. Coach
 
@@ -855,10 +861,10 @@ board_update, friend_request, friend_accept + bgm_town / bgm_battle loops.
 `audio/sfx.js` wraps expo-av; every call degrades silently (web autoplay,
 early calls). BGM switching lives in Router via TOWN_BGM.
 
-## 12. Save format — `companionquest:save:v1` key, `version: 12`
+## 12. Save format — `companionquest:save:v1` key, `version: 13`
 
 ```js
-{ version: 12, started, goalId,                    // 'muscle'|'lean'|'root'
+{ version: 13, started, goalId,                    // 'muscle'|'lean'|'root'
   playerOutfit, playerGender,                     // one-time, v6
   party: [{ id, baseId, xp, bond, evo, hp,
             charm }],                             // ≤6; charm = worn Trail
@@ -880,6 +886,7 @@ early calls). BGM switching lives in Router via TOWN_BGM.
              cardioSessions, battles, workouts, sessions, habitLogs, goalsMet,
              restDays→rested, load } },
   cardioSessions: [{ id, station, miles, seconds, endedAt }], // latest 120, v12
+  gymCheckIns: [{ day, checkedAt }],               // one per local day, v13
   settings: { muted, bgmMuted, units, control, bodyWeightLb },
                                                   // units 'lb'|'kg' (a LABEL
                                                   // for the Forge); control
@@ -909,6 +916,7 @@ Migrations, all in HYDRATE — and every one of them refuses to invent history:
 | v9→10 | D-Pad becomes the default; a stored `stick` from before the choice existed migrates once |
 | v10→11 | `cyclingMi` / `ridesDone` default to zero, preserving all existing lifetime distance without inventing old bicycle history |
 | v11→12 | bounded `cardioSessions` list starts empty; daily/lifetime totals cannot honestly be expanded into individual past sessions |
+| v12→13 | `gymCheckIns` starts empty; old saves cannot prove that a past app day included walking to reception |
 
 Plus, every load: goal ids translated, `rollAllModules` day roll, and a
 `MODULE_RESET_DAY` self-heal from the Habits screens so a session left open past

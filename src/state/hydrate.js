@@ -6,9 +6,10 @@ import { emptyTrails, normalizeTrails } from '../data/routes';
 import { rollAllModules, todayKey } from '../modules';
 import { DEFAULT_BODY_WEIGHT_LB } from './cardioMaths';
 import { normalizeCardioSessions } from './cardioHistory';
+import { normalizeGymCheckIns } from './gymCheckIns';
 import { trim } from './history';
 
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
@@ -65,6 +66,7 @@ export const FRESH = {
   modules: {},
   history: {},
   cardioSessions: [],
+  gymCheckIns: [],
   // 'dpad' by default: a tap per square is precise on a phone screen, and the
   // stick's hold-and-lean is easy to overshoot with. The stick stays one
   // Options toggle away for anyone who prefers to glide.
@@ -84,7 +86,7 @@ export const FRESH = {
 export const HYDRATE_KEYS = [
   'version', 'started', 'playerOutfit', 'playerGender', 'goalId',
   'party', 'activeIndex', 'credits', 'stats', 'bag', 'discoveredCharms', 'dex',
-  'modules', 'history', 'cardioSessions', 'settings', 'meta', 'trails',
+  'modules', 'history', 'cardioSessions', 'gymCheckIns', 'settings', 'meta', 'trails',
 ];
 
 export function hydrateSave(saved) {
@@ -133,6 +135,10 @@ export function hydrateSave(saved) {
   // totals remain intact, but they cannot honestly be expanded into individual
   // past sessions, so an older save starts this list empty.
   merged.cardioSessions = normalizeCardioSessions(saved.cardioSessions);
+  // v13 makes reception a presence log. Older saves have no trustworthy way
+  // to reconstruct which gym visits included an actual walk to the desk, so
+  // they begin with no check-ins rather than receiving invented attendance.
+  merged.gymCheckIns = normalizeGymCheckIns(saved.gymCheckIns);
   // v6 adds one-time outfit and gender choices. Their null defaults keep
   // older saves in setup until both choices have been recorded.
   // v7 adds Trail Credit. Older saves start at zero rather than being
@@ -163,6 +169,7 @@ export function hydrateSave(saved) {
   // they already earned and begin the two new counters at zero.
   // v12 records completed cardio sessions. The normalizer above preserves any
   // v12 rows and rejects malformed entries without inventing older history.
+  // v13 records one reception check-in per local day, including its real time.
   merged.version = SAVE_VERSION;
 
   // v3 also moved "today" from a UTC date to a LOCAL one. A pre-v3

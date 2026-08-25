@@ -27,12 +27,19 @@ distance, average speed, GPS state, and a clearly labelled calorie estimate.
 Ride miles remain real cardio and can still pay general distance XP, but they
 never receive a trail id, fill a trail quota, move a trail milestone meter,
 roll an encounter, or mint Trail Credit. They are recorded separately as
-cycling miles and completed bike rides in the Phone, Reception, Week and the
+cycling miles and completed bike rides in the Phone, Week and the
 noticeboard's local/accepted-circle Bike board.
 
 Completed bike, treadmill and rower sessions also enter a bounded recent-cardio
 log with machine, date, duration and mileage. Existing saves keep all lifetime
 totals and begin that session-level list empty rather than inventing detail.
+Reception is deliberately separate: walking into its desk records attendance
+only. Its date/time, streak and total-day history appear in the Phone's Personal
+Tracker and never become cardio mileage or rewards.
+
+![Reception check-in confirmation](previews/reception-checkin-preview.png)
+
+![Phone Personal gym-attendance history](previews/phone-personal-attendance-preview.png)
 
 ## Treadmills
 

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <rect width="390" height="844" fill="#17252a"/>
+  <text x="195" y="58" text-anchor="middle" font-family="DejaVu Sans" font-weight="700" font-size="25" fill="#f3c969">RECEPTION</text>
+  <rect x="18" y="86" width="354" height="164" rx="10" fill="#24373d" stroke="#0d1518" stroke-width="5"/>
+  <text x="38" y="120" font-family="DejaVu Sans" font-weight="700" font-size="16" fill="#f3c969">QUEST FITNESS CHECK-IN</text>
+  <text x="38" y="154" font-family="DejaVu Sans" font-size="12" fill="#f4ead5">You walked up to the desk, so</text>
+  <text x="38" y="174" font-family="DejaVu Sans" font-size="12" fill="#f4ead5">today's visit is in the book.</text>
+  <text x="38" y="205" font-family="DejaVu Sans" font-size="11" fill="#c8bda8">Attendance only — no mileage,</text>
+  <text x="38" y="223" font-family="DejaVu Sans" font-size="11" fill="#c8bda8">workouts, battles, or rewards.</text>
+  <rect x="18" y="272" width="354" height="132" rx="10" fill="#f4ead5" stroke="#1a1715" stroke-width="5"/>
+  <text x="38" y="311" font-family="DejaVu Sans" font-weight="700" font-size="17" fill="#4a8a54">CHECKED IN</text>
+  <text x="38" y="349" font-family="DejaVu Sans" font-size="13" fill="#514b45">Today at 8:42 AM.</text>
+  <text x="38" y="374" font-family="DejaVu Sans" font-size="11" fill="#786f66">Returning today keeps this first time.</text>
+  <text x="28" y="447" font-family="DejaVu Sans" font-size="12" fill="#c8bda8">Open Phone → Personal Tracker to see your</text>
+  <text x="28" y="467" font-family="DejaVu Sans" font-size="12" fill="#c8bda8">streak, total days, and dated entry times.</text>
+  <rect x="18" y="510" width="354" height="54" rx="8" fill="#dbe8cc" stroke="#1a1715" stroke-width="4"/>
+  <text x="195" y="544" text-anchor="middle" font-family="DejaVu Sans" font-weight="700" font-size="14" fill="#2c2926">BACK TO QUEST FITNESS</text>
+  <rect x="68" y="700" width="254" height="76" rx="8" fill="#24373d" stroke="#f3c969" stroke-width="4"/>
+  <text x="195" y="730" text-anchor="middle" font-family="DejaVu Sans" font-weight="700" font-size="13" fill="#f3c969">RECEPTION DOES ONE THING</text>
+  <text x="195" y="753" text-anchor="middle" font-family="DejaVu Sans" font-size="11" fill="#f4ead5">records that you showed up</text>
+</svg>

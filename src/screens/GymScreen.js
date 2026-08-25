@@ -45,7 +45,7 @@ const MENU = [
 const TOUR_STOPS = [
   { at: { x: 6, y: 16 }, face: 'down', lines: [
     { speaker: 'Coach Maple', text: 'Welcome to Quest Fitness. Everything in this room works one way: walk up to a thing and use it. Stay close - I will take you around every station and tell you what each one actually does.' },
-    { speaker: 'Coach Maple', text: 'Reception first. Walk into this desk and your whole record opens: lifetime miles, every session, battles, catches, streaks, credit. When you want the honest total of who you have been, it is here.' },
+    { speaker: 'Coach Maple', text: 'Reception first. Walk into this desk when you arrive and it records today’s date and your first check-in time. That is all reception does. Your check-in streak, total days and visit history live in the Phone’s Personal section.' },
   ] },
   { at: { x: 7, y: 16 }, face: 'down', lines: [
     { speaker: 'Coach Maple', text: 'The cork noticeboard. This is where friends live. Sign in, read your trail code to someone you actually train near, and once you BOTH agree you can see each other.' },
@@ -94,7 +94,7 @@ const TOUR_STOPS = [
   ] },
   { at: { x: 14, y: 9 }, face: 'right', lines: [
     { speaker: 'Coach Maple', text: 'The bikes. This one stays here; you do not. Start a ride, secure your phone, then take your real bicycle outside. GPS measures the miles while your person pedals here with you.' },
-    { speaker: 'Coach Maple', text: 'The Phone, Reception, your Week and this noticeboard all keep the ride as cycling mileage. It never fills a trail, moves its milestones, rolls encounters, or earns Trail Credit. Start and stop only while the real bike is parked.' },
+    { speaker: 'Coach Maple', text: 'The Phone, your Week and this noticeboard keep the ride as cycling mileage. Reception only records when you check in. A ride never fills a trail, moves its milestones, rolls encounters, or earns Trail Credit. Start and stop only while the real bike is parked.' },
   ] },
   { at: { x: 14, y: 11 }, face: 'right', lines: [
     { speaker: 'Coach Maple', text: 'The rowers. Same console, same rule: it counts what your body actually does, and stepping off ends the session honestly.' },

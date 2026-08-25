@@ -56,15 +56,15 @@
   <path class="arrow" d="M705 375 V455"/>
 
   <rect class="panel" x="70" y="470" rx="16" width="1260" height="310"/>
-  <text class="h" x="100" y="515">EVERY PLACE BIKE HISTORY NOW APPEARS</text>
+  <text class="h" x="100" y="515">WHERE FITNESS + ATTENDANCE RECORDS GO</text>
 
   <rect class="gym" x="105" y="555" rx="12" width="230" height="86"/>
   <text class="t" x="132" y="592">Phone tracker</text>
-  <text class="micro" x="132" y="619">today / lifetime / recent log</text>
+  <text class="micro" x="122" y="619">cardio + Personal attendance</text>
 
   <rect class="gym" x="365" y="555" rx="12" width="230" height="86"/>
-  <text class="t" x="397" y="592">Reception</text>
-  <text class="small" x="397" y="619">week + recent cardio</text>
+  <text class="t" x="397" y="592">Reception desk</text>
+  <text class="micro" x="385" y="619">check-in only; no stats</text>
 
   <rect class="gym" x="625" y="555" rx="12" width="230" height="86"/>
   <text class="t" x="662" y="592">Week view</text>
@@ -81,8 +81,8 @@
   <text class="t" x="615" y="716">Coach context</text>
 
   <rect class="gate" x="880" y="675" rx="12" width="300" height="70"/>
-  <text class="t" x="930" y="704">Save v12</text>
-  <text class="small" x="924" y="730">latest 120 cardio sessions</text>
+  <text class="t" x="930" y="704">Save v13</text>
+  <text class="small" x="900" y="730">cardio + dated gym check-ins</text>
 
   <text class="footer" x="70" y="828">Selected outdoor trails keep their existing mileage rewards. Gym bike and treadmill sessions cannot enter that path.</text>
 </svg>

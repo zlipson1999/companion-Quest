@@ -749,7 +749,7 @@ boards, on the proxy that already existed for the Coach. Full design in
   a week gives everyone the same empty column. Bests are the exception.
 - The noticeboard hangs by reception (`G`). One cork `BoardScreen` (paper
   FieldCards, 44px TrailAction tabs, name + this week's amount; bests are
-  one-set cards, not a ladder). Reception `N` stays Summary. Friends "See the
+  one-set cards, not a ladder). Reception `N` is a local check-in desk. Friends "See the
   boards" opens the same screen. Friends stays off the six-item hub menu.
 
 Two bugs found by driving it in a browser rather than reading it: `BarFill`
@@ -774,11 +774,20 @@ milestone meter, roll an encounter, or mint Trail Credit. The console and
 Maple's full-floor tour say the same thing.
 
 Cycling data reaches every current cardio surface: daily history, lifetime
-stats, Phone, Reception, Week, Coach context, a local noticeboard card, and a
+stats, Phone, Week, Coach context, a local noticeboard card, and a
 fifth signed-in Bike board. The day-sync/database path now stores checked
 `cyclingMi` and ride count, with an additive database migration. A bounded
 120-row cardio-session log records machine, date, duration and mileage for the
-Phone and Reception; save v12 preserves old totals but invents no old sessions.
+Phone; save v12 preserves old totals but invents no old sessions.
+
+## Phase 17 — DONE: reception means showing up
+
+Reception no longer mirrors the player's fitness record. Walking into the desk
+automatically records that local date and the first arrival time, once per day.
+The desk shows only a check-in confirmation. Current and longest attendance
+streaks, total check-in days and recent dated times live in Phone → Personal
+Tracker with the player's workout data. Check-ins award nothing, and save v13
+does not invent reception visits for older saves.
 
 ## Phase 6 — ideas, not committed
 

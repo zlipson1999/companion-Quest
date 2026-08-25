@@ -27,7 +27,7 @@ import RouteScreen from './RouteScreen';
 import BattleScreen from './BattleScreen';
 import WorkoutScreen from './WorkoutScreen';
 import HomeRestScreen from './HomeRestScreen';
-import SummaryScreen from './SummaryScreen';
+import ReceptionScreen from './ReceptionScreen';
 import IndexScreen from './IndexScreen';
 import BagScreen from './BagScreen';
 import PartyScreen from './PartyScreen';
@@ -61,7 +61,7 @@ const SCREENS = {
   battle: BattleScreen,
   workout: WorkoutScreen,
   rest: HomeRestScreen,
-  summary: SummaryScreen,
+  reception: ReceptionScreen,
   index: IndexScreen,
   bag: BagScreen,
   party: PartyScreen,
@@ -82,7 +82,7 @@ const SCREENS = {
 // fleeing a battle returns there, and without an entry here the battle music
 // just kept playing over the walk.
 const TOWN_BGM = new Set([
-  'title', 'intro', 'outfit', 'homeIntro', 'goal', 'pairing', 'sparIntro', 'mapleSession', 'cookbook', 'smoothiebar', 'hub', 'gym', 'route', 'rest', 'workout', 'summary', 'index', 'bag', 'friends', 'board',
+  'title', 'intro', 'outfit', 'homeIntro', 'goal', 'pairing', 'sparIntro', 'mapleSession', 'cookbook', 'smoothiebar', 'hub', 'gym', 'route', 'rest', 'workout', 'reception', 'index', 'bag', 'friends', 'board',
   'party', 'coach', 'options', 'habits', 'habit', 'forge', 'forgeEdit', 'formcheck', 'week', 'world',
 ]);
 
@@ -176,4 +176,3 @@ export default function Router() {
     </NavContext.Provider>
   );
 }
-

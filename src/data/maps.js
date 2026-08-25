@@ -274,10 +274,9 @@ const INTERACTIONS = {
   q: { cardio: 'rower', label: 'Rower — cardio, no interruptions' },
   Z: { screen: 'week', label: "Whiteboard — this week's work" },
   L: { screen: 'bag', label: 'Lockers — your supplies' },
-  // Reception is the record. The cork noticeboard is the friends board — the
-  // same BoardScreen Friends opens. Do not cork Summary, and do not move the
-  // boards onto N.
-  N: { screen: 'summary', label: 'Reception — your record so far' },
+  // Reception is attendance only. Walking into the desk records today's first
+  // arrival time; the Phone owns the broader workout/cardio record.
+  N: { screen: 'reception', label: 'Reception — check in for today' },
   r: { screen: 'board', label: 'Noticeboard — how your friends are doing' },
   // Front of house. The bar is the one place credit is spent, and credit is
   // only ever minted by real effort — see src/state/economy.js.

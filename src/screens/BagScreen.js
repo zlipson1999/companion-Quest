@@ -5,9 +5,9 @@
 
 import React, { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Screen, Window, PixelText, PixelButton, PixelSprite, CardioHistoryList } from '../components';
+import { Screen, Window, PixelText, PixelButton, PixelSprite, CardioHistoryList, GymCheckInList } from '../components';
 import { palette, space } from '../theme';
-import { useGame, useCompanion } from '../state';
+import { gymCheckInStats, useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { ITEMS, getItem } from '../data/items';
@@ -97,6 +97,7 @@ export default function BagScreen() {
   const ownedCharms = TRAIL_CHARMS.filter((c) => (state.bag[c.id] || 0) > 0 || state.discoveredCharms[c.id]);
   const exerciseEntries = Object.entries(state.stats.exercises || {}).filter(([id]) => !id.startsWith('workout:'));
   const routineEntries = Object.entries(state.stats.exercises || {}).filter(([id]) => id.startsWith('workout:'));
+  const checkIns = gymCheckInStats(state.gymCheckIns);
 
   const useItem = (id) => {
     const item = getItem(id);
@@ -137,8 +138,17 @@ export default function BagScreen() {
         {statRow('Lifetime — bike', `${(state.stats.cyclingMi || 0).toFixed(1)} mi`)}
         {statRow('Bike Rides', state.stats.ridesDone || 0)}
         {statRow('Steps', state.stats.totalSteps || 0)}
-        {statRow('Streak', `${state.stats.streak || 0}d`)}
-        {statRow('Active Days', state.stats.daysActive || 0)}
+      </Window>
+
+      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+        <PixelText size="small" color={palette.windowText}>Personal — Gym Attendance</PixelText>
+        {statRow('Current Streak', `${checkIns.currentStreak}d`)}
+        {statRow('Longest Streak', `${checkIns.longestStreak}d`)}
+        {statRow('Days Checked In', checkIns.totalDays)}
+        <GymCheckInList entries={state.gymCheckIns} />
+        <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: space.sm, lineHeight: 13 }}>
+          Reception records your first desk check-in time each day. Your attendance stats live here in the Phone’s Personal section; reception does not track mileage or award anything.
+        </PixelText>
       </Window>
 
       <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>

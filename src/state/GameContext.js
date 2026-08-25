@@ -29,6 +29,7 @@ import { XP_PER_MILE, pointsFor, xpFor } from './evolution';
 import { CREDIT_PER_GOAL, CREDIT_PER_MILE, CREDIT_PER_SESSION, CREDIT_PER_WIN, mint } from './economy';
 import { FRESH, hydrateSave } from './hydrate';
 import { appendCardioSession } from './cardioHistory';
+import { appendGymCheckIn } from './gymCheckIns';
 import { distancePolicy } from './distancePolicy';
 import {
   liveOnMember,
@@ -262,6 +263,12 @@ function reducer(state, action) {
           ridesDone: (state.stats.ridesDone || 0) + (ride ? 1 : 0),
         },
       };
+    }
+
+    case 'GYM_CHECK_IN': {
+      const gymCheckIns = appendGymCheckIn(state.gymCheckIns, action.payload);
+      if (gymCheckIns.length === (state.gymCheckIns || []).length) return state;
+      return { ...state, gymCheckIns };
     }
 
     case 'COLLECT_ITEM': {
