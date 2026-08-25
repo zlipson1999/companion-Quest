@@ -124,6 +124,10 @@ export default function WorldScreen({
   // measured activity arrives. The room stays visible; only the player's pose
   // changes from walking the floor to using the machine.
   playerActivity,
+  // Small controls that belong to the place itself. Cardio uses this instead
+  // of `status`: a full console below the world squeezed the room down until
+  // the player could not actually watch their character run or pedal.
+  worldOverlay,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const reach = showControl ? reachableThing(map, player) : null;
@@ -210,6 +214,20 @@ export default function WorldScreen({
             playerActivity={playerActivity}
           />
         </View>
+        {worldOverlay ? (
+          <View
+            pointerEvents="box-none"
+            style={{
+              position: 'absolute',
+              left: space.sm,
+              bottom: space.sm,
+              width: '74%',
+              maxWidth: 380,
+            }}
+          >
+            {worldOverlay}
+          </View>
+        ) : null}
         {menu.length ? (
           <View style={{ position: 'absolute', top: TOP_INSET, right: space.sm }}>
             <MenuButton onPress={() => setMenuOpen(true)} />

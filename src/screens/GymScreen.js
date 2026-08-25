@@ -454,29 +454,31 @@ export default function GymScreen() {
         type: cardio.station,
         active: cardio.station === 'bike' ? !!(cardio.gpsStarted && moving) : !!moving,
       } : null}
+      worldOverlay={cardio ? (
+        <>
+          <KeepAwakeOnDeck />
+          <CardioConsole
+            compact
+            station={cardio.station}
+            seconds={seconds}
+            miles={sessionMiles}
+            steps={sessionSteps}
+            breakdown={breakdown}
+            bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}
+            moving={moving}
+            gpsActive={!!(cardio.gpsStarted && dist.running)}
+            gpsError={cardio.station === 'bike' ? dist.gpsError : null}
+            note={note}
+            onStartGps={cardio.station === 'bike' ? startBikeRide : null}
+            onInject={cardio.station !== 'bike' && dist.showInjector ? dist.injectSteps : null}
+            onStop={stepOff}
+          />
+        </>
+      ) : null}
       status={
         tour || rush ? (
           <CompanionStatus companion={companion} stats={state.stats} />
-        ) : cardio ? (
-          <>
-            <KeepAwakeOnDeck />
-            <CardioConsole
-              station={cardio.station}
-              seconds={seconds}
-              miles={sessionMiles}
-              steps={sessionSteps}
-              breakdown={breakdown}
-              bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}
-              moving={moving}
-              gpsActive={!!(cardio.gpsStarted && dist.running)}
-              gpsError={cardio.station === 'bike' ? dist.gpsError : null}
-              note={note}
-              onStartGps={cardio.station === 'bike' ? startBikeRide : null}
-              onInject={cardio.station !== 'bike' && dist.showInjector ? dist.injectSteps : null}
-              onStop={stepOff}
-            />
-          </>
-        ) : (
+        ) : cardio ? null : (
           <CompanionStatus companion={companion} stats={state.stats} />
         )
       }

@@ -5,6 +5,16 @@ new session can see how the systems grew. It is **not** the instruction
 manual. For current rules see `CLAUDE.md`, `docs/CREATING_CHARACTERS.md`,
 `docs/AGENTS.md`, and `docs/GAME_BIBLE.md`.
 
+### Gym cardio stays in the room
+
+The treadmill and Bike Ride fascia became a compact lower-left overlay instead
+of a large status panel that squeezed Quest Fitness out of sight. The player is
+now visible on the east-wall machine while the session runs: real treadmill
+steps alternate the run frames, real Bike Ride GPS deltas alternate the side-on
+pedal frames, and either character returns to an idle pose when movement stops.
+A regression check locks the overlay, sensor-to-animation wiring, and stopped
+states together.
+
 The thirteen phase sections below are copied verbatim from the file that
 used to wear a manual's name.
 

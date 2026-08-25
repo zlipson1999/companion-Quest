@@ -464,7 +464,9 @@ Cardio is a machine you stand ON, in the room, not a screen that takes over the
 phone. Walking into a treadmill or bike moves you onto the tile — the same 120 ms
 tween every other step in that room uses, so no bespoke mount animation was
 needed — the stick hides, movement is disabled (the button is how you get off,
-the way the bar is on a real one), and the gym stays on screen above.
+the way the bar is on a real one), and a compact fascia overlays the gym's
+lower-left corner. It never occupies the status pane or shrinks the room; the
+east-wall machine and player remain visible beside it.
 
 The trail runs the same console: the measurement outdoors is identical, so there
 was no reason the trail should report it in a smaller vocabulary. It passes a
@@ -489,8 +491,11 @@ meters) and no `onStop`, because outdoors there is no getting off a trail.
   6.8 below 12, 8 below 14, 10 below 16 and 12 above that. It is explicitly
   labelled an estimate because the phone cannot see grade, wind or resistance.
 - Treadmill animation alternates the authored walk/run frames only when step
-  deltas arrive. The rider uses the side-on frames only when GPS distance
-  arrives. An idle sensor means an idle character; neither machine fakes work.
+  deltas arrive. The rider uses the side-on frames while GPS distance keeps
+  arriving. The bike's motion pulse bridges normal GPS sampling gaps instead
+  of freezing between valid updates, then returns to the stopped pose when the
+  sensor goes quiet. An idle sensor means an idle character; neither machine
+  fakes work.
 - Completing a bike session of at least 0.01 mi and 5 s adds one to
   `ridesDone` / that day's `rides`. Phone mileage shows cycling miles and ride
   count separately while lifetime distance keeps the common total.

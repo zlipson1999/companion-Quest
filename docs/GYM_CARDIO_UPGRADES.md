@@ -9,6 +9,8 @@ now stops at the bikes and explains what crosses into the real world.
 
 ![Quest Fitness cardio floor](previews/gym-cardio-floor.png)
 
+![Compact treadmill and Bike Ride overlays with the moving character still visible](previews/gym-cardio-live-overlay-preview.png)
+
 ## Bike rides
 
 The bike in the gym is stationary; the player rides a real moving bicycle
@@ -19,8 +21,12 @@ only after stopping again.
 ![Bike Ride console wording and controls](previews/bike-ride-console-preview.png)
 
 Once GPS is live, distance updates the console and the character pedals only
-when a real location delta arrives. The console reports elapsed time, measured
-distance, average speed, GPS state, and a clearly labelled calorie estimate.
+when real location deltas keep arriving. The rider remains in motion across the
+normal gap between GPS samples, then returns to the stopped pose when updates
+go quiet. The compact console sits over the lower-left of the gym instead of
+claiming the screen below it, leaving both the character and east-wall bike
+visible. It reports elapsed time, measured distance, average speed, GPS state,
+and a clearly labelled calorie estimate.
 
 Ride miles remain real cardio and can still pay general distance XP, but they
 never receive a trail id, fill a trail quota, move a trail milestone meter,
@@ -50,8 +56,10 @@ usable gym code is missing from the tour or a stop omits its action/result.
 
 Treadmills keep using the phone's real step source. The player walk/run frames
 animate only while step deltas arrive, so a stationary phone never makes the
-character run. The browser development build can show its existing step
-injector for QA; release builds and the bike never expose manual distance.
+character run. The stopped frame returns when the steps stop. The same compact
+lower-left overlay leaves the treadmill and character visible at the same time.
+The browser development build can show its existing step injector for QA;
+release builds and the bike never expose manual distance.
 
 ![Treadmill console](previews/gym-treadmill-ready.png)
 

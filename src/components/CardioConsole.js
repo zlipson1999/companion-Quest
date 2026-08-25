@@ -85,6 +85,7 @@ export default function CardioConsole({
   // encounter meters here.
   children,
   style,
+  compact = false,
 }) {
   const bike = station === 'bike';
   const pace = paceFor(miles, seconds);
@@ -113,6 +114,102 @@ export default function CardioConsole({
     const row = cells.slice(i, i + PER_ROW);
     while (row.length < PER_ROW) row.push(null);
     rows.push(row);
+  }
+
+  // In the gym this is a machine fascia laid over one corner of the room, not
+  // a destination screen. Keep every live number and both bike actions, but
+  // remove the long-form explanation so the player and machine remain visible.
+  if (compact) {
+    const compactRows = [];
+    const perCompactRow = bike ? 3 : 4;
+    for (let i = 0; i < cells.length; i += perCompactRow) {
+      compactRows.push(cells.slice(i, i + perCompactRow));
+    }
+    const stopLabel = bike
+      ? (gpsActive ? 'End Bike Ride' : 'Step off')
+      : station === 'rower' ? 'Get off' : 'Step off';
+
+    return (
+      <View
+        style={[
+          {
+            backgroundColor: '#101219ee',
+            borderColor: tokens.line,
+            borderWidth: 3,
+            borderRadius: scale.radius.panel,
+            padding: space.sm,
+          },
+          style,
+        ]}
+      >
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ letterSpacing: 1 }}>
+            {title || (bike ? 'BIKE RIDE' : station === 'rower' ? 'ROWER' : 'TREADMILL')}
+          </PixelText>
+          <PixelText size="tiny" color={moving || gpsActive ? palette.secondary : tokens.disabledInk}>
+            {bike ? (moving ? 'RIDING' : gpsActive ? 'PAUSED' : 'READY') : moving ? 'MOVING' : 'STOPPED'}
+          </PixelText>
+        </View>
+
+        <View style={{ flexDirection: 'row', marginTop: 6 }}>
+          <Readout label="TIME" value={formatClock(seconds)} big live={moving} />
+          <Readout label="DISTANCE" value={miles.toFixed(2)} unit="mi" big live={moving} />
+        </View>
+
+        {compactRows.map((row, i) => (
+          <View key={i} style={{ flexDirection: 'row', marginTop: 5 }}>
+            {row.map((cell) => <Readout key={cell.label} {...cell} />)}
+          </View>
+        ))}
+
+        <PixelText size="tiny" color={tokens.textOnDarkDim} numberOfLines={2} style={{ marginTop: 6, lineHeight: 13 }}>
+          {bike
+            ? 'Bike cardio only — no trail progress or Trail Credit.'
+            : 'Gym cardio only — no trail progress or Trail Credit.'}
+        </PixelText>
+
+        {gpsError ? (
+          <PixelText size="tiny" color={palette.danger} numberOfLines={2} style={{ marginTop: 5, lineHeight: 13 }}>
+            {gpsError}
+          </PixelText>
+        ) : note ? (
+          <PixelText size="tiny" color={palette.windowFill} numberOfLines={2} style={{ marginTop: 5, lineHeight: 13 }}>
+            {note}
+          </PixelText>
+        ) : null}
+
+        {onInject ? (
+          <View style={{ flexDirection: 'row', marginTop: 6 }}>
+            {[[100, '+0.05mi'], [500, '+0.25mi'], [2000, '+1mi']].map(([n, label], i) => (
+              <PixelButton
+                key={n}
+                label={label}
+                tone="dark"
+                size="small"
+                sound="cursor"
+                style={{ flex: 1, marginRight: i < 2 ? 4 : 0, paddingVertical: 6 }}
+                onPress={() => onInject(n)}
+              />
+            ))}
+          </View>
+        ) : null}
+
+        <View style={{ flexDirection: 'row', marginTop: 6 }}>
+          {bike && !gpsActive && onStartGps ? (
+            <TrailAction
+              label="Start Bike Ride"
+              sublabel="Start parked"
+              tone="primary"
+              style={{ flex: 1, marginRight: 6 }}
+              onPress={onStartGps}
+            />
+          ) : null}
+          {onStop ? (
+            <TrailAction label={stopLabel} tone="primary" style={{ flex: 1 }} onPress={onStop} />
+          ) : null}
+        </View>
+      </View>
+    );
   }
 
   return (
