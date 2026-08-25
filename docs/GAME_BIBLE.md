@@ -563,7 +563,7 @@ never credits and never progress. For the same reason `seconds` on a saved row
 is defined to equal `activeSeconds`: code that reads `seconds` as a fallback
 must not be able to see elapsed time.
 
-The rower's tap starts only a 1.2s animation pulse. Payment is confirmed in
+The rower's tap starts only a 3s animation pulse, long enough to span a real rowing cadence. Payment is confirmed in
 arrears between two strokes no more than `STROKE_CONFIRM_GAP_MS` (5s) apart.
 The confirmation clock and animation pulse are cleared on pause, resume,
 background, finish, leave, a new session and unmount, so neither a pause gap

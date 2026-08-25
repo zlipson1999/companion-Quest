@@ -38,8 +38,15 @@ export function confirmationGapMs(gpsOnly) {
 }
 
 // Rower taps still need a visual pulse, but this number controls animation
-// only. It never controls credits.
-export const STROKE_MOVING_MS = 1200;
+// only. It never controls credits. It is longer than the 900ms step hold
+// because it spans a different thing: footfalls are half a second apart, a
+// rowing stroke two or three seconds. At 1.2s the character finished its pull
+// and stood idle before the next one, which reads as somebody who keeps
+// giving up rather than somebody rowing. Three seconds covers a real cadence
+// and still drops the pose about three seconds after the last pull — and it
+// stays under STROKE_CONFIRM_GAP_MS, so the figure can never be animating
+// through a stretch that has already stopped being creditable.
+export const STROKE_MOVING_MS = 3000;
 
 export default function useCardio({ active = true, gpsOnly = false, activity, onDelta, onMilestone, routeId } = {}) {
   const { state, dispatch } = useGame();
