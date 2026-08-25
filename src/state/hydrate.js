@@ -9,7 +9,7 @@ import { normalizeCardioSessions } from './cardioHistory';
 import { normalizeGymCheckIns } from './gymCheckIns';
 import { trim } from './history';
 
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
@@ -38,6 +38,16 @@ export const FRESH = {
     distanceMi: 0,
     cyclingMi: 0,
     ridesDone: 0,
+    // Lifetime gym-cardio counters (v13). All five machines feed these
+    // through COMPLETE_CARDIO; per-machine extras only tick for their own
+    // machine. Older saves start at zero — no history is reconstructed.
+    cardioMinutes: 0,
+    cardioSessionsDone: 0,
+    cardioCreditsEarned: 0,
+    treadmillMi: 0,
+    rowerStrokes: 0,
+    stairFloors: 0,
+    ellipticalStrides: 0,
     routeMi: 0,
     xpCarry: 0,       // fractional walking XP not yet paid out
     creditCarry: 0,   // ...and the same for credit
@@ -170,8 +180,14 @@ export function hydrateSave(saved) {
   // v11 records outdoor bicycle mileage and completed rides separately. The
   // additive defaults above are the migration: prior saves keep every mile
   // they already earned and begin the two new counters at zero.
-  // v12: the Quest Ledger became free and reception attendance became
-  // timestamped.
+  // v12 added the cardio-session log and timestamped reception attendance.
+  // v13 unified the session record for the five-machine cardio floor: a
+  // legacy row is carried forward through the same normalizer — its
+  // measurements stay exactly as saved, its id becomes stable, and it gains
+  // safe defaults (creditsAwarded 0: the duration pay started at v13 and is
+  // never handed out retroactively; an interrupted session was never saved,
+  // so nothing here can promote one to a rewarded completion). Running this
+  // again changes nothing — normalization is idempotent.
   merged.cardioSessions = normalizeCardioSessions(saved.cardioSessions);
   // Old check-ins kept only the day; the timestamp is synthesized at local
   // noon because the record never held the real arrival time. New check-ins
@@ -183,12 +199,10 @@ export function hydrateSave(saved) {
     })),
   );
   delete merged.quests.checkIns;
-  // Quests were briefly PURCHASED with Quest Credits. That design is gone —
-  // quests are free commitments — so anyone who provably paid is refunded
-  // the exact historical price of each quest still active or already
-  // completed, exactly once: the refundApplied flag persists in the save,
-  // and the price table below is the frozen launch pricing, not a live
-  // tuning value (the live quests no longer have prices at all).
+  // The LAUNCH ledger priced quests at 10-30. Those purchases are refunded
+  // at their exact historical prices exactly once — the refundApplied flag
+  // persists in the save — and the live 5-15 pricing applies from then on.
+  // The table below is frozen launch pricing, not a live tuning value.
   if (!(saved.quests && saved.quests.refundApplied)) {
     const PAID = {
       tenminutetrek: 15, wheelsinmotion: 10, foundationset: 15,

@@ -346,7 +346,7 @@ are grown, never knotted.
   machine stays indoors, but Start begins a real Bike Ride measured through
   the same GPS watcher as a run. Those deltas carry `activity: 'ride'`, add
   to `cyclingMi`, and never receive a `routeId`.
-- **Six trails** (`src/data/routes.js`), save `version: 12`. Maple Trail is
+- **Six trails** (`src/data/routes.js`), save `version: 13`. Maple Trail is
   unlocked from the start. Walk that trail's miles and confirm its reps in
   challenges, then Challenge the Warden. First win grants the Quest Pin, a
   Kinship Knot, and the next trail. Wild companion pick is random from that
@@ -454,6 +454,83 @@ and `logAs` records the drink as your own Nourish check-in, through the module's
 normal path, so the daily cap applies and buying one can never pay more than
 showing up would have.
 
+### 5.5b The cardio floor — five machines, one pipeline (`data/cardioMachines.js`)
+
+Quest Fitness has five interactable cardio machines along its east wall:
+**Treadmill**, **Bike Ride**, **Rower**, **Stair Climber** (named to avoid a
+trademark) and **Elliptical**. They are ONE table, not five implementations:
+id, user-facing name, map code, tracking method, MET band, character pose and
+cadence, manual-entry fields, safety line and tour line all live in
+`src/data/cardioMachines.js`, and every screen, reducer, board and test reads
+them from there.
+
+| machine | code | tracking | character | optional manual entry |
+|---|---|---|---|---|
+| Treadmill | `t` | phone steps | faces away, 220ms | — |
+| Bike Ride | `c` | real GPS | side-on, 180ms | — |
+| Rower | `q` | timer + logged strokes | side-on, 420ms | strokes, machine distance |
+| Stair Climber | `x` | phone steps | faces away, 260ms | floors, level |
+| Elliptical | `m` | phone steps | faces away, 300ms | machine distance, resistance |
+
+`x` and `m` are map-local codes (every letter is spoken for somewhere), the
+same way `c` is the bike here and a kitchen counter at home.
+
+**The session pipeline** (`state/cardioSession.js`) is the same for all five:
+walk into the machine → the character steps onto it → the compact console
+opens over the live room → start → track → pause/resume → finish or discard →
+summary → save exactly once. The clock banks ACTIVE and PAUSED seconds
+separately, and a backgrounded app pauses rather than accruing.
+
+**The reward formula is duration-based and shared.** Mileage cannot be the
+universal unit — a rower's metres, a climber's floors and an elliptical's
+strides do not compare — but a minute of honest work does:
+
+```
+credits = activeSeconds < 300 ? 0 : min(15, floor(activeSeconds / 240))
+```
+
+(`CARDIO_MIN_ACTIVE_SEC = 300`, `CARDIO_SEC_PER_CREDIT = 240`,
+`CARDIO_SESSION_CREDIT_CAP = 15`, all in `state/economy.js`.)
+
+| active time | credits |
+|---|---|
+| 4:59 | 0 |
+| 5:00 | 1 |
+| 20:00 | 5 |
+| 40:00 | 10 |
+| 64:00+ | 15 (cap) |
+
+Priced against the reference mile: a brisk outdoor mile takes about twenty
+minutes and pays 10, so twenty indoor minutes pay 5 — deliberately about half
+the outdoor rate, because trails want you outside and the gym should never
+out-earn them. The minimum and the cap are the anti-spam rails.
+
+Credits are awarded **once**, by `COMPLETE_CARDIO`, from the row it actually
+appended — `appendCardioSession` refuses an id already in the log, so a
+duplicate finish event, a re-submitted summary, a reload or a replayed
+dispatch changes nothing. The award is stored on the record as
+`creditsAwarded`, and it is added to the credits pool directly rather than
+through `mint()`: the fractional `creditCarry` belongs to walked trail miles
+and gym cardio never touches it. A discarded session is never dispatched at
+all, and a session under the minimum saves its honest record and pays zero.
+
+**Trail isolation survives the credit change.** Earning Quest Credits does not
+make an activity trail work. No gym session advances trail mileage, fills a
+quota, moves a milestone meter, rolls an encounter or a Warden, completes a
+trail, or awards a pin, charm or trail-only Token — `state/distancePolicy.js`
+is still the single gate and still throws if gym cardio carries a `routeId`.
+GPS alone does not qualify (the Bike Ride is gym cardio); hand-entered
+distance never does.
+
+**Honest metrics.** Nothing fabricates what the device cannot measure. A rower
+is timed, because a phone cannot feel a stroke; its strokes are the player's
+own taps or a figure read off the machine, and machine distance is entered by
+hand AFTER the session, off the equipment. Every record carries a `source`
+(`sensor`, `gps`, `timer`, `mixed`, or `legacy` for pre-v13 rows), and
+hand-entered figures are marked with a `*` wherever they are shown. Manual
+values are validated against per-field bounds and refused — not clamped —
+when impossible.
+
 ### 5.6b The Quest Ledger and Quest Tokens (`data/quests.js`)
 
 Quests are bought with Quest Credits — the other place besides the smoothie
@@ -468,7 +545,7 @@ by real recorded behavior — the SAME stats and module buckets everything
 else keeps, measured against a snapshot taken at purchase so only new
 effort counts — and turned in at the desk for its category Token plus a
 reward paid through the usual `{xp,bond,evo,heal}` contract.
-7 Quest Tokens, one per category; 8 quests on
+7 Quest Tokens, one per category; 13 quests on
 the board; at most 3 active; 7-day windows; abandoning frees the slot with
 no refund. Tokens are collectible proof of completion, never money: they
 cannot be spent or sold, never convert to credits, and never touch trail
@@ -485,6 +562,11 @@ post-purchase check-in days.
 | Fill the Flask | Rill | 8 | water goal on 2 days | +35 Resolve |
 | Rest to Rise | Hearth | 9 | sleep logged 2 nights | Resolve fully restored |
 | Five Calm Breaths | Stillwater | 7 | 2 stillness sessions | +12 bond |
+| Pull With Purpose | Stride | 6 | 1 qualifying Rower session | +30 XP |
+| Step by Step | Stride | 6 | 1 qualifying Stair Climber session | +30 XP |
+| Smooth Strides | Stride | 6 | 1 qualifying Elliptical session | +30 XP |
+| Cardio Circuit | Stride | 9 | qualifying sessions on 3 different machines | +45 XP |
+| Five-Machine Circuit | Stride | 12 | a qualifying session on every cardio machine | +60 XP, +6 bond |
 | Seven-Day Foundation | Root | 15 | 3 check-ins, 2 strength, 1 cardio, water×4, meals×3, sleep×2, stillness×1 | +10 bond + 1 Kinship Knot |
 
 Rewards are matched to what each category already pays elsewhere: movement
@@ -752,7 +834,7 @@ faint.
 4. `backlight()` (rim opposite the key light) and `spec()` (hotspots) are what
    read as "modern".
 
-### 8.3 Sprite inventory (295 runtime sprites + 417 atlas cells)
+### 8.3 Sprite inventory (295 runtime sprites + 419 atlas cells)
 
 The count includes the traced regalia set landed with the Warden/badge/charm
 plates: 10 unique Warden bodies (the Horizon Wardens no longer wear recolored
@@ -839,7 +921,7 @@ whose stages are too similar. The `sphere()` + `eye()` recipe is how
 the first trail pass came out as twelve interchangeable blobs and is
 not used again.
 
-## 9. UI components (32)
+## 9. UI components (33)
 
 `src/components/index.js` exports 30. HorizonSky is its own painter so the
 stage and the walk cannot drift; GrowthCeremony is the evolution hold, not a
@@ -891,10 +973,10 @@ board_update, friend_request, friend_accept + bgm_town / bgm_battle loops.
 `audio/sfx.js` wraps expo-av; every call degrades silently (web autoplay,
 early calls). BGM switching lives in Router via TOWN_BGM.
 
-## 12. Save format — `companionquest:save:v1` key, `version: 12`
+## 12. Save format — `companionquest:save:v1` key, `version: 13`
 
 ```js
-{ version: 12, started, goalId,                    // 'muscle'|'lean'|'root'
+{ version: 13, started, goalId,                    // 'muscle'|'lean'|'root'
   playerOutfit, playerGender,                     // one-time, v6
   party: [{ id, baseId, xp, bond, evo, hp,
             charm }],                             // ≤6; charm = worn Trail
@@ -905,6 +987,9 @@ early calls). BGM switching lives in Router via TOWN_BGM.
            routeMi, xpCarry, creditCarry,
            milestonesReached, battlesWon, battlesLost, caught, workoutsDone,
            itemsCollected, habitLogs, habitGoalsHit, daysActive, streak,
+           cardioMinutes, cardioSessionsDone,     // v13 gym-cardio lifetime
+           cardioCreditsEarned, treadmillMi,      // counters, per machine
+           rowerStrokes, stairFloors, ellipticalStrides,
            sets, reps, holdSec,                   // real exercise done
            exercises: { [exerciseId|'workout:<id>']: amount } },
   bag: { itemId: count }, dex: { creatureId: 'owned'|'seen' },
@@ -913,8 +998,13 @@ early calls). BGM switching lives in Router via TOWN_BGM.
             completed: [{ questId, day }],
             tokens: { tokenId: count },           // the Token Case
             refundApplied },                      // v12 one-time refund flag
-  cardioSessions: [{ station, miles, seconds,     // gym cardio history only,
-                     endedAt }],                  // last 120 (v12)
+  cardioSessions: [{ id, station, startedAt,      // gym cardio history only,
+                     endedAt, activeSeconds,      // last 120. v13 unified the
+                     pausedSeconds, miles, steps, // record across all five
+                     strokes, floors, strides,    // machines; `source` says
+                     level, machineMiles, kcal,   // whether a figure was
+                     creditsAwarded, source,      // sensed, GPS'd, timed or
+                     completion }],               // typed in by hand.
   gymCheckIns: [{ day: 'YYYY-MM-DD',              // reception attendance:
                   checkedAt }],                   // first arrival per day (v12)
   modules: { [id]: { date, count, entries, goalHit, streak, bestStreak,
@@ -952,6 +1042,7 @@ Migrations, all in HYDRATE — and every one of them refuses to invent history:
 | v8→9 | `trails` — Maple Trail at zero miles/reps, no pins. Older miles are not back-credited: they were not trail-tagged, and gym miles must never fill a trail quota |
 | v9→10 | D-Pad becomes the default; a stored `stick` from before the choice existed migrates once |
 | v10→11 | `cyclingMi` / `ridesDone` default to zero, preserving all existing lifetime distance without inventing old bicycle history |
+| v12→13 | the five-machine cardio floor: legacy cardio rows carried forward through the unified normalizer (measurements kept, `creditsAwarded: 0` — duration pay starts at v13 and is never retroactive, and no interrupted session can become a rewarded one), new per-machine lifetime counters start at zero, and the whole migration is idempotent |
 | v11→12 | quests became free: priced-era purchases refunded at their exact historical prices exactly once (`quests.refundApplied`); `quests.checkIns` day strings become timestamped `gymCheckIns` (synthesized noon — the old record never held the real time); `cardioSessions` starts empty |
 
 Plus, every load: goal ids translated, `rollAllModules` day roll, and a

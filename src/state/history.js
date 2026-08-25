@@ -24,6 +24,8 @@ export function blankDay(date) {
     distanceMi: 0,
     cyclingMi: 0,
     rides: 0,
+    cardioSessions: 0, // completed gym cardio sessions (any machine)
+    cardioMin: 0,      // active gym-cardio minutes across those sessions
     battles: 0,
     workouts: 0,
     habitLogs: 0,
@@ -112,6 +114,8 @@ export function totals(days) {
       distanceMi: t.distanceMi + (d.distanceMi || 0),
       cyclingMi: t.cyclingMi + (d.cyclingMi || 0),
       rides: t.rides + (d.rides || 0),
+      cardioSessions: t.cardioSessions + (d.cardioSessions || 0),
+      cardioMin: t.cardioMin + (d.cardioMin || 0),
       battles: t.battles + (d.battles || 0),
       workouts: t.workouts + (d.workouts || 0),
       habitLogs: t.habitLogs + (d.habitLogs || 0),
@@ -121,7 +125,7 @@ export function totals(days) {
       activeDays: t.activeDays + (isActive(d) ? 1 : 0),
       restDays: t.restDays + (d.rested ? 1 : 0),
     }),
-    { xp: 0, bond: 0, distanceMi: 0, cyclingMi: 0, rides: 0, battles: 0, workouts: 0, habitLogs: 0, goalsMet: 0, load: 0, sessions: 0, activeDays: 0, restDays: 0 }
+    { xp: 0, bond: 0, distanceMi: 0, cyclingMi: 0, rides: 0, cardioSessions: 0, cardioMin: 0, battles: 0, workouts: 0, habitLogs: 0, goalsMet: 0, load: 0, sessions: 0, activeDays: 0, restDays: 0 }
   );
 }
 

@@ -11,6 +11,7 @@ const bikeLabelSource = [
   source,
   readFileSync(new URL('../src/components/CardioConsole.js', import.meta.url), 'utf8'),
   readFileSync(new URL('../src/state/cardioHistory.js', import.meta.url), 'utf8'),
+  readFileSync(new URL('../src/data/cardioMachines.js', import.meta.url), 'utf8'),
   readFileSync(new URL('../src/data/maps.js', import.meta.url), 'utf8'),
 ].join('\n');
 const failures = [];
@@ -43,6 +44,18 @@ covered.forEach((code) => {
   if (!required.has(code)) failures.push(`tour claims unknown gym interaction ${JSON.stringify(code)}`);
 });
 
+// Maple's grouped Cardio Section Overview must name what each of the five
+// machines measures, not merely list them.
+const overview = (source.match(/covers:\s*\[[^\]]*'t'[^\]]*\],\s*lines:\s*\[([\s\S]*?)\n\s*\]\s*\},/) || [])[1] || '';
+for (const word of ['treadmill', 'bike', 'rower', 'stair climber', 'elliptical']) {
+  if (!overview.toLowerCase().includes(word)) {
+    failures.push(`the grouped cardio overview never mentions the ${word}`);
+  }
+}
+for (const rule of [/active time/i, /quest credit/i, /trail/i, /hand|by hand|enter/i]) {
+  if (!rule.test(overview)) failures.push(`the grouped cardio overview is missing ${rule}`);
+}
+
 if (!bikeLabelSource.includes('Start Bike Ride') || !bikeLabelSource.includes("'Bike Ride'")) {
   failures.push('player-facing cycling labels must use Bike Ride');
 }
@@ -56,4 +69,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`ok     Maple explains action + result for ${required.size} gym interactions across ${stops} stops`);
+console.log(`ok     Maple explains action + result for ${required.size} gym interactions across ${stops} stops, cardio grouped`);

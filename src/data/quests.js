@@ -16,6 +16,16 @@
 // against a snapshot taken at purchase — a quest never invents its own
 // counters, and only effort after you buy counts.
 
+// Requirements carry explicit activity SCOPES (data/activityScopes.js): what
+// kind of real effort may progress them. Gym cardio can satisfy Stride and
+// mixed wellness work, strength satisfies Forge, attendance satisfies Root —
+// and nothing here can touch a trail quota, which only `trail_activity`
+// (a delta carrying a real routeId) ever reaches.
+
+import { scopesForReqKind } from './activityScopes';
+import { CARDIO_MACHINE_IDS } from './cardioMachines';
+import { CARDIO_MIN_ACTIVE_SEC } from '../state/economy';
+
 export const MAX_ACTIVE_QUESTS = 3;
 
 // One token per healthy-habit category. Sprites are the painted plates in
@@ -86,6 +96,43 @@ export const QUESTS = [
     reqs: [{ kind: 'moduleLogs', moduleId: 'meditation', amount: 2, label: 'Sit for two stillness sessions' }],
     reward: { bond: 12 }, rewardLine: '+12 bond',
   },
+  // The machine quests: one honest qualifying session (five active minutes
+  // or more) on the named machine. Movement quests pay the XP engine.
+  {
+    id: 'pullwithpurpose', name: 'Pull With Purpose', tokenId: 'stride',
+    price: 6, days: 7,
+    blurb: 'One qualifying rower session — five real active minutes or more. Row first, log after.',
+    reqs: [{ kind: 'machineSessions', machineId: 'rower', amount: 1, label: 'Complete one qualifying Rower session' }],
+    reward: { xp: 30 }, rewardLine: '+30 XP',
+  },
+  {
+    id: 'stepbystep', name: 'Step by Step', tokenId: 'stride',
+    price: 6, days: 7,
+    blurb: 'One qualifying Stair Climber session. The floors are optional; the minutes are real.',
+    reqs: [{ kind: 'machineSessions', machineId: 'stairclimber', amount: 1, label: 'Complete one qualifying Stair Climber session' }],
+    reward: { xp: 30 }, rewardLine: '+30 XP',
+  },
+  {
+    id: 'smoothstrides', name: 'Smooth Strides', tokenId: 'stride',
+    price: 6, days: 7,
+    blurb: 'One qualifying elliptical session, arms and legs together.',
+    reqs: [{ kind: 'machineSessions', machineId: 'elliptical', amount: 1, label: 'Complete one qualifying Elliptical session' }],
+    reward: { xp: 30 }, rewardLine: '+30 XP',
+  },
+  {
+    id: 'cardiocircuit', name: 'Cardio Circuit', tokenId: 'stride',
+    price: 9, days: 7,
+    blurb: 'Qualifying sessions on three different cardio machines in one week.',
+    reqs: [{ kind: 'distinctMachines', amount: 3, label: 'Qualifying sessions on three different machines' }],
+    reward: { xp: 45 }, rewardLine: '+45 XP',
+  },
+  {
+    id: 'fivemachinecircuit', name: 'Five-Machine Circuit', tokenId: 'stride',
+    price: 12, days: 7,
+    blurb: 'Every cardio machine in the room, once each, inside the window. The full tour, done for real.',
+    reqs: [{ kind: 'distinctMachines', amount: 5, label: 'A qualifying session on every cardio machine' }],
+    reward: { xp: 60, bond: 6 }, rewardLine: '+60 XP, +6 bond',
+  },
   // The flagship: every system, none of them demanding perfection.
   {
     id: 'sevendayfoundation', name: 'Seven-Day Foundation', tokenId: 'root',
@@ -104,6 +151,12 @@ export const QUESTS = [
   },
 ];
 
+// Stamp every requirement with the scopes its kind accepts (per-req
+// overrides would win, but none exists — the policy is central on purpose).
+QUESTS.forEach((q) => {
+  q.reqs = q.reqs.map((r) => ({ scopes: scopesForReqKind(r.kind), ...r }));
+});
+
 export const QUEST_BY_ID = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 
 export function getQuest(id) {
@@ -112,13 +165,26 @@ export function getQuest(id) {
 
 const moduleBucket = (state, id) => (state.modules && state.modules[id]) || {};
 
+// A session QUALIFIES for quest work when it met the same active-time
+// minimum the credit formula uses — one definition, shared.
+const qualifies = (s) => s && (s.activeSeconds || s.seconds || 0) >= CARDIO_MIN_ACTIVE_SEC;
+
+export function qualifyingMachineCounts(state) {
+  const counts = Object.fromEntries(CARDIO_MACHINE_IDS.map((id) => [id, 0]));
+  (state.cardioSessions || []).forEach((s) => {
+    if (qualifies(s) && counts[s.station] != null) counts[s.station] += 1;
+  });
+  return counts;
+}
+
 // Everything a requirement might be measured against, captured at purchase.
 export function questSnapshot(state) {
   return {
     miles: state.stats.distanceMi || 0,
     rides: state.stats.ridesDone || 0,
     workouts: state.stats.workoutsDone || 0,
-    cardio: (state.cardioSessions || []).length,
+    cardio: (state.cardioSessions || []).filter(qualifies).length,
+    machines: qualifyingMachineCounts(state),
     moduleLogs: {
       diet: moduleBucket(state, 'diet').totalLogs || 0,
       sleep: moduleBucket(state, 'sleep').totalLogs || 0,
@@ -140,9 +206,17 @@ function reqHave(req, active, state) {
     case 'workouts':
       return Math.max(0, (state.stats.workoutsDone || 0) - (base.workouts || 0));
     case 'cardio':
-      // Every ended gym cardio session (deck, ride or rower) lands in
-      // cardioSessions, so the count is the record — no mileage heuristics.
-      return Math.max(0, (state.cardioSessions || []).length - (base.cardio || 0));
+      // Every ended gym cardio session lands in cardioSessions; only
+      // qualifying ones (five active minutes) count for quests.
+      return Math.max(0, (state.cardioSessions || []).filter(qualifies).length - (base.cardio || 0));
+    case 'machineSessions': {
+      const now = qualifyingMachineCounts(state)[req.machineId] || 0;
+      return Math.max(0, now - ((base.machines || {})[req.machineId] || 0));
+    }
+    case 'distinctMachines': {
+      const now = qualifyingMachineCounts(state);
+      return CARDIO_MACHINE_IDS.filter((id) => (now[id] || 0) > ((base.machines || {})[id] || 0)).length;
+    }
     case 'moduleLogs': {
       const now = moduleBucket(state, req.moduleId).totalLogs || 0;
       return Math.max(0, now - ((base.moduleLogs || {})[req.moduleId] || 0));

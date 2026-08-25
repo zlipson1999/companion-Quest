@@ -97,11 +97,11 @@ export const GYM = {
     'Mj.............w|',
     'Mb.B...........t|',
     'Mb.B...K.K.....t|',
-    'Mb.....K.K.....t|',
+    'Mb.....K.K.....c|',
     'Mb.z...........c|',
-    'M..z...K.K.....c|',
-    'M......K.K.....q|',
-    'M..............q|',
+    'M..z...K.K.....q|',
+    'M......K.K.....x|',
+    'M..............m|',
     'MS.............Q|',
     'M...............|',
     'M...............|',
@@ -115,6 +115,15 @@ export const GYM = {
     { field: 'tile_gym_turf', x0: 1, y0: 12, x1: 7, y1: 15 },
     { field: 'tile_gym_mats', x0: 9, y0: 12, x1: 15, y1: 15 },
   ],
+  // Map-local, the same way `c` is the bike here and a kitchen counter at
+  // home: every letter is spoken for somewhere, so the two newest cardio
+  // machines borrow house-furniture codes and override them for this room
+  // only. TileMap carries the matching gym-local prop override, so a code
+  // can never draw a sideboard on the cardio wall.
+  interactions: {
+    x: { cardio: 'stairclimber', label: 'Stair Climber — cardio, no interruptions' },
+    m: { cardio: 'elliptical', label: 'Elliptical — cardio, no interruptions' },
+  },
 };
 
 // Your house. Both rooms used to be declared TWICE — once in HomeIntroScreen

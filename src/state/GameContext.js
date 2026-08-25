@@ -245,23 +245,36 @@ function reducer(state, action) {
       };
     }
 
+    // One completed cardio session, from any of the five machines, built by
+    // finishCardioSession(). Saving and paying happen HERE, exactly once:
+    // appendCardioSession refuses an id already in the log, so a duplicate
+    // finish event, a re-submitted summary, or a replayed dispatch is a
+    // no-op — no second row, no second credit. The award itself was decided
+    // by the one shared duration formula (economy.cardioCredits) and rides
+    // in the record as creditsAwarded; it is added to the same universal
+    // credits pool, and deliberately NOT routed through mint(): the trail's
+    // fractional creditCarry belongs to walked miles and stays untouched.
     case 'COMPLETE_CARDIO': {
-      const { station, miles = 0, seconds = 0, endedAt } = action.payload || {};
-      const cardioSessions = appendCardioSession(state.cardioSessions, {
-        station,
-        miles,
-        seconds,
-        endedAt,
-      });
+      const cardioSessions = appendCardioSession(state.cardioSessions, action.payload);
       if (cardioSessions === state.cardioSessions) return state;
-      const ride = station === 'bike';
+      const s = cardioSessions[cardioSessions.length - 1];
+      const ride = s.station === 'bike';
+      const minutes = Math.round(s.activeSeconds / 60);
       return {
         ...state,
         cardioSessions,
-        history: remember(state, { cardioSessions: 1, rides: ride ? 1 : 0 }),
+        credits: (state.credits || 0) + (s.creditsAwarded || 0),
+        history: remember(state, { cardioSessions: 1, rides: ride ? 1 : 0, cardioMin: minutes }),
         stats: {
           ...state.stats,
           ridesDone: (state.stats.ridesDone || 0) + (ride ? 1 : 0),
+          cardioMinutes: (state.stats.cardioMinutes || 0) + minutes,
+          cardioSessionsDone: (state.stats.cardioSessionsDone || 0) + 1,
+          cardioCreditsEarned: (state.stats.cardioCreditsEarned || 0) + (s.creditsAwarded || 0),
+          treadmillMi: (state.stats.treadmillMi || 0) + (s.station === 'treadmill' ? s.miles : 0),
+          rowerStrokes: (state.stats.rowerStrokes || 0) + s.strokes,
+          stairFloors: (state.stats.stairFloors || 0) + s.floors,
+          ellipticalStrides: (state.stats.ellipticalStrides || 0) + s.strides,
         },
       };
     }

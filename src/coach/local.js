@@ -276,9 +276,9 @@ const INTENTS = [
     test: /\b(step|walk|distance|mile|run|running|cardio|pedometer|bike|biking|bicycle|cycling|treadmill|ride)\b/i,
     answer: (f) => {
       const mi = Math.round(f.recent.distanceMi * 10) / 10;
-      if (!mi) return 'No distance logged in the last two weeks. Trails move only after you choose one outside. The gym bike and treadmill keep separate cardio records, but add no trail progress or Quest Credits.';
+      if (!mi) return 'No distance logged in the last two weeks. Trails move only after you choose one outside. The five gym cardio machines keep separate fitness records, and their active time pays Quest Credits — but none of it is trail progress.';
       const cycled = Math.round((f.recent.cyclingMi || 0) * 10) / 10;
-      return `${mi} total miles over the last ${RECENT_DAYS} days${cycled ? `, including ${cycled} cycled across ${f.recent.rides || 0} rides` : ''}; ${Math.round(f.week.distanceMi * 10) / 10} miles this week. Only miles logged on a selected outdoor trail advance its quota, milestones, encounters, or Quest Credits. Gym bike and treadmill miles stay in cardio history instead.`;
+      return `${mi} total miles over the last ${RECENT_DAYS} days${cycled ? `, including ${cycled} cycled across ${f.recent.rides || 0} rides` : ''}; ${Math.round(f.week.distanceMi * 10) / 10} miles this week. Only miles logged on a selected outdoor trail advance its quota, milestones or encounters. Gym cardio — treadmill, Bike Ride, rower, stair climber, elliptical — stays in cardio history and pays its credits by active time instead.`;
     },
   },
 ];

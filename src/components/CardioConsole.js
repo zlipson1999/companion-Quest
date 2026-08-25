@@ -19,12 +19,11 @@ import {
   formatClock,
   formatPace,
   formatSpeed,
-  kcalFor,
-  kcalForBike,
   lapsFor,
   paceFor,
   speedFor,
 } from '../state/cardioMaths';
+import { MACHINE_BY_ID } from '../data/cardioMachines';
 
 function Readout({ label, value, unit, big, live }) {
   return (
@@ -60,6 +59,18 @@ export default function CardioConsole({
   seconds = 0,
   miles = 0,
   steps = 0,
+  // Live session state from state/cardioSession.js. 'running' banks active
+  // seconds; everything else banks paused seconds and pays nothing.
+  phase = 'running',
+  kcal = 0,
+  credits = 0,
+  manual = {},
+  taps = 0,
+  onManual,
+  onTap,
+  onPause,
+  onResume,
+  onDiscard,
   // Bodyweight work done on this outing, as ONE number. It used to be SETS and
   // REPS side by side, which asked you to add two figures together to know how
   // much you had done — and the breakdown underneath already names every
@@ -88,17 +99,31 @@ export default function CardioConsole({
   compact = false,
 }) {
   const bike = station === 'bike';
+  const machine = MACHINE_BY_ID[station];
   const pace = paceFor(miles, seconds);
   const speed = speedFor(miles, seconds);
-  const kcal = bike
-    ? kcalForBike(miles, seconds, bodyWeightLb)
-    : kcalFor(miles, seconds, bodyWeightLb);
+  const paused = phase === 'paused';
+  const timerOnly = !!machine && machine.tracking === 'timer';
 
+  // Each machine shows what it actually measures. A permanently-zero PACE on
+  // a rower would be the console claiming a number it does not have.
   const cells = [
     ...(bike ? [
       { label: 'SPEED', value: formatSpeed(speed), unit: 'mph' },
       { label: 'KCAL', value: String(Math.round(kcal)) },
       { label: 'GPS', value: gpsActive ? 'LIVE' : 'READY' },
+    ] : station === 'rower' ? [
+      { label: 'STROKES', value: String((manual.strokes || 0) + taps) },
+      { label: 'SPM', value: seconds > 30 ? String(Math.round(((manual.strokes || 0) + taps) / (seconds / 60))) : '--' },
+      { label: 'KCAL', value: String(Math.round(kcal)) },
+    ] : station === 'stairclimber' ? [
+      { label: 'STEPS', value: steps.toLocaleString() },
+      { label: 'FLOORS', value: String(manual.floors || 0) },
+      { label: 'KCAL', value: String(Math.round(kcal)) },
+    ] : station === 'elliptical' ? [
+      { label: 'STRIDES', value: steps.toLocaleString() },
+      { label: 'CADENCE', value: seconds > 30 ? String(Math.round(steps / (seconds / 60))) : '--' },
+      { label: 'KCAL', value: String(Math.round(kcal)) },
     ] : [
       { label: 'LAPS', value: lapsFor(miles).toFixed(1) },
       { label: 'PACE', value: formatPace(pace), unit: '/mi' },
@@ -116,6 +141,11 @@ export default function CardioConsole({
     rows.push(row);
   }
 
+  const machineTitle = title || (machine ? machine.name.toUpperCase() : 'TREADMILL');
+  const statusWord = paused ? 'PAUSED'
+    : bike ? (moving ? 'RIDING' : gpsActive ? 'READY' : 'READY')
+    : moving ? 'MOVING' : 'STOPPED';
+
   // In the gym this is a machine fascia laid over one corner of the room, not
   // a destination screen. Keep every live number and both bike actions, but
   // remove the long-form explanation so the player and machine remain visible.
@@ -125,9 +155,7 @@ export default function CardioConsole({
     for (let i = 0; i < cells.length; i += perCompactRow) {
       compactRows.push(cells.slice(i, i + perCompactRow));
     }
-    const stopLabel = bike
-      ? (gpsActive ? 'End Bike Ride' : 'Step off')
-      : station === 'rower' ? 'Get off' : 'Step off';
+    const stopLabel = bike && gpsActive ? 'End Bike Ride' : 'Finish';
 
     return (
       <View
@@ -144,16 +172,20 @@ export default function CardioConsole({
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ letterSpacing: 1 }}>
-            {title || (bike ? 'BIKE RIDE' : station === 'rower' ? 'ROWER' : 'TREADMILL')}
+            {machineTitle}
           </PixelText>
-          <PixelText size="tiny" color={moving || gpsActive ? palette.secondary : tokens.disabledInk}>
-            {bike ? (moving ? 'RIDING' : gpsActive ? 'PAUSED' : 'READY') : moving ? 'MOVING' : 'STOPPED'}
+          <PixelText size="tiny" color={paused ? palette.danger : moving || gpsActive ? palette.secondary : tokens.disabledInk}>
+            {statusWord}
           </PixelText>
         </View>
 
         <View style={{ flexDirection: 'row', marginTop: 6 }}>
-          <Readout label="TIME" value={formatClock(seconds)} big live={moving} />
-          <Readout label="DISTANCE" value={miles.toFixed(2)} unit="mi" big live={moving} />
+          <Readout label="ACTIVE" value={formatClock(seconds)} big live={moving && !paused} />
+          {timerOnly ? (
+            <Readout label="CREDITS" value={String(credits)} big live={credits > 0} />
+          ) : (
+            <Readout label="DISTANCE" value={miles.toFixed(2)} unit="mi" big live={moving && !paused} />
+          )}
         </View>
 
         {compactRows.map((row, i) => (
@@ -163,9 +195,7 @@ export default function CardioConsole({
         ))}
 
         <PixelText size="tiny" color={tokens.textOnDarkDim} numberOfLines={2} style={{ marginTop: 6, lineHeight: 13 }}>
-          {bike
-            ? 'Bike cardio only — no trail progress or Quest Credits.'
-            : 'Gym cardio only — no trail progress or Quest Credits.'}
+          {`Gym cardio: pays ${credits} Quest Credit${credits === 1 ? '' : 's'} on active time. Never trail progress.`}
         </PixelText>
 
         {gpsError ? (
@@ -194,6 +224,18 @@ export default function CardioConsole({
           </View>
         ) : null}
 
+        {onTap ? (
+          <PixelButton
+            label={`Log a stroke  (${(manual.strokes || 0) + taps})`}
+            tone="dark"
+            size="small"
+            sound="cursor"
+            style={{ marginTop: 6, paddingVertical: 8 }}
+            disabled={paused}
+            onPress={onTap}
+          />
+        ) : null}
+
         <View style={{ flexDirection: 'row', marginTop: 6 }}>
           {bike && !gpsActive && onStartGps ? (
             <TrailAction
@@ -204,10 +246,31 @@ export default function CardioConsole({
               onPress={onStartGps}
             />
           ) : null}
+          {onPause && !(bike && !gpsActive) ? (
+            <PixelButton
+              label={paused ? 'Resume' : 'Pause'}
+              tone="dark"
+              size="small"
+              sound="cursor"
+              style={{ flex: 1, marginRight: 6, paddingVertical: 8 }}
+              onPress={paused ? onResume : onPause}
+            />
+          ) : null}
           {onStop ? (
             <TrailAction label={stopLabel} tone="primary" style={{ flex: 1 }} onPress={onStop} />
           ) : null}
         </View>
+
+        {onDiscard ? (
+          <PixelButton
+            label="Discard session"
+            tone="plain"
+            size="tiny"
+            sound="cancel"
+            style={{ marginTop: 5 }}
+            onPress={onDiscard}
+          />
+        ) : null}
       </View>
     );
   }
@@ -227,11 +290,11 @@ export default function CardioConsole({
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ letterSpacing: 1 }}>
-          {title || (bike ? 'BIKE RIDE' : station === 'rower' ? 'ROWER' : 'TREADMILL')}
+          {machineTitle}
         </PixelText>
         {/* The one moving part of a console you are not touching. */}
-        <PixelText size="tiny" color={moving || gpsActive ? palette.secondary : tokens.disabledInk}>
-          {bike ? (gpsActive ? (moving ? '- RIDING -' : '- GPS LIVE -') : '- GPS READY -') : (moving ? '- RUNNING -' : '- READY -')}
+        <PixelText size="tiny" color={paused ? palette.danger : moving || gpsActive ? palette.secondary : tokens.disabledInk}>
+          {`- ${statusWord} -`}
         </PixelText>
       </View>
 
@@ -270,12 +333,19 @@ export default function CardioConsole({
         </View>
       ) : null}
 
-      {/* Which of these the machine actually knows. */}
+      {/* Which of these the machine actually knows, and what it pays. */}
       <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: space.sm, lineHeight: 13 }}>
-        {bike
-          ? 'GPS measures the bike ride. Logged as bike cardio only: no trail progress or Quest Credits. Kcal is an estimate.'
-          : 'Gym cardio is recorded, but earns no trail progress or Quest Credits. Kcal is an estimate from pace and body weight.'}
+        {machine ? machine.statLine : ''}
       </PixelText>
+      <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 5, lineHeight: 13 }}>
+        {`Gym cardio: active time pays Quest Credits (${credits} so far this session) and never advances a trail, its milestones or its encounters. Kcal is an estimate.`}
+      </PixelText>
+      {machine && machine.safety ? (
+        <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 5, lineHeight: 13 }}>
+          {machine.safety}
+        </PixelText>
+      ) : null}
+
 
       {bike && !gpsActive && onStartGps ? (
         <View style={{ marginTop: space.sm }}>
@@ -325,7 +395,7 @@ export default function CardioConsole({
           onStop and keeps its own way back. */}
       {onStop ? (
         <TrailAction
-          label={bike ? (gpsActive ? 'End Bike Ride' : 'Step off the bike') : station === 'rower' ? 'Off the rower' : 'Step off the deck'}
+          label={bike && gpsActive ? 'End Bike Ride' : 'Finish session'}
           tone="primary"
           style={{ marginTop: space.sm }}
           onPress={onStop}

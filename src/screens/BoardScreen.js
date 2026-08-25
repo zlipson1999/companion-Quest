@@ -108,6 +108,7 @@ export default function BoardScreen() {
         >
           <PixelText size="small" color={tokens.textOnPaper}>
             {(localWeek.cyclingMi || 0).toFixed(1)} mi · {localWeek.rides || 0} {localWeek.rides === 1 ? 'ride' : 'rides'} this week
+            {'\n'}{localWeek.cardioSessions || 0} cardio {localWeek.cardioSessions === 1 ? 'session' : 'sessions'} · {localWeek.cardioMin || 0} active min
           </PixelText>
           <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 6, lineHeight: 15 }}>
             Bike mileage is cardio history only. It never adds trail progress or Quest Credits.
@@ -165,7 +166,7 @@ export default function BoardScreen() {
           {(localWeek.cyclingMi || 0).toFixed(1)} mi · {localWeek.rides || 0} {localWeek.rides === 1 ? 'ride' : 'rides'} this week
         </PixelText>
         <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 6, lineHeight: 15 }}>
-          The Bike board shares checked cycling miles with your accepted circle. No bike mile advances a trail or earns Quest Credits.
+          The Bike board shares checked cycling miles with your accepted circle. Gym cardio pays Quest Credits for active time, but no gym mile advances a trail.
         </PixelText>
       </FieldCard>
 
