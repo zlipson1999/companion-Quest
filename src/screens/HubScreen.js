@@ -6,7 +6,7 @@
 // stands for was one tap away down there. What is left in the menu is places
 // you go and the two lines that are not places at all.
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { WorldScreen, CompanionStatus } from '../components';
 import { palette, space, tokens } from '../theme';
@@ -25,14 +25,25 @@ const MENU = [
   { label: 'Title', value: 'title', sublabel: 'main menu' },
 ];
 
-export default function HubScreen() {
+export const TRAIL_ARRIVAL_STEPS = [
+  { x: 6, y: 0, facing: 'down' },
+  { x: 6, y: 1, facing: 'down' },
+  { x: 6, y: 2, facing: 'down' },
+  { x: 6, y: 3, facing: 'down' },
+];
+export const TRAIL_ARRIVAL_STEP_MS = 180;
+
+export default function HubScreen({ params = {} }) {
   const { state } = useGame();
   const companion = useCompanion();
   const { navigate } = useNav();
 
-  const [player, setPlayer] = useState(() =>
-    recallSpot('hub', { x: HUB.spawn.x, y: HUB.spawn.y, facing: 'down' }, (s) => isWalkable(HUB, s.x, s.y))
+  const arrivingFromTrail = params.entry === 'trail';
+  const [player, setPlayer] = useState(() => arrivingFromTrail
+    ? TRAIL_ARRIVAL_STEPS[0]
+    : recallSpot('hub', { x: HUB.spawn.x, y: HUB.spawn.y, facing: 'down' }, (s) => isWalkable(HUB, s.x, s.y))
   );
+  const [arrivalLocked, setArrivalLocked] = useState(arrivingFromTrail);
   const [facingThing, setFacingThing] = useState(null);
   const playerRef = useRef(player);
   const apply = (np) => {
@@ -41,7 +52,19 @@ export default function HubScreen() {
     rememberSpot('hub', np);
   };
 
+  useEffect(() => {
+    if (!arrivingFromTrail) return undefined;
+    const timers = TRAIL_ARRIVAL_STEPS.slice(1).map((step, index) => setTimeout(() => {
+      playerRef.current = step;
+      setPlayer(step);
+      rememberSpot('hub', step);
+      if (index === TRAIL_ARRIVAL_STEPS.length - 2) setArrivalLocked(false);
+    }, TRAIL_ARRIVAL_STEP_MS * (index + 1)));
+    return () => timers.forEach(clearTimeout);
+  }, [arrivingFromTrail]);
+
   const move = (dir) => {
+    if (arrivalLocked) return;
     const { x, y } = playerRef.current;
     const nx = dir === 'left' ? x - 1 : dir === 'right' ? x + 1 : x;
     const ny = dir === 'up' ? y - 1 : dir === 'down' ? y + 1 : y;
@@ -68,7 +91,8 @@ export default function HubScreen() {
     }
   };
 
-  const objective = facingThing ? facingThing.label : !companion
+  const objective = arrivalLocked ? 'Leaving the trail — partial progress saved'
+    : facingThing ? facingThing.label : !companion
     ? 'Walk with the stick. Meet Coach Maple inside Quest Fitness'
     : state.meta.homeTourDone && !state.meta.mapleSessionDone
       ? 'Maple called — she is waiting at Quest Fitness with your first session'
@@ -84,7 +108,8 @@ export default function HubScreen() {
       place="Sunkist Lane"
       objective={objective}
       status={<CompanionStatus companion={companion} stats={state.stats} />}
-      menu={MENU}
+      menu={arrivalLocked ? [] : MENU}
+      showControl={!arrivalLocked}
       onSelect={(item) => navigate(item.value)}
     />
   );

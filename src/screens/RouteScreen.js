@@ -35,6 +35,7 @@ import { routeCheer, pickupLine } from '../coach';
 import useCardio from './useCardio';
 import { forgetSpot, recallSpot, rememberSpot } from './placeMemory';
 import { DEFAULT_BODY_WEIGHT_LB } from '../state/cardioMaths';
+import { saveGame } from '../state/storage';
 
 const ROUTE_TS = 22;
 
@@ -111,6 +112,7 @@ export default function RouteScreen({ params = {} }) {
   );
   const [encMeter, setEncMeter] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [endingSession, setEndingSession] = useState(false);
   const [stride, setStride] = useState(0);
   const session = useRef(
     recallSpot('route:session', null) || {
@@ -212,6 +214,32 @@ export default function RouteScreen({ params = {} }) {
       const ok = await dist.startRun();
       if (ok) setMessage('Run started — GPS is tracking your real miles. Go!');
     }
+  };
+
+  const endTrailSession = async () => {
+    if (endingSession) return;
+    setEndingSession(true);
+    setSheetOpen(false);
+    if (encTimer.current) {
+      clearTimeout(encTimer.current);
+      encTimer.current = null;
+    }
+    busyRef.current = true;
+    if (dist.running) dist.stopRun();
+
+    // Distance, challenge reps, pickups and credits enter the main state as
+    // they happen. Flush that latest state before leaving so ending halfway
+    // through a trail is an explicit save point, not merely a navigation.
+    const saved = await saveGame(state);
+    if (!saved) {
+      busyRef.current = false;
+      setEndingSession(false);
+      setMessage('Progress is still on this screen, but the save failed. Please try End Trail Session again.');
+      return;
+    }
+
+    forgetSpot('route:session');
+    navigate('hub', { entry: 'trail' });
   };
 
   const pickTrail = (id) => {
@@ -379,14 +407,11 @@ export default function RouteScreen({ params = {} }) {
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>{stepPanel}</ScrollView>
             <TrailAction
-              label={`Back to ${PLACE_LABELS.hub}`}
-              tone="quiet"
-              onPress={() => {
-                setSheetOpen(false);
-                if (dist.running) dist.stopRun();
-                forgetSpot('route:session');
-                navigate('hub');
-              }}
+              label={endingSession ? 'Saving trail progress...' : 'End Trail Session & Save'}
+              sublabel={`Keep partial miles and challenge progress · return to ${PLACE_LABELS.hub}`}
+              tone="primary"
+              disabled={endingSession}
+              onPress={endTrailSession}
             />
             <TrailAction label="Close" tone="quiet" style={{ marginTop: space.sm }} onPress={() => setSheetOpen(false)} />
           </Pressable>
