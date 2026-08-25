@@ -1,6 +1,6 @@
 // Items. Pickups spawn at distance milestones on the Route; the Kinship Knot
 // is what a trail companion ties with you when it decides to travel along. The gym's smoothie bar sells
-// most of them for Trail Credit (see `src/data/shop.js`).
+// most of them for Quest Credits (see `src/data/shop.js`).
 //
 // A smoothie is a TWO-PART item, which is the point of the bar: the blend does
 // something for your companion, and `logAs` records the drink as your own

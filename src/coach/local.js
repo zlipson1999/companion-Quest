@@ -276,9 +276,9 @@ const INTENTS = [
     test: /\b(step|walk|distance|mile|run|running|cardio|pedometer)\b/i,
     answer: (f) => {
       const mi = Math.round(f.recent.distanceMi * 10) / 10;
-      if (!mi) return 'No distance logged in the last two weeks. Trails move on real steps or a GPS run; an outdoor bike ride earns cardio progress but never fills a walking trail.';
+      if (!mi) return 'No distance logged in the last two weeks. Trails move on real steps or a GPS run; a Bike Ride earns cardio progress but never fills a walking trail.';
       const cycled = Math.round((f.recent.cyclingMi || 0) * 10) / 10;
-      return `${mi} total miles over the last ${RECENT_DAYS} days${cycled ? `, including ${cycled} cycled` : ''}; ${Math.round(f.week.distanceMi * 10) / 10} miles this week. Only miles logged on a selected trail advance that trail and roll encounters. Outdoor bike rides still earn distance XP and Trail Credit, but stay out of walking-trail quotas.`;
+      return `${mi} total miles over the last ${RECENT_DAYS} days${cycled ? `, including ${cycled} cycled` : ''}; ${Math.round(f.week.distanceMi * 10) / 10} miles this week. Only miles logged on a selected trail advance that trail and roll encounters. Bike rides still earn distance XP and Quest Credits, but stay out of walking-trail quotas.`;
     },
   },
 ];

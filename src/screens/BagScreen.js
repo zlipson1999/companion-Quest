@@ -324,7 +324,7 @@ export default function BagScreen() {
       <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <PixelText size="tiny" color={palette.windowFill}>{companion ? `Traveling with ${companion.creature.name}` : 'Your personal pack'}</PixelText>
-          <PixelText size="tiny" color={palette.secondary}>{`${state.credits || 0} Trail Credit`}</PixelText>
+          <PixelText size="tiny" color={palette.secondary}>{`${state.credits || 0} Quest Credits`}</PixelText>
         </View>
       </Window>
 

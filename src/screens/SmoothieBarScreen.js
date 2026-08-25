@@ -1,7 +1,7 @@
 // Quest Fitness' smoothie bar.
 //
 // Reached by walking up to the counter, like everything else in the room. What
-// it sells is in `src/data/shop.js`; what pays for it is Trail Credit, which
+// it sells is in `src/data/shop.js`; what pays for it is Quest Credits, which
 // only real effort mints (`src/state/economy.js`).
 //
 // The balance and the earn rate are both on screen on purpose. A shop that
@@ -24,7 +24,7 @@ function Wallet({ credits }) {
     <FieldCard title="Your tab" accent={tokens.accent}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <PixelText size="body" color={palette.secondary}>{`${credits} credit`}</PixelText>
-        <PixelText size="tiny" color={tokens.textOnDarkDim}>Trail Credit</PixelText>
+        <PixelText size="tiny" color={tokens.textOnDarkDim}>Quest Credits</PixelText>
       </View>
       <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 6, lineHeight: 14 }}>
         {`Earned by moving, never bought: ${CREDIT_PER_MILE} a mile, ${CREDIT_PER_SESSION} a session, ${CREDIT_PER_GOAL} for a habit goal you hit.`}

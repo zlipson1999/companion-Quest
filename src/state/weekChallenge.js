@@ -1,5 +1,5 @@
 // One shared trail among friends each Monday. Display only — no extra XP,
-// bond or Trail Credit. The existing week boards already hold the numbers.
+// bond or Quest Credits. The existing week boards already hold the numbers.
 
 import { todayKey } from '../modules/daily';
 

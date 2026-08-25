@@ -107,7 +107,7 @@ src/
                sprites.js + tileAtlas.js
                (BOTH GENERATED — never edit by hand)
   state/       GameContext (reducer, save), leveling, evolution, history,
-               recovery, economy (Trail Credit), cardioMaths (console numbers),
+               recovery, economy (Quest Credits), cardioMaths (console numbers),
                useDistance, stepDetector, storage
   screens/     Router + 30 screens (§4), plus useCardio (the one path real
                distance takes into the game) and placeMemory (where you were
@@ -207,7 +207,7 @@ clears it.
 | `sparIntro` | SparIntroScreen | safety redirect; live path is bumping Rowan, who sends Pebblepup |
 | `mapleSession` | MapleSessionScreen | Maple's guided first session: 5 interactive movements (real start/pause timers, tap-per-rep counters, left/right alternator), each with an easier version and a skip, no speed scoring. Completes `firstsession` through the normal `COMPLETE_WORKOUT`, then `CLAIM_STARTER_PACK` (once: 5 knots + 1 berryblend, reducer-gated on `meta.mapleSessionDone`). Entered by bumping Coach (`C`) once `homeTourDone` and until `mapleSessionDone` |
 | `cookbook` | CookbookScreen | the kitchen shelf: 74 recipes, 18 categories, search over names/blurbs/tags/ingredients |
-| `smoothiebar` | SmoothieBarScreen | the gym's bar; spends Trail Credit (§5.6) |
+| `smoothiebar` | SmoothieBarScreen | the gym's bar; spends Quest Credits (§5.6) |
 | `route` | RouteScreen | six trails — §5.4 |
 | `world` | WorldMapScreen | region journey journal: the 11 regions, pins and Wardens per trail. Opened from the hub menu's Trails entry |
 | `battle` | BattleScreen | §6 |
@@ -395,7 +395,7 @@ are grown, never knotted.
   A ride must be started and stopped while the real bicycle is parked; the
   console tells the player to secure the phone and not use it while moving.
 
-### 5.6 Trail Credit (`state/economy.js`, `data/shop.js`)
+### 5.6 Quest Credits (`state/economy.js`, `data/shop.js`)
 
 The only currency, and there is no way to buy it. A shop needs something to
 spend, and the moment a game has a shop it has a pressure to sell the currency;
@@ -848,7 +848,7 @@ early calls). BGM switching lives in Router via TOWN_BGM.
             charm }],                             // ≤6; charm = worn Trail
                                                   // Charm id or absent (§6.1)
   activeIndex,
-  credits,                                        // Trail Credit, v7
+  credits,                                        // Quest Credits, v7
   stats: { totalSteps, distanceMi, cyclingMi, ridesDone,
            routeMi, xpCarry, creditCarry,
            milestonesReached, battlesWon, battlesLost, caught, workoutsDone,
@@ -1034,7 +1034,7 @@ measured. Before large content expansion, define and simulate:
   evolution for each goal and for low/median/high-activity players.
 - Expected Kinship Knot income (milestone pickups + the bar at 25 credit)
   versus befriending attempts, including full-party behaviour.
-- Whether the Trail Credit rates in §5.6 are right: 10/mile is the anchor and
+- Whether the Quest Credits rates in §5.6 are right: 10/mile is the anchor and
   everything else is priced against it, but nobody has played a week on them.
 - Battle length and exercise volume by level, fitness ability and move type;
   accessible substitutions for players who cannot perform a prescribed move.

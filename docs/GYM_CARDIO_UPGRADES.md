@@ -22,7 +22,7 @@ distance, average speed, GPS state, and a clearly labelled calorie estimate.
 
 ![Bike console receiving a simulated GPS delta during web QA](previews/gym-bike-gps-live.png)
 
-Ride miles earn the same distance XP, Trail Credit, milestones, and companion
+Ride miles earn the same distance XP, Quest Credits, milestones, and companion
 cardio progress as other honest mileage. They are recorded separately as
 cycling miles and completed bike rides in the Phone and Reception, but never
 receive a trail id, never fill a walking trail, and never roll trail encounters.
