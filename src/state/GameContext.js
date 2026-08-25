@@ -11,6 +11,7 @@ import { getCreature } from '../data/creatures';
 import { getItem } from '../data/items';
 import { priceOf } from '../data/shop';
 import { charmForTrail, CHARM_BY_ID } from '../data/charms';
+import { getQuest, questSnapshot, questProgress, MAX_ACTIVE_QUESTS } from '../data/quests';
 import { pacingForGoal } from '../data/route';
 import {
   addTrailMiles,
@@ -559,6 +560,72 @@ function reducer(state, action) {
           knot: (state.bag.knot || 0) + 5,
           berryblend: (state.bag.berryblend || 0) + 1,
         },
+      };
+    }
+
+    // ---- The Quest Ledger (data/quests.js) ----
+    // Check-in is attendance only: it records the day and nothing else, and
+    // a day can only be recorded once.
+    case 'RECEPTION_CHECKIN': {
+      const day = today();
+      if (state.quests.checkIns.includes(day)) return state;
+      return { ...state, quests: { ...state.quests, checkIns: [...state.quests.checkIns, day] } };
+    }
+
+    // Quests are BOUGHT with Quest Credits — the reducer holds the rules:
+    // a real quest, affordable, at most MAX_ACTIVE at once, no duplicates.
+    // The purchase snapshots today's records so only NEW effort counts.
+    case 'BUY_QUEST': {
+      const quest = getQuest(action.payload.questId);
+      if (!quest) return state;
+      if ((state.credits || 0) < quest.price) return state;
+      if (state.quests.active.length >= MAX_ACTIVE_QUESTS) return state;
+      if (state.quests.active.some((a) => a.questId === quest.id)) return state;
+      return {
+        ...state,
+        credits: state.credits - quest.price,
+        quests: {
+          ...state.quests,
+          active: [...state.quests.active, { questId: quest.id, startedDay: today(), base: questSnapshot(state) }],
+        },
+      };
+    }
+
+    // Turning in re-checks completion here, not in the screen: the reward
+    // (matched to the category through the usual {xp,bond,evo,heal} contract,
+    // plus items) and the Token only exist for finished requirements.
+    case 'TURN_IN_QUEST': {
+      const active = state.quests.active.find((a) => a.questId === action.payload.questId);
+      const quest = active && getQuest(active.questId);
+      if (!quest) return state;
+      if (!questProgress(quest, active, state, today()).done) return state;
+      let next = updateActive(state, (m) => {
+        let mem = applyEffect(m, quest.reward);
+        if (quest.reward.healFull) mem = { ...mem, hp: memberMaxHp(mem) };
+        return mem;
+      });
+      const bag = quest.reward.item
+        ? { ...next.bag, [quest.reward.item]: (next.bag[quest.reward.item] || 0) + 1 }
+        : next.bag;
+      return {
+        ...next,
+        bag,
+        quests: {
+          ...state.quests,
+          active: state.quests.active.filter((a) => a.questId !== quest.id),
+          completed: [...state.quests.completed, { questId: quest.id, day: today() }],
+          tokens: { ...state.quests.tokens, [quest.tokenId]: (state.quests.tokens[quest.tokenId] || 0) + 1 },
+        },
+      };
+    }
+
+    // Walking away frees the slot. The credits stay spent — the ledger sells
+    // commitments, not refunds — which is also why buying is a choice.
+    case 'ABANDON_QUEST': {
+      if (!state.quests.active.some((a) => a.questId === action.payload.questId)) return state;
+      return {
+        ...state,
+        quests: { ...state.quests, active: state.quests.active.filter((a) => a.questId !== action.payload.questId) },
       };
     }
 

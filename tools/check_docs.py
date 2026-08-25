@@ -103,6 +103,16 @@ def build_checks():
          first(r"'pace-token': \{ incomingMult: ([\d.]+)", charm_battle, 'pace token mult')),
     ]
 
+    quests_src = read('src/data/quests.js')
+    checks += [
+        ('quest tokens', r'(\d+) Quest Tokens, one per category',
+         str(len(re.findall(r"^  \{ id: '", quests_src, re.M)))),
+        ('quests on the board', r'(\d+) quests on\nthe board',
+         str(len(re.findall(r"^    id: '", quests_src, re.M)))),
+        ('flagship quest price', r"Seven-Day Foundation \| Root \| (\d+) \|",
+         str(round(float(first(r"id: 'sevendayfoundation'[\s\S]*?price: MILES\(([\d.]+)\)", quests_src, 'flagship price')) * 10))),
+    ]
+
     for const, label in (('CREDIT_PER_MILE', 'a walked mile'),
                          ('CREDIT_PER_SESSION', 'a completed session'),
                          ('CREDIT_PER_WIN', 'a challenge won'),

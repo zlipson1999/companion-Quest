@@ -4,7 +4,7 @@
 // a second set of wellness or progression counters.
 
 import React, { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Image, ScrollView, View } from 'react-native';
 import { Screen, Window, PixelText, PixelButton, PixelSprite } from '../components';
 import { palette, space } from '../theme';
 import { useGame, useCompanion } from '../state';
@@ -15,6 +15,9 @@ import { TRAIL_CHARMS } from '../data/charms';
 import { REGIONAL_BADGES } from '../data/badges';
 import { getGoal } from '../data/goals';
 import { DEFAULT_BODY_WEIGHT_LB, displayWeight } from '../state/cardioMaths';
+import { TOKENS, getQuest, questProgress } from '../data/quests';
+import { TOKEN_IMAGES } from '../data/tokenImages';
+import { todayKey } from '../modules';
 
 const POCKETS = [
   { id: 'phone', label: 'Phone', sub: 'Personal Tracker' },
@@ -119,6 +122,58 @@ export default function BagScreen() {
         <PixelText size="body" color={palette.secondary}>Personal Tracker</PixelText>
         <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 4, lineHeight: 13 }}>
           Real work done in Companion Quest feeds this tracker automatically. Care/imported health data can plug into this same view later.
+        </PixelText>
+      </Window>
+
+      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+        <PixelText size="small" color={palette.windowText}>Quest Log</PixelText>
+        {(state.quests.active || []).length ? state.quests.active.map((active) => {
+          const quest = getQuest(active.questId);
+          if (!quest) return null;
+          const prog = questProgress(quest, active, state, todayKey());
+          return (
+            <View key={quest.id} style={{ marginTop: 8 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <PixelText size="tiny" color={palette.windowText}>{quest.name}</PixelText>
+                <PixelText size="tiny" color={prog.done ? palette.success : prog.expired ? palette.danger : palette.windowTextDim}>
+                  {prog.done ? 'Ready — turn in at reception' : prog.expired ? 'Out of time' : `until ${prog.endDay}`}
+                </PixelText>
+              </View>
+              {prog.reqs.map((r) => (
+                <View key={r.label} style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 3 }}>
+                  <PixelText size="tiny" color={r.done ? palette.success : palette.windowTextDim} style={{ flex: 1, lineHeight: 13 }}>
+                    {(r.done ? '✓ ' : '· ') + r.label}
+                  </PixelText>
+                  <PixelText size="tiny" color={palette.windowText}>{`${Math.floor(r.have * 10) / 10}/${r.need}`}</PixelText>
+                </View>
+              ))}
+            </View>
+          );
+        }) : (
+          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 13 }}>
+            No active quests. The Quest Ledger at reception sells them for Quest Credits.
+          </PixelText>
+        )}
+        {statRow('Completed', (state.quests.completed || []).length)}
+      </Window>
+
+      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+        <PixelText size="small" color={palette.windowText}>Token Case</PixelText>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
+          {TOKENS.map((t) => {
+            const n = (state.quests.tokens || {})[t.id] || 0;
+            return (
+              <View key={t.id} style={{ width: '25%', alignItems: 'center', marginBottom: space.sm }}>
+                <Image source={TOKEN_IMAGES[t.id]} resizeMode="contain" fadeDuration={0} style={{ width: 56, height: 56, opacity: n ? 1 : 0.2 }} />
+                <PixelText size="tiny" color={n ? palette.windowText : palette.windowTextDim} style={{ marginTop: 2 }}>
+                  {n ? `x${n}` : '—'}
+                </PixelText>
+              </View>
+            );
+          })}
+        </View>
+        <PixelText size="tiny" color={palette.windowTextDim} style={{ lineHeight: 13 }}>
+          Proof of finished quests, one per category. Collectible, never spendable.
         </PixelText>
       </Window>
 

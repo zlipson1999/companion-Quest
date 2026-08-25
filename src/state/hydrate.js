@@ -60,6 +60,10 @@ export const FRESH = {
   },
   bag: {},
   discoveredCharms: {},
+  // The Quest Ledger: reception check-in days, quests bought and in progress
+  // (each with the stat snapshot taken at purchase), the archive, and the
+  // Token Case. Tokens are proof, never money.
+  quests: { checkIns: [], active: [], completed: [], tokens: {} },
   dex: {},
   modules: {},
   history: {},
@@ -81,7 +85,7 @@ export const FRESH = {
 // not invent days of history nobody logged.
 export const HYDRATE_KEYS = [
   'version', 'started', 'playerOutfit', 'playerGender', 'goalId',
-  'party', 'activeIndex', 'credits', 'stats', 'bag', 'discoveredCharms', 'dex',
+  'party', 'activeIndex', 'credits', 'stats', 'bag', 'discoveredCharms', 'quests', 'dex',
   'modules', 'history', 'settings', 'meta', 'trails',
 ];
 
@@ -95,6 +99,10 @@ export function hydrateSave(saved) {
     stats: { ...FRESH.stats, ...(saved.stats || {}), exercises: { ...((saved.stats || {}).exercises || {}) } },
     bag: { ...(saved.bag || {}) },
     discoveredCharms: { ...(saved.discoveredCharms || {}) },
+    quests: {
+      checkIns: [], active: [], completed: [], tokens: {},
+      ...(saved.quests || {}),
+    },
     dex: { ...(saved.dex || {}) },
     settings: { ...FRESH.settings, ...(saved.settings || {}) },
     meta: { ...FRESH.meta, ...(saved.meta || {}) },

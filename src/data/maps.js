@@ -263,7 +263,7 @@ const INTERACTIONS = {
   // Reception is the record. The cork noticeboard is the friends board — the
   // same BoardScreen Friends opens. Do not cork Summary, and do not move the
   // boards onto N.
-  N: { screen: 'summary', label: 'Reception — your record so far' },
+  N: { screen: 'reception', label: 'Reception — check in, your record, and the Quest Ledger' },
   r: { screen: 'board', label: 'Noticeboard — how your friends are doing' },
   // Front of house. The bar is the one place credit is spent, and credit is
   // only ever minted by real effort — see src/state/economy.js.

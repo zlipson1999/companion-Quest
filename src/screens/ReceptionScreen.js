@@ -1,0 +1,244 @@
+// The reception desk, made a place: Check In records that you showed up,
+// Your Record opens the Summary the desk always held, and the Quest Ledger
+// sells healthy-habit quests for Quest Credits — the promise in Maple's tour
+// line, kept. Turn-ins happen here too, so the desk is where a week of real
+// habits becomes a Token in the case.
+
+import React, { useState } from 'react';
+import { Image, ScrollView, View } from 'react-native';
+import { Screen, Window, PixelText, PixelButton } from '../components';
+import { palette, space } from '../theme';
+import { useGame, useCompanion } from '../state';
+import { useNav } from './navContext';
+import { playSfx } from '../audio';
+import { QUESTS, TOKENS, TOKEN_BY_ID, getQuest, questProgress, MAX_ACTIVE_QUESTS } from '../data/quests';
+import { TOKEN_IMAGES } from '../data/tokenImages';
+import { todayKey } from '../modules';
+
+function TokenBadge({ tokenId, size = 44, dim = false }) {
+  return (
+    <Image
+      source={TOKEN_IMAGES[tokenId]}
+      resizeMode="contain"
+      fadeDuration={0}
+      style={{ width: size, height: size, opacity: dim ? 0.22 : 1 }}
+    />
+  );
+}
+
+export default function ReceptionScreen() {
+  const { state, dispatch } = useGame();
+  const companion = useCompanion();
+  const { navigate, goBack, back } = useNav();
+  const [phase, setPhase] = useState('desk');   // desk | ledger
+  const [award, setAward] = useState(null);     // quest just turned in
+  const today = todayKey();
+  const quests = state.quests;
+  const checkedInToday = quests.checkIns.includes(today);
+  const credits = state.credits || 0;
+
+  const checkIn = () => {
+    dispatch({ type: 'RECEPTION_CHECKIN' });
+    playSfx('confirm');
+  };
+
+  const buy = (quest) => {
+    dispatch({ type: 'BUY_QUEST', payload: { questId: quest.id } });
+    playSfx('confirm');
+  };
+
+  const turnIn = (quest) => {
+    dispatch({ type: 'TURN_IN_QUEST', payload: { questId: quest.id } });
+    playSfx('victory');
+    setAward(quest);
+  };
+
+  const abandon = (quest) => {
+    dispatch({ type: 'ABANDON_QUEST', payload: { questId: quest.id } });
+    playSfx('cancel');
+  };
+
+  // The award moment: the Token, big, and what the week actually paid.
+  if (award) {
+    const token = TOKEN_BY_ID[award.tokenId];
+    return (
+      <Screen style={{ padding: space.md, justifyContent: 'center' }}>
+        <View style={{ alignItems: 'center' }}>
+          <TokenBadge tokenId={award.tokenId} size={180} />
+          <PixelText size="heading" color={palette.secondary} align="center" style={{ marginTop: space.md }}>
+            {token.name}
+          </PixelText>
+          <PixelText size="small" color={palette.windowFill} align="center" style={{ marginTop: space.sm, lineHeight: 16 }}>
+            {award.name} — complete.
+          </PixelText>
+          <PixelText size="tiny" color={palette.windowFill} align="center" style={{ marginTop: space.sm, lineHeight: 14 }}>
+            {companion ? `${companion.creature.name} gains ${award.rewardLine}.` : award.rewardLine}
+          </PixelText>
+          <PixelText size="tiny" color={palette.windowTextDim} align="center" style={{ marginTop: space.md, lineHeight: 14 }}>
+            Maple: “That is a week that actually happened. The Token is yours — the habit is the real prize.”
+          </PixelText>
+        </View>
+        <PixelButton label="Back to the desk" tone="gold" style={{ marginTop: space.lg }} onPress={() => setAward(null)} />
+      </Screen>
+    );
+  }
+
+  if (phase === 'ledger') {
+    const activeIds = new Set(quests.active.map((a) => a.questId));
+    const offered = QUESTS.filter((q) => !activeIds.has(q.id));
+    const slotsFull = quests.active.length >= MAX_ACTIVE_QUESTS;
+    return (
+      <Screen style={{ padding: space.md }}>
+        <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
+          Quest Ledger
+        </PixelText>
+        <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <PixelText size="tiny" color={palette.windowFill}>{`${quests.active.length}/${MAX_ACTIVE_QUESTS} active`}</PixelText>
+            <PixelText size="tiny" color={palette.secondary}>{`${credits} Quest Credits`}</PixelText>
+          </View>
+          <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 4, lineHeight: 13 }}>
+            Buy a quest here, live it out there, come back to claim its Token. Tokens are proof, never money.
+          </PixelText>
+        </Window>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {quests.active.map((active) => {
+            const quest = getQuest(active.questId);
+            if (!quest) return null;
+            const prog = questProgress(quest, active, state, today);
+            return (
+              <Window key={quest.id} tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <TokenBadge tokenId={quest.tokenId} size={44} />
+                  <View style={{ flex: 1, marginLeft: space.sm }}>
+                    <PixelText size="body" color={palette.windowText}>{quest.name}</PixelText>
+                    <PixelText size="tiny" color={prog.expired ? palette.danger : palette.windowTextDim} style={{ marginTop: 2 }}>
+                      {prog.expired ? 'Out of time — the week is gone' : `Until ${prog.endDay}`}
+                    </PixelText>
+                  </View>
+                  {prog.done ? <PixelText size="tiny" color={palette.success}>READY</PixelText> : null}
+                </View>
+                {prog.reqs.map((r) => (
+                  <View key={r.label} style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
+                    <PixelText size="tiny" color={r.done ? palette.success : palette.windowTextDim} style={{ flex: 1, lineHeight: 13 }}>
+                      {(r.done ? '✓ ' : '· ') + r.label}
+                    </PixelText>
+                    <PixelText size="tiny" color={palette.windowText}>{`${Math.floor(r.have * 10) / 10}/${r.need}`}</PixelText>
+                  </View>
+                ))}
+                {prog.done ? (
+                  <PixelButton label={`Turn in — claim your ${TOKEN_BY_ID[quest.tokenId].name}`} tone="gold" size="small" style={{ marginTop: space.sm }} onPress={() => turnIn(quest)} />
+                ) : (
+                  <PixelButton label="Abandon (no refund)" tone="plain" size="tiny" sound="cancel" style={{ marginTop: space.sm }} onPress={() => abandon(quest)} />
+                )}
+              </Window>
+            );
+          })}
+
+          <PixelText size="tiny" color={palette.windowFill} style={{ letterSpacing: 1, marginVertical: space.sm }}>
+            ON THE BOARD
+          </PixelText>
+          {offered.map((quest) => {
+            const short = credits < quest.price;
+            return (
+              <Window key={quest.id} tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <TokenBadge tokenId={quest.tokenId} size={44} />
+                  <View style={{ flex: 1, marginLeft: space.sm }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <PixelText size="body" color={palette.windowText}>{quest.name}</PixelText>
+                      <PixelText size="tiny" color={palette.accentDark}>{`${quest.price} credits`}</PixelText>
+                    </View>
+                    <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 2 }}>
+                      {`${TOKEN_BY_ID[quest.tokenId].category} · ${quest.days} days · reward: ${quest.rewardLine}`}
+                    </PixelText>
+                  </View>
+                </View>
+                <PixelText size="tiny" color={palette.windowText} style={{ marginTop: 6, lineHeight: 13 }}>{quest.blurb}</PixelText>
+                {quest.reqs.map((r) => (
+                  <PixelText key={r.label} size="tiny" color={palette.windowTextDim} style={{ marginTop: 3, lineHeight: 13 }}>
+                    {'· ' + r.label}
+                  </PixelText>
+                ))}
+                <PixelButton
+                  label={slotsFull ? 'Quest slots full' : short ? `Need ${quest.price - credits} more credits` : `Accept — ${quest.price} credits`}
+                  tone={slotsFull || short ? 'plain' : 'gold'}
+                  size="small"
+                  disabled={slotsFull || short}
+                  style={{ marginTop: space.sm }}
+                  onPress={() => buy(quest)}
+                />
+              </Window>
+            );
+          })}
+        </ScrollView>
+        <PixelButton label="Back to the desk" tone="plain" sound="cancel" style={{ marginTop: space.sm }} onPress={() => setPhase('desk')} />
+      </Screen>
+    );
+  }
+
+  const earned = TOKENS.filter((t) => (quests.tokens[t.id] || 0) > 0).length;
+  const readyCount = quests.active.filter((a) => {
+    const q = getQuest(a.questId);
+    return q && questProgress(q, a, state, today).done;
+  }).length;
+
+  return (
+    <Screen style={{ padding: space.md }}>
+      <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
+        Reception
+      </PixelText>
+      <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
+        <PixelText size="tiny" color={palette.windowFill} style={{ lineHeight: 13 }}>
+          Two things happen at this desk: your visit gets recorded, and quests get picked up and turned in. Progress lives on your Phone.
+        </PixelText>
+      </Window>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <PixelText size="body" color={palette.windowText}>Check In</PixelText>
+            <PixelText size="tiny" color={palette.accentDark}>{`${quests.checkIns.length} day${quests.checkIns.length === 1 ? '' : 's'} recorded`}</PixelText>
+          </View>
+          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 13 }}>
+            Attendance only — showing up is its own record, and some quests count it.
+          </PixelText>
+          {checkedInToday ? (
+            <PixelText size="tiny" color={palette.success} style={{ marginTop: space.sm }}>{'✓ Checked in today'}</PixelText>
+          ) : (
+            <PixelButton label="Check In" tone="gold" size="small" style={{ marginTop: space.sm }} onPress={checkIn} />
+          )}
+        </Window>
+
+        <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+          <PixelText size="body" color={palette.windowText}>Quest Ledger</PixelText>
+          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 13 }}>
+            {`Healthy-habit quests, bought with Quest Credits. ${quests.active.length} active${readyCount ? `, ${readyCount} ready to turn in` : ''}.`}
+          </PixelText>
+          <PixelButton label={readyCount ? `Open Ledger — ${readyCount} ready` : 'Open Ledger'} tone="gold" size="small" style={{ marginTop: space.sm }} onPress={() => { playSfx('confirm'); setPhase('ledger'); }} />
+        </Window>
+
+        <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+          <PixelText size="body" color={palette.windowText}>Your Record</PixelText>
+          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 13 }}>
+            Lifetime miles, sessions, battles, streaks — the honest total of who you have been.
+          </PixelText>
+          <PixelButton label="Open Record" tone="plain" size="small" style={{ marginTop: space.sm }} onPress={() => navigate('summary')} />
+        </Window>
+
+        {/* The showcase fills as categories are completed — quiet bragging. */}
+        <Window tone="dark" pad={12} style={{ marginBottom: space.sm }}>
+          <PixelText size="tiny" color={palette.windowFill} style={{ letterSpacing: 1 }}>TOKEN SHOWCASE</PixelText>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.sm }}>
+            {TOKENS.map((t) => (
+              <TokenBadge key={t.id} tokenId={t.id} size={40} dim={!(quests.tokens[t.id] || 0)} />
+            ))}
+          </View>
+          <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: space.sm }}>
+            {`${earned} of ${TOKENS.length} categories earned`}
+          </PixelText>
+        </Window>
+      </ScrollView>
+      <PixelButton label={back.label} tone="plain" sound="cancel" style={{ marginTop: space.sm }} onPress={goBack} />
+    </Screen>
+  );
+}

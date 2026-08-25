@@ -169,7 +169,7 @@ the bed sleeps or logs last night, the desk is your habits,
 the kitchen counters log a meal, the kitchen shelf is the cookbook, the sofa is
 stillness, the wardrobe is your bag.
 
-## 4. Screens (all 31, registered in `screens/Router.js`)
+## 4. Screens (all 32, registered in `screens/Router.js`)
 
 Router holds the `SCREENS` map, `navigate(name, params)`, `toBattle(params)`
 (which plays the `BattleTransition` flash/wipe first), a `TOWN_BGM` set — every
@@ -214,6 +214,7 @@ clears it.
 | `workout` | WorkoutScreen | 34 preset routines (data/workouts.js), pay ×`workoutXpMult`; a station can pin one via `params.workoutId`; the `guided: true` routine (`firstsession`) is kept off the shelf list — MapleSessionScreen runs it |
 | `rest` | HomeRestScreen | your house (13×15 downstairs, 11×13 bedroom); the bed sleeps (`HEAL_FULL`) |
 | `summary` | SummaryScreen | Status: companion, stats, daily habits block, recovery |
+| `reception` | ReceptionScreen | the desk (gym `N`): Check In (attendance, once a day), Your Record (opens `summary`), and the Quest Ledger — buy quests with Quest Credits, watch the checklists, turn finished ones in for their Token (§5.6b). Token showcase fills per category |
 | `index` | IndexScreen | Creature Index: owned/seen/silhouetted-unknown |
 | `bag` | BagScreen | items, use effects (heal/xp/bond) |
 | `party` | PartyScreen | team of ≤6, swap active |
@@ -449,6 +450,38 @@ is one bug away from a free shop.
 and `logAs` records the drink as your own Nourish check-in, through the module's
 normal path, so the daily cap applies and buying one can never pay more than
 showing up would have.
+
+### 5.6b The Quest Ledger and Quest Tokens (`data/quests.js`)
+
+The other place credits are spent — and the reason the reception tour line
+says "purchase quests". A quest is bought at the desk, completed by real
+recorded behavior (the SAME stats and module buckets everything else keeps,
+measured against a snapshot taken at purchase so only new effort counts),
+and turned in for its category Token plus a reward paid through the usual
+`{xp,bond,evo,heal}` contract. 7 Quest Tokens, one per category; 8 quests on
+the board; at most 3 active; 7-day windows; abandoning frees the slot with
+no refund. Tokens are collectible proof, never money: they cannot be spent,
+never convert to credits, and never touch trail progress. Check-in records
+attendance only, once per day.
+
+| quest | token | price | requirements | reward |
+|---|---|---|---|---|
+| Ten-Minute Trek | Stride | 15 | walk 0.5 real mi | +40 XP |
+| Wheels in Motion | Stride | 10 | 1 Bike Ride | +30 XP |
+| Foundation Set | Forge | 15 | 2 strength sessions | +6 Evolve Points |
+| Balanced Bowl | Harvest | 15 | 3 meals logged | +30 Resolve, +6 bond |
+| Fill the Flask | Rill | 15 | water goal on 2 days | +35 Resolve |
+| Rest to Rise | Hearth | 15 | sleep logged 2 nights | Resolve fully restored |
+| Five Calm Breaths | Stillwater | 15 | 2 stillness sessions | +12 bond |
+| Seven-Day Foundation | Root | 30 | 3 check-ins, 2 strength, 1 cardio, water×4, meals×3, sleep×2, stillness×1 | +10 bond + 1 Kinship Knot |
+
+Rewards are matched to what each category already pays elsewhere: movement
+is the XP engine, training earns Evolve Points, food and water restore,
+sleep is the full heal, stillness pays bond, and consistency earns a
+Kinship Knot. No quest mints credits — a bought quest that refunded its
+price in credits would be a money printer, and the economy has none.
+Token art: 7 painted plates in `assets/items/tokens/` (masters mirrored in
+`tools/reference_art/tokens/`), drawn via `data/tokenImages.js`.
 
 ### 5.7 The cardio console (`components/CardioConsole.js`, `state/cardioMaths.js`)
 
@@ -860,6 +893,11 @@ early calls). BGM switching lives in Router via TOWN_BGM.
            sets, reps, holdSec,                   // real exercise done
            exercises: { [exerciseId|'workout:<id>']: amount } },
   bag: { itemId: count }, dex: { creatureId: 'owned'|'seen' },
+  quests: { checkIns: ['YYYY-MM-DD'],             // reception attendance
+            active: [{ questId, startedDay,
+                       base }],                   // stat snapshot at purchase
+            completed: [{ questId, day }],
+            tokens: { tokenId: count } },         // the Token Case
   modules: { [id]: { date, count, entries, goalHit, streak, bestStreak,
                      lastGoalDate, goalDays, totalCount, totalLogs,
                      paid?, goalCredit?, bonusPaid?,        // replaces-modules
