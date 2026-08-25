@@ -42,9 +42,10 @@ export function buildCoachContext(state, companion) {
   lines.push(
     `Last ${RECENT_DAYS} days: ${t.activeDays} active days, ${t.restDays} logged rest days, ` +
       `${t.sessions + t.workouts} workouts, ${Math.round(t.distanceMi * 10) / 10} total miles` +
-      `${t.cyclingMi ? ` (${Math.round(t.cyclingMi * 10) / 10} cycled)` : ''}, ` +
+      `${t.cyclingMi ? ` (${Math.round(t.cyclingMi * 10) / 10} cycled across ${t.rides} rides)` : ''}, ` +
       `${t.habitLogs} habit logs.`
   );
+  lines.push('Gym rule: bicycle and treadmill miles are cardio records only; they never advance a trail, roll trail encounters or milestones, or mint Quest Credits.');
 
   // --- recovery, stated plainly so it can act on it ---
   const rec = computeRecovery(state.history, today);

@@ -54,6 +54,8 @@ CREATE TABLE IF NOT EXISTS day (
   date        TEXT NOT NULL,           -- LOCAL date key, YYYY-MM-DD
   steps       INTEGER NOT NULL DEFAULT 0,
   distance_mi REAL    NOT NULL DEFAULT 0,
+  cycling_mi  REAL    NOT NULL DEFAULT 0,
+  rides       INTEGER NOT NULL DEFAULT 0,
   workouts    INTEGER NOT NULL DEFAULT 0,
   sets        INTEGER NOT NULL DEFAULT 0,
   reps        INTEGER NOT NULL DEFAULT 0,
@@ -111,6 +113,13 @@ CREATE TABLE IF NOT EXISTS game_save (
 
 const db = new Database(FILE);
 db.exec(SCHEMA);
+
+// CREATE TABLE IF NOT EXISTS does not add columns to a deployed database.
+// Keep this additive migration beside the schema so an existing friends board
+// begins accepting bicycle history without dropping or rebuilding any day.
+const dayColumns = new Set(db.prepare('PRAGMA table_info(day)').all().map((row) => row.name));
+if (!dayColumns.has('cycling_mi')) db.exec('ALTER TABLE day ADD COLUMN cycling_mi REAL NOT NULL DEFAULT 0');
+if (!dayColumns.has('rides')) db.exec('ALTER TABLE day ADD COLUMN rides INTEGER NOT NULL DEFAULT 0');
 
 // A friend code a person can read down a phone line. No vowels and no 0/1/I/O,
 // so MAPLE-K7Q2 cannot be misheard as a word or mistyped as a lookalike.

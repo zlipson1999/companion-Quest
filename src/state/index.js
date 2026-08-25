@@ -16,6 +16,9 @@ export { loadGame, saveGame, clearGame } from './storage';
 export { blankDay, dayIn, stamp, trim, lastDays, weekOf, previousWeekOf, totals, isActive, weekStart } from './history';
 export { computeRecovery, loadOf, weeklyLoads } from './recovery';
 export { useDistance } from './useDistance';
+export { distancePolicy } from './distancePolicy';
+export { KEEP_CARDIO_SESSIONS, CARDIO_STATIONS, cardioSession, appendCardioSession, normalizeCardioSessions, cardioStationLabel } from './cardioHistory';
+export { localDayKey as gymLocalDayKey, normalizeGymCheckIns, appendGymCheckIn, gymCheckInStats } from './gymCheckIns';
 export {
   encounterContext,
   meetsEncounter,

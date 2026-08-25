@@ -1,14 +1,14 @@
-// The reception desk, made a place: Check In records that you showed up,
-// Your Record opens the Summary the desk always held, and the Quest Ledger
-// sells healthy-habit quests for Quest Credits — the promise in Maple's tour
-// line, kept. Turn-ins happen here too, so the desk is where a week of real
-// habits becomes a Token in the case.
+// The reception desk, made a place: walking up IS the check-in — the first
+// arrival of each local day is recorded with its time, attendance only, no
+// reward attached — and the Quest Ledger offers free healthy-habit quests to
+// pick up and turn in. Tokens are proof of completion, never money. Your
+// full attendance record lives on the Phone, under Personal.
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import { Screen, Window, PixelText, PixelButton } from '../components';
 import { palette, space } from '../theme';
-import { useGame, useCompanion } from '../state';
+import { useGame, useCompanion, gymLocalDayKey, gymCheckInStats } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { QUESTS, TOKENS, TOKEN_BY_ID, getQuest, questProgress, MAX_ACTIVE_QUESTS } from '../data/quests';
@@ -26,24 +26,35 @@ function TokenBadge({ tokenId, size = 44, dim = false }) {
   );
 }
 
+function clockOf(iso) {
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return '';
+  const h = d.getHours();
+  const m = String(d.getMinutes()).padStart(2, '0');
+  const ampm = h < 12 ? 'am' : 'pm';
+  return `${((h + 11) % 12) + 1}:${m} ${ampm}`;
+}
+
 export default function ReceptionScreen() {
   const { state, dispatch } = useGame();
   const companion = useCompanion();
-  const { navigate, goBack, back } = useNav();
+  const { goBack, back } = useNav();
   const [phase, setPhase] = useState('desk');   // desk | ledger
   const [award, setAward] = useState(null);     // quest just turned in
   const today = todayKey();
   const quests = state.quests;
-  const checkedInToday = quests.checkIns.includes(today);
-  const credits = state.credits || 0;
 
-  const checkIn = () => {
-    dispatch({ type: 'RECEPTION_CHECKIN' });
-    playSfx('confirm');
-  };
+  // Walking up to the desk is the check-in. The reducer keeps only the FIRST
+  // arrival per local day, so mounting again later today changes nothing.
+  useEffect(() => {
+    dispatch({ type: 'GYM_CHECK_IN', payload: { checkedAt: new Date().toISOString() } });
+  }, [dispatch]);
 
-  const buy = (quest) => {
-    dispatch({ type: 'BUY_QUEST', payload: { questId: quest.id } });
+  const todayVisit = (state.gymCheckIns || []).find((v) => v.day === gymLocalDayKey());
+  const attendance = gymCheckInStats(state.gymCheckIns);
+
+  const accept = (quest) => {
+    dispatch({ type: 'ACCEPT_QUEST', payload: { questId: quest.id } });
     playSfx('confirm');
   };
 
@@ -93,12 +104,9 @@ export default function ReceptionScreen() {
           Quest Ledger
         </PixelText>
         <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <PixelText size="tiny" color={palette.windowFill}>{`${quests.active.length}/${MAX_ACTIVE_QUESTS} active`}</PixelText>
-            <PixelText size="tiny" color={palette.secondary}>{`${credits} Quest Credits`}</PixelText>
-          </View>
+          <PixelText size="tiny" color={palette.windowFill}>{`${quests.active.length}/${MAX_ACTIVE_QUESTS} active`}</PixelText>
           <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 4, lineHeight: 13 }}>
-            Buy a quest here, live it out there, come back to claim its Token. Tokens are proof, never money.
+            Quests are free — pick one up, live it out there, come back to claim its Token. Tokens are proof of completion, not currency, and no credits change hands here.
           </PixelText>
         </Window>
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -129,7 +137,7 @@ export default function ReceptionScreen() {
                 {prog.done ? (
                   <PixelButton label={`Turn in — claim your ${TOKEN_BY_ID[quest.tokenId].name}`} tone="gold" size="small" style={{ marginTop: space.sm }} onPress={() => turnIn(quest)} />
                 ) : (
-                  <PixelButton label="Abandon (no refund)" tone="plain" size="tiny" sound="cancel" style={{ marginTop: space.sm }} onPress={() => abandon(quest)} />
+                  <PixelButton label="Set it down (keeps your credits — nothing was paid)" tone="plain" size="tiny" sound="cancel" style={{ marginTop: space.sm }} onPress={() => abandon(quest)} />
                 )}
               </Window>
             );
@@ -138,39 +146,33 @@ export default function ReceptionScreen() {
           <PixelText size="tiny" color={palette.windowFill} style={{ letterSpacing: 1, marginVertical: space.sm }}>
             ON THE BOARD
           </PixelText>
-          {offered.map((quest) => {
-            const short = credits < quest.price;
-            return (
-              <Window key={quest.id} tone="cream" pad={12} style={{ marginBottom: space.sm }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <TokenBadge tokenId={quest.tokenId} size={44} />
-                  <View style={{ flex: 1, marginLeft: space.sm }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                      <PixelText size="body" color={palette.windowText}>{quest.name}</PixelText>
-                      <PixelText size="tiny" color={palette.accentDark}>{`${quest.price} credits`}</PixelText>
-                    </View>
-                    <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 2 }}>
-                      {`${TOKEN_BY_ID[quest.tokenId].category} · ${quest.days} days · reward: ${quest.rewardLine}`}
-                    </PixelText>
-                  </View>
-                </View>
-                <PixelText size="tiny" color={palette.windowText} style={{ marginTop: 6, lineHeight: 13 }}>{quest.blurb}</PixelText>
-                {quest.reqs.map((r) => (
-                  <PixelText key={r.label} size="tiny" color={palette.windowTextDim} style={{ marginTop: 3, lineHeight: 13 }}>
-                    {'· ' + r.label}
+          {offered.map((quest) => (
+            <Window key={quest.id} tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TokenBadge tokenId={quest.tokenId} size={44} />
+                <View style={{ flex: 1, marginLeft: space.sm }}>
+                  <PixelText size="body" color={palette.windowText}>{quest.name}</PixelText>
+                  <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 2 }}>
+                    {`${TOKEN_BY_ID[quest.tokenId].category} · ${quest.days} days · reward: ${quest.rewardLine}`}
                   </PixelText>
-                ))}
-                <PixelButton
-                  label={slotsFull ? 'Quest slots full' : short ? `Need ${quest.price - credits} more credits` : `Accept — ${quest.price} credits`}
-                  tone={slotsFull || short ? 'plain' : 'gold'}
-                  size="small"
-                  disabled={slotsFull || short}
-                  style={{ marginTop: space.sm }}
-                  onPress={() => buy(quest)}
-                />
-              </Window>
-            );
-          })}
+                </View>
+              </View>
+              <PixelText size="tiny" color={palette.windowText} style={{ marginTop: 6, lineHeight: 13 }}>{quest.blurb}</PixelText>
+              {quest.reqs.map((r) => (
+                <PixelText key={r.label} size="tiny" color={palette.windowTextDim} style={{ marginTop: 3, lineHeight: 13 }}>
+                  {'· ' + r.label}
+                </PixelText>
+              ))}
+              <PixelButton
+                label={slotsFull ? 'Quest slots full' : 'Accept quest — free'}
+                tone={slotsFull ? 'plain' : 'gold'}
+                size="small"
+                disabled={slotsFull}
+                style={{ marginTop: space.sm }}
+                onPress={() => accept(quest)}
+              />
+            </Window>
+          ))}
         </ScrollView>
         <PixelButton label="Back to the desk" tone="plain" sound="cancel" style={{ marginTop: space.sm }} onPress={() => setPhase('desk')} />
       </Screen>
@@ -190,39 +192,29 @@ export default function ReceptionScreen() {
       </PixelText>
       <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
         <PixelText size="tiny" color={palette.windowFill} style={{ lineHeight: 13 }}>
-          Two things happen at this desk: your visit gets recorded, and quests get picked up and turned in. Progress lives on your Phone.
+          Walking up checked you in. The desk also holds the Quest Ledger — free quests to pick up and turn in. Progress and attendance live on your Phone.
         </PixelText>
       </Window>
       <ScrollView showsVerticalScrollIndicator={false}>
         <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <PixelText size="body" color={palette.windowText}>Check In</PixelText>
-            <PixelText size="tiny" color={palette.accentDark}>{`${quests.checkIns.length} day${quests.checkIns.length === 1 ? '' : 's'} recorded`}</PixelText>
+            <PixelText size="body" color={palette.windowText}>Checked In</PixelText>
+            <PixelText size="tiny" color={palette.accentDark}>{`${attendance.totalDays} day${attendance.totalDays === 1 ? '' : 's'} total`}</PixelText>
           </View>
-          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 13 }}>
-            Attendance only — showing up is its own record, and some quests count it.
+          <PixelText size="tiny" color={palette.success} style={{ marginTop: space.sm }}>
+            {todayVisit ? `✓ Today at ${clockOf(todayVisit.checkedAt)} — first arrival of the day` : '…'}
           </PixelText>
-          {checkedInToday ? (
-            <PixelText size="tiny" color={palette.success} style={{ marginTop: space.sm }}>{'✓ Checked in today'}</PixelText>
-          ) : (
-            <PixelButton label="Check In" tone="gold" size="small" style={{ marginTop: space.sm }} onPress={checkIn} />
-          )}
+          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 13 }}>
+            Attendance only — no reward attached, one record per day. Streaks and the full history are on your Phone under Personal.
+          </PixelText>
         </Window>
 
         <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
           <PixelText size="body" color={palette.windowText}>Quest Ledger</PixelText>
           <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 13 }}>
-            {`Healthy-habit quests, bought with Quest Credits. ${quests.active.length} active${readyCount ? `, ${readyCount} ready to turn in` : ''}.`}
+            {`Optional healthy-habit quests, free to pick up. ${quests.active.length} active${readyCount ? `, ${readyCount} ready to turn in` : ''}.`}
           </PixelText>
           <PixelButton label={readyCount ? `Open Ledger — ${readyCount} ready` : 'Open Ledger'} tone="gold" size="small" style={{ marginTop: space.sm }} onPress={() => { playSfx('confirm'); setPhase('ledger'); }} />
-        </Window>
-
-        <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
-          <PixelText size="body" color={palette.windowText}>Your Record</PixelText>
-          <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 13 }}>
-            Lifetime miles, sessions, battles, streaks — the honest total of who you have been.
-          </PixelText>
-          <PixelButton label="Open Record" tone="plain" size="small" style={{ marginTop: space.sm }} onPress={() => navigate('summary')} />
         </Window>
 
         {/* The showcase fills as categories are completed — quiet bragging. */}
@@ -234,7 +226,7 @@ export default function ReceptionScreen() {
             ))}
           </View>
           <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: space.sm }}>
-            {`${earned} of ${TOKENS.length} categories earned`}
+            {`${earned} of ${TOKENS.length} categories earned — proof of completion, not currency`}
           </PixelText>
         </Window>
       </ScrollView>

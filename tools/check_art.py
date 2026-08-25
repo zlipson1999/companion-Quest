@@ -341,6 +341,42 @@ def check_family_stages(chains):
     return clones
 
 
+def check_token_alpha():
+    """The 7 Quest Token plates must ship on real transparency.
+
+    They render over cream ledger cards and the dark showcase, so an opaque
+    background (the Forge plate shipped one once) reads as a pasted square.
+    Corners must be fully transparent and the subject actually present.
+    """
+    bad = []
+    tokens = sorted((ROOT / 'assets' / 'items' / 'tokens').glob('*.png'))
+    if len(tokens) != 7:
+        print(f'FAIL   expected 7 quest token plates, found {len(tokens)}')
+        bad.append('count')
+    for path in tokens:
+        img = Image.open(path).convert('RGBA')
+        w, h = img.size
+        alpha = img.getchannel('A')
+        px = alpha.load()
+        m = 6  # sample a margin, not the single corner pixel
+        corners = [px[x, y] for x, y in
+                   ((m, m), (w - 1 - m, m), (m, h - 1 - m), (w - 1 - m, h - 1 - m))]
+        lo, hi = alpha.getextrema()
+        opaque = sum(1 for v in alpha.getdata() if v > 200)
+        if max(corners) > 8:
+            bad.append(path.stem)
+            print(f'FAIL   token {path.stem:<14} corners are not transparent (alpha {corners})')
+        elif lo == hi:
+            bad.append(path.stem)
+            print(f'FAIL   token {path.stem:<14} has a flat alpha channel')
+        elif opaque < (w * h) // 20:
+            bad.append(path.stem)
+            print(f'FAIL   token {path.stem:<14} holds almost no opaque subject')
+        else:
+            print(f'ok     token {path.stem:<14} transparent plate, subject present')
+    return bad
+
+
 def main():
     chains = family_chains()
 
@@ -419,8 +455,12 @@ def main():
         print('  gap is reported instead. See docs/ART_KIT.md and docs/CREATING_CHARACTERS.md.')
 
     clones = check_family_stages(chains)
+    token_bad = check_token_alpha()
 
     bad = []
+    if token_bad:
+        print(f'\n{len(token_bad)} quest token plate problem(s) above.')
+        bad.append('tokens')
     if broken or orphaned:
         print(f'\n{len(broken) + len(orphaned)} master problem(s) above.')
         bad.append('master')

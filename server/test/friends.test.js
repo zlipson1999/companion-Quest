@@ -44,18 +44,19 @@ const say = (ok, label, extra = '') =>
   say((await call('GET', '/board/distance', { token: 'nonsense' })).status === 401, 'a bogus token is rejected');
 
   // Each pushes a week of days.
-  const days = (miles, workouts) => {
+  const days = (miles, workouts, cyclingMi = 0, rides = 0) => {
     const out = [];
     for (let i = 0; i < 5; i += 1) {
       const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
-      out.push({ date: d, steps: Math.round(miles * 2000), distanceMi: miles, workouts,
+      const footMi = Math.max(0, miles - cyclingMi);
+      out.push({ date: d, steps: Math.round(footMi * 2000), distanceMi: miles, cyclingMi, rides, workouts,
                  sets: workouts * 3, reps: workouts * 30, holdSec: 0, active: 1, source: 'pedometer' });
     }
     return out;
   };
-  await call('POST', '/sync', { token: who.Ada.token, body: { days: days(3, 1),
+  await call('POST', '/sync', { token: who.Ada.token, body: { days: days(12, 1, 4, 1),
     records: [{ movementId: 'back_squat', kind: 'load', amount: 5, weight: 185, sets: 1, achievedOn: new Date().toISOString().slice(0,10) }] } });
-  await call('POST', '/sync', { token: who.Rowan.token, body: { days: days(2, 2),
+  await call('POST', '/sync', { token: who.Rowan.token, body: { days: days(10, 2, 8, 1),
     records: [{ movementId: 'back_squat', kind: 'load', amount: 3, weight: 225, sets: 1, achievedOn: new Date().toISOString().slice(0,10) }] } });
   await call('POST', '/sync', { token: who.Stranger.token, body: { days: days(99, 1) } });
 
@@ -78,6 +79,11 @@ const say = (ok, label, extra = '') =>
   b = await call('GET', '/board/distance', { token: who.Ada.token });
   say(b.json.rows.length === 2, 'after accepting, both appear', b.json.rows.map(r => `${r.name} ${r.display}`).join(' / '));
   say(b.json.rows[0].name === 'Ada', 'ordered by value', `top=${b.json.rows[0].display}`);
+
+  const bikes = await call('GET', '/board/cycling', { token: who.Ada.token });
+  say(bikes.json.rows.length === 2, 'bike board is friends-only', `rows=${bikes.json.rows.length}`);
+  say(bikes.json.rows[0].name === 'Rowan' && bikes.json.rows[0].value > bikes.json.rows[1].value,
+      'bike board ranks checked cycling miles', bikes.json.rows.map(r => `${r.name} ${r.display}`).join(' / '));
 
   // The stranger still cannot see them, nor they the stranger.
   const sb = await call('GET', '/board/distance', { token: who.Stranger.token });

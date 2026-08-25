@@ -41,6 +41,8 @@ export function daysToSync(history, { since } = {}) {
       date,
       steps: Math.round(day.steps || 0),
       distanceMi: Math.round((day.distanceMi || 0) * 1000) / 1000,
+      cyclingMi: Math.round((day.cyclingMi || 0) * 1000) / 1000,
+      rides: Math.round(day.rides || 0),
       // A premade routine and a Forge session are both a session; the board
       // ranks "sessions this week" and does not care which kind.
       workouts: Math.round((day.workouts || 0) + (day.sessions || 0)),

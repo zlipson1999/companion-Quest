@@ -1,0 +1,128 @@
+// The Quest Ledger's promises, checked deterministically:
+//   - quests are free: no prices, and no quest action may touch credits
+//   - tokens are proof, never currency: nothing spends or sells one
+//   - progress is measured from the snapshot taken at acceptance
+//   - gym cardio never reaches trails, milestones, or Quest Credits
+//   - the v12 migration refunds priced-era purchases exactly once
+//
+//   node --import ./tools/register-esm.mjs tools/test_quest_ledger.mjs
+
+import { readFileSync } from 'node:fs';
+import {
+  MAX_ACTIVE_QUESTS, QUESTS, TOKENS, getQuest, questProgress, questSnapshot,
+} from '../src/data/quests.js';
+import { distancePolicy } from '../src/state/distancePolicy.js';
+import { hydrateSave } from '../src/state/hydrate.js';
+
+const failures = [];
+const check = (label, ok) => { if (!ok) failures.push(label); };
+const equal = (label, got, want) => {
+  if (got !== want) failures.push(`${label}: got ${JSON.stringify(got)}, want ${JSON.stringify(want)}`);
+};
+
+// ---- Quests are free, tokens are not currency ----
+equal('seven token categories', TOKENS.length, 7);
+equal('eight quests on the board', QUESTS.length, 8);
+equal('three active quests at most', MAX_ACTIVE_QUESTS, 3);
+QUESTS.forEach((q) => {
+  check(`quest ${q.id} carries no price`, !('price' in q));
+  check(`quest ${q.id} pays no credits`, !('credits' in (q.reward || {})));
+});
+
+// The reducer file is the one place quest actions live; none of those cases
+// may mention credits at all — accepting, abandoning and turning in are
+// credit-neutral by construction, not by arithmetic.
+const reducerSrc = readFileSync(new URL('../src/state/GameContext.js', import.meta.url), 'utf8');
+for (const action of ['ACCEPT_QUEST', 'TURN_IN_QUEST', 'ABANDON_QUEST']) {
+  const start = reducerSrc.indexOf(`case '${action}'`);
+  check(`reducer still handles ${action}`, start >= 0);
+  const body = reducerSrc.slice(start, reducerSrc.indexOf('\n    }', start));
+  check(`${action} never touches credits`, !/credits/.test(body));
+}
+check('BUY_QUEST is gone — quests are not purchased', !reducerSrc.includes('BUY_QUEST'));
+check('no reducer case spends tokens', !/tokens\[[^\]]*\]\s*-|tokens[^\n]*- 1/.test(reducerSrc));
+
+// ---- Progress counts only effort after acceptance ----
+const state = {
+  stats: { distanceMi: 4.2, ridesDone: 1, workoutsDone: 3 },
+  cardioSessions: [{ station: 'bike', miles: 2, seconds: 600, endedAt: '2026-08-20T10:00:00.000Z' }],
+  modules: { diet: { totalLogs: 5 }, sleep: { totalLogs: 2 }, meditation: { totalLogs: 1 }, hydration: { goalDays: 6 } },
+  gymCheckIns: [
+    { day: '2026-08-18', checkedAt: '2026-08-18T09:00:00.000Z' },
+    { day: '2026-08-20', checkedAt: '2026-08-20T09:00:00.000Z' },
+    { day: '2026-08-21', checkedAt: '2026-08-21T09:00:00.000Z' },
+  ],
+  quests: { active: [], completed: [], tokens: {} },
+};
+const snap = questSnapshot(state);
+equal('snapshot captures miles', snap.miles, 4.2);
+equal('snapshot captures cardio sessions', snap.cardio, 1);
+
+const trek = getQuest('tenminutetrek');
+const fresh = { questId: 'tenminutetrek', startedDay: '2026-08-19', base: snap };
+const before = questProgress(trek, fresh, state, '2026-08-20');
+equal('a just-accepted quest starts at zero', before.reqs[0].have, 0);
+check('a just-accepted quest is not done', !before.done);
+const walked = { ...state, stats: { ...state.stats, distanceMi: 4.8 } };
+const after = questProgress(trek, fresh, walked, '2026-08-20');
+check('0.6 new miles finish the half-mile trek', after.done);
+
+// Check-ins earlier than acceptance never count.
+const flagship = getQuest('sevendayfoundation');
+const flagshipRun = { questId: 'sevendayfoundation', startedDay: '2026-08-19', base: snap };
+const checkinReq = questProgress(flagship, flagshipRun, state, '2026-08-21').reqs
+  .find((r) => r.label.includes('reception'));
+equal('only post-acceptance check-in days count', checkinReq.have, 2);
+
+// The clock runs out.
+const stale = { questId: 'tenminutetrek', startedDay: '2026-08-01', base: snap };
+check('an unfinished quest expires after its window', questProgress(trek, stale, state, '2026-08-20').expired);
+
+// ---- Gym cardio is isolated from trails and credits ----
+const trail = distancePolicy({ miles: 1, routeId: 'maple' });
+check('trail miles advance the trail', trail.advancesTrail && trail.earnsTrailCredit && trail.advancesTrailMilestones);
+for (const activity of ['gym-cardio', 'ride']) {
+  const gym = distancePolicy({ miles: 1, activity });
+  check(`${activity} never advances a trail`, !gym.advancesTrail);
+  check(`${activity} never earns Quest Credits`, !gym.earnsTrailCredit);
+  check(`${activity} never moves trail milestones`, !gym.advancesTrailMilestones);
+}
+let threw = false;
+try { distancePolicy({ miles: 1, activity: 'ride', routeId: 'maple' }); } catch { threw = true; }
+check('gym cardio carrying a routeId is a programming error', threw);
+
+// ---- v12 migration: the one-time refund and the check-in conversion ----
+const pricedEra = {
+  version: 11, started: true, goalId: 'root', credits: 5,
+  party: [{ id: 'sproutle', xp: 10, bond: 1, hp: 20 }],
+  stats: { totalSteps: 100, distanceMi: 1 },
+  quests: {
+    checkIns: ['2026-08-18', '2026-08-19'],
+    active: [{ questId: 'sevendayfoundation', startedDay: '2026-08-19', base: {} }],
+    completed: [{ questId: 'wheelsinmotion', day: '2026-08-18' }],
+    tokens: { stride: 1 },
+  },
+};
+const migrated = hydrateSave(structuredClone(pricedEra));
+equal('refund pays the exact historical prices (30 + 10)', migrated.credits, 45);
+check('refund is flagged so it cannot repeat', migrated.quests.refundApplied === true);
+equal('day-only check-ins become timestamped attendance', migrated.gymCheckIns.length, 2);
+equal('converted check-in keeps its day', migrated.gymCheckIns[0].day, '2026-08-18');
+check('converted check-in gains a real timestamp', !Number.isNaN(new Date(migrated.gymCheckIns[0].checkedAt).getTime()));
+check('quests.checkIns bucket is gone', !('checkIns' in migrated.quests));
+check('earned tokens survive migration', migrated.quests.tokens.stride === 1);
+
+// Hydrating the migrated save again must not pay twice.
+const again = hydrateSave(structuredClone(migrated));
+equal('re-hydrating never refunds twice', again.credits, 45);
+
+// A fresh save has nothing to refund.
+const blank = hydrateSave({ version: 11, started: false });
+equal('a save with no purchases gets no credits', blank.credits, 0);
+
+if (failures.length) {
+  console.error(`FAIL ${failures.length} quest-ledger check(s):`);
+  failures.forEach((line) => console.error(`  ${line}`));
+  process.exit(1);
+}
+console.log('ok     free quest ledger, token-as-proof, cardio isolation and the v12 refund');

@@ -109,8 +109,10 @@ def build_checks():
          str(len(re.findall(r"^  \{ id: '", quests_src, re.M)))),
         ('quests on the board', r'(\d+) quests on\nthe board',
          str(len(re.findall(r"^    id: '", quests_src, re.M)))),
-        ('flagship quest price', r"Seven-Day Foundation \| Root \| (\d+) \|",
-         str(round(float(first(r"id: 'sevendayfoundation'[\s\S]*?price: MILES\(([\d.]+)\)", quests_src, 'flagship price')) * 10))),
+        # Quests are free. A price field creeping back into the data would be
+        # the purchase design returning; that is a build failure, not a tune.
+        ('quests stay free', r'Quests are (free)',
+         'free' if not re.search(r'\bprice\s*:', quests_src) else 'priced'),
     ]
 
     for const, label in (('CREDIT_PER_MILE', 'a walked mile'),
@@ -193,8 +195,15 @@ def banned_name_checks():
     a build failure now, the same way a stale figure is. Scans every live
     source and doc; this file is excluded because it must name the ban.
     """
-    banned = re.compile(r'trail\s+credits?', re.I)
-    exts = {'.js', '.md', '.py', '.html', '.json'}
+    banned = [
+        (re.compile(r'trail\s+credits?', re.I), 'the currency is Quest Credits'),
+        # The gym bicycle is always "Bike Ride". Branding it "outdoor"
+        # suggested the ride belonged to the trail system, which it never
+        # does — the wording came back once already (#83 recovery).
+        (re.compile(r'outdoor\s+(?:bike\s+|bicycle\s+)?rides?\b|outdoor\s+ride\s+live', re.I),
+         'the activity is named Bike Ride, never outdoor'),
+    ]
+    exts = {'.js', '.mjs', '.md', '.py', '.html', '.json'}
     skip = {ROOT / 'tools' / 'check_docs.py'}
     bad = []
     files = [ROOT / 'CLAUDE.md', ROOT / 'README.md']
@@ -205,11 +214,12 @@ def banned_name_checks():
         if p in skip or not p.is_file():
             continue
         for i, line in enumerate(p.read_text(encoding='utf-8', errors='replace').splitlines(), 1):
-            if banned.search(line):
-                bad.append(f'banned name "Trail Credit" in {p.relative_to(ROOT)}:{i}')
-                print(f'DRIFT banned name at {p.relative_to(ROOT)}:{i} — the currency is Quest Credits')
+            for rx, why in banned:
+                if rx.search(line):
+                    bad.append(f'banned wording in {p.relative_to(ROOT)}:{i} — {why}')
+                    print(f'DRIFT banned wording at {p.relative_to(ROOT)}:{i} — {why}')
     if not bad:
-        print('ok   banned names                   no "Trail Credit" anywhere — the currency is Quest Credits')
+        print('ok   banned wording                 no "Trail Credit" or "outdoor ride" anywhere')
     return bad
 
 

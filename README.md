@@ -23,7 +23,14 @@ npx expo start
 Scan the QR code with **Expo Go** (iOS/Android).
 
 - **On a real phone:** the pedometer drives walking, and GPS drives outdoor runs
-  and bicycle rides started from the stationary bikes in Quest Fitness.
+  and Bike Rides started from the stationary bikes in Quest Fitness.
+- **Gym cardio stays gym cardio:** bicycle and treadmill miles are saved in the
+  Phone, Week, recent-session history and noticeboard sync, but never
+  advance a trail or its milestones and never earn Quest Credits.
+- **Reception is attendance only:** walking into the desk records the local date
+  and first arrival time for that day. Streaks, total check-in days and visit
+  history live in the Phone's Personal Tracker, and the desk's free Quest
+  Ledger hands out healthy-habit quests whose Tokens are proof, not currency.
 - **On desktop/simulator/web:** a **DEV-ONLY step injector** appears on the Route
   screen and the treadmill/rower deck (`+0.05mi / +0.25mi / +1mi`) so the loop can be
   tested where there is no pedometer. It is gated on `__DEV__`, which is false in
@@ -46,7 +53,7 @@ src/
   state/       game reducer + context (auto-persist), leveling, evolution,
                history, recovery, economy (Quest Credits), cardio maths,
                distance (pedometer / accelerometer / GPS)
-  components/  30 blocks — WorldScreen, HorizonSky, GrowthCeremony, TileMap/TileImage,
+  components/  32 blocks — WorldScreen, HorizonSky, GrowthCeremony, TileMap/TileImage,
                 CardioConsole, CompanionStatus, Joystick, the Trailkeeper primitives, ...
   modules/     the life-module plugin system + 5 modules (the Forge is one)
   coach/       the companion/Coach's warm, in-character dialogue

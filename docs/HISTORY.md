@@ -749,7 +749,7 @@ boards, on the proxy that already existed for the Coach. Full design in
   a week gives everyone the same empty column. Bests are the exception.
 - The noticeboard hangs by reception (`G`). One cork `BoardScreen` (paper
   FieldCards, 44px TrailAction tabs, name + this week's amount; bests are
-  one-set cards, not a ladder). Reception `N` stays Summary. Friends "See the
+  one-set cards, not a ladder). Reception `N` is a local check-in desk. Friends "See the
   boards" opens the same screen. Friends stays off the six-item hub menu.
 
 Two bugs found by driving it in a browser rather than reading it: `BarFill`
@@ -759,7 +759,62 @@ button that needs it is now its own component, mounted only when configured.
 
 **Not proven:** the Apple and Google handshakes themselves need real client ids
 and a device. Everything downstream of the token is tested —
-`npm --prefix server run test:friends`, 21 checks over HTTP.
+`npm --prefix server run test:friends`, 23 checks over HTTP.
+
+## Phase 16 — DONE: gym cardio is recorded without becoming a trail
+
+The stationary bikes remain only on the Quest Fitness floor. Starting one
+measures a real Bike Ride with GPS, but the game character never
+leaves the in-gym machine. Treadmills continue to use real phone movement.
+
+The reducer now owns a single hard boundary for both (`distancePolicy.js`):
+bike and treadmill miles may pay general companion distance XP and remain part
+of lifetime fitness/load, but they cannot carry a trail id, fill a trail
+quota, advance the trail milestone meter, roll an encounter, or mint Quest
+Credits. The console and Maple's full-floor tour say the same thing.
+
+Cycling data reaches every current cardio surface: daily history, lifetime
+stats, Phone, Week, Coach context, a local noticeboard card, and a
+fifth signed-in Bike board. The day-sync/database path now stores checked
+`cyclingMi` and ride count, with an additive database migration. A bounded
+120-row cardio-session log records machine, date, duration and mileage for the
+Phone; the save migration preserves old totals but invents no old sessions.
+The cardio fascia became a compact lower-left overlay instead of a status
+panel that squeezed the room out of sight: the player stays visible on the
+east-wall machine, real treadmill steps alternate the run frames, real Bike
+Ride GPS deltas alternate the pedal frames, and the character idles when real
+movement stops. A regression check locks the overlay, sensor-to-animation
+wiring, and stopped states together.
+
+## Phase 17 — DONE: reception means showing up
+
+Reception no longer mirrors the player's fitness record. Walking into the desk
+automatically records that local date and the first arrival time, once per day.
+The desk shows only a check-in confirmation. Current and longest attendance
+streaks, total check-in days and recent dated times live in Phone → Personal
+Tracker with the player's workout data. Check-ins award nothing, and the
+migration does not invent reception visits for older saves.
+
+Maple's floor tour now carries explicit coverage metadata for every usable gym
+code, including reception, Coach, Rowan and the exit. Each stop explains how to
+activate the object and what opens/starts/saves rather than merely naming the
+equipment. The coverage test fails on a missing interaction or a description
+without an action and result. Player-facing cycling labels say **Bike Ride**;
+GPS remains the measurement source without branding the activity "outdoor."
+
+## Phase 18 — DONE: the Quest Ledger is free
+
+The reception desk's Quest Ledger shipped for one release selling quests for
+Quest Credits. That was wrong twice over: a wellness quest is a commitment,
+not a purchase, and a paid quest whose reward mattered would be a credit
+converter. Quests are now optional goals a player picks up free at the desk —
+at most three at once, progress measured against a snapshot taken at
+acceptance so only new effort counts, turned in at the same desk for the
+category Token and a reward on the normal `{xp,bond,evo,heal}` contract.
+Accepting, abandoning and turning in never move credits; Tokens are proof of
+completion and are not currency. The v12 migration refunds priced-era
+purchases at their exact historical prices exactly once, and `check_docs.py`
+fails the build if a `price:` ever returns to `data/quests.js`.
 
 ## Phase 6 — ideas, not committed
 

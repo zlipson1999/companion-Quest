@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <rect width="390" height="844" fill="#17252a"/>
+  <text x="195" y="44" text-anchor="middle" font-family="DejaVu Sans" font-weight="700" font-size="22" fill="#f3c969">QUEST FITNESS</text>
+  <rect x="16" y="68" width="358" height="74" rx="8" fill="#24373d" stroke="#0d1518" stroke-width="4"/>
+  <text x="34" y="96" font-family="DejaVu Sans" font-weight="700" font-size="12" fill="#f3c969">BIKE READY</text>
+  <text x="34" y="119" font-family="DejaVu Sans" font-size="11" fill="#f4ead5">Start GPS while your real bicycle is parked.</text>
+  <rect x="16" y="160" width="358" height="614" rx="8" fill="#20282d" stroke="#0d1518" stroke-width="5"/>
+  <text x="34" y="196" font-family="DejaVu Sans" font-weight="700" font-size="18" fill="#f3c969">BIKE RIDE</text>
+  <text x="352" y="196" text-anchor="end" font-family="DejaVu Sans" font-size="11" fill="#c8bda8">— GPS READY —</text>
+  <text x="77" y="238" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#c8bda8">TIME</text>
+  <text x="77" y="272" text-anchor="middle" font-family="DejaVu Sans" font-weight="700" font-size="24" fill="#f4ead5">00:00</text>
+  <text x="292" y="238" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#c8bda8">DISTANCE</text>
+  <text x="292" y="272" text-anchor="middle" font-family="DejaVu Sans" font-weight="700" font-size="24" fill="#f4ead5">0.00</text>
+  <text x="77" y="318" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#c8bda8">SPEED</text>
+  <text x="77" y="344" text-anchor="middle" font-family="DejaVu Sans" font-size="16" fill="#f4ead5">--.- mph</text>
+  <text x="195" y="318" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#c8bda8">KCAL</text>
+  <text x="195" y="344" text-anchor="middle" font-family="DejaVu Sans" font-size="16" fill="#f4ead5">0</text>
+  <text x="310" y="318" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#c8bda8">GPS</text>
+  <text x="310" y="344" text-anchor="middle" font-family="DejaVu Sans" font-size="16" fill="#f3c969">READY</text>
+  <text x="34" y="391" font-family="DejaVu Sans" font-size="11" fill="#c8bda8">GPS measures the Bike Ride. It is bike cardio</text>
+  <text x="34" y="411" font-family="DejaVu Sans" font-size="11" fill="#c8bda8">only: no trail progress or Trail Credit.</text>
+  <text x="34" y="451" font-family="DejaVu Sans" font-size="11" fill="#c8bda8">Start while stopped, secure the phone, then ride.</text>
+  <text x="34" y="471" font-family="DejaVu Sans" font-size="11" fill="#c8bda8">Do not use the screen while the bicycle is moving.</text>
+  <rect x="30" y="503" width="330" height="60" rx="6" fill="#2e7d55" stroke="#dbe8cc" stroke-width="3"/>
+  <text x="195" y="540" text-anchor="middle" font-family="DejaVu Sans" font-weight="700" font-size="15" fill="#ffffff">START BIKE RIDE</text>
+  <text x="34" y="606" font-family="DejaVu Sans" font-size="11" fill="#f4ead5">The in-game bike starts a Bike Ride.</text>
+  <text x="34" y="626" font-family="DejaVu Sans" font-size="11" fill="#f4ead5">GPS begins only when you press Start.</text>
+  <rect x="30" y="674" width="330" height="60" rx="6" fill="#dbe8cc" stroke="#1a1715" stroke-width="3"/>
+  <text x="195" y="711" text-anchor="middle" font-family="DejaVu Sans" font-weight="700" font-size="14" fill="#2c2926">STEP OFF THE BIKE</text>
+</svg>
