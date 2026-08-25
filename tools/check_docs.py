@@ -174,6 +174,35 @@ def paired_source_checks():
     return bad
 
 
+def banned_name_checks():
+    """Renames are forever, and agents regenerate text constantly.
+
+    The currency was renamed Trail Credit -> Quest Credits (#82) and the old
+    name was swept from every live file. A future PR that pastes an old coach
+    line or regenerates a doc could quietly bring it back, so the old name is
+    a build failure now, the same way a stale figure is. Scans every live
+    source and doc; this file is excluded because it must name the ban.
+    """
+    banned = re.compile(r'trail\s+credits?', re.I)
+    exts = {'.js', '.md', '.py', '.html', '.json'}
+    skip = {ROOT / 'tools' / 'check_docs.py'}
+    bad = []
+    files = [ROOT / 'CLAUDE.md', ROOT / 'README.md']
+    for top in ('src', 'docs', 'server', 'tools', 'web'):
+        files += [p for p in (ROOT / top).rglob('*')
+                  if p.suffix in exts and 'node_modules' not in p.parts]
+    for p in sorted(files):
+        if p in skip or not p.is_file():
+            continue
+        for i, line in enumerate(p.read_text(encoding='utf-8', errors='replace').splitlines(), 1):
+            if banned.search(line):
+                bad.append(f'banned name "Trail Credit" in {p.relative_to(ROOT)}:{i}')
+                print(f'DRIFT banned name at {p.relative_to(ROOT)}:{i} — the currency is Quest Credits')
+    if not bad:
+        print('ok   banned names                   no "Trail Credit" anywhere — the currency is Quest Credits')
+    return bad
+
+
 def main():
     bible, checks, other = build_checks()
     bad = []
@@ -189,6 +218,7 @@ def main():
             bad.append(label)
 
     bad += paired_source_checks()
+    bad += banned_name_checks()
 
     print()
     if bad:

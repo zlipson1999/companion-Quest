@@ -399,7 +399,11 @@ are grown, never knotted.
 
 The only currency, and there is no way to buy it. A shop needs something to
 spend, and the moment a game has a shop it has a pressure to sell the currency;
-this one is minted by REAL EFFORT and nothing else.
+this one is minted by REAL EFFORT and nothing else. Renamed in #82 from its
+trail-era name (the save's `credits` field is unchanged) — and the old name
+is a BUILD FAILURE now: `check_docs.py` scans every live source and doc and
+fails on any reappearance, so a pasted old coach line or a regenerated doc
+cannot quietly bring back a second currency name.
 
 | source | credit |
 |---|---|
