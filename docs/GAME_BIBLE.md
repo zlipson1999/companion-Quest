@@ -701,7 +701,13 @@ meters) and no `onStop`, because outdoors there is no getting off a trail.
 **A session survives a challenge.** A battle unmounts the trail and
 `useDistance` restarts from zero with it, so the session baseline is taken from
 the LIFETIME stats (which persist) and parked in `placeMemory` across the round
-trip. "Back to Sunkist Lane" ends the walk.
+trip. **End Trail Session & Save** stops GPS, explicitly flushes the current
+game state, then returns to Sunkist Lane. It can be used at any point: partial
+miles, challenge reps, pickups and earned credits remain saved, while the trail
+itself is not marked cleared until its normal Keeper/Warden win. The return
+starts at the lane's north/top-centre trail gate and walks the character three
+steps inward before unlocking the stick and menu; from there Home and Quest
+Fitness remain ordinary walkable destinations.
 
 **THIS SESSION** breaks it down: "20 Push-ups · 20s Plank · 15 Squats".
 `stats.exercises` tallies per exercise id (routines under a `workout:` prefix,
