@@ -123,11 +123,13 @@ export function completeSession(session, { stats, bodyWeightLb, endedAt } = {}) 
   if (!machine) return null;
   const metrics = sessionMetrics(session, stats || {});
   const manual = { ...session.manual };
-  // A tap-per-stroke machine folds its taps into the metric it counts, and
-  // says so: taps are the player's own count, which is manual entry with a
-  // friendlier button.
-  if (machine.tapMetric && session.taps > 0) {
-    manual[machine.tapMetric] = (manual[machine.tapMetric] || 0) + session.taps;
+  // A tap-per-stroke machine folds its taps into the metric it counts — but
+  // the two are the SAME total counted twice, not two totals to add. The
+  // summary asks for the figure on the machine's own display, so when that is
+  // entered it wins outright; the taps are the fallback for somebody who
+  // counted along instead of reading it off.
+  if (machine.tapMetric && session.taps > 0 && !manual[machine.tapMetric]) {
+    manual[machine.tapMetric] = session.taps;
   }
   return finishCardioSession({
     station: session.machineId,

@@ -7,12 +7,12 @@
 // explaining the systems with a room that demonstrates them.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { WorldScreen, CompanionStatus, CardioConsole, CardioSummary, DialogueBox } from '../components';
 import { useGame, useCompanion } from '../state';
 import {
-  newSession, tickSession, pauseSession, resumeSession, tapSession, setManual,
-  sessionMetrics, sessionKcal, completeSession,
+  newSession, tickSession, pauseSession, resumeSession, backgroundSession, tapSession,
+  setManual, sessionMetrics, sessionKcal, completeSession,
 } from '../state/cardioSession';
 import { getCardioMachine } from '../data/cardioMachines';
 import { cardioCredits } from '../state/economy';
@@ -292,6 +292,18 @@ export default function GymScreen() {
     return () => clearInterval(t);
   }, [!!cardio]);
 
+  // Leaving the app mid-session pauses it. The phone keeps counting steps with
+  // the screen off, but it cannot tell whether you are still on the machine,
+  // so banking paid active time through a backgrounded app would be the one
+  // thing this game does not do: pay for movement nobody verified.
+  useEffect(() => {
+    if (!cardio) return undefined;
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active') setCardio((cur) => backgroundSession(cur));
+    });
+    return () => sub.remove();
+  }, [!!cardio]);
+
   const machine = cardio ? getCardioMachine(cardio.machineId) : null;
   const { dist, moving } = useCardio({
     // The sensor only feeds machines that can honestly use it, and only while
@@ -340,11 +352,15 @@ export default function GymScreen() {
       reps: state.stats.reps,
       holdSec: state.stats.holdSec,
     }));
+    // Where they were standing, captured BEFORE the step onto the machine:
+    // apply() moves playerRef synchronously, so reading it afterwards would
+    // record the equipment tile itself — a tile nobody can stand on — and
+    // rememberSpot would persist that as their place in the room.
+    setFrom({ ...playerRef.current });
     // Walking onto the machine IS the animation: the same tween every other
     // step in this room uses, so the character steps up rather than cutting to
     // a screen where they are already running.
     apply({ x: at.x, y: at.y, facing: m.pose.facing === 'left' ? 'left' : 'up' });
-    setFrom({ ...playerRef.current });
   };
 
 

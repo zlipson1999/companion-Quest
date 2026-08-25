@@ -29,8 +29,15 @@ import { distancePolicy } from '../src/state/distancePolicy.js';
 import { QUESTS, getQuest, questProgress, questSnapshot } from '../src/data/quests.js';
 import { reqAcceptsScope, distanceScope } from '../src/data/activityScopes.js';
 import { hydrateSave } from '../src/state/hydrate.js';
+import { blankDay, isActive, isTraining, TRAINING_CARDIO_MIN } from '../src/state/history.js';
 
 const src = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8');
+// One function body out of GymScreen, for order-of-operations checks.
+const gymSrcFor = (name) => {
+  const text = src('src/screens/GymScreen.js');
+  const start = text.indexOf(`const ${name} =`);
+  return start < 0 ? '' : text.slice(start, text.indexOf('\n  };', start));
+};
 const failures = [];
 const check = (label, ok) => { if (!ok) failures.push(label); };
 const equal = (label, got, want) => {
@@ -270,6 +277,39 @@ machineQuests.forEach((id) => {
   check(`${id} awards no trail pin or charm`, !r.pin && !r.charm && !r.trail);
   check(`${id} mints no credits`, !('credits' in r));
 });
+
+// ---- Review regressions (#85) ----
+// A tap-per-stroke machine must not ADD the taps to the total read off the
+// machine: they are the same strokes counted twice. The display total wins.
+let tapped = newSession('rower', { miles: 0, steps: 0 }, '2026-08-25T18:00:00.000Z');
+tapped = { ...tapped, phase: 'running', activeSeconds: 1800 };
+for (let i = 0; i < 30; i += 1) tapped = tapSession(tapped);
+const tapsOnly = completeSession(tapped, { stats: {}, bodyWeightLb: 155, endedAt: '2026-08-25T18:30:00.000Z' });
+equal('taps stand in when nothing was read off the machine', tapsOnly.strokes, 30);
+const withDisplay = completeSession(setManual(tapped, 'strokes', 300), {
+  stats: {}, bodyWeightLb: 155, endedAt: '2026-08-25T18:30:00.000Z',
+});
+equal('the machine total wins over taps rather than adding to them', withDisplay.strokes, 300);
+
+// A cardio-only day is a day somebody trained. Without this a half hour on
+// the rower reads as "did nothing" in the Week view, and recovery would
+// prescribe rest from a workout it did not notice.
+const rowerDay = { ...blankDay('2026-08-25'), cardioSessions: 1, cardioMin: 30 };
+check('a cardio-only day counts as active', isActive(rowerDay));
+check('a qualifying cardio-only day counts as training', isTraining(rowerDay));
+const shortCardioDay = { ...blankDay('2026-08-25'), cardioSessions: 1, cardioMin: TRAINING_CARDIO_MIN - 1 };
+check('a sub-minimum cardio day is not training', !isTraining(shortCardioDay));
+check('an empty day is still neither', !isActive(blankDay('2026-08-25')) && !isTraining(blankDay('2026-08-25')));
+
+// Stepping onto a machine must remember the FLOOR tile, not the equipment:
+// apply() moves playerRef synchronously, so the capture has to come first.
+const stepOnBody = gymSrcFor('stepOn');
+check('the floor tile is captured before stepping onto the machine',
+  stepOnBody.indexOf('setFrom({ ...playerRef.current })') < stepOnBody.indexOf('apply({ x: at.x'));
+
+// Backgrounding the app pauses the session for real, not just in principle.
+check('AppState pauses a running session', /AppState\.addEventListener\('change'/.test(src('src/screens/GymScreen.js')));
+check('the pause uses the shared background transition', /backgroundSession\(cur\)/.test(src('src/screens/GymScreen.js')));
 
 // ---- Surfaces ----
 const bagSrc = src('src/screens/BagScreen.js');

@@ -96,6 +96,7 @@ export default function CardioSummary({
             </PixelText>
             <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 4, lineHeight: 13 }}>
               Optional. Read these off the machine now that you are stopped; your phone cannot measure them.
+              {taps > 0 && machine.tapMetric ? ' A stroke total entered here replaces the ones you tapped, rather than adding to them.' : ''}
             </PixelText>
             {machine.manual.map((field) => (
               <View key={field.key} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
