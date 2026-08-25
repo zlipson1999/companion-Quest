@@ -177,7 +177,7 @@ plain-language reason.
 in-character. The Anthropic key stays server-side. `check_docs.py` compares
 both copies of the jailbreak regex and the refusal line.
 
-**Trail Credit** cannot be bought. Minted by real effort only (`economy.js`).
+**Quest Credits** cannot be bought. Minted by real effort only (`economy.js`).
 The smoothie bar spends it. A Kinship Knot is offered, never thrown.
 
 **Friends / boards** live on the same proxy. The unit of sync is a **day**,

@@ -339,14 +339,14 @@ shared primitives. This is **additive** — `palette` still works and still mean
 what it did. Hub and the gym are converted; the remaining screens still use
 `Window`/`PixelButton` and are the next pass.
 
-## Phase 8 — DONE: the smoothie bar, Trail Credit, and the Kinship Knot
+## Phase 8 — DONE: the smoothie bar, Quest Credits, and the Kinship Knot
 
 **The gym is called Quest Fitness.** The building has a proper name; the room
 you are standing in is "the gym". Proper noun where it is being named, common
 noun where you are being pointed at it — so the hub menu says Quest Fitness and
 every back button says "Back to the gym".
 
-**Trail Credit (`src/state/economy.js`) cannot be bought.** A shop needs
+**Quest Credits (`src/state/economy.js`) cannot be bought.** A shop needs
 something to spend, and the moment a game has a shop it has a pressure to sell
 the currency. This one is minted by real effort and nothing else: **10 a mile,
 8 a session, 6 a challenge won, 4 for a habit goal you hit**, on the same

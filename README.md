@@ -44,7 +44,7 @@ src/
                the four maps (+ floor zones), 140 movements, 74 recipes, the
                shop, route tuning, and the GENERATED sprites.js / tileAtlas.js
   state/       game reducer + context (auto-persist), leveling, evolution,
-               history, recovery, economy (Trail Credit), cardio maths,
+               history, recovery, economy (Quest Credits), cardio maths,
                distance (pedometer / accelerometer / GPS)
   components/  30 blocks — WorldScreen, HorizonSky, GrowthCeremony, TileMap/TileImage,
                 CardioConsole, CompanionStatus, Joystick, the Trailkeeper primitives, ...
@@ -104,7 +104,7 @@ python3 tools/check_art.py       # masters reproduce, and stages are not clones
   to run it in the room with a real console (time, distance, laps, pace, kcal, sets,
   reps), Coach for a session off the shelf, the turf for walking stretches, the mats for
   bodyweight work, the kitchen shelf for 74 recipes, your bed to log last night.
-- **Trail Credit**, earned only by moving — never bought — and spent at the gym's
+- **Quest Credits**, earned only by moving — never bought — and spent at the gym's
   smoothie bar.
 - **Life modules** (hydration, nourish, sleep, stillness) and the **Workout Forge**:
   build your own plans, with a 3D muscle map and on-device analysis.
