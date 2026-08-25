@@ -3820,6 +3820,69 @@ def prop_bike():
     return c
 
 
+def prop_stairclimber():
+    """Stair climber: a visible staircase of two pedals under a console mast.
+
+    The silhouette has to say STAIRS at a glance, so the two pedals sit on an
+    obvious diagonal with clear air between them, and the frame is a single
+    back mast with short grab handles — a closed rectangle of rails read as a
+    squat rack instead.
+    """
+    c = _prop('gymkit')
+    c.rect(2, 14, 13, 15, 'body', 0.20)                      # floor base
+    c.rect(2, 14, 13, 14, 'body', 0.42)                      # lit base lip
+    # The staircase: high step at the back, low step at the front, air between.
+    c.rect(2, 11, 8, 13, 'body', 0.48)                       # low pedal
+    c.rect(2, 11, 8, 11, 'belly', 0.78)                      # its lit tread
+    c.rect(7, 7, 13, 9, 'body', 0.48)                        # raised pedal
+    c.rect(7, 7, 13, 7, 'belly', 0.78)
+    c.rect(9, 9, 11, 11, 'body', 0.26)                       # linkage down to base
+    c.rect(4, 13, 6, 14, 'body', 0.26)
+    # Back mast and short grab handles.
+    c.rect(13, 2, 14, 14, 'body', 0.40)
+    c.rect(9, 4, 14, 5, 'body', 0.52)                        # handle bar
+    c.rect(3, 5, 4, 6, 'body', 0.44)                         # left grab post
+    c.rect(3, 5, 9, 5, 'body', 0.50)
+    c.rect(8, 0, 14, 3, 'body', 0.32)                        # console head
+    c.rect(8, 0, 14, 0, 'body', 0.64)
+    c.rect(9, 1, 13, 2, 'belly', 0.90)                       # readout, lit
+    c.rect(0, 15, 15, 15, 'ink', 0)                          # contact shadow
+    return c
+
+
+def prop_elliptical():
+    """Elliptical: front flywheel, long low rails, two swinging arm poles.
+
+    The long horizontal rails running the full width are what separates this
+    from the climber next to it, so they get the strongest line; the arm poles
+    stay thin and unsaturated so they read as poles rather than as the bike's
+    bright frame triangle.
+    """
+    c = _prop('gymkit')
+    c.sphere(3, 7, 3.0, 3.0, 'body', ambient=0.24)           # flywheel housing
+    c.sphere(3, 7, 1.6, 1.6, 'ink', ambient=0.05)
+    c.sphere(3, 7, 0.6, 0.6, 'belly', ambient=0.66)
+    # The defining shape: two long rails sweeping back across the whole tile.
+    c.rect(2, 12, 15, 13, 'body', 0.30)
+    c.rect(2, 12, 15, 12, 'body', 0.54)                      # lit rail top
+    c.rect(3, 14, 14, 15, 'body', 0.18)                      # floor bar
+    c.rect(6, 10, 9, 12, 'body', 0.50)                       # pedals, staggered
+    c.rect(6, 10, 9, 10, 'belly', 0.72)
+    c.rect(10, 11, 13, 13, 'body', 0.38)
+    c.rect(10, 11, 13, 11, 'belly', 0.58)
+    # Arm poles: thin, body-coloured, angled back from the wheel.
+    c.limb(3, 6, 5, 1, 0.40, 0.30, 'body', ambient=0.50)
+    c.limb(4, 7, 7, 2, 0.40, 0.30, 'body', ambient=0.40)
+    c.rect(4, 0, 5, 1, 'accent', 0.62)                       # grips
+    c.rect(6, 1, 7, 2, 'accent', 0.52)
+    c.limb(3, 8, 7, 11, 0.45, 0.45, 'body', ambient=0.34)    # drive arm to pedal
+    c.rect(11, 3, 15, 6, 'belly', 0.82)                      # console display
+    c.rect(12, 4, 14, 4, 'accent', 0.80)
+    c.rect(12, 6, 13, 12, 'body', 0.36)                      # console mast
+    c.rect(0, 15, 15, 15, 'ink', 0)                          # contact shadow
+    return c
+
+
 def prop_bench():
     """Flat bench: pad, frame, feet."""
     c = _prop('gymkit')
@@ -4300,6 +4363,7 @@ def build_all():
     add('prop_rack_barbell', prop_rack_barbell()); add('prop_rack_dumbbell', prop_rack_dumbbell())
     add('prop_machine', prop_machine()); add('prop_treadmill', prop_treadmill())
     add('prop_bike', prop_bike())
+    add('prop_stairclimber', prop_stairclimber()); add('prop_elliptical', prop_elliptical())
     add('prop_bench', prop_bench()); add('prop_water_station', prop_water_station())
     add('prop_banner', prop_banner()); add('prop_wall_clock', prop_wall_clock())
     add('prop_whiteboard', prop_whiteboard())

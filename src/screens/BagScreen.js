@@ -7,7 +7,7 @@ import React, { useMemo, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import { Screen, Window, PixelText, PixelButton, PixelSprite, CardioHistoryList, GymCheckInList } from '../components';
 import { palette, space } from '../theme';
-import { gymCheckInStats, useGame, useCompanion } from '../state';
+import { cardioTotals, gymCheckInStats, useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { ITEMS, getItem } from '../data/items';
@@ -101,6 +101,7 @@ export default function BagScreen() {
   const exerciseEntries = Object.entries(state.stats.exercises || {}).filter(([id]) => !id.startsWith('workout:'));
   const routineEntries = Object.entries(state.stats.exercises || {}).filter(([id]) => id.startsWith('workout:'));
   const checkIns = gymCheckInStats(state.gymCheckIns);
+  const cardio = cardioTotals(state.cardioSessions);
 
   const useItem = (id) => {
     const item = getItem(id);
@@ -207,10 +208,25 @@ export default function BagScreen() {
       </Window>
 
       <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+        <PixelText size="small" color={palette.windowText}>Cardio Totals</PixelText>
+        {statRow('Cardio minutes', state.stats.cardioMinutes || 0)}
+        {statRow('Cardio sessions', state.stats.cardioSessionsDone || 0)}
+        {statRow('Credits from cardio', state.stats.cardioCreditsEarned || 0)}
+        <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: space.sm, letterSpacing: 1 }}>
+          BY MACHINE
+        </PixelText>
+        {statRow('Treadmill', `${(state.stats.treadmillMi || 0).toFixed(1)} mi · ${cardio.byMachine.treadmill.sessions} sessions`)}
+        {statRow('Bike Ride', `${(state.stats.cyclingMi || 0).toFixed(1)} mi · ${state.stats.ridesDone || 0} rides`)}
+        {statRow('Rower', `${cardio.byMachine.rower.machineMeters || 0} m · ${cardio.byMachine.rower.sessions} sessions`)}
+        {statRow('Stair Climber', `${state.stats.stairFloors || 0} floors · ${cardio.byMachine.stairclimber.sessions} sessions`)}
+        {statRow('Elliptical', `${state.stats.ellipticalStrides || 0} strides · ${cardio.byMachine.elliptical.sessions} sessions`)}
+      </Window>
+
+      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="small" color={palette.windowText}>Recent Cardio</PixelText>
         <CardioHistoryList sessions={state.cardioSessions} limit={8} />
         <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: space.sm, lineHeight: 13 }}>
-          Bike and treadmill miles stay in this fitness record. They do not advance trails or earn Quest Credits.
+          All five machines land here. Their active time pays Quest Credits; none of it advances a trail, its milestones or its encounters. A * marks a figure read off the machine and entered by hand.
         </PixelText>
       </Window>
 

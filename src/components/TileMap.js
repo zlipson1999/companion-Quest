@@ -116,7 +116,19 @@ const PROP_SPRITES = {
 // Quest Fitness. Keep the visual override beside the prop table so adding a
 // map-local interaction can never leave the wrong object on the floor.
 const PROP_SPRITES_BY_MAP = {
-  gym: { c: 'prop_bike' },
+  gym: { c: 'prop_bike', x: 'prop_stairclimber', m: 'prop_elliptical' },
+};
+
+// How each cardio machine holds the player, and how fast their frames
+// alternate while real movement is arriving. Mirrors data/cardioMachines.js
+// (which the game logic reads); kept here as the render-side table so TileMap
+// does not import game data for two numbers.
+const CARDIO_POSE = {
+  treadmill: { facing: 'up', ms: 220 },
+  bike: { facing: 'left', ms: 180 },
+  rower: { facing: 'left', ms: 420 },
+  stairclimber: { facing: 'up', ms: 260 },
+  elliptical: { facing: 'up', ms: 300 },
 };
 
 function propFor(map, code) {
@@ -498,10 +510,14 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
       return undefined;
     }
     // Alternating the existing authored stride frames gives the treadmill a
-    // real gait and the side-on rider two distinct leg positions. The GPS/step
-    // pulse owns whether this loop runs; an idle person never pedals by magic.
+    // real gait and the side-on rider two distinct leg positions. The sensor
+    // pulse (steps, GPS deltas, or logged strokes) owns whether this loop
+    // runs; an idle person never pedals by magic, and a paused console never
+    // animates at all. Each machine gets its own cadence: a rower's slow
+    // drive, a climber's deliberate step, a cyclist's quick spin.
     setActivityFrame(1);
-    const ms = playerActivity.type === 'bike' ? 180 : 220;
+    const machine = CARDIO_POSE[playerActivity.type];
+    const ms = machine ? machine.ms : 220;
     const t = setInterval(() => setActivityFrame((f) => (f === 1 ? 2 : 1)), ms);
     return () => clearInterval(t);
   }, [playerActivity && playerActivity.type, playerActivity && playerActivity.active]);
@@ -559,13 +575,15 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
     [map, s, frame, floor, wallField]
   );
 
-  const usingBike = playerActivity && playerActivity.type === 'bike';
-  const usingTreadmill = playerActivity && playerActivity.type === 'treadmill';
-  const facing = usingBike ? 'left' : usingTreadmill ? 'up' : (player.facing || 'down');
+  // On a machine the character faces the way that machine puts them: side-on
+  // for the bike and the rower's drive, away from you on the walking decks.
+  const pose = playerActivity ? CARDIO_POSE[playerActivity.type] : null;
+  const sideOnPose = !!pose && pose.facing === 'left';
+  const facing = pose ? pose.facing : (player.facing || 'down');
   const spriteKey = playerSprite(
     state.playerGender,
     facing,
-    usingBike || usingTreadmill ? activityFrame : walkFrame
+    pose ? activityFrame : walkFrame
   );
 
   const world = (
@@ -599,15 +617,18 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
           transform: [{ translateX: pos.x }, { translateY: pos.y }],
         }}
       >
+        {/* A side-on rider sits into the machine rather than standing on it,
+            so the sprite nudges onto the saddle and draws a touch smaller.
+            Both side-on poses (bike, rower) want the same treatment. */}
         <View
-          style={usingBike ? {
+          style={sideOnPose ? {
             transform: [{ translateX: -s * 0.08 }, { translateY: -s * 0.04 }],
           } : null}
         >
           <PixelSprite
             spriteKey={spriteKey}
             palette={outfitPalette(state.playerOutfit, state.playerGender)}
-            size={widthForHeight(spriteKey, s * (usingBike ? 1.5 : 1.85))}
+            size={widthForHeight(spriteKey, s * (sideOnPose ? 1.5 : 1.85))}
           />
         </View>
       </Animated.View>

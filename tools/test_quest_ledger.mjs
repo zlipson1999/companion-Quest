@@ -26,7 +26,9 @@ const equal = (label, got, want) => {
 
 // ---- Quests are priced 5-15; tokens are not currency ----
 equal('seven token categories', TOKENS.length, 7);
-equal('eight quests on the board', QUESTS.length, 8);
+// Eight original quests plus the five cardio-machine quests. The count is
+// asserted rather than ranged so a quest cannot quietly vanish.
+equal('thirteen quests on the board', QUESTS.length, 13);
 equal('three active quests at most', MAX_ACTIVE_QUESTS, 3);
 QUESTS.forEach((q) => {
   check(`quest ${q.id} price is an integer`, Number.isInteger(q.price));

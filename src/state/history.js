@@ -24,6 +24,8 @@ export function blankDay(date) {
     distanceMi: 0,
     cyclingMi: 0,
     rides: 0,
+    cardioSessions: 0, // completed gym cardio sessions (any machine)
+    cardioMin: 0,      // active gym-cardio minutes across those sessions
     battles: 0,
     workouts: 0,
     habitLogs: 0,
@@ -112,6 +114,8 @@ export function totals(days) {
       distanceMi: t.distanceMi + (d.distanceMi || 0),
       cyclingMi: t.cyclingMi + (d.cyclingMi || 0),
       rides: t.rides + (d.rides || 0),
+      cardioSessions: t.cardioSessions + (d.cardioSessions || 0),
+      cardioMin: t.cardioMin + (d.cardioMin || 0),
       battles: t.battles + (d.battles || 0),
       workouts: t.workouts + (d.workouts || 0),
       habitLogs: t.habitLogs + (d.habitLogs || 0),
@@ -121,7 +125,7 @@ export function totals(days) {
       activeDays: t.activeDays + (isActive(d) ? 1 : 0),
       restDays: t.restDays + (d.rested ? 1 : 0),
     }),
-    { xp: 0, bond: 0, distanceMi: 0, cyclingMi: 0, rides: 0, battles: 0, workouts: 0, habitLogs: 0, goalsMet: 0, load: 0, sessions: 0, activeDays: 0, restDays: 0 }
+    { xp: 0, bond: 0, distanceMi: 0, cyclingMi: 0, rides: 0, cardioSessions: 0, cardioMin: 0, battles: 0, workouts: 0, habitLogs: 0, goalsMet: 0, load: 0, sessions: 0, activeDays: 0, restDays: 0 }
   );
 }
 
@@ -129,7 +133,8 @@ export function totals(days) {
 // habit counts — showing up is the point of the habit modules.
 export function isActive(day) {
   if (!day) return false;
-  return !!(day.sessions || day.workouts || day.battles || day.habitLogs || (day.distanceMi || 0) >= 0.25);
+  return !!(day.sessions || day.workouts || day.battles || day.habitLogs
+    || day.cardioSessions || (day.distanceMi || 0) >= 0.25);
 }
 
 // "Training" is narrower and deliberately so: it means you physically trained.
@@ -138,9 +143,17 @@ export function isActive(day) {
 // never trained to take a rest day.
 export const TRAINING_DISTANCE_MI = 0.75;
 
+// A qualifying cardio session — the same five active minutes the credit
+// formula pays for — is training. A rower leaves no distance and no Forge
+// session behind, so without this a half hour of real work reads as a day
+// somebody did nothing, and recovery would tell them to rest from it.
+export const TRAINING_CARDIO_MIN = 5;
+
 export function isTraining(day) {
   if (!day) return false;
-  return !!(day.sessions || day.workouts || day.battles || (day.distanceMi || 0) >= TRAINING_DISTANCE_MI);
+  return !!(day.sessions || day.workouts || day.battles
+    || (day.cardioMin || 0) >= TRAINING_CARDIO_MIN
+    || (day.distanceMi || 0) >= TRAINING_DISTANCE_MI);
 }
 
 // Days that carry any record at all — used to tell "no data yet" apart from

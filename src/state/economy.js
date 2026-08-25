@@ -21,6 +21,33 @@ export const CREDIT_PER_SESSION = 8;
 export const CREDIT_PER_WIN = 6;
 export const CREDIT_PER_GOAL = 4;
 
+// Gym cardio pays by ACTIVE TIME, one formula for every machine. Mileage
+// cannot be the universal unit — a rower's metres, a stair climber's floors
+// and an elliptical's strides do not compare — but a minute of honest work
+// does. The rate is priced against the reference mile: a brisk outdoor mile
+// takes about twenty minutes and pays 10, so twenty active gym minutes pay 5.
+// Indoors deliberately pays about half the outdoor rate; trails want you
+// outside, and the gym should never out-earn them.
+//
+//   credits = activeSeconds < 300 ? 0 : min(15, floor(activeSeconds / 240))
+//
+//   5 active min -> 1     20 min -> 5     40 min -> 10     64+ min -> 15 (cap)
+//
+// Paused time is not active time. Sessions are paid ONCE, at completion, by
+// the reducer, which refuses a session id it has already recorded — reopening
+// a summary, reloading, or double-tapping Save cannot mint twice. The minimum
+// and the cap are the anti-spam rails: hopping on for thirty seconds pays
+// nothing, and camping on a console cannot out-earn a real workout.
+export const CARDIO_MIN_ACTIVE_SEC = 300;
+export const CARDIO_SEC_PER_CREDIT = 240;
+export const CARDIO_SESSION_CREDIT_CAP = 15;
+
+export function cardioCredits(activeSeconds) {
+  const s = Math.max(0, Math.floor(Number(activeSeconds) || 0));
+  if (s < CARDIO_MIN_ACTIVE_SEC) return 0;
+  return Math.min(CARDIO_SESSION_CREDIT_CAP, Math.floor(s / CARDIO_SEC_PER_CREDIT));
+}
+
 // Credit arrives a thousandth of a mile at a time, so the fraction is carried
 // between dispatches. Rounding each dispatch on its own would floor every one
 // of them to zero and a walk would pay nothing at all — the same trap the
@@ -44,4 +71,8 @@ export function dayEstimate(miles = 2, sessions = 1, goals = 2) {
   return Math.round(miles * CREDIT_PER_MILE + sessions * CREDIT_PER_SESSION + goals * CREDIT_PER_GOAL);
 }
 
-export default { CREDIT_PER_MILE, CREDIT_PER_SESSION, CREDIT_PER_WIN, CREDIT_PER_GOAL, mint, canAfford };
+export default {
+  CREDIT_PER_MILE, CREDIT_PER_SESSION, CREDIT_PER_WIN, CREDIT_PER_GOAL,
+  CARDIO_MIN_ACTIVE_SEC, CARDIO_SEC_PER_CREDIT, CARDIO_SESSION_CREDIT_CAP,
+  cardioCredits, mint, canAfford,
+};

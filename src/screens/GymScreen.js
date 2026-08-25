@@ -7,9 +7,15 @@
 // explaining the systems with a room that demonstrates them.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform } from 'react-native';
-import { WorldScreen, CompanionStatus, CardioConsole, DialogueBox } from '../components';
+import { AppState, Platform } from 'react-native';
+import { WorldScreen, CompanionStatus, CardioConsole, CardioSummary, DialogueBox } from '../components';
 import { useGame, useCompanion } from '../state';
+import {
+  newSession, tickSession, pauseSession, resumeSession, backgroundSession, tapSession,
+  setManual, sessionMetrics, sessionKcal, completeSession,
+} from '../state/cardioSession';
+import { getCardioMachine } from '../data/cardioMachines';
+import { cardioCredits } from '../state/economy';
 import { useNav } from './navContext';
 import { SPAR_PARAMS } from './SparIntroScreen';
 import { playSfx } from '../audio';
@@ -91,16 +97,18 @@ const TOUR_STOPS = [
   { at: { x: 14, y: 4 }, face: 'right', covers: ['w'], lines: [
     { speaker: 'Coach Maple', text: 'Walk into the water station to open Daily Habits. Choose water, food, sleep, stillness or recovery, then log only what happened; each module shows today’s count and goal, and a completed goal pays its reward once.' },
   ] },
-  { at: { x: 14, y: 6 }, face: 'right', covers: ['t'], lines: [
-    { speaker: 'Coach Maple', text: 'The deck. Step on and the console starts: time, distance, pace, calories from your real body weight. It counts your phone steps - only REAL movement moves the number. There is no button that walks for you, here or anywhere in your life.' },
-    { speaker: 'Coach Maple', text: 'Deck miles stay in your cardio record. They can help your companion grow, but they never fill a trail, move its milestone meter, roll an encounter, or earn Quest Credits. Trail work starts only after you choose a trail outside.' },
-  ] },
-  { at: { x: 14, y: 9 }, face: 'right', covers: ['c'], lines: [
-    { speaker: 'Coach Maple', text: 'Step onto a bike to open its console, then press Start Bike Ride while your real bicycle is stopped. Secure the phone before moving; GPS measures the ride, and End saves its time, mileage and estimate while your person pedals here.' },
-    { speaker: 'Coach Maple', text: 'The Phone, your Week and this noticeboard keep the ride as cycling mileage. Reception only records when you check in. A ride never fills a trail, moves its milestones, rolls encounters, or earns Quest Credits. Start and stop only while the real bike is parked.' },
-  ] },
-  { at: { x: 14, y: 11 }, face: 'right', covers: ['q'], lines: [
-    { speaker: 'Coach Maple', text: 'Step onto a rower to open its console. The timer starts, real phone movement updates the session, and End saves the machine, duration and distance in Recent Cardio. It earns no trail progress or Quest Credits.' },
+  // ONE stop for the whole cardio wall. Five machines each getting their own
+  // stop turned the middle of the tour into a stationary lecture; the wall is
+  // one place, so Maple stands in the middle of it and explains the rules
+  // that apply to all five, then what each one measures. The coverage test
+  // accepts a grouped stop for every machine it names.
+  { at: { x: 14, y: 8 }, face: 'right', covers: ['t', 'c', 'q', 'x', 'm'], lines: [
+    { speaker: 'Coach Maple', text: 'The cardio wall — five machines, one rule. Walk into any of them to get on, and the console opens over the room so you can still see yourself working. Your person moves while you move and stops when you stop.' },
+    { speaker: 'Coach Maple', text: 'The treadmill tracks real walking or running from your phone steps. The bikes connect a real bicycle to that in-game one: start parked, secure the phone, and GPS measures the ride while your person pedals here.' },
+    { speaker: 'Coach Maple', text: 'The rower tracks your time, plus strokes you log and the distance the machine itself shows. The stair climber tracks time and real steps, plus floors and level. The elliptical tracks time and strides, plus its own distance and resistance.' },
+    { speaker: 'Coach Maple', text: 'Anything your phone cannot feel — strokes, floors, machine distance — you enter by hand AFTER you finish, off the machine, reading its display. Never type while something is moving under you.' },
+    { speaker: 'Coach Maple', text: 'All five pay Quest Credits the same way: by active time, at one shared rate, five minutes minimum. Pause the console and the clock stops paying. Every session lands in your Phone cardio history and can push an accepted gym or cardio quest toward its Stride Token.' },
+    { speaker: 'Coach Maple', text: 'And none of it touches a trail. No trail quota, no milestone, no encounter, no Warden, no pin, no charm, no trail Token — not even the bike, GPS or not. Trail work starts when you choose a trail outside. That is the line, and it does not move.' },
   ] },
   { at: { x: 14, y: 12 }, face: 'right', covers: ['Q'], lines: [
     { speaker: 'Coach Maple', text: 'The mat floor. Walk on and a guided circuit runs - dead bugs, push-ups, holds, rest, repeat. You do the reps for real and confirm when they are done. Your word is the equipment here, and your companion grows exactly as much as your word is good.' },
@@ -157,7 +165,12 @@ export default function GymScreen() {
   // Standing on a machine. Cardio used to be a whole separate screen that took
   // over the phone; it is a thing you do in the room, standing on the thing.
   const [cardio, setCardio] = useState(null);
-  const [seconds, setSeconds] = useState(0);
+  // The finished-but-unsaved session: the summary is showing, nothing has
+  // been written yet, and Save/Discard decide which.
+  const [done, setDone] = useState(null);
+  // Where the player was standing before they got on, so finishing puts them
+  // back beside the machine rather than teleporting them to the door.
+  const [from, setFrom] = useState(null);
   const [note, setNote] = useState(null);
   const playerRef = useRef(player);
 
@@ -271,80 +284,166 @@ export default function GymScreen() {
     { speaker: 'Rowan', text: 'Push-up contest. Right here, right now. Show me what you two are made of!' },
   ];
 
-  // The console's own clock. Only ticks while somebody is standing on the deck.
+  // The console's own clock. One tick a second, banked as ACTIVE or PAUSED by
+  // the shared session machine — paused seconds are never paid.
   useEffect(() => {
-    if (!cardio || (cardio.station === 'bike' && !cardio.gpsStarted)) return undefined;
-    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
+    if (!cardio) return undefined;
+    const t = setInterval(() => setCardio((s) => tickSession(s)), 1000);
     return () => clearInterval(t);
-  }, [cardio]);
+  }, [!!cardio]);
 
+  // Leaving the app mid-session pauses it. The phone keeps counting steps with
+  // the screen off, but it cannot tell whether you are still on the machine,
+  // so banking paid active time through a backgrounded app would be the one
+  // thing this game does not do: pay for movement nobody verified.
+  useEffect(() => {
+    if (!cardio) return undefined;
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active') setCardio((cur) => backgroundSession(cur));
+    });
+    return () => sub.remove();
+  }, [!!cardio]);
+
+  const machine = cardio ? getCardioMachine(cardio.machineId) : null;
   const { dist, moving } = useCardio({
-    active: !!cardio,
-    gpsOnly: !!(cardio && cardio.station === 'bike'),
-    activity: cardio && cardio.station === 'bike' ? 'ride' : 'gym-cardio',
+    // The sensor only feeds machines that can honestly use it, and only while
+    // the session is actually running: a paused console counts nothing.
+    active: !!(cardio && cardio.phase === 'running' && machine && machine.tracking !== 'timer'),
+    gpsOnly: !!(machine && machine.tracking === 'gps'),
+    activity: machine && machine.tracking === 'gps' ? 'ride' : 'gym-cardio',
   });
 
+  // A rower has no sensor to pulse, so its animation comes from the strokes
+  // the player logs; everything else animates on real measured movement.
+  const [tapPulse, setTapPulse] = useState(false);
+  const tapTimer = useRef(null);
+  const pulseTap = () => {
+    setTapPulse(true);
+    if (tapTimer.current) clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => setTapPulse(false), 1400);
+  };
+  useEffect(() => () => tapTimer.current && clearTimeout(tapTimer.current), []);
+  const machineMoving = machine && machine.tracking === 'timer' ? tapPulse : moving;
+  const sessionLive = !!(cardio && cardio.phase === 'running' && machineMoving);
+
+  const metrics = cardio ? sessionMetrics(cardio, state.stats) : { miles: 0, steps: 0 };
+  const bodyWeight = state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB;
+  const liveKcal = cardio ? sessionKcal(cardio, metrics, bodyWeight) : 0;
+  const liveCredits = cardio ? cardioCredits(cardio.activeSeconds) : 0;
+
   const stepOn = (code, at, kind) => {
+    const m = getCardioMachine(kind);
+    if (!m) return;
     playSfx('confirm');
     setNote(
-      kind === 'bike'
+      m.tracking === 'gps'
         ? 'The in-game bike starts a Bike Ride. GPS begins only when you press Start.'
+        : m.tracking === 'timer'
+        ? 'The timer is running. Log strokes as you pull, or just row and enter the machine total after.'
         : Platform.OS === 'web'
-        ? 'A browser cannot count steps on this deck. Use a phone — there are no walk buttons.'
+        ? 'A browser cannot count steps on this machine. Use a phone — there are no walk buttons.'
         : null
     );
-    setSeconds(0);
-    setCardio({
-      station: kind,
-      gpsStarted: false,
-      from: { ...playerRef.current },
-      base: {
-        miles: state.stats.distanceMi,
-        steps: state.stats.totalSteps,
-        sets: state.stats.sets,
-        exercises: state.stats.exercises,
-        reps: state.stats.reps,
-        holdSec: state.stats.holdSec,
-      },
-    });
+    setCardio(newSession(kind, {
+      miles: state.stats.distanceMi,
+      steps: state.stats.totalSteps,
+      sets: state.stats.sets,
+      exercises: state.stats.exercises,
+      reps: state.stats.reps,
+      holdSec: state.stats.holdSec,
+    }));
+    // Where they were standing, captured BEFORE the step onto the machine:
+    // apply() moves playerRef synchronously, so reading it afterwards would
+    // record the equipment tile itself — a tile nobody can stand on — and
+    // rememberSpot would persist that as their place in the room.
+    setFrom({ ...playerRef.current });
     // Walking onto the machine IS the animation: the same tween every other
     // step in this room uses, so the character steps up rather than cutting to
     // a screen where they are already running.
-    apply({ x: at.x, y: at.y, facing: 'up' });
+    apply({ x: at.x, y: at.y, facing: m.pose.facing === 'left' ? 'left' : 'up' });
   };
 
+
   const startBikeRide = async () => {
-    if (!cardio || cardio.station !== 'bike' || cardio.gpsStarted) return;
+    if (!cardio || !machine || machine.tracking !== 'gps' || cardio.gpsStarted) return;
     setNote('Requesting GPS — stay parked until the ride says LIVE.');
     const ok = await dist.startRun();
-    if (!ok) return;
-    setSeconds(0);
-    setCardio((cur) => (cur ? { ...cur, gpsStarted: true } : cur));
+    if (!ok) {
+      // Permission denied or no GPS: the session stays honest and stays
+      // 'ready', banking paused seconds that will never be paid.
+      setNote('GPS is unavailable, so a Bike Ride cannot be measured. Nothing has been recorded.');
+      return;
+    }
+    setCardio((cur) => (cur ? { ...cur, gpsStarted: true, phase: 'running', activeSeconds: 0 } : cur));
     setNote('GPS is live. Secure the phone and ride — the character pedals only when real distance arrives.');
   };
 
-  const stepOff = () => {
-    playSfx('cancel');
-    if (cardio) {
-      const miles = Math.max(0, state.stats.distanceMi - cardio.base.miles);
-      if (cardio.station === 'bike') {
-        if (dist.running) dist.stopRun();
-      }
-      dispatch({
-        type: 'COMPLETE_CARDIO',
-        payload: { station: cardio.station, miles, seconds, endedAt: new Date().toISOString() },
-      });
-      apply({ ...cardio.from });
-    }
+  const togglePause = () => {
+    playSfx('cursor');
+    setCardio((cur) => (cur && cur.phase === 'paused' ? resumeSession(cur) : pauseSession(cur)));
+  };
+
+  const logStroke = () => {
+    playSfx('cursor');
+    pulseTap();
+    setCardio((cur) => tapSession(cur));
+  };
+
+  // Finish: stop the sensors, hold the completed session in `done`, and show
+  // the summary. NOTHING is written yet — Save writes it, Discard drops it.
+  const finishSession = () => {
+    if (!cardio) return;
+    // A machine that never started measured nothing; leave rather than
+    // offering a summary of zeros.
+    if (cardio.activeSeconds < 5) { abandonUnstarted(); return; }
+    playSfx('confirm');
+    if (machine && machine.tracking === 'gps' && dist.running) dist.stopRun();
+    setDone({ ...cardio, phase: 'summary', endedAt: new Date().toISOString(), metrics });
     setCardio(null);
     setNote(null);
+  };
+
+  const leaveMachine = () => {
+    if (from) apply({ ...from });
+    setFrom(null);
+    setDone(null);
+    setCardio(null);
+    setNote(null);
+  };
+
+  // Stepping off a bike that never started (GPS refused, or the player
+  // changed their mind before pressing Start) records nothing, because
+  // nothing was measured. There is no discard button once a session is
+  // running: finishing always offers the summary, and saving is the only
+  // way off it.
+  const abandonUnstarted = () => {
+    playSfx('cancel');
+    if (machine && machine.tracking === 'gps' && dist.running) dist.stopRun();
+    leaveMachine();
+  };
+
+  // Save exactly once. The record was built by the shared pipeline, and the
+  // reducer refuses an id it already holds — so a double tap, a re-render or
+  // a reload cannot write a second row or pay a second time.
+  const saveSession = () => {
+    if (!done) return;
+    const record = completeSession(done, {
+      stats: state.stats,
+      bodyWeightLb: bodyWeight,
+      endedAt: done.endedAt,
+    });
+    if (record) {
+      dispatch({ type: 'COMPLETE_CARDIO', payload: record });
+      playSfx(record.creditsAwarded > 0 ? 'victory' : 'confirm');
+    }
+    leaveMachine();
   };
 
   const move = (dir) => {
     // On the deck you are on the deck. Getting off is the button, the way it is
     // the bar on a real one. While Maple is showing you her floor, the floor
     // is hers — and when Rowan is marching over, you hold your ground.
-    if (cardio || tour || rush) return;
+    if (cardio || done || tour || rush) return;
     const { x, y } = playerRef.current;
     const nx = dir === 'left' ? x - 1 : dir === 'right' ? x + 1 : x;
     const ny = dir === 'up' ? y - 1 : dir === 'down' ? y + 1 : y;
@@ -401,10 +500,10 @@ export default function GymScreen() {
     }
   };
 
-  const sessionMiles = cardio ? Math.max(0, state.stats.distanceMi - cardio.base.miles) : 0;
-  const sessionSteps = cardio ? Math.max(0, state.stats.totalSteps - cardio.base.steps) : 0;
+  const sessionMiles = metrics.miles;
+  const sessionSteps = metrics.steps;
   const breakdown = useMemo(
-    () => formatBreakdown(breakdownSince(state.stats.exercises, (cardio ? cardio.base.exercises : state.stats.exercises), (id) => {
+    () => formatBreakdown(breakdownSince(state.stats.exercises, ((cardio && cardio.base.exercises) || state.stats.exercises), (id) => {
       const w = getWorkout(id);
       return w ? w.name : id;
     })),
@@ -424,9 +523,13 @@ export default function GymScreen() {
           : rush
             ? 'Rowan is coming over'
             : cardio
-            ? cardio.station === 'bike'
-              ? (cardio.gpsStarted ? 'Bike Ride live — GPS movement turns the pedals' : 'Bike ready — start GPS while your real bicycle is parked')
-              : `On the ${cardio.station === 'rower' ? 'rower' : 'deck'} — only real movement counts`
+            ? cardio.phase === 'paused'
+              ? `${machine.name} paused — paused time earns nothing`
+              : machine.tracking === 'gps'
+                ? (cardio.gpsStarted ? 'Bike Ride live — GPS movement turns the pedals' : 'Bike ready — start GPS while your real bicycle is parked')
+                : machine.tracking === 'timer'
+                  ? `On the ${machine.name} — the clock is the workout`
+                  : `On the ${machine.name} — only real movement counts`
             : facingStation
               ? facingStation.label
               : !companion
@@ -439,9 +542,9 @@ export default function GymScreen() {
                       ? 'Maple called you in — walk up to her for your first guided session'
                       : 'Walk into any equipment to use it'
       }
-      menu={cardio || tour || rush ? [] : MENU}
+      menu={cardio || done || tour || rush ? [] : MENU}
       onSelect={(item) => navigate(item.value)}
-      showControl={!cardio && !tour && !rush}
+      showControl={!cardio && !done && !tour && !rush}
       dialogue={
         tour && tour.talking ? (
           <DialogueBox key={tour.stop} lines={TOUR_STOPS[tour.stop].lines} onComplete={advanceTour} />
@@ -453,29 +556,57 @@ export default function GymScreen() {
         ) : null
       }
       playerActivity={cardio ? {
-        type: cardio.station,
-        active: cardio.station === 'bike' ? !!(cardio.gpsStarted && moving) : !!moving,
-      } : null}
+        type: cardio.machineId,
+        // Real measured movement is the ONLY thing that animates the
+        // character: GPS deltas for the bike, sensor steps for the deck,
+        // climber and elliptical, logged strokes for the rower. A paused
+        // console never animates, and an open console alone never does.
+        active: machine.tracking === 'gps'
+          ? !!(cardio.gpsStarted && cardio.phase === 'running' && moving)
+          : sessionLive,
+      } : done ? { type: done.machineId, active: false } : null}
       worldOverlay={cardio ? (
         <>
           <KeepAwakeOnDeck />
           <CardioConsole
             compact
-            station={cardio.station}
-            seconds={seconds}
+            station={cardio.machineId}
+            phase={cardio.phase}
+            seconds={cardio.activeSeconds}
             miles={sessionMiles}
             steps={sessionSteps}
+            kcal={liveKcal}
+            credits={liveCredits}
+            manual={cardio.manual}
+            taps={cardio.taps}
             breakdown={breakdown}
-            bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}
-            moving={moving}
+            bodyWeightLb={bodyWeight}
+            moving={machineMoving}
             gpsActive={!!(cardio.gpsStarted && dist.running)}
-            gpsError={cardio.station === 'bike' ? dist.gpsError : null}
+            gpsError={machine.tracking === 'gps' ? dist.gpsError : null}
             note={note}
-            onStartGps={cardio.station === 'bike' ? startBikeRide : null}
-            onInject={cardio.station !== 'bike' && dist.showInjector ? dist.injectSteps : null}
-            onStop={stepOff}
+            onStartGps={machine.tracking === 'gps' ? startBikeRide : null}
+            onTap={machine.tapMetric ? logStroke : null}
+            onPause={togglePause}
+            onResume={togglePause}
+            onInject={machine.tracking === 'steps' && dist.showInjector ? dist.injectSteps : null}
+            onStop={cardio.phase === 'ready' ? abandonUnstarted : finishSession}
           />
         </>
+      ) : done ? (
+        <CardioSummary
+          station={done.machineId}
+          activeSeconds={done.activeSeconds}
+          pausedSeconds={done.pausedSeconds}
+          miles={done.metrics.miles}
+          steps={done.metrics.steps}
+          taps={done.taps}
+          kcal={sessionKcal(done, done.metrics, bodyWeight)}
+          credits={cardioCredits(done.activeSeconds)}
+          manual={done.manual}
+          onManual={(key, value) => setDone((cur) => setManual(cur, key, value))}
+          onSave={saveSession}
+        />
       ) : null}
       status={
         tour || rush ? (

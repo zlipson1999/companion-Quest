@@ -207,7 +207,13 @@ def banned_name_checks():
          'the activity is named Bike Ride, never outdoor'),
     ]
     exts = {'.js', '.mjs', '.md', '.py', '.html', '.json'}
-    skip = {ROOT / 'tools' / 'check_docs.py'}
+    # A guard has to be able to name what it bans. These two files exist to
+    # fail the build when the old wording returns, so they are the only
+    # places the old wording is allowed to appear.
+    skip = {
+        ROOT / 'tools' / 'check_docs.py',
+        ROOT / 'tools' / 'test_cardio_machines.mjs',
+    }
     bad = []
     files = [ROOT / 'CLAUDE.md', ROOT / 'README.md']
     for top in ('src', 'docs', 'server', 'tools', 'web'):

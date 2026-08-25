@@ -73,6 +73,31 @@ export function kcalForBike(miles, seconds, bodyWeightLb = DEFAULT_BODY_WEIGHT_L
   return cyclingMet(speedFor(miles, seconds)) * 3.5 * kg / 200 * (seconds / 60);
 }
 
+
+// Time-based estimate for machines whose honest primary metric is active
+// minutes (rower, stair climber, elliptical — and any machine when distance
+// is unknown). Same gross formula as the bike: MET * 3.5 * kg / 200 per
+// minute, with the MET drawn from the machine registry. Still an estimate;
+// resistance and intensity are invisible to the phone.
+export function kcalForActiveTime(met, activeSeconds, bodyWeightLb = DEFAULT_BODY_WEIGHT_LB) {
+  const s = Math.max(0, Math.floor(activeSeconds || 0));
+  if (s < 5) return 0;
+  const kg = Math.max(1, bodyWeightLb) / LB_PER_KG;
+  return (met || 6) * 3.5 * kg / 200 * (s / 60);
+}
+
+// A rower's own language: metres on the rail, and a split expressed as the
+// time it would take to cover 500 m at this pace. Both come from the metres
+// the physical machine reported, so both are absent until those are entered
+// — an invented split would be the console guessing at the one number
+// rowers actually judge a piece by.
+export function splitPer500(meters, seconds) {
+  const m = Number(meters) || 0;
+  const s = Number(seconds) || 0;
+  if (m < 1 || s < 1) return null;
+  return (s / m) * 500;
+}
+
 export function formatClock(seconds) {
   const s = Math.max(0, Math.floor(seconds));
   const mm = String(Math.floor(s / 60)).padStart(2, '0');
@@ -104,6 +129,8 @@ export default {
   speedFor,
   kcalFor,
   kcalForBike,
+  kcalForActiveTime,
+  splitPer500,
   cyclingMet,
   formatClock,
   formatPace,

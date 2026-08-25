@@ -98,6 +98,7 @@ export default function WeekScreen() {
             ['Bike distance', Math.round(now.cyclingMi * 100) / 100, Math.round(before.cyclingMi * 100) / 100, ' mi'],
             ['Bike rides', now.rides, before.rides, ''],
             ['Cardio sessions', now.cardioSessions, before.cardioSessions, ''],
+            ['Cardio minutes', now.cardioMin, before.cardioMin, ''],
             ['Habit logs', now.habitLogs, before.habitLogs, ''],
             ['Daily goals met', now.goalsMet, before.goalsMet, ''],
             ['XP earned', now.xp, before.xp, ''],

@@ -45,7 +45,7 @@ export function buildCoachContext(state, companion) {
       `${t.cyclingMi ? ` (${Math.round(t.cyclingMi * 10) / 10} cycled across ${t.rides} rides)` : ''}, ` +
       `${t.habitLogs} habit logs.`
   );
-  lines.push('Gym rule: bicycle and treadmill miles are cardio records only; they never advance a trail, roll trail encounters or milestones, or mint Quest Credits.');
+  lines.push('Gym rule: the five cardio machines (treadmill, Bike Ride, rower, stair climber, elliptical) are fitness records. Their ACTIVE TIME pays Quest Credits at one shared rate, but none of them ever advances a trail, fills a trail quota, rolls a trail encounter or milestone, or awards a trail pin, charm or Token.');
 
   // --- recovery, stated plainly so it can act on it ---
   const rec = computeRecovery(state.history, today);

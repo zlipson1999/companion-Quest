@@ -139,7 +139,7 @@ counts steps off the accelerometer: peak detection with hysteresis and a
 refractory gap, foreground-only. See `docs/STEP_COUNTING.md`.
 
 **State shape** (persisted to AsyncStorage, auto-migrated by `version`, currently
-**12**): `{ started, goalId, playerOutfit, playerGender, party:[{id,baseId,xp,
+**13**): `{ started, goalId, playerOutfit, playerGender, party:[{id,baseId,xp,
 bond,evo,hp,charm}], activeIndex, credits, stats, bag, discoveredCharms, quests,
 cardioSessions, gymCheckIns, dex, modules, history, settings, meta, trails }`.
 Companion XP is a lifetime total; level/HP are derived
@@ -147,9 +147,18 @@ Companion XP is a lifetime total; level/HP are derived
 `useParty()` returns the whole team. Distance is in miles (`stats.distanceMi`);
 Bike Ride work is also kept separately in `stats.cyclingMi` and
 `stats.ridesDone`, and every ended gym cardio session lands in
-`cardioSessions`. Gym cardio (`activity: 'gym-cardio'` or `'ride'`) never
-advances trails, milestones, or Quest Credits — `src/state/distancePolicy.js`
-is the single gate, and it throws if gym cardio carries a `routeId`.
+`cardioSessions`. **Five cardio machines** (`src/data/cardioMachines.js`: treadmill, Bike Ride,
+rower, Stair Climber, elliptical) share ONE session pipeline
+(`src/state/cardioSession.js`) and ONE reward: active time pays Quest Credits
+at `economy.cardioCredits` (1 per 4 active minutes, 5-minute minimum, 15
+cap), identically on every machine, paid once by `COMPLETE_CARDIO` — which
+refuses a session id it already stored, so no reload or double-tap can pay
+twice. Gym cardio (`activity: 'gym-cardio'` or `'ride'`) still never advances
+trails, quotas, milestones or encounters — `src/state/distancePolicy.js` is
+the single gate, and it throws if gym cardio carries a `routeId`. Quest
+requirements declare activity **scopes** (`src/data/activityScopes.js`); only
+`trail_activity` reaches trail work, and GPS or hand-entered distance never
+qualifies as one.
 Quests are bought with Quest Credits (`BUY_QUEST`, 5–15 by ease and reward),
 tokens are proof — never currency — and reception check-in (`GYM_CHECK_IN`)
 is timestamped attendance, once per local day.
