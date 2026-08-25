@@ -11,8 +11,11 @@ import { readFileSync } from 'node:fs';
 import {
   MAX_ACTIVE_QUESTS, QUESTS, TOKENS, getQuest, questProgress, questSnapshot,
 } from '../src/data/quests.js';
+import { appendCardioSession, cardioStationLabel } from '../src/state/cardioHistory.js';
 import { distancePolicy } from '../src/state/distancePolicy.js';
 import { hydrateSave } from '../src/state/hydrate.js';
+
+const src = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8');
 
 const failures = [];
 const check = (label, ok) => { if (!ok) failures.push(label); };
@@ -90,6 +93,26 @@ for (const activity of ['gym-cardio', 'ride']) {
 let threw = false;
 try { distancePolicy({ miles: 1, activity: 'ride', routeId: 'maple' }); } catch { threw = true; }
 check('gym cardio carrying a routeId is a programming error', threw);
+
+// ---- Cardio history receives the session, and the right surfaces show it ----
+const sessions = appendCardioSession([], {
+  station: 'bike', miles: 3.2, seconds: 1200, endedAt: '2026-08-20T10:00:00.000Z',
+});
+equal('a Bike Ride lands in cardio history', sessions.length, 1);
+equal('the session keeps its mileage', sessions[0].miles, 3.2);
+equal('the activity is named Bike Ride', cardioStationLabel('bike'), 'Bike Ride');
+
+const bagSrc = src('src/screens/BagScreen.js');
+check('Phone Personal shows attendance stats', /gymCheckInStats/.test(bagSrc) && /GymCheckInList/.test(bagSrc));
+check('Phone Personal shows recent cardio', /CardioHistoryList/.test(bagSrc));
+check('Phone holds the Quest Log', bagSrc.includes('Quest Log'));
+check('Phone holds the Token Case', bagSrc.includes('Token Case'));
+const boardSrc = src('src/screens/BoardScreen.js');
+check('the noticeboard has a Bike board', /bike/i.test(boardSrc) && /cyclingMi|cycling/i.test(boardSrc));
+const receptionSrc = src('src/screens/ReceptionScreen.js');
+check('reception never renders mileage', !/distanceMi|cyclingMi/.test(receptionSrc));
+const smoothieSrc = src('src/screens/SmoothieBarScreen.js');
+check('the smoothie bar never tracks mileage or quests', !/cyclingMi|cardioSessions|Quest Log/.test(smoothieSrc));
 
 // ---- v12 migration: the one-time refund and the check-in conversion ----
 const pricedEra = {

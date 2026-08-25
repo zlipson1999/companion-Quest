@@ -200,7 +200,7 @@ def banned_name_checks():
         # The gym bicycle is always "Bike Ride". Branding it "outdoor"
         # suggested the ride belonged to the trail system, which it never
         # does — the wording came back once already (#83 recovery).
-        (re.compile(r'outdoor\s+(?:bike\s+|bicycle\s+)?rides?\b|outdoor\s+ride\s+live', re.I),
+        (re.compile(r'outdoor\s+(?:\w+\s+)?rides?\b|outdoor\s+ride\s+live', re.I),
          'the activity is named Bike Ride, never outdoor'),
     ]
     exts = {'.js', '.mjs', '.md', '.py', '.html', '.json'}

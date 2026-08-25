@@ -256,7 +256,7 @@ const INTERACTIONS = {
   // `c` is a kitchen counter at home, whose map-local interaction overrides
   // this one. In the gym it is the cycle station; TileMap has the matching
   // map-local prop override so the code cannot draw a counter on the cardio wall.
-  c: { cardio: 'bike', label: 'Bike — start a real outdoor GPS ride' },
+  c: { cardio: 'bike', label: 'Bike — start a Bike Ride, measured by GPS' },
   q: { cardio: 'rower', label: 'Rower — cardio, no interruptions' },
   Z: { screen: 'week', label: "Whiteboard — this week's work" },
   L: { screen: 'bag', label: 'Lockers — your supplies' },
