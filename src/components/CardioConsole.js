@@ -22,6 +22,7 @@ import {
   lapsFor,
   paceFor,
   speedFor,
+  splitPer500,
 } from '../state/cardioMaths';
 import { MACHINE_BY_ID } from '../data/cardioMachines';
 
@@ -70,7 +71,6 @@ export default function CardioConsole({
   onTap,
   onPause,
   onResume,
-  onDiscard,
   // Bodyweight work done on this outing, as ONE number. It used to be SETS and
   // REPS side by side, which asked you to add two figures together to know how
   // much you had done — and the breakdown underneath already names every
@@ -104,26 +104,45 @@ export default function CardioConsole({
   const speed = speedFor(miles, seconds);
   const paused = phase === 'paused';
   const timerOnly = !!machine && machine.tracking === 'timer';
+  // The second big readout is whatever this machine actually measures. A
+  // stair climber showing DISTANCE would be borrowing the treadmill's
+  // headline for a number nobody climbs in.
+  const headline = station === 'stairclimber'
+    ? { label: 'STEPS', value: steps.toLocaleString() }
+    : station === 'elliptical'
+      ? { label: 'STRIDES', value: steps.toLocaleString() }
+      : timerOnly
+        ? { label: 'CREDITS', value: String(credits) }
+        : { label: 'DISTANCE', value: miles.toFixed(2), unit: 'mi' };
+  // Manual values are read off the machine, so they are only meaningful once
+  // the player has entered them — the console never guesses at one.
 
-  // Each machine shows what it actually measures. A permanently-zero PACE on
+  // Each machine shows what it actually measures, in its own language: a
+  // rower judges a piece by metres and split, a climber by floors and steps
+  // per minute, a cyclist by speed and cadence. A permanently-blank PACE on
   // a rower would be the console claiming a number it does not have.
+  const activeMin = seconds / 60;
+  const rowerMeters = manual.machineMeters || 0;
+  const split = splitPer500(rowerMeters, seconds);
   const cells = [
     ...(bike ? [
       { label: 'SPEED', value: formatSpeed(speed), unit: 'mph' },
+      { label: 'CADENCE', value: manual.cadence ? String(manual.cadence) : '--', unit: 'rpm' },
       { label: 'KCAL', value: String(Math.round(kcal)) },
       { label: 'GPS', value: gpsActive ? 'LIVE' : 'READY' },
     ] : station === 'rower' ? [
-      { label: 'STROKES', value: String((manual.strokes || 0) + taps) },
-      { label: 'SPM', value: seconds > 30 ? String(Math.round(((manual.strokes || 0) + taps) / (seconds / 60))) : '--' },
+      { label: 'METRES', value: rowerMeters ? String(Math.round(rowerMeters)) : '--' },
+      { label: 'SPLIT', value: split ? formatClock(split) : '--', unit: '/500m' },
       { label: 'KCAL', value: String(Math.round(kcal)) },
     ] : station === 'stairclimber' ? [
-      { label: 'STEPS', value: steps.toLocaleString() },
       { label: 'FLOORS', value: String(manual.floors || 0) },
+      { label: 'SPM', value: activeMin > 0.5 ? String(Math.round(steps / activeMin)) : '--' },
       { label: 'KCAL', value: String(Math.round(kcal)) },
+      { label: 'LEVEL', value: String(manual.level || 0) },
     ] : station === 'elliptical' ? [
-      { label: 'STRIDES', value: steps.toLocaleString() },
-      { label: 'CADENCE', value: seconds > 30 ? String(Math.round(steps / (seconds / 60))) : '--' },
+      { label: 'DISTANCE', value: manual.machineMiles ? manual.machineMiles.toFixed(2) : '--', unit: 'mi' },
       { label: 'KCAL', value: String(Math.round(kcal)) },
+      { label: 'RESIST', value: String(manual.level || 0) },
     ] : [
       { label: 'LAPS', value: lapsFor(miles).toFixed(1) },
       { label: 'PACE', value: formatPace(pace), unit: '/mi' },
@@ -155,7 +174,9 @@ export default function CardioConsole({
     for (let i = 0; i < cells.length; i += perCompactRow) {
       compactRows.push(cells.slice(i, i + perCompactRow));
     }
-    const stopLabel = bike && gpsActive ? 'End Bike Ride' : 'Finish';
+    const stopLabel = bike && gpsActive ? 'End Bike Ride'
+      : bike && phase === 'ready' ? 'Step off'
+      : 'Finish';
 
     return (
       <View
@@ -181,11 +202,7 @@ export default function CardioConsole({
 
         <View style={{ flexDirection: 'row', marginTop: 6 }}>
           <Readout label="ACTIVE" value={formatClock(seconds)} big live={moving && !paused} />
-          {timerOnly ? (
-            <Readout label="CREDITS" value={String(credits)} big live={credits > 0} />
-          ) : (
-            <Readout label="DISTANCE" value={miles.toFixed(2)} unit="mi" big live={moving && !paused} />
-          )}
+          <Readout {...headline} big live={moving && !paused} />
         </View>
 
         {compactRows.map((row, i) => (
@@ -195,7 +212,7 @@ export default function CardioConsole({
         ))}
 
         <PixelText size="tiny" color={tokens.textOnDarkDim} numberOfLines={2} style={{ marginTop: 6, lineHeight: 13 }}>
-          {`Gym cardio: pays ${credits} Quest Credit${credits === 1 ? '' : 's'} on active time. Never trail progress.`}
+          {`Active time pays Quest Credits — ${credits} so far. Gym cardio only: never trail progress.`}
         </PixelText>
 
         {gpsError ? (
@@ -261,16 +278,6 @@ export default function CardioConsole({
           ) : null}
         </View>
 
-        {onDiscard ? (
-          <PixelButton
-            label="Discard session"
-            tone="plain"
-            size="tiny"
-            sound="cancel"
-            style={{ marginTop: 5 }}
-            onPress={onDiscard}
-          />
-        ) : null}
       </View>
     );
   }
@@ -299,8 +306,8 @@ export default function CardioConsole({
       </View>
 
       <View style={{ flexDirection: 'row', marginTop: space.sm }}>
-        <Readout label="TIME" value={formatClock(seconds)} big live={moving} />
-        <Readout label="DISTANCE" value={miles.toFixed(2)} unit="mi" big live={moving} />
+        <Readout label="ACTIVE" value={formatClock(seconds)} big live={moving && !paused} />
+        <Readout {...headline} big live={moving && !paused} />
       </View>
 
       {/* Three to a row. Five across a phone put four characters under a

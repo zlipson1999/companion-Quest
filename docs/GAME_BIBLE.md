@@ -464,22 +464,34 @@ cadence, manual-entry fields, safety line and tour line all live in
 `src/data/cardioMachines.js`, and every screen, reducer, board and test reads
 them from there.
 
-| machine | code | tracking | character | optional manual entry |
-|---|---|---|---|---|
-| Treadmill | `t` | phone steps | faces away, 220ms | — |
-| Bike Ride | `c` | real GPS | side-on, 180ms | — |
-| Rower | `q` | timer + logged strokes | side-on, 420ms | strokes, machine distance |
-| Stair Climber | `x` | phone steps | faces away, 260ms | floors, level |
-| Elliptical | `m` | phone steps | faces away, 300ms | machine distance, resistance |
+| machine | code | tracking | character | console readouts | entered by hand |
+|---|---|---|---|---|---|
+| Treadmill | `t` | phone steps | faces away, 220ms | time, distance, laps, pace, kcal, steps | — |
+| Bike Ride | `c` | real GPS | side-on, 180ms | time, distance, speed, cadence, kcal, GPS state | cadence (RPM) |
+| Rower | `q` | timer + logged strokes | side-on, 420ms | time, metres, split /500 m, kcal | metres, strokes |
+| Stair Climber | `x` | phone steps | faces away, 260ms | time, steps, floors, SPM, kcal, level | floors, level |
+| Elliptical | `m` | phone steps | faces away, 300ms | time, strides, distance, kcal, resistance | distance, resistance |
+
+Each console speaks its own machine's language: a rower is judged by metres
+and the split it would hold over 500 m, a climber by floors and steps per
+minute, a cyclist by speed and cadence. Figures the phone cannot sense are
+blank (`--`) until they are entered, never guessed.
 
 `x` and `m` are map-local codes (every letter is spoken for somewhere), the
 same way `c` is the bike here and a kitchen counter at home.
 
 **The session pipeline** (`state/cardioSession.js`) is the same for all five:
 walk into the machine → the character steps onto it → the compact console
-opens over the live room → start → track → pause/resume → finish or discard →
-summary → save exactly once. The clock banks ACTIVE and PAUSED seconds
-separately, and a backgrounded app pauses rather than accruing.
+opens over the live room → start → track → pause/resume → finish → summary →
+save exactly once. The clock banks ACTIVE and PAUSED seconds separately, and
+a backgrounded app pauses rather than accruing.
+
+**There is no discard control once a session is running.** A button beside
+Finish is a way to lose a hard workout to one tired thumb, and there is
+nothing worth throwing away: a session under the minimum already pays zero
+and simply joins the history as what it was. Saving is the only way off the
+summary. The one exception is a bike whose GPS never started — nothing was
+measured, so stepping off records nothing.
 
 **The reward formula is duration-based and shared.** Mileage cannot be the
 universal unit — a rower's metres, a climber's floors and an elliptical's

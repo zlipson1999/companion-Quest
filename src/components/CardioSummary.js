@@ -17,7 +17,7 @@ import PixelText from './PixelText';
 import PixelButton from './PixelButton';
 import TrailAction from './TrailAction';
 import { palette, tokens, scale, space } from '../theme';
-import { formatClock } from '../state/cardioMaths';
+import { formatClock, splitPer500 } from '../state/cardioMaths';
 import { MACHINE_BY_ID } from '../data/cardioMachines';
 import { CARDIO_MIN_ACTIVE_SEC } from '../state/economy';
 
@@ -42,7 +42,6 @@ export default function CardioSummary({
   manual = {},
   onManual,
   onSave,
-  onDiscard,
   style,
 }) {
   const machine = MACHINE_BY_ID[station];
@@ -70,11 +69,24 @@ export default function CardioSummary({
         <Row label="Active time" value={formatClock(activeSeconds)} tone={palette.secondary} />
         {pausedSeconds > 0 ? <Row label="Paused (unpaid)" value={formatClock(pausedSeconds)} /> : null}
         {machine && machine.tracking === 'gps' ? <Row label="GPS distance" value={`${miles.toFixed(2)} mi`} /> : null}
+        {machine && machine.tracking === 'gps' && activeSeconds > 30 ? (
+          <Row label="Average speed" value={`${(miles / (activeSeconds / 3600)).toFixed(1)} mph`} />
+        ) : null}
         {machine && machine.id === 'treadmill' ? <Row label="Distance" value={`${miles.toFixed(2)} mi`} /> : null}
         {machine && machine.tracking === 'steps' ? (
           <Row label={machine.id === 'elliptical' ? 'Strides (sensor)' : 'Steps (sensor)'} value={steps.toLocaleString()} />
         ) : null}
+        {machine && machine.id === 'stairclimber' && activeSeconds > 30 ? (
+          <Row label="Steps per minute" value={String(Math.round(steps / (activeSeconds / 60)))} />
+        ) : null}
         {taps > 0 ? <Row label="Strokes you logged" value={String(taps)} /> : null}
+        {machine && machine.id === 'rower' && manual.machineMeters ? (
+          <Row
+            label="Split (per 500 m)"
+            value={formatClock(splitPer500(manual.machineMeters, activeSeconds) || 0)}
+            tone={palette.secondary}
+          />
+        ) : null}
         <Row label="Kcal (estimate)" value={String(Math.round(kcal))} />
 
         {machine && machine.manual.length ? (
@@ -126,19 +138,16 @@ export default function CardioSummary({
         </PixelText>
       </View>
 
+      {/* Saving is the only way off this screen, on purpose. A discard
+          button next to Save after a hard session is a way to lose the work
+          to one tired thumb, and there is nothing here worth throwing away:
+          a session under the minimum already pays nothing and simply joins
+          the history as what it was. */}
       <TrailAction
         label={credits > 0 ? `Save session — collect ${credits}` : 'Save session'}
         tone="primary"
         style={{ marginTop: space.sm }}
         onPress={onSave}
-      />
-      <PixelButton
-        label="Discard — save nothing"
-        tone="plain"
-        size="tiny"
-        sound="cancel"
-        style={{ marginTop: 5 }}
-        onPress={onDiscard}
       />
     </View>
   );

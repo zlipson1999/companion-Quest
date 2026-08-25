@@ -217,7 +217,7 @@ export default function BagScreen() {
         </PixelText>
         {statRow('Treadmill', `${(state.stats.treadmillMi || 0).toFixed(1)} mi · ${cardio.byMachine.treadmill.sessions} sessions`)}
         {statRow('Bike Ride', `${(state.stats.cyclingMi || 0).toFixed(1)} mi · ${state.stats.ridesDone || 0} rides`)}
-        {statRow('Rower', `${state.stats.rowerStrokes || 0} strokes · ${cardio.byMachine.rower.sessions} sessions`)}
+        {statRow('Rower', `${cardio.byMachine.rower.machineMeters || 0} m · ${cardio.byMachine.rower.sessions} sessions`)}
         {statRow('Stair Climber', `${state.stats.stairFloors || 0} floors · ${cardio.byMachine.stairclimber.sessions} sessions`)}
         {statRow('Elliptical', `${state.stats.ellipticalStrides || 0} strides · ${cardio.byMachine.elliptical.sessions} sessions`)}
       </Window>

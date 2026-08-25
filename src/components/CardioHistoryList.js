@@ -14,6 +14,7 @@ function headline(session) {
   const machine = MACHINE_BY_ID[session.station];
   if (!machine) return `${(session.miles || 0).toFixed(2)} mi`;
   if (session.miles > 0) return `${session.miles.toFixed(2)} mi`;
+  if (session.machineMeters > 0) return `${session.machineMeters} m*`;
   if (session.machineMiles > 0) return `${session.machineMiles.toFixed(2)} mi*`;
   if (session.station === 'rower' && session.strokes > 0) return `${session.strokes} strokes*`;
   if (session.station === 'stairclimber' && session.floors > 0) return `${session.floors} floors*`;

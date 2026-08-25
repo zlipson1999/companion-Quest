@@ -377,6 +377,9 @@ export default function GymScreen() {
   // the summary. NOTHING is written yet — Save writes it, Discard drops it.
   const finishSession = () => {
     if (!cardio) return;
+    // A machine that never started measured nothing; leave rather than
+    // offering a summary of zeros.
+    if (cardio.activeSeconds < 5) { abandonUnstarted(); return; }
     playSfx('confirm');
     if (machine && machine.tracking === 'gps' && dist.running) dist.stopRun();
     setDone({ ...cardio, phase: 'summary', endedAt: new Date().toISOString(), metrics });
@@ -392,7 +395,12 @@ export default function GymScreen() {
     setNote(null);
   };
 
-  const discardSession = () => {
+  // Stepping off a bike that never started (GPS refused, or the player
+  // changed their mind before pressing Start) records nothing, because
+  // nothing was measured. There is no discard button once a session is
+  // running: finishing always offers the summary, and saving is the only
+  // way off it.
+  const abandonUnstarted = () => {
     playSfx('cancel');
     if (machine && machine.tracking === 'gps' && dist.running) dist.stopRun();
     leaveMachine();
@@ -479,7 +487,7 @@ export default function GymScreen() {
   const sessionMiles = metrics.miles;
   const sessionSteps = metrics.steps;
   const breakdown = useMemo(
-    () => formatBreakdown(breakdownSince(state.stats.exercises, (cardio ? cardio.base.exercises : state.stats.exercises), (id) => {
+    () => formatBreakdown(breakdownSince(state.stats.exercises, ((cardio && cardio.base.exercises) || state.stats.exercises), (id) => {
       const w = getWorkout(id);
       return w ? w.name : id;
     })),
@@ -565,9 +573,8 @@ export default function GymScreen() {
             onTap={machine.tapMetric ? logStroke : null}
             onPause={togglePause}
             onResume={togglePause}
-            onDiscard={discardSession}
             onInject={machine.tracking === 'steps' && dist.showInjector ? dist.injectSteps : null}
-            onStop={finishSession}
+            onStop={cardio.phase === 'ready' ? abandonUnstarted : finishSession}
           />
         </>
       ) : done ? (
@@ -583,7 +590,6 @@ export default function GymScreen() {
           manual={done.manual}
           onManual={(key, value) => setDone((cur) => setManual(cur, key, value))}
           onSave={saveSession}
-          onDiscard={discardSession}
         />
       ) : null}
       status={

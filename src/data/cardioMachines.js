@@ -11,8 +11,9 @@
 //   gps    — real outdoor location deltas drive the ride (Bike Ride only;
 //            the in-game bike never leaves the building).
 //   timer  — the console clock is the primary metric (rower: a phone cannot
-//            feel a stroke, so time is measured and strokes are optional
-//            taps or manual entry, clearly labelled as such).
+//            feel a stroke or measure metres on a rail, so time and calories
+//            are measured and the machine's own metres, split and strokes
+//            are entered afterwards, clearly labelled as such).
 // Nothing here fabricates a metric the device cannot measure: everything a
 // machine cannot sense is optional manual entry from the physical machine's
 // own display, entered AFTER the session, and tagged manual in the record.
@@ -38,9 +39,11 @@ export const CARDIO_MACHINES = [
     tracking: 'gps',
     met: 7,
     pose: { facing: 'left', ms: 180 },
-    manual: [],
+    manual: [
+      { key: 'cadence', label: 'Cadence (RPM)', step: 5, max: 200 },
+    ],
     tapMetric: null,
-    statLine: 'Time, GPS mileage, average speed and a kcal estimate.',
+    statLine: 'Time, GPS distance, average speed and a kcal estimate; cadence from your bike computer.',
     safety: 'Start and end only while the real bicycle is stationary. Secure the phone before you move.',
     tour: 'The bikes connect a real bicycle to this in-game bike: GPS measures the real ride while your person pedals here.',
   },
@@ -52,45 +55,45 @@ export const CARDIO_MACHINES = [
     met: 7,
     pose: { facing: 'left', ms: 420 },
     manual: [
+      { key: 'machineMeters', label: 'Distance (m)', step: 100, max: 42000 },
       { key: 'strokes', label: 'Strokes', step: 10, max: 3000 },
-      { key: 'machineMiles', label: 'Machine distance (mi)', step: 0.1, max: 20 },
     ],
     tapMetric: 'strokes',
-    statLine: 'Time, plus optional strokes (tap or enter after) and the distance the physical rower showed.',
+    statLine: 'Time and calories, plus the metres and split the physical rower showed, entered after.',
     safety: 'Row first, log after. Enter strokes and machine distance once you have finished, not mid-pull.',
     tour: 'The rower tracks your time, plus optional strokes and the distance from the physical machine, logged after you finish.',
   },
   {
     id: 'stairclimber',
     name: 'Stair Climber',
-    code: 'H',
+    code: 'x',
     tracking: 'steps',
     met: 9,
     pose: { facing: 'up', ms: 260 },
     manual: [
       { key: 'floors', label: 'Floors climbed', step: 1, max: 400 },
-      { key: 'level', label: 'Level', step: 1, max: 25 },
+      { key: 'level', label: 'Level / resistance', step: 1, max: 25 },
     ],
     tapMetric: null,
-    statLine: 'Time and real steps, plus optional floors and level from the machine display, entered after.',
+    statLine: 'Time, real steps and steps per minute, plus floors and level from the machine display.',
     safety: 'Hands on the rails, phone in a pocket. Pause or finish before entering totals — never type while climbing.',
     tour: 'The stair climber tracks time and your real steps, plus optional floors and level from its display, entered after.',
   },
   {
     id: 'elliptical',
     name: 'Elliptical',
-    code: 'E',
+    code: 'm',
     tracking: 'steps',
     met: 6,
     pose: { facing: 'up', ms: 300 },
     manual: [
-      { key: 'machineMiles', label: 'Machine distance (mi)', step: 0.1, max: 20 },
+      { key: 'machineMiles', label: 'Distance (mi)', step: 0.1, max: 20 },
       { key: 'level', label: 'Resistance', step: 1, max: 25 },
     ],
     tapMetric: null,
-    statLine: 'Time and strides from real movement, plus optional distance and resistance from the machine display.',
+    statLine: 'Time, distance and calories, plus the resistance level from the machine display.',
     safety: 'Ride the full stride, arms and legs together. Enter the display totals after you finish.',
-    tour: 'The elliptical tracks time and strides from real movement, plus optional distance, cadence and resistance, entered after.',
+    tour: 'The elliptical tracks time and calories from real movement, plus the distance and resistance level from its display, entered after.',
   },
 ];
 

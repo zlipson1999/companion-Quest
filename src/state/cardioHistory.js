@@ -47,7 +47,11 @@ export function cardioSession(raw) {
     floors: Math.floor(num(raw.floors, 400)),
     strides: Math.floor(num(raw.strides, 200000)),
     level: Math.floor(num(raw.level, 25)),
+    cadence: Math.floor(num(raw.cadence, 200)),
     machineMiles: round3(num(raw.machineMiles, 20)),
+    // A rower speaks metres, not miles; kept in its own units rather than
+    // converted, so the split it reports is the split the machine showed.
+    machineMeters: Math.floor(num(raw.machineMeters, 42000)),
     kcal: Math.floor(num(raw.kcal, 5000)),
     creditsAwarded: Math.max(0, Math.floor(num(raw.creditsAwarded, 15))),
     source: ['sensor', 'gps', 'manual', 'timer', 'mixed', 'legacy'].includes(raw.source) ? raw.source : 'legacy',
@@ -91,7 +95,9 @@ export function finishCardioSession({
     strokes: manualClean.strokes || 0,
     floors: manualClean.floors || 0,
     level: manualClean.level || 0,
+    cadence: manualClean.cadence || 0,
     machineMiles: manualClean.machineMiles || 0,
+    machineMeters: manualClean.machineMeters || 0,
     creditsAwarded: cardioCredits(activeSeconds),
     source,
   });
@@ -132,7 +138,8 @@ export function cardioTotals(sessions) {
     activeSeconds: 0,
     credits: 0,
     byMachine: Object.fromEntries(CARDIO_STATIONS.map((id) => [id, {
-      sessions: 0, activeSeconds: 0, miles: 0, steps: 0, strokes: 0, floors: 0, strides: 0, machineMiles: 0,
+      sessions: 0, activeSeconds: 0, miles: 0, steps: 0, strokes: 0, floors: 0, strides: 0,
+      machineMiles: 0, machineMeters: 0,
     }])),
   };
   normalizeCardioSessions(sessions).forEach((s) => {
@@ -148,6 +155,7 @@ export function cardioTotals(sessions) {
     m.floors += s.floors;
     m.strides += s.strides;
     m.machineMiles += s.machineMiles;
+    m.machineMeters += s.machineMeters;
   });
   return t;
 }

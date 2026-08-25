@@ -39,8 +39,10 @@ export function newSession(machineId, base, startedAt) {
     activeSeconds: 0,
     pausedSeconds: 0,
     // Sensor baselines, so walking to the machine is never the first metre
-    // of the workout.
-    base: base || { miles: 0, steps: 0 },
+    // of the workout. The caller may park extra baselines here (the gym
+    // passes its exercise tallies so a challenge mid-session reads right);
+    // only miles and steps are load-bearing.
+    base: { miles: 0, steps: 0, ...(base || {}) },
     manual: {},
     taps: 0,
     gpsStarted: false,

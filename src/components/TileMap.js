@@ -578,6 +578,7 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
   // On a machine the character faces the way that machine puts them: side-on
   // for the bike and the rower's drive, away from you on the walking decks.
   const pose = playerActivity ? CARDIO_POSE[playerActivity.type] : null;
+  const sideOnPose = !!pose && pose.facing === 'left';
   const facing = pose ? pose.facing : (player.facing || 'down');
   const spriteKey = playerSprite(
     state.playerGender,
@@ -616,15 +617,18 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
           transform: [{ translateX: pos.x }, { translateY: pos.y }],
         }}
       >
+        {/* A side-on rider sits into the machine rather than standing on it,
+            so the sprite nudges onto the saddle and draws a touch smaller.
+            Both side-on poses (bike, rower) want the same treatment. */}
         <View
-          style={usingBike ? {
+          style={sideOnPose ? {
             transform: [{ translateX: -s * 0.08 }, { translateY: -s * 0.04 }],
           } : null}
         >
           <PixelSprite
             spriteKey={spriteKey}
             palette={outfitPalette(state.playerOutfit, state.playerGender)}
-            size={widthForHeight(spriteKey, s * (usingBike ? 1.5 : 1.85))}
+            size={widthForHeight(spriteKey, s * (sideOnPose ? 1.5 : 1.85))}
           />
         </View>
       </Animated.View>

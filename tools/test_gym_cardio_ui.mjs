@@ -35,7 +35,12 @@ requireMatch('Compact console must expose visible moving and stopped states', co
 requireMatch('Compact console must expose a paused state', consoleSource, /paused \? 'PAUSED'/);
 requireMatch('Compact bike console must expose its riding state', consoleSource, /moving \? 'RIDING'/);
 requireMatch('Pausing must be reachable from the compact console', consoleSource, /label=\{paused \? 'Resume' : 'Pause'\}/);
-requireMatch('Discarding must be reachable from the compact console', consoleSource, /label="Discard session"/);
+// There is deliberately NO discard control once a session is running: a
+// button next to Finish is a way to lose a hard workout to one tired thumb.
+// Check for a rendered control, not the word: the files explain in prose
+// why there is no discard, and that explanation must not trip the guard.
+const discardControl = /label=(?:"|'|\{`)?Discard/;
+if (discardControl.test(consoleSource)) failures.push('the live console must not offer a discard button');
 requireMatch('Activity frames must return to idle when movement stops', tileMap, /!playerActivity \|\| !playerActivity\.active[\s\S]*?setActivityFrame\(0\)/);
 requireMatch('Activity frames must alternate while movement is live', tileMap, /setInterval\(\(\) => setActivityFrame\(\(f\) => \(f === 1 \? 2 : 1\)\)/);
 requireMatch('Bike must use its side-on mounted pose', tileMap, /bike: \{ facing: 'left'/);
@@ -50,7 +55,8 @@ requireMatch('The pose table must drive the sprite, not a per-machine branch', t
 const summary = read('../src/components/CardioSummary.js');
 requireMatch('The summary must label hand-entered figures as hand-entered', summary, /ENTERED BY HAND/);
 requireMatch('The summary must show the credits the session earned', summary, /Quest Credits/);
-requireMatch('The summary must offer discarding instead of saving', summary, /Discard — save nothing/);
+if (discardControl.test(summary)) failures.push('the completion summary must not offer a discard button');
+requireMatch('Saving is the only way off the summary', summary, /Save session/);
 
 const gpsHold = Number(cardio.match(/GPS_MOVING_MS\s*=\s*(\d+)/)?.[1]);
 const gpsInterval = Number(distance.match(/timeInterval:\s*(\d+)/)?.[1]);

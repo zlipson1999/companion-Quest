@@ -10,6 +10,7 @@
 //   node --import ./tools/register-esm.mjs tools/test_cardio_machines.mjs
 
 import { readFileSync } from 'node:fs';
+import { splitPer500 } from '../src/state/cardioMaths.js';
 import {
   CARDIO_MACHINES, CARDIO_MACHINE_IDS, getCardioMachine, validManualValue,
 } from '../src/data/cardioMachines.js';
@@ -159,9 +160,9 @@ const manualRec = finishCardioSession({
   startedAt: '2026-08-25T14:00:00.000Z',
   endedAt: '2026-08-25T14:30:00.000Z',
   activeSeconds: 1800,
-  manual: { machineMiles: 6, strokes: 500 },
+  manual: { machineMeters: 6000, strokes: 500 },
 });
-equal('the rower stores hand-entered machine distance', manualRec.machineMiles, 6);
+equal('the rower stores hand-entered machine distance', manualRec.machineMeters, 6000);
 equal('hand-entered distance is not sensed distance', manualRec.miles, 0);
 equal('a hand-entered session is marked mixed', manualRec.source, 'mixed');
 check('no cardio record carries a routeId', !('routeId' in manualRec));
@@ -172,6 +173,32 @@ check('absurd floors are refused', !validManualValue('stairclimber', 'floors', 9
 check('NaN is refused', !validManualValue('elliptical', 'machineMiles', Number.NaN));
 check('a metric the machine has not got is refused', !validManualValue('treadmill', 'floors', 3));
 check('a sane value is accepted', validManualValue('stairclimber', 'floors', 40));
+
+// Each machine asks for exactly the figures it can honestly report.
+const manualKeys = (id) => getCardioMachine(id).manual.map((f) => f.key).sort().join(',');
+equal('the treadmill needs nothing by hand', manualKeys('treadmill'), '');
+equal('the bike asks for cadence', manualKeys('bike'), 'cadence');
+equal('the rower asks for metres and strokes', manualKeys('rower'), 'machineMeters,strokes');
+equal('the climber asks for floors and level', manualKeys('stairclimber'), 'floors,level');
+equal('the elliptical asks for distance and resistance', manualKeys('elliptical'), 'level,machineMiles');
+check('the rower speaks metres, not miles', !manualKeys('rower').includes('machineMiles'));
+
+// A rower's split is the machine's metres over the real active time, and is
+// absent until those metres are entered.
+equal('no metres means no split', splitPer500(0, 600), null);
+equal('2000 m in 8:00 is a 2:00 split', splitPer500(2000, 480), 120);
+const rowerMeters = finishCardioSession({
+  station: 'rower', startedAt: '2026-08-25T16:00:00.000Z', endedAt: '2026-08-25T16:30:00.000Z',
+  activeSeconds: 1800, manual: { machineMeters: 5000 },
+});
+equal('rower metres are stored in metres', rowerMeters.machineMeters, 5000);
+equal('rower metres are not silently converted to miles', rowerMeters.machineMiles, 0);
+const bikeCadence = finishCardioSession({
+  station: 'bike', startedAt: '2026-08-25T17:00:00.000Z', endedAt: '2026-08-25T17:30:00.000Z',
+  activeSeconds: 1800, miles: 6, manual: { cadence: 85 }, usedGps: true,
+});
+equal('the bike stores hand-entered cadence', bikeCadence.cadence, 85);
+check('cadence is refused when absurd', !validManualValue('bike', 'cadence', 900));
 const badManual = finishCardioSession({
   station: 'stairclimber', startedAt: '2026-08-25T15:00:00.000Z', endedAt: '2026-08-25T15:20:00.000Z',
   activeSeconds: 1200, manual: { floors: -12, level: 999 },
@@ -270,6 +297,10 @@ check('the smoothie bar still tracks no cardio', !/cyclingMi|cardioSessions|card
 const gymSrc = src('src/screens/GymScreen.js');
 check('the console rides in the world overlay', /worldOverlay=\{cardio \?/.test(gymSrc));
 check('the console is compact', /<CardioConsole\s+compact/.test(gymSrc));
+// No discard once a session is running: finishing always offers the summary,
+// and saving is the only way off it.
+check('the gym offers no discard control', !/onDiscard/.test(gymSrc));
+check('the summary saves rather than discards', /onSave=\{saveSession\}/.test(gymSrc));
 check('the character is posed on the machine', /playerActivity=\{cardio \?/.test(gymSrc));
 check('animation follows real movement, not the open console', /sessionLive/.test(gymSrc));
 check('a paused session does not animate', /cardio\.phase === 'running'/.test(gymSrc));
