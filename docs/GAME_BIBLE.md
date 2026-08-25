@@ -218,6 +218,12 @@ clears it.
 | `bag` | BagScreen | items, use effects (heal/xp/bond) |
 | `party` | PartyScreen | team of ≤6, swap active |
 | `habits` / `habit` | HabitsScreen / HabitLogScreen | module hub + per-module log (§7) |
+
+Maple's in-room tour covers all 23 usable gym-floor codes across 19 physical
+stops, including reception, people and the exit. A stop must explain both the
+player action (walk/step/press/choose) and the result (screen or console opened,
+data saved and any reward/privacy limit). `tools/test_gym_tour.mjs` enforces
+coverage so a new interactable cannot silently miss onboarding.
 | `forge` / `forgeEdit` | ForgeScreen / ForgeEditScreen | plan list/detail/session runner; builder (§7.4) |
 | `formcheck` | FormCheckScreen | front camera as a MIRROR + cue ticker; explicitly NOT pose analysis; session state rides through `params.resume` |
 | `week` | WeekScreen | this week vs the same elapsed days last week, honest verdict sentence |
@@ -341,7 +347,7 @@ are grown, never knotted.
   not fill a trail quota, advance its milestone meter, roll encounters, or
   mint Trail Credit.
   The gym bike is the deliberate hybrid: the in-game machine stays indoors,
-  but Start begins a real outdoor bicycle ride through the same GPS watcher as
+  but Start begins a Bike Ride through the same GPS watcher as
   a run. Those deltas carry `activity: 'ride'`, add to `cyclingMi`, may pay
   general distance XP, and never receive a `routeId` or trail-only rewards.
 - **Six trails** (`src/data/routes.js`), save `version: 13`. Maple Trail is
@@ -426,9 +432,10 @@ this one is minted by REAL EFFORT and nothing else.
   { mintCredit: false })`) — a shop that can refund part of its own price is a
   thing to not have at all.
 
-**The smoothie bar** (front of Quest Fitness). Prices are written in MILES and
-converted through `CREDIT_PER_MILE`, so every price reads as "this much real
-outdoor trail walking" and the whole board moves if the earn rate is retuned.
+**The smoothie bar** (front of Quest Fitness). Designers tune prices against
+the selected-trail earn rate through `CREDIT_PER_MILE`, but that conversion is
+not player-facing: the bar displays prices and shortfalls only as Trail Credit.
+It spends currency and never claims to track mileage.
 
 | shelf | item | price |
 |---|---|---|
@@ -442,7 +449,7 @@ outdoor trail walking" and the whole board moves if the earn rate is retuned.
 | | Bond Charm | 1.5 mi = 15 |
 
 Rows you cannot afford are deliberately NOT disabled: a greyed row that will
-not answer a tap tells you nothing, so each says how far short you are in miles.
+not answer a tap tells you nothing, so each says how much Trail Credit is missing.
 The reducer looks the price up itself — a screen that could name its own price
 is one bug away from a free shop.
 

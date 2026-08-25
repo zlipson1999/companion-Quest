@@ -248,7 +248,7 @@ const BLOCKED = new Set([
 //
 // The cardio deck is the one that needed a distinction rather than a link.
 // Treadmill, bike and rower share the room's cardio console. Treadmill/rower
-// listen for movement on the phone; the bike explicitly starts outdoor GPS.
+// listen for movement on the phone; the bike explicitly starts ride GPS.
 // None passes a route id, so gym effort never fills an outdoor trail quota,
 // advances trail milestones, or mints Trail Credit.
 const INTERACTIONS = {
@@ -270,7 +270,7 @@ const INTERACTIONS = {
   // `c` is a kitchen counter at home, whose map-local interaction overrides
   // this one. In the gym it is the cycle station; TileMap has the matching
   // map-local prop override so the code cannot draw a counter on the cardio wall.
-  c: { cardio: 'bike', label: 'Bike — GPS ride log, no trail progress or credit' },
+  c: { cardio: 'bike', label: 'Bike Ride — GPS log, no trail progress or credit' },
   q: { cardio: 'rower', label: 'Rower — cardio, no interruptions' },
   Z: { screen: 'week', label: "Whiteboard — this week's work" },
   L: { screen: 'bag', label: 'Lockers — your supplies' },

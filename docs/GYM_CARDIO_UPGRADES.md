@@ -9,20 +9,18 @@ now stops at the bikes and explains what crosses into the real world.
 
 ![Quest Fitness cardio floor](previews/gym-cardio-floor.png)
 
-## Outdoor bicycle rides
+## Bike rides
 
 The bike in the gym is stationary; the player rides a real moving bicycle
 outside. Stepping onto the in-game bike opens a dedicated ride console. The
 player starts GPS while parked, secures the phone, rides, then ends the session
 only after stopping again.
 
-![Bike console ready to start GPS](previews/gym-bike-ready.png)
+![Bike Ride console wording and controls](previews/bike-ride-console-preview.png)
 
 Once GPS is live, distance updates the console and the character pedals only
 when a real location delta arrives. The console reports elapsed time, measured
 distance, average speed, GPS state, and a clearly labelled calorie estimate.
-
-![Bike console receiving a simulated GPS delta during web QA](previews/gym-bike-gps-live.png)
 
 Ride miles remain real cardio and can still pay general distance XP, but they
 never receive a trail id, fill a trail quota, move a trail milestone meter,
@@ -37,9 +35,16 @@ Reception is deliberately separate: walking into its desk records attendance
 only. Its date/time, streak and total-day history appear in the Phone's Personal
 Tracker and never become cardio mileage or rewards.
 
+![Reception desk on the Quest Fitness floor](previews/reception-desk-location.png)
+
 ![Reception check-in confirmation](previews/reception-checkin-preview.png)
 
 ![Phone Personal gym-attendance history](previews/phone-personal-attendance-preview.png)
+
+Maple's walking tour stops at every usable gym-floor interaction. Each stop now
+states what the player does, which screen/console opens or begins, what is saved,
+and the important reward/privacy boundary. `tools/test_gym_tour.mjs` fails if a
+usable gym code is missing from the tour or a stop omits its action/result.
 
 ## Treadmills
 

@@ -164,7 +164,7 @@ export function hydrateSave(saved) {
   if ((saved.version || 1) < 10 && merged.settings.control === 'stick') {
     merged.settings.control = 'dpad';
   }
-  // v11 records outdoor bicycle mileage and completed rides separately. The
+  // v11 records bicycle mileage and completed Bike Rides separately. The
   // additive defaults above are the migration: prior saves keep every mile
   // they already earned and begin the two new counters at zero.
   // v12 records completed cardio sessions. The normalizer above preserves any

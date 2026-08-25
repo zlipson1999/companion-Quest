@@ -43,69 +43,70 @@ const MENU = [
 // The route between stops is found at runtime over the real grid, so a future
 // floor re-plan cannot silently walk her through a rack.
 const TOUR_STOPS = [
-  { at: { x: 6, y: 16 }, face: 'down', lines: [
-    { speaker: 'Coach Maple', text: 'Welcome to Quest Fitness. Everything in this room works one way: walk up to a thing and use it. Stay close - I will take you around every station and tell you what each one actually does.' },
+  { at: { x: 6, y: 16 }, face: 'down', covers: ['N', 'C', 'A', 'X'], lines: [
+    { speaker: 'Coach Maple', text: 'Welcome to Quest Fitness. Walk into equipment to use it and walk up to a person to talk. After the tour, come back to me for coaching; Rowan will explain his challenge when you approach him.' },
     { speaker: 'Coach Maple', text: 'Reception first. Walk into this desk when you arrive and it records today’s date and your first check-in time. That is all reception does. Your check-in streak, total days and visit history live in the Phone’s Personal section.' },
+    { speaker: 'Coach Maple', text: 'The front door behind you works the same way as every doorway: walk through it to return to Sunkist Lane. It never logs a check-in by itself—you must come to this desk.' },
   ] },
-  { at: { x: 7, y: 16 }, face: 'down', lines: [
-    { speaker: 'Coach Maple', text: 'The cork noticeboard. This is where friends live. Sign in, read your trail code to someone you actually train near, and once you BOTH agree you can see each other.' },
-    { speaker: 'Coach Maple', text: 'Five boards: total miles, bike miles, days active, sessions done - those wipe clean every Monday so nobody wins on seniority - and personal bests, which stand until someone beats them. Only real, checked days make the board.' },
+  { at: { x: 7, y: 16 }, face: 'down', covers: ['r'], lines: [
+    { speaker: 'Coach Maple', text: 'Walk into the cork noticeboard to open its five tabs. Sign in, share your trail code with someone you actually train near, and once you BOTH accept, their checked results can appear beside yours.' },
+    { speaker: 'Coach Maple', text: 'Miles, Bike, Days and Sessions show this week and reset every Monday; Bests keeps each person’s strongest set until it is beaten. The local card still works signed out, and only accepted friends appear.' },
   ] },
-  { at: { x: 11, y: 16 }, face: 'down', lines: [
-    { speaker: 'Coach Maple', text: 'The smoothie bar. The one place in this world money gets spent - and the money is Trail Credit, minted by effort only: ten an outdoor trail mile, eight a session, four a habit goal hit. Gym cardio never mints it. There is no other way to get it.' },
-    { speaker: 'Coach Maple', text: 'What it buys: blends that heal your companion, deepen the bond, or fuel a session - each one logs as a real meal choice. Water and apples for the trail. And Kinship Knots, about two and a half outdoor trail miles each - you will need those to bond with wild companions.' },
+  { at: { x: 11, y: 16 }, face: 'down', covers: ['J', 'I'], lines: [
+    { speaker: 'Coach Maple', text: 'Walk into any part of the smoothie counter to open the shelves. Pick an item, read its exact Trail Credit price and effect, then buy it; if your balance is short, nothing is taken. Purchases go straight into your bag.' },
+    { speaker: 'Coach Maple', text: 'Blends heal, deepen bond or fuel a session and log the meal choice they really represent. Water and apples are trail supplies; Kinship Knots let you bond with wild companions. The bar spends Trail Credit—it does not track mileage.' },
   ] },
-  { at: { x: 2, y: 16 }, face: 'down', lines: [
+  { at: { x: 2, y: 16 }, face: 'down', covers: ['L'], lines: [
     { speaker: 'Coach Maple', text: 'Lockers - your bag. Everything you buy or find on the trail lives here. Walk in to use an item: an apple heals a little, a blend heals more, a charm deepens bond. Same bag whether you open it here, at home, or mid-battle.' },
   ] },
-  { at: { x: 1, y: 2 }, face: 'left', lines: [
+  { at: { x: 1, y: 2 }, face: 'left', covers: ['M'], lines: [
     { speaker: 'Coach Maple', text: 'The mirror. Walk into it and your camera becomes a form check: you watch yourself while the movement cues tick past - knees out, back flat, whatever that lift needs. Nothing is recorded or sent anywhere. It is a mirror that talks.' },
   ] },
-  { at: { x: 2, y: 4 }, face: 'left', lines: [
+  { at: { x: 2, y: 4 }, face: 'left', covers: ['j'], lines: [
     { speaker: 'Coach Maple', text: 'Kettlebells. Swings, carries, get-ups. Walking into ANY iron in this room opens the Forge - the one place you write a session - so pick the piece you mean to use and it is waiting inside.' },
   ] },
-  { at: { x: 2, y: 6 }, face: 'left', lines: [
-    { speaker: 'Coach Maple', text: 'The dumbbell run. In the Forge you build a plan: pick movements, set your sets and reps, then run it and check off what you really did. Finished sessions pay XP and bond to your companion and eight credit each.' },
+  { at: { x: 2, y: 6 }, face: 'left', covers: ['b'], lines: [
+    { speaker: 'Coach Maple', text: 'Walk into the dumbbell run to open the Forge. Build a plan, pick movements, set your sets, reps and weight, then run it and check off what you really did. Finishing saves the work and pays the normal session rewards.' },
   ] },
-  { at: { x: 4, y: 5 }, face: 'left', lines: [
-    { speaker: 'Coach Maple', text: 'Flat benches. When you log a lift, log the WEIGHT - your best single set per movement becomes your personal record, and records are the one board that never resets. Being beaten there is information, not an insult.' },
+  { at: { x: 4, y: 5 }, face: 'left', covers: ['B'], lines: [
+    { speaker: 'Coach Maple', text: 'Walk into a flat bench to open the Forge with bench work in mind. Build or run the plan, record the weight and completed reps, and your strongest single set becomes that movement’s personal record. Records do not reset.' },
   ] },
-  { at: { x: 4, y: 8 }, face: 'left', lines: [
-    { speaker: 'Coach Maple', text: 'The EZ-bar cradle. Curls and skull-crushers without the wrist ache. Same Forge as everything else - the label changes, the honesty does not.' },
+  { at: { x: 4, y: 8 }, face: 'left', covers: ['z'], lines: [
+    { speaker: 'Coach Maple', text: 'Walk into the EZ-bar cradle to open the same Forge for curls, skull-crushers or your own plan. Choose the movement, enter the sets, reps and weight you actually complete, then finish the session to save it.' },
   ] },
-  { at: { x: 5, y: 2 }, face: 'up', lines: [
-    { speaker: 'Coach Maple', text: 'The power racks - the heart of the Forge. Squats, presses, pulls. Write down what really happened, not what you hoped: the Forge remembers what you train and can tell you what you have been neglecting.' },
+  { at: { x: 5, y: 2 }, face: 'up', covers: ['R'], lines: [
+    { speaker: 'Coach Maple', text: 'Walk into any power rack to open the Forge for squats, presses, pulls or a custom plan. Enter what you really complete; finishing saves the sets, reps and weight so the Phone and Coach can show what you train or neglect.' },
   ] },
-  { at: { x: 14, y: 2 }, face: 'up', lines: [
-    { speaker: 'Coach Maple', text: 'The pull-up bar. Bodyweight is iron too - reps go in the Forge like any lift, and a max set of pull-ups is as proud a record as anything on a bar.' },
+  { at: { x: 14, y: 2 }, face: 'up', covers: ['U'], lines: [
+    { speaker: 'Coach Maple', text: 'Walk into the pull-up bar to open the Forge, choose pull-ups or another bodyweight movement, and log each set you actually finish. Your strongest set becomes a personal record just like a weighted lift.' },
   ] },
-  { at: { x: 13, y: 1 }, face: 'up', lines: [
-    { speaker: 'Coach Maple', text: 'My whiteboard. Walk into it for your week: this week against the same days last week, and an honest verdict sentence. Not the flattering one - the true one.' },
+  { at: { x: 13, y: 1 }, face: 'up', covers: ['Z'], lines: [
+    { speaker: 'Coach Maple', text: 'Walk into my whiteboard to open your Week view. It shows this week against the same days last week—distance, Bike Rides, sessions and work—then gives you an honest verdict sentence, not merely a flattering one.' },
   ] },
-  { at: { x: 6, y: 6 }, face: 'right', lines: [
-    { speaker: 'Coach Maple', text: 'The machines. Guided iron - same Forge, built around what a machine does best. Good for going close to failure without a spotter.' },
+  { at: { x: 6, y: 6 }, face: 'right', covers: ['K'], lines: [
+    { speaker: 'Coach Maple', text: 'Walk into any guided machine to open the Forge. Choose the movement that matches the machine, enter the real sets, reps and weight, and finish to save it. These are useful when you want to work hard without a spotter.' },
   ] },
-  { at: { x: 14, y: 4 }, face: 'right', lines: [
-    { speaker: 'Coach Maple', text: 'The water station. It opens your daily habits: water, food, sleep, stillness, recovery. Log them honestly - each goal you hit pays four credit and real bond, and some wild companions only ever appear to people who live well. I mean that literally.' },
+  { at: { x: 14, y: 4 }, face: 'right', covers: ['w'], lines: [
+    { speaker: 'Coach Maple', text: 'Walk into the water station to open Daily Habits. Choose water, food, sleep, stillness or recovery, then log only what happened; each module shows today’s count and goal, and a completed goal pays its reward once.' },
   ] },
-  { at: { x: 14, y: 6 }, face: 'right', lines: [
+  { at: { x: 14, y: 6 }, face: 'right', covers: ['t'], lines: [
     { speaker: 'Coach Maple', text: 'The deck. Step on and the console starts: time, distance, pace, calories from your real body weight. It counts your phone steps - only REAL movement moves the number. There is no button that walks for you, here or anywhere in your life.' },
     { speaker: 'Coach Maple', text: 'Deck miles stay in your cardio record. They can help your companion grow, but they never fill a trail, move its milestone meter, roll an encounter, or earn Trail Credit. Trail work starts only after you choose a trail outside.' },
   ] },
-  { at: { x: 14, y: 9 }, face: 'right', lines: [
-    { speaker: 'Coach Maple', text: 'The bikes. This one stays here; you do not. Start a ride, secure your phone, then take your real bicycle outside. GPS measures the miles while your person pedals here with you.' },
+  { at: { x: 14, y: 9 }, face: 'right', covers: ['c'], lines: [
+    { speaker: 'Coach Maple', text: 'Step onto a bike to open its console, then press Start Bike Ride while your real bicycle is stopped. Secure the phone before moving; GPS measures the ride, and End saves its time, mileage and estimate while your person pedals here.' },
     { speaker: 'Coach Maple', text: 'The Phone, your Week and this noticeboard keep the ride as cycling mileage. Reception only records when you check in. A ride never fills a trail, moves its milestones, rolls encounters, or earns Trail Credit. Start and stop only while the real bike is parked.' },
   ] },
-  { at: { x: 14, y: 11 }, face: 'right', lines: [
-    { speaker: 'Coach Maple', text: 'The rowers. Same console, same rule: it counts what your body actually does, and stepping off ends the session honestly.' },
+  { at: { x: 14, y: 11 }, face: 'right', covers: ['q'], lines: [
+    { speaker: 'Coach Maple', text: 'Step onto a rower to open its console. The timer starts, real phone movement updates the session, and End saves the machine, duration and distance in Recent Cardio. It earns no trail progress or Trail Credit.' },
   ] },
-  { at: { x: 14, y: 12 }, face: 'right', lines: [
+  { at: { x: 14, y: 12 }, face: 'right', covers: ['Q'], lines: [
     { speaker: 'Coach Maple', text: 'The mat floor. Walk on and a guided circuit runs - dead bugs, push-ups, holds, rest, repeat. You do the reps for real and confirm when they are done. Your word is the equipment here, and your companion grows exactly as much as your word is good.' },
   ] },
   // The tour ENDS on the turf, on purpose: warming up is where a session
   // starts, so it is the last thing she teaches and the first thing you do -
   // and it is where Rowan finds you afterwards.
-  { at: { x: 2, y: 13 }, face: 'left', lines: [
+  { at: { x: 2, y: 13 }, face: 'left', covers: ['S'], lines: [
     { speaker: 'Coach Maple', text: 'Last stop, and the most important: the turf. Every session STARTS here, with dynamic stretches - leg swings, walking lunges, arm circles, high knees. Movement that warms you, not holds that put you to sleep.' },
     { speaker: 'Coach Maple', text: 'Warm muscles move better and get hurt less. Walk onto the turf before the iron, every time - it runs the warm-up routine and guides you through each stretch.' },
     { speaker: 'Coach Maple', text: 'So - the real question, right here on the grass. What are you here to become? Answer honestly, because a companion is about to recognize you by it.' },
@@ -285,7 +286,7 @@ export default function GymScreen() {
     playSfx('confirm');
     setNote(
       kind === 'bike'
-        ? 'The in-game bike starts a real outdoor bicycle ride. GPS begins only when you press Start.'
+        ? 'The in-game bike starts a Bike Ride. GPS begins only when you press Start.'
         : Platform.OS === 'web'
         ? 'A browser cannot count steps on this deck. Use a phone — there are no walk buttons.'
         : null
@@ -422,7 +423,7 @@ export default function GymScreen() {
             ? 'Rowan is coming over'
             : cardio
             ? cardio.station === 'bike'
-              ? (cardio.gpsStarted ? 'Outdoor ride live — GPS movement turns the pedals' : 'Bike ready — start GPS while your real bicycle is parked')
+              ? (cardio.gpsStarted ? 'Bike Ride live — GPS movement turns the pedals' : 'Bike ready — start GPS while your real bicycle is parked')
               : `On the ${cardio.station === 'rower' ? 'rower' : 'deck'} — only real movement counts`
             : facingStation
               ? facingStation.label

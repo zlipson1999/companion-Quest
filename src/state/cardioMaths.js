@@ -48,7 +48,7 @@ export function kcalFor(miles, seconds, bodyWeightLb = DEFAULT_BODY_WEIGHT_LB) {
   return miles * bodyWeightLb * rate;
 }
 
-// Outdoor cycling is measured by GPS, so average speed is the honest intensity
+// A Bike Ride is measured by GPS, so average speed is the honest intensity
 // signal available without pretending the phone can see cadence or resistance.
 export function speedFor(miles, seconds) {
   if (miles < 0.02 || seconds < 5) return null;

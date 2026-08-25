@@ -38,7 +38,7 @@ export function normalizeCardioSessions(sessions) {
 }
 
 export function cardioStationLabel(station) {
-  if (station === 'bike') return 'Outdoor bike';
+  if (station === 'bike') return 'Bike ride';
   if (station === 'rower') return 'Rower';
   return 'Treadmill';
 }

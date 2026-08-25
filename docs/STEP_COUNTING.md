@@ -58,7 +58,7 @@ pedometer as well, which sidesteps the accelerometer path completely.
 
 When neither source exists at all (a desktop browser, a simulator), the trail
 and the treadmill/rower console offer `+0.05mi` / `+0.25mi` / `+1mi` buttons.
-The bike never does: its outdoor ride is GPS-only even in development.
+The bike never does: a Bike Ride is GPS-only even in development.
 
 Regardless of sensor source, gym treadmill and bicycle deltas are tagged as gym
 cardio. They update fitness/cardio history but cannot carry a `routeId`, advance

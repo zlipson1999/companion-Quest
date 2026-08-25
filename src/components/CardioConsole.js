@@ -130,7 +130,7 @@ export default function CardioConsole({
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ letterSpacing: 1 }}>
-          {title || (bike ? 'OUTDOOR BIKE RIDE' : station === 'rower' ? 'ROWER' : 'TREADMILL')}
+          {title || (bike ? 'BIKE RIDE' : station === 'rower' ? 'ROWER' : 'TREADMILL')}
         </PixelText>
         {/* The one moving part of a console you are not touching. */}
         <PixelText size="tiny" color={moving || gpsActive ? palette.secondary : tokens.disabledInk}>
@@ -176,7 +176,7 @@ export default function CardioConsole({
       {/* Which of these the machine actually knows. */}
       <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: space.sm, lineHeight: 13 }}>
         {bike
-          ? 'GPS measures the outdoor ride. Logged as bike cardio only: no trail progress or Trail Credit. Kcal is an estimate.'
+          ? 'GPS measures the bike ride. Logged as bike cardio only: no trail progress or Trail Credit. Kcal is an estimate.'
           : 'Gym cardio is recorded, but earns no trail progress or Trail Credit. Kcal is an estimate from pace and body weight.'}
       </PixelText>
 
@@ -185,7 +185,7 @@ export default function CardioConsole({
           <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ lineHeight: 13 }}>
             Start while stopped, secure the phone, then ride. Do not use the screen while the bicycle is moving.
           </PixelText>
-          <TrailAction label="Start outdoor ride" tone="primary" style={{ marginTop: space.sm }} onPress={onStartGps} />
+          <TrailAction label="Start Bike Ride" tone="primary" style={{ marginTop: space.sm }} onPress={onStartGps} />
         </View>
       ) : null}
 
@@ -228,7 +228,7 @@ export default function CardioConsole({
           onStop and keeps its own way back. */}
       {onStop ? (
         <TrailAction
-          label={bike ? (gpsActive ? 'End ride' : 'Step off the bike') : station === 'rower' ? 'Off the rower' : 'Step off the deck'}
+          label={bike ? (gpsActive ? 'End Bike Ride' : 'Step off the bike') : station === 'rower' ? 'Off the rower' : 'Step off the deck'}
           tone="primary"
           style={{ marginTop: space.sm }}
           onPress={onStop}

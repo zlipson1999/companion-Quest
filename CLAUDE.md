@@ -144,7 +144,7 @@ bond,evo,hp,charm}], activeIndex, credits, stats, bag, discoveredCharms, dex,
 modules, history, cardioSessions, gymCheckIns, settings, meta, trails }`. Companion XP is a lifetime total; level/HP are derived
 (`src/state/leveling.js`). `useCompanion()` returns the active party member;
 `useParty()` returns the whole team. Distance is in miles (`stats.distanceMi`);
-outdoor bicycle work is also kept separately in `stats.cyclingMi` and
+bicycle work is also kept separately in `stats.cyclingMi` and
 `stats.ridesDone`.
 Reception is not a stats mirror: walking into its desk records one local-day
 arrival time in `gymCheckIns`. Attendance totals/streaks are shown in the

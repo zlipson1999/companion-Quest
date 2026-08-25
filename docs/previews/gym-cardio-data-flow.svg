@@ -31,7 +31,7 @@
   <text class="t" x="100" y="207">Treadmill</text>
   <text class="small" x="100" y="237">real phone step deltas</text>
   <text class="t" x="100" y="287">Stationary in-game bike</text>
-  <text class="small" x="100" y="317">real outdoor bicycle + GPS</text>
+  <text class="small" x="100" y="317">real moving bicycle + GPS</text>
   <text class="small" x="100" y="350">The rider sprite stays in the gym.</text>
 
   <path class="arrow" d="M420 245 H520"/>

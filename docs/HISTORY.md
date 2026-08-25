@@ -764,7 +764,7 @@ and a device. Everything downstream of the token is tested —
 ## Phase 16 — DONE: gym cardio is recorded without becoming a trail
 
 The stationary bikes remain only on the Quest Fitness floor. Starting one
-measures a real outdoor bicycle ride with GPS, but the game character never
+measures a real Bike Ride with GPS, but the game character never
 leaves the in-gym machine. Treadmills continue to use real phone movement.
 
 The reducer now owns a single hard boundary for both: bike and treadmill miles
@@ -788,6 +788,16 @@ The desk shows only a check-in confirmation. Current and longest attendance
 streaks, total check-in days and recent dated times live in Phone → Personal
 Tracker with the player's workout data. Check-ins award nothing, and save v13
 does not invent reception visits for older saves.
+
+Maple's floor tour now carries explicit coverage metadata for every usable gym
+code, including reception, Coach, Rowan and the exit. Each stop explains how to
+activate the object and what opens/starts/saves rather than merely naming the
+equipment. The coverage test fails on a missing interaction or a description
+without an action and result. Player-facing cycling labels say **Bike Ride**;
+GPS remains the measurement source without branding the activity "outdoor."
+The smoothie bar now keeps its own language in Trail Credit as well: prices and
+shortfalls no longer convert themselves into mileage, because the bar spends
+currency and does not track distance.
 
 ## Phase 6 — ideas, not committed
 
