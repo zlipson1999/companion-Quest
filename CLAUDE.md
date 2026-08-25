@@ -149,9 +149,13 @@ Bike Ride work is also kept separately in `stats.cyclingMi` and
 `stats.ridesDone`, and every ended gym cardio session lands in
 `cardioSessions`. **Five cardio machines** (`src/data/cardioMachines.js`: treadmill, Bike Ride,
 rower, Stair Climber, elliptical) share ONE session pipeline
-(`src/state/cardioSession.js`) and ONE reward: active time pays Quest Credits
+(`src/state/cardioSession.js`) and ONE reward: movement-detected active time
+pays Quest Credits
 at `economy.cardioCredits` (1 per 4 active minutes, 5-minute minimum, 15
-cap), identically on every machine, paid once by `COMPLETE_CARDIO` — which
+cap), identically on every machine. Step/GPS deltas gate the first four
+machines and recent logged strokes gate the rower; a stationary running
+console banks inactive time and earns nothing. Payment happens once by
+`COMPLETE_CARDIO` — which
 refuses a session id it already stored, so no reload or double-tap can pay
 twice. Gym cardio (`activity: 'gym-cardio'` or `'ride'`) still never advances
 trails, quotas, milestones or encounters — `src/state/distancePolicy.js` is

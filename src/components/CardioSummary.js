@@ -33,6 +33,7 @@ function Row({ label, value, tone }) {
 export default function CardioSummary({
   station,
   activeSeconds = 0,
+  inactiveSeconds = 0,
   pausedSeconds = 0,
   miles = 0,
   steps = 0,
@@ -67,6 +68,7 @@ export default function CardioSummary({
 
       <ScrollView style={{ maxHeight: 300 }} showsVerticalScrollIndicator={false}>
         <Row label="Active time" value={formatClock(activeSeconds)} tone={palette.secondary} />
+        {inactiveSeconds > 0 ? <Row label="Inactive (unpaid)" value={formatClock(inactiveSeconds)} /> : null}
         {pausedSeconds > 0 ? <Row label="Paused (unpaid)" value={formatClock(pausedSeconds)} /> : null}
         {machine && machine.tracking === 'gps' ? <Row label="GPS distance" value={`${miles.toFixed(2)} mi`} /> : null}
         {machine && machine.tracking === 'gps' && activeSeconds > 30 ? (
@@ -134,7 +136,7 @@ export default function CardioSummary({
         </View>
         <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 4, lineHeight: 13 }}>
           {qualified
-            ? 'Paid on active time alone — the same rate on every machine here. Gym cardio, never trail progress.'
+            ? 'Paid on detected active time alone — stationary, paused and background time earn nothing. Gym cardio, never trail progress.'
             : `Too short to pay: ${formatClock(short)} more active time would qualify. Saved to your history all the same.`}
         </PixelText>
       </View>

@@ -107,7 +107,7 @@ const TOUR_STOPS = [
     { speaker: 'Coach Maple', text: 'The treadmill tracks real walking or running from your phone steps. The bikes connect a real bicycle to that in-game one: start parked, secure the phone, and GPS measures the ride while your person pedals here.' },
     { speaker: 'Coach Maple', text: 'The rower tracks your time, plus strokes you log and the distance the machine itself shows. The stair climber tracks time and real steps, plus floors and level. The elliptical tracks time and strides, plus its own distance and resistance.' },
     { speaker: 'Coach Maple', text: 'Anything your phone cannot feel — strokes, floors, machine distance — you enter by hand AFTER you finish, off the machine, reading its display. Never type while something is moving under you.' },
-    { speaker: 'Coach Maple', text: 'All five pay Quest Credits the same way: by active time, at one shared rate, five minutes minimum. Pause the console and the clock stops paying. Every session lands in your Phone cardio history and can push an accepted gym or cardio quest toward its Stride Token.' },
+    { speaker: 'Coach Maple', text: 'All five pay Quest Credits the same way: by detected active time, at one shared rate, five minutes minimum. Stop moving, pause the console or background the app and the paid clock stops. Every session lands in your Phone cardio history and can push an accepted gym or cardio quest toward its Stride Token.' },
     { speaker: 'Coach Maple', text: 'And none of it touches a trail. No trail quota, no milestone, no encounter, no Warden, no pin, no charm, no trail Token — not even the bike, GPS or not. Trail work starts when you choose a trail outside. That is the line, and it does not move.' },
   ] },
   { at: { x: 14, y: 12 }, face: 'right', covers: ['Q'], lines: [
@@ -284,14 +284,6 @@ export default function GymScreen() {
     { speaker: 'Rowan', text: 'Push-up contest. Right here, right now. Show me what you two are made of!' },
   ];
 
-  // The console's own clock. One tick a second, banked as ACTIVE or PAUSED by
-  // the shared session machine — paused seconds are never paid.
-  useEffect(() => {
-    if (!cardio) return undefined;
-    const t = setInterval(() => setCardio((s) => tickSession(s)), 1000);
-    return () => clearInterval(t);
-  }, [!!cardio]);
-
   // Leaving the app mid-session pauses it. The phone keeps counting steps with
   // the screen off, but it cannot tell whether you are still on the machine,
   // so banking paid active time through a backgrounded app would be the one
@@ -320,11 +312,27 @@ export default function GymScreen() {
   const pulseTap = () => {
     setTapPulse(true);
     if (tapTimer.current) clearTimeout(tapTimer.current);
-    tapTimer.current = setTimeout(() => setTapPulse(false), 1400);
+    // A normal rowing cadence leaves a few seconds between strokes. Keep the
+    // movement lease long enough to bridge that gap, then stop paid time and
+    // animation automatically when no further stroke is logged.
+    tapTimer.current = setTimeout(() => setTapPulse(false), 5000);
   };
   useEffect(() => () => tapTimer.current && clearTimeout(tapTimer.current), []);
   const machineMoving = machine && machine.tracking === 'timer' ? tapPulse : moving;
   const sessionLive = !!(cardio && cardio.phase === 'running' && machineMoving);
+  const movementRef = useRef(false);
+  movementRef.current = sessionLive;
+
+  // A running phase is permission to track, not proof of work. Only a live
+  // sensor/GPS delta or a recent rowing stroke banks an ACTIVE second.
+  // Stationary time remains visible as INACTIVE and earns nothing.
+  useEffect(() => {
+    if (!cardio) return undefined;
+    const t = setInterval(() => {
+      setCardio((s) => tickSession(s, movementRef.current));
+    }, 1000);
+    return () => clearInterval(t);
+  }, [!!cardio]);
 
   const metrics = cardio ? sessionMetrics(cardio, state.stats) : { miles: 0, steps: 0 };
   const bodyWeight = state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB;
@@ -339,7 +347,7 @@ export default function GymScreen() {
       m.tracking === 'gps'
         ? 'The in-game bike starts a Bike Ride. GPS begins only when you press Start.'
         : m.tracking === 'timer'
-        ? 'The timer is running. Log strokes as you pull, or just row and enter the machine total after.'
+        ? 'Log strokes as you pull. The paid clock runs only while strokes are detected; enter the machine total after.'
         : Platform.OS === 'web'
         ? 'A browser cannot count steps on this machine. Use a phone — there are no walk buttons.'
         : null
@@ -597,6 +605,7 @@ export default function GymScreen() {
         <CardioSummary
           station={done.machineId}
           activeSeconds={done.activeSeconds}
+          inactiveSeconds={done.inactiveSeconds || 0}
           pausedSeconds={done.pausedSeconds}
           miles={done.metrics.miles}
           steps={done.metrics.steps}

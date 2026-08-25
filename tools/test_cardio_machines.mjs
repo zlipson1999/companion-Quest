@@ -1,7 +1,7 @@
 // The five-machine cardio floor, checked deterministically:
 //   - all five run through ONE pipeline and ONE credit formula
 //   - equal qualifying active time pays equal credits on every machine
-//   - paused time, short sessions and discarded sessions pay nothing
+//   - stationary, paused, short and discarded time pay nothing
 //   - a session cannot be saved or paid twice (duplicate finish, reload)
 //   - every machine writes the right record and reaches the right surfaces
 //   - gym cardio can progress cardio quests and NEVER a trail requirement
@@ -103,7 +103,7 @@ check('the elliptical counts strides from the sensor', ellipRec.strides > 0);
 // ---- Pause, discard, short: the ways to earn nothing ----
 let paused = newSession('treadmill', { miles: 0, steps: 0 }, '2026-08-25T11:00:00.000Z');
 paused = { ...paused, phase: 'running' };
-for (let i = 0; i < 400; i += 1) paused = tickSession(paused);   // active
+for (let i = 0; i < 400; i += 1) paused = tickSession(paused, true);   // detected movement
 paused = pauseSession(paused);
 for (let i = 0; i < 4000; i += 1) paused = tickSession(paused);  // paused
 equal('active seconds banked while running', paused.activeSeconds, 400);
@@ -116,6 +116,25 @@ let resumed = resumeSession(paused);
 equal('resume returns to running', resumed.phase, 'running');
 equal('backgrounding the app pauses', backgroundSession(resumed).phase, 'paused');
 equal('ticking a summary changes nothing', tickSession({ ...resumed, phase: 'summary' }).activeSeconds, resumed.activeSeconds);
+
+// A console being in the running phase is not proof of work. Every machine
+// uses the same movement gate; stationary seconds are kept for honesty but
+// never flow into the credit formula or the qualifying quest duration.
+CARDIO_MACHINE_IDS.forEach((id) => {
+  let stationary = newSession(id, {}, `2026-08-25T12:00:00.000Z`);
+  stationary = { ...stationary, phase: 'running' };
+  for (let i = 0; i < 600; i += 1) stationary = tickSession(stationary, false);
+  equal(`${id} banks no active seconds while stationary`, stationary.activeSeconds, 0);
+  equal(`${id} records stationary seconds as inactive`, stationary.inactiveSeconds, 600);
+  equal(`${id} stationary time earns no credits`, cardioCredits(stationary.activeSeconds), 0);
+  for (let i = 0; i < CARDIO_MIN_ACTIVE_SEC; i += 1) stationary = tickSession(stationary, true);
+  const detected = completeSession(stationary, {
+    stats: {}, bodyWeightLb: 155, endedAt: '2026-08-25T12:20:00.000Z',
+  });
+  equal(`${id} pays only the detected five minutes`, detected.creditsAwarded, 1);
+  equal(`${id} keeps inactive time out of active duration`, detected.activeSeconds, CARDIO_MIN_ACTIVE_SEC);
+  equal(`${id} saves unpaid inactive duration`, detected.inactiveSeconds, 600);
+});
 
 let tooShort = newSession('rower', { miles: 0, steps: 0 }, '2026-08-25T13:00:00.000Z');
 tooShort = { ...tooShort, phase: 'running', activeSeconds: 120 };
@@ -335,6 +354,8 @@ check('the smoothie bar still tracks no cardio', !/cyclingMi|cardioSessions|card
 // The compact console leaves the character visible: the console is rendered
 // into worldOverlay (a corner of the live room) and never as a full screen.
 const gymSrc = src('src/screens/GymScreen.js');
+check('the shared clock receives the detected-movement gate', /tickSession\(s, movementRef\.current\)/.test(gymSrc));
+check('the movement gate requires a running phase and real movement', /cardio\.phase === 'running' && machineMoving/.test(gymSrc));
 check('the console rides in the world overlay', /worldOverlay=\{cardio \?/.test(gymSrc));
 check('the console is compact', /<CardioConsole\s+compact/.test(gymSrc));
 // No discard once a session is running: finishing always offers the summary,

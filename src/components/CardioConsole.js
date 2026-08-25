@@ -345,7 +345,7 @@ export default function CardioConsole({
         {machine ? machine.statLine : ''}
       </PixelText>
       <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 5, lineHeight: 13 }}>
-        {`Gym cardio: active time pays Quest Credits (${credits} so far this session) and never advances a trail, its milestones or its encounters. Kcal is an estimate.`}
+        {`Gym cardio: detected active time pays Quest Credits (${credits} so far); stationary and paused time pay nothing. It never advances a trail, its milestones or encounters. Kcal is an estimate.`}
       </PixelText>
       {machine && machine.safety ? (
         <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 5, lineHeight: 13 }}>
