@@ -6,9 +6,10 @@
 // a treadmill and a stair climber cannot drift into two different ideas of
 // what "five active minutes" means.
 //
-// The clock separates ACTIVE from PAUSED deliberately. Credits are paid on
-// active seconds alone (economy.cardioCredits), so a paused console is worth
-// exactly nothing — the same reason there are no walk buttons.
+// The clock separates ACTIVE, INACTIVE and PAUSED deliberately. Credits are
+// paid on active seconds alone (economy.cardioCredits). Merely leaving a
+// running console open is not activity: the screen must pass a real movement
+// signal from steps, GPS or a logged rowing stroke for that second to count.
 
 import { MACHINE_BY_ID } from '../data/cardioMachines';
 import { finishCardioSession } from './cardioHistory';
@@ -37,6 +38,7 @@ export function newSession(machineId, base, startedAt) {
     phase: tracksWithGps(machineId) ? 'ready' : 'running',
     startedAt: startedAt || new Date().toISOString(),
     activeSeconds: 0,
+    inactiveSeconds: 0,
     pausedSeconds: 0,
     // Sensor baselines, so walking to the machine is never the first metre
     // of the workout. The caller may park extra baselines here (the gym
@@ -50,12 +52,15 @@ export function newSession(machineId, base, startedAt) {
 }
 
 // One second of wall clock. Which counter it lands in is the whole point:
-// a 'ready' bike (GPS not started yet) and a paused machine bank paused
-// seconds, and paused seconds never become credits.
-export function tickSession(session) {
+// a running machine pays only when real movement was recently detected; a
+// running-but-stationary machine banks inactive time; ready/paused banks
+// paused time. Only the first counter can ever become Quest Credits.
+export function tickSession(session, movementDetected = false) {
   if (!session) return session;
   if (session.phase === 'running') {
-    return { ...session, activeSeconds: session.activeSeconds + 1 };
+    return movementDetected
+      ? { ...session, activeSeconds: session.activeSeconds + 1 }
+      : { ...session, inactiveSeconds: (session.inactiveSeconds || 0) + 1 };
   }
   if (session.phase === 'paused' || session.phase === 'ready') {
     return { ...session, pausedSeconds: session.pausedSeconds + 1 };
@@ -136,6 +141,7 @@ export function completeSession(session, { stats, bodyWeightLb, endedAt } = {}) 
     startedAt: session.startedAt,
     endedAt: endedAt || new Date().toISOString(),
     activeSeconds: session.activeSeconds,
+    inactiveSeconds: session.inactiveSeconds || 0,
     pausedSeconds: session.pausedSeconds,
     miles: machine.tracking === 'timer' ? 0 : metrics.miles,
     steps: machine.tracking === 'steps' ? metrics.steps : 0,

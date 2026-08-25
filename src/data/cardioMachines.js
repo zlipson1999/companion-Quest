@@ -10,10 +10,10 @@
 //            (treadmill, stair climber, elliptical: real footfalls register).
 //   gps    — real outdoor location deltas drive the ride (Bike Ride only;
 //            the in-game bike never leaves the building).
-//   timer  — the console clock is the primary metric (rower: a phone cannot
-//            feel a stroke or measure metres on a rail, so time and calories
-//            are measured and the machine's own metres, split and strokes
-//            are entered afterwards, clearly labelled as such).
+//   timer  — logged strokes are the rower's movement signal (a phone cannot
+//            reliably feel a stroke or measure metres on a rail), so the paid
+//            clock stops automatically when stroke logging goes quiet. The
+//            machine's metres and final stroke total are entered afterwards.
 // Nothing here fabricates a metric the device cannot measure: everything a
 // machine cannot sense is optional manual entry from the physical machine's
 // own display, entered AFTER the session, and tagged manual in the record.
@@ -59,9 +59,9 @@ export const CARDIO_MACHINES = [
       { key: 'strokes', label: 'Strokes', step: 10, max: 3000 },
     ],
     tapMetric: 'strokes',
-    statLine: 'Time and calories, plus the metres and split the physical rower showed, entered after.',
-    safety: 'Row first, log after. Enter strokes and machine distance once you have finished, not mid-pull.',
-    tour: 'The rower tracks your time, plus optional strokes and the distance from the physical machine, logged after you finish.',
+    statLine: 'Detected active time and calories, plus the metres and split the physical rower showed, entered after.',
+    safety: 'Tap the mounted phone as you pull so active time is detected. Enter the machine totals only after you finish.',
+    tour: 'The rower pays only while logged strokes show active rowing; enter the physical machine distance and final stroke total after you finish.',
   },
   {
     id: 'stairclimber',

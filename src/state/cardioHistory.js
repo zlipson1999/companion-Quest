@@ -40,6 +40,7 @@ export function cardioSession(raw) {
     // `seconds` stays the legacy display field; activeSeconds is canonical.
     seconds: activeSeconds,
     activeSeconds,
+    inactiveSeconds: Math.max(0, Math.floor(num(raw.inactiveSeconds))),
     pausedSeconds: Math.max(0, Math.floor(num(raw.pausedSeconds))),
     miles,
     steps: Math.floor(num(raw.steps, 200000)),
@@ -66,7 +67,7 @@ export function cardioSession(raw) {
 // bounds rather than storing fiction. The reducer then saves it exactly
 // once, refusing an id it has already recorded.
 export function finishCardioSession({
-  station, startedAt, endedAt, activeSeconds, pausedSeconds = 0,
+  station, startedAt, endedAt, activeSeconds, inactiveSeconds = 0, pausedSeconds = 0,
   miles = 0, steps = 0, strides = 0, kcal = 0, manual = {}, usedSensor = false, usedGps = false,
 }) {
   const machine = MACHINE_BY_ID[station];
@@ -87,6 +88,7 @@ export function finishCardioSession({
     startedAt,
     endedAt,
     activeSeconds,
+    inactiveSeconds,
     pausedSeconds,
     miles,
     steps,

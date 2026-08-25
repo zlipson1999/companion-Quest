@@ -33,7 +33,10 @@ export const CREDIT_PER_GOAL = 4;
 //
 //   5 active min -> 1     20 min -> 5     40 min -> 10     64+ min -> 15 (cap)
 //
-// Paused time is not active time. Sessions are paid ONCE, at completion, by
+// Running-console time is not automatically active time. The shared session
+// clock advances activeSeconds only while steps, GPS movement or recent rowing
+// strokes are detected; stationary, paused and backgrounded seconds pay zero.
+// Sessions are paid ONCE, at completion, by
 // the reducer, which refuses a session id it has already recorded — reopening
 // a summary, reloading, or double-tapping Save cannot mint twice. The minimum
 // and the cap are the anti-spam rails: hopping on for thirty seconds pays

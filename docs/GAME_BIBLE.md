@@ -483,8 +483,13 @@ same way `c` is the bike here and a kitchen counter at home.
 **The session pipeline** (`state/cardioSession.js`) is the same for all five:
 walk into the machine → the character steps onto it → the compact console
 opens over the live room → start → track → pause/resume → finish → summary →
-save exactly once. The clock banks ACTIVE and PAUSED seconds separately, and
-a backgrounded app pauses rather than accruing.
+save exactly once. The clock banks ACTIVE, INACTIVE and PAUSED seconds
+separately, and a backgrounded app pauses rather than accruing. Running is not
+proof of work: treadmill, Stair Climber and elliptical seconds become ACTIVE
+only while step deltas arrive; Bike Ride seconds become ACTIVE only while GPS
+movement arrives; rower seconds become ACTIVE only while logged strokes keep
+the movement lease alive. When those signals stop, animation and the paid clock
+both stop automatically while the console remains open.
 
 **There is no discard control once a session is running.** A button beside
 Finish is a way to lose a hard workout to one tired thumb, and there is
@@ -515,7 +520,8 @@ credits = activeSeconds < 300 ? 0 : min(15, floor(activeSeconds / 240))
 Priced against the reference mile: a brisk outdoor mile takes about twenty
 minutes and pays 10, so twenty indoor minutes pay 5 — deliberately about half
 the outdoor rate, because trails want you outside and the gym should never
-out-earn them. The minimum and the cap are the anti-spam rails.
+out-earn them. The movement gate, minimum and cap are the anti-spam rails. A
+stationary running console banks INACTIVE seconds and earns nothing.
 
 Credits are awarded **once**, by `COMPLETE_CARDIO`, from the row it actually
 appended — `appendCardioSession` refuses an id already in the log, so a
