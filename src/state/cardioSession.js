@@ -17,6 +17,51 @@ import { kcalFor, kcalForBike, kcalForActiveTime } from './cardioMaths';
 
 export const PHASES = ['ready', 'running', 'paused', 'summary'];
 
+// Movement is confirmed by two real signals bracketing an interval. A lone
+// final signal never opens a forward-looking payment lease, so stopping after
+// a step, GPS sample or rower tap cannot pay for time spent standing still.
+export function newActivityConfirmation() {
+  return { lastAt: null, carryMs: 0 };
+}
+
+export function confirmActivityInterval(clock, at, maxGapMs) {
+  const now = Number(at);
+  const prior = clock || newActivityConfirmation();
+  if (!Number.isFinite(now) || !Number.isFinite(maxGapMs) || maxGapMs <= 0) {
+    return { clock: newActivityConfirmation(), seconds: 0 };
+  }
+  if (!Number.isFinite(prior.lastAt)) {
+    return { clock: { lastAt: now, carryMs: 0 }, seconds: 0 };
+  }
+  const gap = now - prior.lastAt;
+  // A long silence breaks continuity. This signal becomes the first point of
+  // a new interval; none of the silent time is paid retroactively.
+  if (gap <= 0 || gap > maxGapMs) {
+    return { clock: { lastAt: now, carryMs: 0 }, seconds: 0 };
+  }
+  const total = Math.max(0, Number(prior.carryMs) || 0) + gap;
+  const seconds = Math.floor(total / 1000);
+  return { clock: { lastAt: now, carryMs: total - seconds * 1000 }, seconds };
+}
+
+export function confirmSessionActivity(session, seconds) {
+  if (!session || session.phase !== 'running') return session;
+  const requested = Math.max(0, Math.floor(Number(seconds) || 0));
+  if (!requested) return session;
+  // Reclassify inactive ticks first. A sensor callback can arrive just before
+  // the interval timer that represents the same elapsed second; `clockAhead`
+  // tells that later tick the time is already accounted for. Active time is
+  // updated only here, synchronously with a confirming movement signal.
+  const reclaimed = Math.min(requested, Math.max(0, session.inactiveSeconds || 0));
+  const ahead = requested - reclaimed;
+  return {
+    ...session,
+    activeSeconds: session.activeSeconds + requested,
+    inactiveSeconds: session.inactiveSeconds - reclaimed,
+    clockAheadSeconds: (session.clockAheadSeconds || 0) + ahead,
+  };
+}
+
 // A machine whose primary metric is the clock still needs a movement signal
 // for the character: the rower gets it from stroke taps rather than a sensor
 // the phone does not have.
@@ -58,6 +103,9 @@ export function newSession(machineId, base, startedAt) {
 export function tickSession(session, movementDetected = false) {
   if (!session) return session;
   if (session.phase === 'running') {
+    if (!movementDetected && (session.clockAheadSeconds || 0) > 0) {
+      return { ...session, clockAheadSeconds: session.clockAheadSeconds - 1 };
+    }
     return movementDetected
       ? { ...session, activeSeconds: session.activeSeconds + 1 }
       : { ...session, inactiveSeconds: (session.inactiveSeconds || 0) + 1 };
@@ -70,7 +118,7 @@ export function tickSession(session, movementDetected = false) {
 
 export function pauseSession(session) {
   if (!session || session.phase !== 'running') return session;
-  return { ...session, phase: 'paused' };
+  return { ...session, phase: 'paused', clockAheadSeconds: 0 };
 }
 
 export function resumeSession(session) {
@@ -156,5 +204,6 @@ export function completeSession(session, { stats, bodyWeightLb, endedAt } = {}) 
 export default {
   PHASES, newSession, tickSession, pauseSession, resumeSession, backgroundSession,
   tapSession, setManual, sessionMetrics, sessionKcal, completeSession,
+  newActivityConfirmation, confirmActivityInterval, confirmSessionActivity,
   tracksWithSensor, tracksWithGps,
 };

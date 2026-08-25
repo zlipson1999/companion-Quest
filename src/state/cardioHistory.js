@@ -10,7 +10,9 @@
 // legacy row gains safe defaults (creditsAwarded 0 — nothing is paid
 // retroactively) and keeps its measurements exactly as saved.
 
-import { CARDIO_MACHINE_IDS, MACHINE_BY_ID, validManualValue } from '../data/cardioMachines';
+import {
+  CARDIO_MACHINE_IDS, MACHINE_BY_ID, hasLoggableManualWork, validManualValue,
+} from '../data/cardioMachines';
 import { cardioCredits } from './economy';
 
 export const KEEP_CARDIO_SESSIONS = 120;
@@ -49,7 +51,9 @@ export function cardioSession(raw) {
   // typing in what its display said. That row is honest history: zero
   // measured active time, zero credits, no quest progress, and the figure
   // marked manual. Without the figure there is nothing to keep.
-  const loggedWork = strokes > 0 || floors > 0 || machineMiles > 0 || machineMeters > 0;
+  const loggedWork = hasLoggableManualWork(raw.station, {
+    strokes, floors, machineMiles, machineMeters, level: raw.level, cadence: raw.cadence,
+  });
   const elapsed = activeSeconds + inactiveSeconds + pausedSeconds;
   if (activeSeconds < 5 && !(loggedWork && elapsed >= CARDIO_LOGGABLE_SEC)) return null;
   return {

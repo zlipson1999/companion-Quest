@@ -55,8 +55,8 @@ export const CARDIO_MACHINES = [
     met: 7,
     pose: { facing: 'left', ms: 420 },
     manual: [
-      { key: 'machineMeters', label: 'Distance (m)', step: 100, max: 42000 },
-      { key: 'strokes', label: 'Strokes', step: 10, max: 3000 },
+      { key: 'machineMeters', label: 'Distance (m)', step: 100, max: 42000, loggableWork: true },
+      { key: 'strokes', label: 'Strokes', step: 10, max: 3000, loggableWork: true },
     ],
     tapMetric: 'strokes',
     statLine: 'Detected active time and calories, plus the metres and split the physical rower showed, entered after.',
@@ -71,7 +71,7 @@ export const CARDIO_MACHINES = [
     met: 9,
     pose: { facing: 'up', ms: 260 },
     manual: [
-      { key: 'floors', label: 'Floors climbed', step: 1, max: 400 },
+      { key: 'floors', label: 'Floors climbed', step: 1, max: 400, loggableWork: true },
       { key: 'level', label: 'Level / resistance', step: 1, max: 25 },
     ],
     tapMetric: null,
@@ -87,7 +87,7 @@ export const CARDIO_MACHINES = [
     met: 6,
     pose: { facing: 'up', ms: 300 },
     manual: [
-      { key: 'machineMiles', label: 'Distance (mi)', step: 0.1, max: 20 },
+      { key: 'machineMiles', label: 'Distance (mi)', step: 0.1, max: 20, loggableWork: true },
       { key: 'level', label: 'Resistance', step: 1, max: 25 },
     ],
     tapMetric: null,
@@ -122,7 +122,21 @@ export function validManualValue(machineId, key, value) {
   return Number.isFinite(n) && n >= 0 && n <= field.max;
 }
 
+// A level or cadence describes how a workout was performed; it is not proof
+// that one happened. This helper is shared by the summary button and record
+// validation so the UI can never promise to save a row the persistence layer
+// will reject.
+export function hasLoggableManualWork(machineId, manual = {}) {
+  const machine = MACHINE_BY_ID[machineId];
+  if (!machine) return false;
+  return machine.manual.some((field) => (
+    field.loggableWork
+    && Number(manual[field.key]) > 0
+    && validManualValue(machineId, field.key, manual[field.key])
+  ));
+}
+
 export default {
   CARDIO_MACHINES, CARDIO_MACHINE_IDS, MACHINE_BY_ID,
-  getCardioMachine, cardioMachineName, validManualValue,
+  getCardioMachine, cardioMachineName, validManualValue, hasLoggableManualWork,
 };

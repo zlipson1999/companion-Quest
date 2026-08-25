@@ -12,7 +12,8 @@
 import { readFileSync } from 'node:fs';
 import { splitPer500 } from '../src/state/cardioMaths.js';
 import {
-  CARDIO_MACHINES, CARDIO_MACHINE_IDS, getCardioMachine, validManualValue,
+  CARDIO_MACHINES, CARDIO_MACHINE_IDS, getCardioMachine, hasLoggableManualWork,
+  validManualValue,
 } from '../src/data/cardioMachines.js';
 import {
   cardioCredits, CARDIO_MIN_ACTIVE_SEC, CARDIO_SEC_PER_CREDIT, CARDIO_SESSION_CREDIT_CAP,
@@ -23,8 +24,10 @@ import {
 } from '../src/state/cardioHistory.js';
 import {
   newSession, tickSession, pauseSession, resumeSession, backgroundSession, tapSession,
-  setManual, completeSession,
+  setManual, completeSession, newActivityConfirmation, confirmActivityInterval,
+  confirmSessionActivity,
 } from '../src/state/cardioSession.js';
+import { cardioDraftPayload, normalizeCardioDraft } from '../src/state/cardioDraft.js';
 import { distancePolicy } from '../src/state/distancePolicy.js';
 import { QUESTS, getQuest, questProgress, questSnapshot } from '../src/data/quests.js';
 import { reqAcceptsScope, distanceScope } from '../src/data/activityScopes.js';
@@ -330,33 +333,37 @@ check('the floor tile is captured before stepping onto the machine',
 check('AppState pauses a running session', /AppState\.addEventListener\('change'/.test(src('src/screens/GymScreen.js')));
 check('the pause uses the shared background transition', /backgroundSession\(cur\)/.test(src('src/screens/GymScreen.js')));
 
-// The PAYMENT lease and the ANIMATION hold are two different numbers on
-// purpose. A pedometer batches roughly one callback a second, so a 900ms
-// lease expires in the sensor's own silence and banks real exercise as
-// unpaid; the animation wants that same 900ms so the character stops when
-// the player does. Locking both in: the pay lease must comfortably outlast
-// a one-second reporting gap, and must never be the shorter of the two.
-// useCardio is a React module, so its numbers are read from source here the
-// same way the screen guards below are — importing it would drag JSX through
-// the plain-Node loader.
+// Payment confirms intervals in arrears. It never starts a forward-looking
+// timer that can keep paying after the final movement signal.
 const cardioHookSrc = src('src/screens/useCardio.js');
 const constOf = (name) => Number((cardioHookSrc.match(new RegExp(`${name} = (\\d+)`)) || [])[1]);
 const stepHold = constOf('STEP_MOVING_MS');
-const stepLease = constOf('STEP_PAY_LEASE_MS');
+const stepGap = constOf('STEP_CONFIRM_GAP_MS');
 const gpsHold = constOf('GPS_MOVING_MS');
-check(`the step pay lease outlasts a 1s sensor gap (${stepLease}ms)`, stepLease > 1000);
-check(`the step pay lease is longer than the animation hold (${stepLease} > ${stepHold})`, stepLease > stepHold);
-check(`the GPS pay lease bridges the 2s GPS sample interval (${gpsHold}ms)`, gpsHold > 2000);
-check('the bike reuses its GPS hold as its pay lease', /GPS_PAY_LEASE_MS = GPS_MOVING_MS/.test(cardioHookSrc));
-check('the pay lease picks per tracking method', /payLeaseMs\(gpsOnly\)/.test(cardioHookSrc));
-check('animation and payment are refreshed by the same real delta', /setPaying\(true\)/.test(cardioHookSrc));
-check('an inactive console drops both leases', /setPaying\(false\)[\s\S]*?\}, \[active\]\)/.test(cardioHookSrc));
-// The gym must gate the PAID clock on the lease and the character on the
-// tighter hold — swapping them is the regression this guards.
+check(`the confirmation gap bridges batched step reports (${stepGap}ms)`, stepGap > 1000);
+check(`animation remains tighter than confirmation (${stepHold} < ${stepGap})`, stepHold < stepGap);
+check(`the GPS animation bridges the 2s sample interval (${gpsHold}ms)`, gpsHold > 2000);
+check('the cardio hook owns no forward payment state', !/setPaying|payTimer|PAY_LEASE/.test(cardioHookSrc));
 const gymPay = src('src/screens/GymScreen.js');
-check('the paid clock is gated on the pay lease', /movementRef\.current = sessionPaying/.test(gymPay));
 check('the animation is gated on the movement hold', /const sessionLive = !!\(cardio && cardio\.phase === 'running' && machineMoving\)/.test(gymPay));
-check('the rower gates both on its stroke lease', /machine\.tracking === 'timer' \? tapPulse : paying/.test(gymPay));
+check('wall-clock ticks start inactive', /tickSession\(s, false\)/.test(gymPay));
+check('real deltas confirm past activity', /confirmActivityInterval/.test(gymPay) && /confirmSessionActivity/.test(gymPay));
+
+let confirmation = newActivityConfirmation();
+let confirmed = confirmActivityInterval(confirmation, 1000, 3000);
+equal('the first movement signal opens no payment lease', confirmed.seconds, 0);
+confirmation = confirmed.clock;
+confirmed = confirmActivityInterval(confirmation, 2000, 3000);
+equal('a later signal confirms the interval before it', confirmed.seconds, 1);
+let strict = { ...newSession('treadmill'), phase: 'running' };
+strict = tickSession(strict, false);
+strict = confirmSessionActivity(strict, confirmed.seconds);
+equal('confirmed movement reclassifies elapsed time as active', strict.activeSeconds, 1);
+for (let i = 0; i < 10; i += 1) strict = tickSession(strict, false);
+equal('silence after the final signal adds no active time', strict.activeSeconds, 1);
+equal('silence is kept as unpaid inactive time', strict.inactiveSeconds, 10);
+confirmed = confirmActivityInterval(confirmed.clock, 7000, 3000);
+equal('a signal after a long silent gap does not pay the gap', confirmed.seconds, 0);
 
 // ---- Surfaces ----
 const bagSrc = src('src/screens/BagScreen.js');
@@ -382,8 +389,7 @@ check('the smoothie bar still tracks no cardio', !/cyclingMi|cardioSessions|card
 // The compact console leaves the character visible: the console is rendered
 // into worldOverlay (a corner of the live room) and never as a full screen.
 const gymSrc = src('src/screens/GymScreen.js');
-check('the shared clock receives the detected-movement gate', /tickSession\(s, movementRef\.current\)/.test(gymSrc));
-check('the movement gate requires a running phase and real movement', /cardio\.phase === 'running' && machineMoving/.test(gymSrc));
+check('the shared clock never predicts future movement', /tickSession\(s, false\)/.test(gymSrc));
 check('the console rides in the world overlay', /worldOverlay=\{cardio \?/.test(gymSrc));
 check('the console is compact', /<CardioConsole\s+compact/.test(gymSrc));
 // No discard once a session is running: finishing always offers the summary,
@@ -469,6 +475,10 @@ equal('...reporting no duration a fallback could mistake for work', handLogged.s
 check('nothing typed means nothing saved', unsensed({ manual: {} }) === null);
 check('a minute is the floor for a hand-logged row', unsensed({ inactiveSeconds: 40 }) === null);
 check('a level dial alone is not a workout', unsensed({ manual: { level: 8 } }) === null);
+check('the shared UI predicate also rejects a level alone', !hasLoggableManualWork('stairclimber', { level: 8 }));
+check('the shared UI predicate accepts climbed floors', hasLoggableManualWork('stairclimber', { floors: 2 }));
+check('the summary uses the same loggable-work predicate as persistence',
+  /hasLoggableManualWork\(station, manual\)/.test(src('src/components/CardioSummary.js')));
 // The same shape catches any machine whose display the player can read: an
 // elliptical stride keeps a foot on the pedal and gives a pedometer very
 // little to hear, so a whole session can land with nothing detected.
@@ -504,16 +514,28 @@ const handProgress = questProgress(
 );
 check('a hand-logged session progresses no quest', !handProgress.done && handProgress.reqs[0].have === 0);
 
-// ---- The rower's stroke lease ----
-// It is the animation hold AND the payment gate, so a lease left running
-// across a pause would pay for the seconds on the far side of it.
+// ---- The rower's animation and confirmed activity ----
 const cardioSrc = src('src/screens/useCardio.js');
-check('the stroke lease is a named constant', /export const STROKE_LEASE_MS = 5000;/.test(cardioSrc));
-check('the gym uses that constant, not a literal', /setTapPulse\(false\), STROKE_LEASE_MS\)/.test(gymSrc));
+check('the stroke confirmation gap is a named constant', /export const STROKE_CONFIRM_GAP_MS = 5000;/.test(cardioSrc));
+check('the rower animation uses an animation-only hold', /setTapPulse\(false\), STROKE_MOVING_MS\)/.test(gymSrc));
 check('the lease is cleared, not only refreshed', /const clearTapLease = useCallback/.test(gymSrc));
 check('...on every transition of session identity and phase', /\[sessionKey, sessionPhase, clearTapLease\]/.test(gymSrc));
 check('...including unmount', /return clearTapLease;/.test(gymSrc));
 check('the phase is part of the key so pause clears it', /const sessionPhase = cardio \? cardio\.phase : null;/.test(gymSrc));
+
+// ---- Reload recovery ----
+const draft = cardioDraftPayload({
+  cardio: { ...newSession('rower', {}, '2026-08-25T10:00:00.000Z'), activeSeconds: 12, phase: 'running' },
+  done: null,
+  from: { x: 4, y: 9, facing: 'right' },
+  player: { x: 5, y: 9, facing: 'left' },
+});
+const restored = normalizeCardioDraft(draft);
+equal('a restored live session is paused', restored.cardio.phase, 'paused');
+equal('a restored live session keeps confirmed active time', restored.cardio.activeSeconds, 12);
+equal('a restored live session drops GPS state', restored.cardio.gpsStarted, false);
+check('the gym loads the persisted cardio draft', /loadCardioDraft\(\)/.test(gymSrc));
+check('the gym persists live and summary drafts', /saveCardioDraft\(payload\)/.test(gymSrc));
 
 // ---- Scopes are read, not just declared ----
 check(
