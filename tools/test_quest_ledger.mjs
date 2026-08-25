@@ -1,9 +1,10 @@
 // The Quest Ledger's promises, checked deterministically:
-//   - quests are free: no prices, and no quest action may touch credits
+//   - quests cost 5-15 Quest Credits, and BUYING is the only credit movement
+//     (abandon refunds nothing, turn-in mints nothing)
 //   - tokens are proof, never currency: nothing spends or sells one
-//   - progress is measured from the snapshot taken at acceptance
+//   - progress is measured from the snapshot taken at purchase
 //   - gym cardio never reaches trails, milestones, or Quest Credits
-//   - the v12 migration refunds priced-era purchases exactly once
+//   - the v12 migration refunds launch-era purchases exactly once
 //
 //   node --import ./tools/register-esm.mjs tools/test_quest_ledger.mjs
 
@@ -23,26 +24,35 @@ const equal = (label, got, want) => {
   if (got !== want) failures.push(`${label}: got ${JSON.stringify(got)}, want ${JSON.stringify(want)}`);
 };
 
-// ---- Quests are free, tokens are not currency ----
+// ---- Quests are priced 5-15; tokens are not currency ----
 equal('seven token categories', TOKENS.length, 7);
 equal('eight quests on the board', QUESTS.length, 8);
 equal('three active quests at most', MAX_ACTIVE_QUESTS, 3);
 QUESTS.forEach((q) => {
-  check(`quest ${q.id} carries no price`, !('price' in q));
+  check(`quest ${q.id} price is an integer`, Number.isInteger(q.price));
+  check(`quest ${q.id} price sits in the 5-15 band (${q.price})`, q.price >= 5 && q.price <= 15);
   check(`quest ${q.id} pays no credits`, !('credits' in (q.reward || {})));
 });
+const flagship2 = QUESTS.find((q) => q.flagship);
+check('the flagship is the most expensive quest',
+  QUESTS.every((q) => q.flagship || q.price < flagship2.price));
 
-// The reducer file is the one place quest actions live; none of those cases
-// may mention credits at all — accepting, abandoning and turning in are
-// credit-neutral by construction, not by arithmetic.
+// The reducer file is the one place quest actions live. Buying is the ONLY
+// credit movement: BUY_QUEST must check affordability and deduct the price,
+// while abandoning and turning in stay credit-neutral by construction.
 const reducerSrc = readFileSync(new URL('../src/state/GameContext.js', import.meta.url), 'utf8');
-for (const action of ['ACCEPT_QUEST', 'TURN_IN_QUEST', 'ABANDON_QUEST']) {
+const caseBody = (action) => {
   const start = reducerSrc.indexOf(`case '${action}'`);
   check(`reducer still handles ${action}`, start >= 0);
-  const body = reducerSrc.slice(start, reducerSrc.indexOf('\n    }', start));
-  check(`${action} never touches credits`, !/credits/.test(body));
+  return start >= 0 ? reducerSrc.slice(start, reducerSrc.indexOf('\n    }', start)) : '';
+};
+for (const action of ['TURN_IN_QUEST', 'ABANDON_QUEST']) {
+  check(`${action} never touches credits`, !/credits/.test(caseBody(action)));
 }
-check('BUY_QUEST is gone — quests are not purchased', !reducerSrc.includes('BUY_QUEST'));
+const buyBody = caseBody('BUY_QUEST');
+check('BUY_QUEST refuses an unaffordable quest', /<\s*quest\.price[\s\S]*return state/.test(buyBody));
+check('BUY_QUEST deducts exactly the price', buyBody.includes('state.credits - quest.price'));
+check('ACCEPT_QUEST is gone — quests are bought', !reducerSrc.includes('ACCEPT_QUEST'));
 check('no reducer case spends tokens', !/tokens\[[^\]]*\]\s*-|tokens[^\n]*- 1/.test(reducerSrc));
 
 // ---- Progress counts only effort after acceptance ----
@@ -148,4 +158,4 @@ if (failures.length) {
   failures.forEach((line) => console.error(`  ${line}`));
   process.exit(1);
 }
-console.log('ok     free quest ledger, token-as-proof, cardio isolation and the v12 refund');
+console.log('ok     priced quest ledger (5-15), token-as-proof, cardio isolation and the v12 refund');

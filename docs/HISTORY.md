@@ -802,19 +802,20 @@ equipment. The coverage test fails on a missing interaction or a description
 without an action and result. Player-facing cycling labels say **Bike Ride**;
 GPS remains the measurement source without branding the activity "outdoor."
 
-## Phase 18 — DONE: the Quest Ledger is free
+## Phase 18 — DONE: the Quest Ledger repriced
 
-The reception desk's Quest Ledger shipped for one release selling quests for
-Quest Credits. That was wrong twice over: a wellness quest is a commitment,
-not a purchase, and a paid quest whose reward mattered would be a credit
-converter. Quests are now optional goals a player picks up free at the desk —
-at most three at once, progress measured against a snapshot taken at
-acceptance so only new effort counts, turned in at the same desk for the
-category Token and a reward on the normal `{xp,bond,evo,heal}` contract.
-Accepting, abandoning and turning in never move credits; Tokens are proof of
-completion and are not currency. The v12 migration refunds priced-era
-purchases at their exact historical prices exactly once, and `check_docs.py`
-fails the build if a `price:` ever returns to `data/quests.js`.
+The reception desk's Quest Ledger launched selling quests for 10–30 Quest
+Credits, was briefly made free during the recovery of the stranded gym
+commits, and then settled where it is now: quests cost **5–15 Quest
+Credits**, priced by how easy each one is and how good its reward is — the
+one-ride errand at 5, the seven-day flagship with the Kinship Knot at 15.
+Buying is the only credit movement in the ledger: abandoning refunds
+nothing, turning in mints nothing, and Tokens are proof of completion, not
+currency. Progress is measured against a snapshot taken at purchase so only
+new effort counts, at most three quests run at once, and the v12 migration
+refunds launch-era prices exactly once before the new pricing applies.
+`check_docs.py` watches the 5–15 band and the flagship price the same way
+it watches every other tuned figure.
 
 ## Phase 6 — ideas, not committed
 

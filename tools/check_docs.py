@@ -109,10 +109,13 @@ def build_checks():
          str(len(re.findall(r"^  \{ id: '", quests_src, re.M)))),
         ('quests on the board', r'(\d+) quests on\nthe board',
          str(len(re.findall(r"^    id: '", quests_src, re.M)))),
-        # Quests are free. A price field creeping back into the data would be
-        # the purchase design returning; that is a build failure, not a tune.
-        ('quests stay free', r'Quests are (free)',
-         'free' if not re.search(r'\bprice\s*:', quests_src) else 'priced'),
+        # Quests are priced 5-15 by ease and reward quality. The band and the
+        # flagship's price are quoted in the bible, so both are watched.
+        ('quest price band', r'Prices run (\d+–\d+)',
+         '{}–{}'.format(min(int(p) for p in re.findall(r'price: (\d+)', quests_src)),
+                        max(int(p) for p in re.findall(r'price: (\d+)', quests_src)))),
+        ('flagship quest price', r'Seven-Day Foundation \| Root \| (\d+) \|',
+         first(r"id: 'sevendayfoundation'[\s\S]*?price: (\d+)", quests_src, 'flagship price')),
     ]
 
     for const, label in (('CREDIT_PER_MILE', 'a walked mile'),

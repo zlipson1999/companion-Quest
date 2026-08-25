@@ -152,7 +152,7 @@ export default function BagScreen() {
           );
         }) : (
           <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 13 }}>
-            No active quests. Pick one up free at the reception Quest Ledger — up to three at a time.
+            No active quests. The Quest Ledger at reception sells them for 5–15 Quest Credits — up to three at a time.
           </PixelText>
         )}
         {statRow('Completed', (state.quests.completed || []).length)}

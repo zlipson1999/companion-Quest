@@ -592,17 +592,20 @@ function reducer(state, action) {
     }
 
     // ---- The Quest Ledger (data/quests.js) ----
-    // Quests are FREE commitments picked up at reception — never bought,
-    // never sold. The reducer holds the rules: a real quest, at most
-    // MAX_ACTIVE at once, no duplicates. Accepting snapshots today's records
-    // so only effort AFTER acceptance counts. Credits never move here.
-    case 'ACCEPT_QUEST': {
+    // Quests are BOUGHT with Quest Credits (5-15, priced by ease and reward
+    // quality) — the reducer holds the rules: a real quest, affordable, at
+    // most MAX_ACTIVE at once, no duplicates. The purchase snapshots today's
+    // records so only effort AFTER buying counts. This and the smoothie bar
+    // are the only places credits are ever spent.
+    case 'BUY_QUEST': {
       const quest = getQuest(action.payload.questId);
       if (!quest) return state;
+      if ((state.credits || 0) < quest.price) return state;
       if (state.quests.active.length >= MAX_ACTIVE_QUESTS) return state;
       if (state.quests.active.some((a) => a.questId === quest.id)) return state;
       return {
         ...state,
+        credits: state.credits - quest.price,
         quests: {
           ...state.quests,
           active: [...state.quests.active, { questId: quest.id, startedDay: today(), base: questSnapshot(state) }],
@@ -613,8 +616,9 @@ function reducer(state, action) {
     // Turning in re-checks completion here, not in the screen: the reward
     // (matched to the category through the usual {xp,bond,evo,heal} contract,
     // plus items) and the Token only exist for finished requirements.
-    // Tokens are proof of completion, never currency — nothing here or
-    // anywhere else prices, spends, or sells one, and no credits are minted.
+    // Tokens are proof of completion, never currency — nothing spends or
+    // sells one — and turning in mints no credits: a quest that paid back
+    // more than its price would be a money printer.
     case 'TURN_IN_QUEST': {
       const active = state.quests.active.find((a) => a.questId === action.payload.questId);
       const quest = active && getQuest(active.questId);
@@ -640,8 +644,8 @@ function reducer(state, action) {
       };
     }
 
-    // Walking away frees the slot, nothing more: no penalty, no refund
-    // math, because nothing was ever paid. Credits are untouched.
+    // Walking away frees the slot. The credits stay spent — the ledger
+    // sells commitments, not refunds — which is also why buying is a choice.
     case 'ABANDON_QUEST': {
       if (!state.quests.active.some((a) => a.questId === action.payload.questId)) return state;
       return {

@@ -46,7 +46,7 @@ const TOUR_STOPS = [
   { at: { x: 6, y: 16 }, face: 'down', covers: ['N', 'C', 'A', 'X'], lines: [
     { speaker: 'Coach Maple', text: 'Welcome to Quest Fitness. Walk into equipment to use it and walk up to a person to talk. After the tour, come back to me for coaching; Rowan will explain his challenge when you approach him.' },
     { speaker: 'Coach Maple', text: 'Reception first. Walk into this desk when you arrive and it records today’s date and your first check-in time — attendance only, once a day, no reward attached. Your check-in streak, total days and visit history live in the Phone’s Personal section.' },
-    { speaker: 'Coach Maple', text: 'The desk also holds the Quest Ledger: optional healthy-habit quests you pick up free, up to three at a time. Live one out for real, watch its progress in the Phone’s Quest Log, then walk back to this desk to turn it in for its Token and reward.' },
+    { speaker: 'Coach Maple', text: 'The desk also holds the Quest Ledger: optional healthy-habit quests bought with Quest Credits — five to fifteen, priced by effort and reward, three at a time at most. Live one out for real, watch its progress in the Phone’s Quest Log, then walk back to this desk to turn it in for its Token and reward.' },
     { speaker: 'Coach Maple', text: 'Tokens are proof of completion and are not currency. They cannot be spent or sold — the case on your Phone is where they live, and the habit itself is the real prize.' },
     { speaker: 'Coach Maple', text: 'The front door behind you works the same way as every doorway: walk through it to return to Sunkist Lane. It never logs a check-in by itself—you must come to this desk.' },
   ] },
