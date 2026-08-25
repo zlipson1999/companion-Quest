@@ -18,7 +18,7 @@ import PixelButton from './PixelButton';
 import TrailAction from './TrailAction';
 import { palette, tokens, scale, space } from '../theme';
 import { formatClock, splitPer500 } from '../state/cardioMaths';
-import { MACHINE_BY_ID } from '../data/cardioMachines';
+import { hasLoggableManualWork, MACHINE_BY_ID } from '../data/cardioMachines';
 import { CARDIO_MIN_ACTIVE_SEC } from '../state/economy';
 
 function Row({ label, value, tone }) {
@@ -53,7 +53,7 @@ export default function CardioSummary({
   // display figure instead of quietly throwing the session away — and says
   // plainly that without one there is no row to keep.
   const unsensed = activeSeconds < 5;
-  const hasManual = Object.values(manual || {}).some((v) => Number(v) > 0);
+  const hasManual = hasLoggableManualWork(station, manual);
 
   return (
     <View

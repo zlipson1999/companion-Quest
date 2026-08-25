@@ -486,20 +486,20 @@ opens over the live room → start → track → pause/resume → finish → sum
 save exactly once. The clock banks ACTIVE, INACTIVE and PAUSED seconds
 separately, and a backgrounded app pauses rather than accruing. Running is not
 proof of work: treadmill, Stair Climber and elliptical seconds become ACTIVE
-only while step deltas arrive; Bike Ride seconds become ACTIVE only while GPS
-movement arrives; rower seconds become ACTIVE only while logged strokes keep
-the movement lease alive. When those signals stop, animation and the paid clock
-both stop automatically while the console remains open.
+only when step deltas arrive; Bike Ride seconds become ACTIVE only when GPS
+movement arrives; rower seconds become ACTIVE only when logged strokes confirm
+them. A later real signal confirms the interval BEFORE it, within the plausible
+reporting gap for that sensor. There is no forward-looking payment lease: the
+unconfirmed tail after the final step, GPS sample or stroke earns nothing.
 
-**The animation hold and the payment lease are different numbers**
-(`screens/useCardio.js`). Animation uses 900ms for steps so the character
-stops when the player does. Payment uses a longer lease — 3s for step
-machines, 3.2s for GPS, and the rower's 5s stroke lease — because a pedometer
-batches its callbacks about once a second, and a 900ms payment gate expires
-in the sensor's own silence and banks real exercise as unpaid. The elliptical
-is the worst case: its stride keeps a foot on the pedal and gives a pedometer
-very little to hear. The lease still only ever refreshes on a real measured
-delta, so standing still stops paying — three seconds later.
+**Animation holds never decide payment** (`screens/useCardio.js`). Animation
+uses 900ms for steps, 3.2s for GPS and 1.2s for a rower tap so the character is
+readable without pretending the next seconds contain work. Confirmation may
+bridge up to 3s between step reports, 3.2s between GPS reports and 5s between
+rower strokes, but only after a second real signal proves the preceding
+interval. A signal after a longer silence starts a new interval and pays none
+of that silence. This handles sensor batching without ever crediting time after
+movement stops.
 
 **There is no discard control once a session is running.** A button beside
 Finish is a way to lose a hard workout to one tired thumb, and there is
@@ -563,13 +563,18 @@ never credits and never progress. For the same reason `seconds` on a saved row
 is defined to equal `activeSeconds`: code that reads `seconds` as a fallback
 must not be able to see elapsed time.
 
-The rower's stroke lease (`STROKE_LEASE_MS`, 5s in `screens/useCardio.js`) is
-its animation hold and its payment lease at once — there is only the one
-signal, and it has to span a rowing cadence rather than a sensor's reporting
-gap. Unlike the sensor leases it is a timer the gym screen owns, so it is
-cleared explicitly on every transition out of a live rowing session (pause,
-resume, background, finish, leave, a new session, unmount). A lease left
-running across a pause would have paid for the seconds on the far side of it.
+The rower's tap starts only a 1.2s animation pulse. Payment is confirmed in
+arrears between two strokes no more than `STROKE_CONFIRM_GAP_MS` (5s) apart.
+The confirmation clock and animation pulse are cleared on pause, resume,
+background, finish, leave, a new session and unmount, so neither a pause gap
+nor the time after the final stroke can become active time.
+
+**Reload recovery uses a separate draft key.** A running console and an
+unsaved summary are stored at `companionquest:cardio-draft:v1`. A running
+session always restores paused, with GPS stopped, its movement-confirmation
+clock empty and its already confirmed counters intact. The draft never awards
+credits; only saving a completed record through idempotent `COMPLETE_CARDIO`
+can do that. Erasing the game clears the draft too.
 
 **Trail isolation survives the credit change.** Earning Quest Credits does not
 make an activity trail work. No gym session advances trail mileage, fills a
@@ -1043,6 +1048,9 @@ board_update, friend_request, friend_accept + bgm_town / bgm_battle loops.
 early calls). BGM switching lives in Router via TOWN_BGM.
 
 ## 12. Save format — `companionquest:save:v1` key, `version: 14`
+
+An interrupted live cardio console is not part of the completed save schema.
+It uses `companionquest:cardio-draft:v1` and always restores paused; see §5.6a.
 
 ```js
 { version: 14, started, goalId,                    // 'muscle'|'lean'|'root'

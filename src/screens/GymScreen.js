@@ -9,10 +9,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 import { WorldScreen, CompanionStatus, CardioConsole, CardioSummary, DialogueBox } from '../components';
-import { useGame, useCompanion } from '../state';
+import {
+  useGame, useCompanion, loadCardioDraft, saveCardioDraft, clearCardioDraft,
+  normalizeCardioDraft, cardioDraftPayload,
+} from '../state';
 import {
   newSession, tickSession, pauseSession, resumeSession, backgroundSession, tapSession,
   setManual, sessionMetrics, sessionKcal, completeSession,
+  newActivityConfirmation, confirmActivityInterval, confirmSessionActivity,
 } from '../state/cardioSession';
 import { getCardioMachine } from '../data/cardioMachines';
 import { cardioCredits } from '../state/economy';
@@ -23,7 +27,9 @@ import { playSfx } from '../audio';
 import { GYM, mapWithout, isWalkable, tileAt, triggerForCode, interactionForCode } from '../data/maps';
 import { recallSpot, rememberSpot } from './placeMemory';
 import { useKeepAwake } from 'expo-keep-awake';
-import useCardio, { STROKE_LEASE_MS } from './useCardio';
+import useCardio, {
+  confirmationGapMs, STROKE_CONFIRM_GAP_MS, STROKE_MOVING_MS,
+} from './useCardio';
 import { DEFAULT_BODY_WEIGHT_LB } from '../state/cardioMaths';
 import { breakdownSince, formatBreakdown } from '../data/exercises';
 import { getWorkout } from '../data/workouts';
@@ -174,6 +180,54 @@ export default function GymScreen() {
   const [from, setFrom] = useState(null);
   const [note, setNote] = useState(null);
   const playerRef = useRef(player);
+  const recoveryMap = useRef(map);
+  const [draftReady, setDraftReady] = useState(false);
+  const draftWriteTimer = useRef(null);
+
+  // Recover a live console or unsaved summary after a reload. A live session
+  // always comes back paused, with GPS stopped and no movement confirmation
+  // carried across the gap; reopening the app is never evidence of exercise.
+  useEffect(() => {
+    let mounted = true;
+    loadCardioDraft().then((raw) => {
+      if (!mounted) return;
+      const draft = normalizeCardioDraft(raw);
+      if (draft) {
+        setCardio(draft.cardio);
+        setDone(draft.done);
+        const restoreMap = recoveryMap.current;
+        const safeFrom = draft.from && isWalkable(restoreMap, draft.from.x, draft.from.y) ? draft.from : null;
+        const safePlayer = safeFrom && draft.player
+          && draft.player.x >= 0 && draft.player.x < restoreMap.cols
+          && draft.player.y >= 0 && draft.player.y < restoreMap.rows
+          ? draft.player : null;
+        setFrom(safeFrom);
+        if (safePlayer) {
+          playerRef.current = safePlayer;
+          setPlayer(safePlayer);
+        }
+        setNote(draft.cardio ? 'Session recovered and paused — resume when you are safely back on the machine.' : null);
+      }
+      setDraftReady(true);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  // The draft is separate from completed history and never awards anything.
+  // Saving the summary still goes through COMPLETE_CARDIO, whose stable id
+  // makes a crash between completion and draft cleanup harmless to retry.
+  useEffect(() => {
+    if (!draftReady) return undefined;
+    if (draftWriteTimer.current) clearTimeout(draftWriteTimer.current);
+    const payload = cardioDraftPayload({ cardio, done, from, player: playerRef.current });
+    draftWriteTimer.current = setTimeout(() => {
+      if (payload) saveCardioDraft(payload);
+      else clearCardioDraft();
+    }, 200);
+    return () => {
+      if (draftWriteTimer.current) clearTimeout(draftWriteTimer.current);
+    };
+  }, [draftReady, cardio, done, from]);
 
   // Maple's walking tour: { stop, coach:{x,y,facing}, path:[tiles], talking }.
   // While it runs, her static C tile comes off the map so she is not standing
@@ -298,12 +352,27 @@ export default function GymScreen() {
   }, [!!cardio]);
 
   const machine = cardio ? getCardioMachine(cardio.machineId) : null;
-  const { dist, moving, paying } = useCardio({
+  const sessionKey = cardio ? `${cardio.machineId}:${cardio.startedAt}` : null;
+  const sessionPhase = cardio ? cardio.phase : null;
+  const activityClock = useRef(newActivityConfirmation());
+  const confirmDetectedActivity = useCallback((maxGapMs, at = Date.now()) => {
+    const result = confirmActivityInterval(activityClock.current, at, maxGapMs);
+    activityClock.current = result.clock;
+    if (result.seconds > 0) {
+      setCardio((cur) => confirmSessionActivity(cur, result.seconds));
+    }
+  }, []);
+  const sensorGapMs = confirmationGapMs(!!(machine && machine.tracking === 'gps'));
+  const confirmSensorDelta = useCallback(() => {
+    confirmDetectedActivity(sensorGapMs);
+  }, [confirmDetectedActivity, sensorGapMs]);
+  const { dist, moving } = useCardio({
     // The sensor only feeds machines that can honestly use it, and only while
     // the session is actually running: a paused console counts nothing.
     active: !!(cardio && cardio.phase === 'running' && machine && machine.tracking !== 'timer'),
     gpsOnly: !!(machine && machine.tracking === 'gps'),
     activity: machine && machine.tracking === 'gps' ? 'ride' : 'gym-cardio',
+    onDelta: confirmSensorDelta,
   });
 
   // A rower has no sensor to pulse, so its animation comes from the strokes
@@ -318,42 +387,26 @@ export default function GymScreen() {
   const pulseTap = () => {
     setTapPulse(true);
     if (tapTimer.current) clearTimeout(tapTimer.current);
-    // A normal rowing cadence leaves a few seconds between strokes. Keep the
-    // movement lease long enough to bridge that gap, then stop paid time and
-    // animation automatically when no further stroke is logged.
-    tapTimer.current = setTimeout(() => setTapPulse(false), STROKE_LEASE_MS);
+    tapTimer.current = setTimeout(() => setTapPulse(false), STROKE_MOVING_MS);
   };
-  // The lease is a movement signal, so it must never outlive the thing it
-  // describes. Pausing, backgrounding, finishing, leaving and starting a
-  // fresh session all end the rowing; a lease still running across any of
-  // those would hand the seconds on the far side of the transition paid time
-  // nobody pulled for. Keying on the session identity AND its phase clears it
-  // on every one of them, and on unmount.
-  const sessionKey = cardio ? `${cardio.machineId}:${cardio.startedAt}` : null;
-  const sessionPhase = cardio ? cardio.phase : null;
+  // Neither the animation pulse nor the in-arrears confirmation clock may
+  // cross pause, background, finish, leave or a new session. Keying on session
+  // identity AND phase clears both on every transition and on unmount.
   useEffect(() => {
     clearTapLease();
+    activityClock.current = newActivityConfirmation();
     return clearTapLease;
   }, [sessionKey, sessionPhase, clearTapLease]);
   const machineMoving = machine && machine.tracking === 'timer' ? tapPulse : moving;
-  // Animation follows `moving` (tight, so the character stops when you do).
-  // Payment follows `paying`, a longer lease that bridges the sensor's own
-  // reporting gaps — see useCardio for why the two are different numbers.
-  // The rower's stroke lease already spans a rowing cadence, so it serves
-  // both.
-  const machinePaying = machine && machine.tracking === 'timer' ? tapPulse : paying;
   const sessionLive = !!(cardio && cardio.phase === 'running' && machineMoving);
-  const sessionPaying = !!(cardio && cardio.phase === 'running' && machinePaying);
-  const movementRef = useRef(false);
-  movementRef.current = sessionPaying;
 
-  // A running phase is permission to track, not proof of work. Only a live
-  // sensor/GPS delta or a recent rowing stroke banks an ACTIVE second.
-  // Stationary time remains visible as INACTIVE and earns nothing.
+  // Wall time starts as inactive. A later real movement signal can reclassify
+  // only the already-elapsed interval before it as active. Nothing predicts
+  // movement into the future, so the tail after stopping is always unpaid.
   useEffect(() => {
     if (!cardio) return undefined;
     const t = setInterval(() => {
-      setCardio((s) => tickSession(s, movementRef.current));
+      setCardio((s) => tickSession(s, false));
     }, 1000);
     return () => clearInterval(t);
   }, [!!cardio]);
@@ -418,6 +471,7 @@ export default function GymScreen() {
   const logStroke = () => {
     playSfx('cursor');
     pulseTap();
+    confirmDetectedActivity(STROKE_CONFIRM_GAP_MS);
     setCardio((cur) => tapSession(cur));
   };
 
@@ -485,7 +539,7 @@ export default function GymScreen() {
     // On the deck you are on the deck. Getting off is the button, the way it is
     // the bar on a real one. While Maple is showing you her floor, the floor
     // is hers — and when Rowan is marching over, you hold your ground.
-    if (cardio || done || tour || rush) return;
+    if (!draftReady || cardio || done || tour || rush) return;
     const { x, y } = playerRef.current;
     const nx = dir === 'left' ? x - 1 : dir === 'right' ? x + 1 : x;
     const ny = dir === 'up' ? y - 1 : dir === 'down' ? y + 1 : y;
@@ -560,7 +614,9 @@ export default function GymScreen() {
       onMove={move}
       place="Quest Fitness"
       objective={
-        tour
+        !draftReady
+          ? 'Restoring the cardio console'
+          : tour
           ? 'Coach Maple is showing you her floor'
           : rush
             ? 'Rowan is coming over'
@@ -584,9 +640,9 @@ export default function GymScreen() {
                       ? 'Maple called you in — walk up to her for your first guided session'
                       : 'Walk into any equipment to use it'
       }
-      menu={cardio || done || tour || rush ? [] : MENU}
+      menu={!draftReady || cardio || done || tour || rush ? [] : MENU}
       onSelect={(item) => navigate(item.value)}
-      showControl={!cardio && !done && !tour && !rush}
+      showControl={draftReady && !cardio && !done && !tour && !rush}
       dialogue={
         tour && tour.talking ? (
           <DialogueBox key={tour.stop} lines={TOUR_STOPS[tour.stop].lines} onComplete={advanceTour} />

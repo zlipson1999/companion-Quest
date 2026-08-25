@@ -159,8 +159,12 @@ sensed at all still reaches its summary once a real minute has elapsed, so a
 machine that has a display figure to enter (rower, climber, elliptical) can
 keep the row — with zero active seconds, zero credits and no quest progress,
 because typed numbers buy history and nothing else. The payment lease is
-deliberately longer than the animation hold (`screens/useCardio.js`): a
-pedometer reports about once a second, so a 900ms gate would drop real work. Payment happens once by
+gone: a later real step/GPS/stroke signal confirms only the interval before it,
+so sensor batching does not undercount continuous work and the unconfirmed tail
+after the final signal earns nothing. Animation still uses a short visual hold
+(`screens/useCardio.js`). A running or finished-but-unsaved console is kept in
+a separate draft and restores paused after reload; reload time cannot count.
+Payment happens once by
 `COMPLETE_CARDIO` — which
 refuses a session id it already stored, so no reload or double-tap can pay
 twice. Gym cardio (`activity: 'gym-cardio'` or `'ride'`) still never advances
