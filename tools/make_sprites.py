@@ -3798,6 +3798,28 @@ def prop_treadmill():
     return c
 
 
+def prop_bike():
+    """Stationary cycle used as the in-world start point for a real GPS ride."""
+    c = _prop('gymkit')
+    # A single enclosed flywheel, floor stabilisers and an upright console make
+    # this unmistakably an indoor exercise bike — not the outdoor bicycle the
+    # player is actually riding while GPS is active.
+    c.sphere(5, 10, 3.7, 3.7, 'body', ambient=0.20)
+    c.sphere(5, 10, 2.2, 2.2, 'ink', ambient=0.03)
+    c.sphere(5, 10, 0.7, 0.7, 'belly', ambient=0.70)
+    c.limb(5, 10, 8, 5, 0.55, 0.45, 'accent', ambient=0.62)
+    c.limb(8, 5, 9, 11, 0.55, 0.55, 'accent', ambient=0.45)
+    c.limb(5, 10, 9, 11, 0.55, 0.55, 'accent', ambient=0.54)
+    c.rect(6, 4, 10, 5, 'body', 0.28)                        # saddle
+    c.limb(9, 11, 12, 5, 0.55, 0.45, 'body', ambient=0.50)  # console mast
+    c.limb(11, 5, 14, 4, 0.45, 0.35, 'body', ambient=0.66)  # handlebar
+    c.rect(11, 2, 14, 4, 'belly', 0.76)                     # ride display
+    c.rect(12, 3, 13, 3, 'accent', 0.82)
+    c.limb(3, 14, 13, 14, 0.55, 0.55, 'body', ambient=0.24) # floor rail
+    c.rect(1, 15, 15, 15, 'ink', 0)                         # contact shadow
+    return c
+
+
 def prop_bench():
     """Flat bench: pad, frame, feet."""
     c = _prop('gymkit')
@@ -4277,6 +4299,7 @@ def build_all():
     add('tile_gym_mirror', tile_gym_mirror()); add('tile_gym_mirror_b', tile_gym_mirror(1)); add('tile_gym_exit', tile_gym_exit())
     add('prop_rack_barbell', prop_rack_barbell()); add('prop_rack_dumbbell', prop_rack_dumbbell())
     add('prop_machine', prop_machine()); add('prop_treadmill', prop_treadmill())
+    add('prop_bike', prop_bike())
     add('prop_bench', prop_bench()); add('prop_water_station', prop_water_station())
     add('prop_banner', prop_banner()); add('prop_wall_clock', prop_wall_clock())
     add('prop_whiteboard', prop_whiteboard())
@@ -4519,4 +4542,3 @@ if __name__ == '__main__':
     emit_room_light()
     emit_js()
     print('Done.')
-

@@ -276,8 +276,9 @@ const INTENTS = [
     test: /\b(step|walk|distance|mile|run|running|cardio|pedometer)\b/i,
     answer: (f) => {
       const mi = Math.round(f.recent.distanceMi * 10) / 10;
-      if (!mi) return 'No distance logged in the last two weeks. The Route only moves on real steps or a GPS run — there is no walk button, which is the whole point.';
-      return `${mi} miles over the last ${RECENT_DAYS} days, ${Math.round(f.week.distanceMi * 10) / 10} of them this week. Distance advances the Route and rolls encounters; it is the part of the game that only real movement can unlock.`;
+      if (!mi) return 'No distance logged in the last two weeks. Trails move on real steps or a GPS run; an outdoor bike ride earns cardio progress but never fills a walking trail.';
+      const cycled = Math.round((f.recent.cyclingMi || 0) * 10) / 10;
+      return `${mi} total miles over the last ${RECENT_DAYS} days${cycled ? `, including ${cycled} cycled` : ''}; ${Math.round(f.week.distanceMi * 10) / 10} miles this week. Only miles logged on a selected trail advance that trail and roll encounters. Outdoor bike rides still earn distance XP and Trail Credit, but stay out of walking-trail quotas.`;
     },
   },
 ];

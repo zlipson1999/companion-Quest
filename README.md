@@ -22,9 +22,10 @@ npx expo start
 
 Scan the QR code with **Expo Go** (iOS/Android).
 
-- **On a real phone:** the pedometer is detected and your real steps drive the Route.
+- **On a real phone:** the pedometer drives walking, and GPS drives outdoor runs
+  and bicycle rides started from the stationary bikes in Quest Fitness.
 - **On desktop/simulator/web:** a **DEV-ONLY step injector** appears on the Route
-  screen and the cardio deck (`+0.05mi / +0.25mi / +1mi`) so the loop can be
+  screen and the treadmill/rower deck (`+0.05mi / +0.25mi / +1mi`) so the loop can be
   tested where there is no pedometer. It is gated on `__DEV__`, which is false in
   **every release build — the published web build included** — so it is absent
   from anything a player runs, not merely hidden on phones. That is the core rule
@@ -141,4 +142,3 @@ Expo (React Native) · expo-sensors (Pedometer + accelerometer fallback) ·
 expo-location (GPS) · expo-camera (the form-check mirror) · expo-gl + three (the
 3D muscle map) · AsyncStorage · expo-av · @expo-google-fonts/press-start-2p ·
 expo-keep-awake. No navigation or state library — one reducer and a small router.
-

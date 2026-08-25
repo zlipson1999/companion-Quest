@@ -265,7 +265,7 @@ function bumpBehavior(member, event, payload, state) {
   if (key === 'miles') next.miles = Math.round((next.miles + (payload.miles || 0)) * 1000) / 1000;
   else if (key === 'cardio') next.cardio = Math.round((next.cardio + (payload.miles || 0)) * 1000) / 1000;
   else if (key) next[key] += payload.amount || 1;
-  if (event === 'distance' && payload.outdoor) {
+  if (event === 'distance' && (payload.outdoor || payload.activity === 'ride')) {
     next.cardio = Math.round((next.cardio + (payload.miles || 0)) * 1000) / 1000;
   }
   const streak = (state && state.stats && state.stats.streak) || 0;
@@ -285,7 +285,14 @@ function pushMemory(member, mem) {
 function memoriesFor(member, creature, event, payload, prevBond) {
   let next = member;
   const name = creature && creature.name;
-  if (event === 'distance' && (member.behaviors.miles || 0) > 0 && !(member.memories || []).some((m) => m.id === 'first-walk')) {
+  if (event === 'distance' && payload.activity === 'ride' && !(member.memories || []).some((m) => m.id === 'first-ride')) {
+    next = pushMemory(next, {
+      id: 'first-ride',
+      title: 'First Ride Together',
+      detail: `${name} pedalled through its first real ride with you — ${(payload.miles || 0).toFixed(2)} mi.`,
+    });
+  }
+  if (event === 'distance' && payload.activity !== 'ride' && (member.behaviors.miles || 0) > 0 && !(member.memories || []).some((m) => m.id === 'first-walk')) {
     next = pushMemory(next, {
       id: 'first-walk',
       title: 'First Walk Together',

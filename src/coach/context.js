@@ -41,7 +41,8 @@ export function buildCoachContext(state, companion) {
   const t = totals(recent);
   lines.push(
     `Last ${RECENT_DAYS} days: ${t.activeDays} active days, ${t.restDays} logged rest days, ` +
-      `${t.sessions + t.workouts} workouts, ${Math.round(t.distanceMi * 10) / 10} miles walked or run, ` +
+      `${t.sessions + t.workouts} workouts, ${Math.round(t.distanceMi * 10) / 10} total miles` +
+      `${t.cyclingMi ? ` (${Math.round(t.cyclingMi * 10) / 10} cycled)` : ''}, ` +
       `${t.habitLogs} habit logs.`
   );
 

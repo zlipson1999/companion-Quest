@@ -60,7 +60,7 @@ export const HUB = {
 //   - Free weights down the WEST wall: kettlebells, then the dumbbell run
 //     against the wall with a working aisle in front of it, benches and the
 //     EZ-bar cradle out on the floor beside it, mirrors at the far end.
-//   - Cardio down the EAST wall in one unbroken line, treadmills then rowers,
+//   - Cardio down the EAST wall in one unbroken line: treadmills, bikes, rowers,
 //     with the water station at the head of it.
 //   - Selectorised machines in the MIDDLE, two rows with an aisle between them
 //     and a cross-aisle through the middle, which is how a circuit is walked.
@@ -72,7 +72,8 @@ export const HUB = {
 //
 //   =  front wall     |  side wall      M  mirrored wall     .  floor
 //   R  power rack     b  dumbbell run   z  EZ-bar cradle  B  bench
-//   K  machine        t  treadmill      q  rower        U  pull-up bar
+//   K  machine        t  treadmill      c  bike         q  rower
+//   U  pull-up bar
 //   j  kettlebells    S  stretch rig    Q  medicine balls
 //   w  water station  L  lockers        N  reception
 //   J  bar counter     I  blender station
@@ -97,8 +98,8 @@ export const GYM = {
     'Mb.B...........t|',
     'Mb.B...K.K.....t|',
     'Mb.....K.K.....t|',
-    'Mb.z...........t|',
-    'M..z...K.K.....q|',
+    'Mb.z...........c|',
+    'M..z...K.K.....c|',
     'M......K.K.....q|',
     'M..............q|',
     'MS.............Q|',
@@ -233,9 +234,9 @@ const BLOCKED = new Set([
 // so the room teaches by being walked around rather than by listing itself.
 //
 // The cardio deck is the one that needed a distinction rather than a link.
-// Treadmill and rower run Route's machinery in `treadmill` mode: the same
-// miles, the same milestones, the same progression — and nothing that stops
-// you. Encounters and trail challenges belong to Route 1, outdoors.
+// Treadmill, bike and rower share the room's cardio console. Treadmill/rower
+// listen for movement on the phone; the bike explicitly starts outdoor GPS.
+// None passes a route id, so gym effort never fills an outdoor trail quota.
 const INTERACTIONS = {
   // The iron is where you WRITE a session. Ask Coach if you want one handed to
   // you. That split is the whole logic of the room: equipment is the work,
@@ -252,6 +253,10 @@ const INTERACTIONS = {
   j: { screen: 'forge', label: 'Kettlebells — build your own session' },
   // Not a screen: you step ONTO these and the room stays around you.
   t: { cardio: 'treadmill', label: 'Treadmill — cardio, no interruptions' },
+  // `c` is a kitchen counter at home, whose map-local interaction overrides
+  // this one. In the gym it is the cycle station; TileMap has the matching
+  // map-local prop override so the code cannot draw a counter on the cardio wall.
+  c: { cardio: 'bike', label: 'Bike — start a real outdoor GPS ride' },
   q: { cardio: 'rower', label: 'Rower — cardio, no interruptions' },
   Z: { screen: 'week', label: "Whiteboard — this week's work" },
   L: { screen: 'bag', label: 'Lockers — your supplies' },
@@ -362,4 +367,3 @@ export const TRIGGER_LABELS = {
 };
 
 export default HUB;
-

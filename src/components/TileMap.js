@@ -111,6 +111,18 @@ const PROP_SPRITES = {
   Z: 'prop_whiteboard',
 };
 
+// A few room codes deliberately reuse a letter because maps are separate
+// physical spaces. `c` is the kitchen counter at home and the cycle station in
+// Quest Fitness. Keep the visual override beside the prop table so adding a
+// map-local interaction can never leave the wrong object on the floor.
+const PROP_SPRITES_BY_MAP = {
+  gym: { c: 'prop_bike' },
+};
+
+function propFor(map, code) {
+  return (map && PROP_SPRITES_BY_MAP[map.id] && PROP_SPRITES_BY_MAP[map.id][code]) || PROP_SPRITES[code];
+}
+
 // Floor zones are REGIONS a map declares, not tile codes.
 //
 // As codes they could only ever be the floor a tile WAS, so the moment a rack
@@ -327,11 +339,11 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
     layers = code === ',' && !floor
       ? [{ key: ground }, ...edges, { key: 'prop_flowers' }]
       : [{ key: ground }, ...edges];
-  } else if (PROP_SPRITES[code]) {
+  } else if (propFor(map, code)) {
     // Wall dressing hangs on the wall, not on the floor.
     const onWall = WALL_DRESSING.has(code);
     const under = onWall ? groundKey(wallField || GROUND_FIELD, x, y) : ground;
-    const prop = PROP_SPRITES[code] + (RUN_PROPS.has(code) ? runSuffix(map, code, x, y) : '');
+    const prop = propFor(map, code) + (RUN_PROPS.has(code) ? runSuffix(map, code, x, y) : '');
     layers = [{ key: under }, ...(onWall ? [] : edges), { key: prop }];
   } else if (FIELD_CODES[code]) {
     const wall = code === 'W' && wallField ? wallField : FIELD_CODES[code];
@@ -445,7 +457,7 @@ function Walker({ walker, s }) {
   );
 }
 
-export default function TileMap({ map, player, tileSize, style, viewport, walker }) {
+export default function TileMap({ map, player, tileSize, style, viewport, walker, playerActivity }) {
   const { state } = useGame();
   const s = tileSize;
   const pos = useRef(new Animated.ValueXY({ x: player.x * s, y: player.y * s })).current;
@@ -471,6 +483,7 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
   const cam = useRef(new Animated.ValueXY(cameraFor(player.x, player.y))).current;
   const [frame, setFrame] = useState(0);
   const [walkFrame, setWalkFrame] = useState(0);
+  const [activityFrame, setActivityFrame] = useState(0);
   const lastPos = useRef(`${player.x},${player.y}`);
   const parkTimer = useRef(null);
 
@@ -478,6 +491,20 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
     const t = setInterval(() => setFrame((f) => f + 1), WATER_FRAME_MS);
     return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    if (!playerActivity || !playerActivity.active) {
+      setActivityFrame(0);
+      return undefined;
+    }
+    // Alternating the existing authored stride frames gives the treadmill a
+    // real gait and the side-on rider two distinct leg positions. The GPS/step
+    // pulse owns whether this loop runs; an idle person never pedals by magic.
+    setActivityFrame(1);
+    const ms = playerActivity.type === 'bike' ? 180 : 220;
+    const t = setInterval(() => setActivityFrame((f) => (f === 1 ? 2 : 1)), ms);
+    return () => clearInterval(t);
+  }, [playerActivity && playerActivity.type, playerActivity && playerActivity.active]);
 
   useEffect(() => () => {
     if (parkTimer.current) clearTimeout(parkTimer.current);
@@ -532,8 +559,14 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
     [map, s, frame, floor, wallField]
   );
 
-  const facing = player.facing || 'down';
-  const spriteKey = playerSprite(state.playerGender, facing, walkFrame);
+  const usingBike = playerActivity && playerActivity.type === 'bike';
+  const usingTreadmill = playerActivity && playerActivity.type === 'treadmill';
+  const facing = usingBike ? 'left' : usingTreadmill ? 'up' : (player.facing || 'down');
+  const spriteKey = playerSprite(
+    state.playerGender,
+    facing,
+    usingBike || usingTreadmill ? activityFrame : walkFrame
+  );
 
   const world = (
     <Animated.View
@@ -566,11 +599,17 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
           transform: [{ translateX: pos.x }, { translateY: pos.y }],
         }}
       >
-        <PixelSprite
-          spriteKey={spriteKey}
-          palette={outfitPalette(state.playerOutfit, state.playerGender)}
-          size={widthForHeight(spriteKey, s * 1.85)}
-        />
+        <View
+          style={usingBike ? {
+            transform: [{ translateX: -s * 0.08 }, { translateY: -s * 0.04 }],
+          } : null}
+        >
+          <PixelSprite
+            spriteKey={spriteKey}
+            palette={outfitPalette(state.playerOutfit, state.playerGender)}
+            size={widthForHeight(spriteKey, s * (usingBike ? 1.5 : 1.85))}
+          />
+        </View>
       </Animated.View>
     </Animated.View>
   );

@@ -57,11 +57,12 @@ pedometer as well, which sidesteps the accelerometer path completely.
 ## 3. The stand-in buttons — DEVELOPMENT ONLY
 
 When neither source exists at all (a desktop browser, a simulator), the trail
-and the cardio console offer `+0.05mi` / `+0.25mi` / `+1mi` buttons.
+and the treadmill/rower console offer `+0.05mi` / `+0.25mi` / `+1mi` buttons.
+The bike never does: its outdoor ride is GPS-only even in development.
 
 These are gated on three things: `__DEV__ && source === 'none' && !running`.
-The last one means they also disappear for the duration of a GPS run, which is
-correct — a run is already measuring real distance — but surprising enough that
+The last one means they also disappear for the duration of a GPS run or ride,
+which is correct — GPS is already measuring real distance — but surprising enough that
 a reader who did not know would report it as a bug. A button that adds
 distance you did not walk is the exact thing this game is built not to have —
 real life is the game, there are no walk buttons — so they exist to test on a

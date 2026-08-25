@@ -165,6 +165,8 @@ export default function SummaryScreen() {
           </PixelText>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
             <StatCell label="Distance" value={`${(s.distanceMi || 0).toFixed(2)} mi`} color={palette.primaryDark} />
+            <StatCell label="Cycling" value={`${(s.cyclingMi || 0).toFixed(2)} mi`} color={palette.primaryDark} />
+            <StatCell label="Bike rides" value={s.ridesDone || 0} color={palette.accentDark} />
             <StatCell label="Total steps" value={s.totalSteps.toLocaleString()} />
             <StatCell label="Milestones" value={s.milestonesReached} />
             <StatCell label="Companions" value={s.caught || 0} color={palette.success} />

@@ -48,6 +48,31 @@ export function kcalFor(miles, seconds, bodyWeightLb = DEFAULT_BODY_WEIGHT_LB) {
   return miles * bodyWeightLb * rate;
 }
 
+// Outdoor cycling is measured by GPS, so average speed is the honest intensity
+// signal available without pretending the phone can see cadence or resistance.
+export function speedFor(miles, seconds) {
+  if (miles < 0.02 || seconds < 5) return null;
+  return miles / (seconds / 3600);
+}
+
+// MET bands from an easy roll through a hard road ride. This stays an estimate:
+// wind, grade, bike weight and drafting are invisible to the phone. Gross kcal
+// per minute = MET * 3.5 * body mass kg / 200.
+export function cyclingMet(speedMph) {
+  if (speedMph == null || !isFinite(speedMph)) return 4;
+  if (speedMph < 10) return 4;
+  if (speedMph < 12) return 6.8;
+  if (speedMph < 14) return 8;
+  if (speedMph < 16) return 10;
+  return 12;
+}
+
+export function kcalForBike(miles, seconds, bodyWeightLb = DEFAULT_BODY_WEIGHT_LB) {
+  if (miles <= 0 || seconds < 5) return 0;
+  const kg = Math.max(1, bodyWeightLb) / LB_PER_KG;
+  return cyclingMet(speedFor(miles, seconds)) * 3.5 * kg / 200 * (seconds / 60);
+}
+
 export function formatClock(seconds) {
   const s = Math.max(0, Math.floor(seconds));
   const mm = String(Math.floor(s / 60)).padStart(2, '0');
@@ -62,10 +87,25 @@ export function formatPace(pace) {
   return ss === 60 ? `${mm + 1}:00` : `${mm}:${String(ss).padStart(2, '0')}`;
 }
 
+export function formatSpeed(speed) {
+  return speed == null || !isFinite(speed) ? '--.-' : speed.toFixed(1);
+}
+
 export const LB_PER_KG = 2.2046226218;
 
 export function displayWeight(lb, units) {
   return units === 'kg' ? Math.round(lb / LB_PER_KG) : Math.round(lb);
 }
 
-export default { MILES_PER_LAP, lapsFor, paceFor, kcalFor, formatClock, formatPace };
+export default {
+  MILES_PER_LAP,
+  lapsFor,
+  paceFor,
+  speedFor,
+  kcalFor,
+  kcalForBike,
+  cyclingMet,
+  formatClock,
+  formatPace,
+  formatSpeed,
+};

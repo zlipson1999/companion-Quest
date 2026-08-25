@@ -7,7 +7,7 @@ import { rollAllModules, todayKey } from '../modules';
 import { DEFAULT_BODY_WEIGHT_LB } from './cardioMaths';
 import { trim } from './history';
 
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
@@ -34,6 +34,8 @@ export const FRESH = {
   stats: {
     totalSteps: 0,
     distanceMi: 0,
+    cyclingMi: 0,
+    ridesDone: 0,
     routeMi: 0,
     xpCarry: 0,       // fractional walking XP not yet paid out
     creditCarry: 0,   // ...and the same for credit
@@ -150,6 +152,9 @@ export function hydrateSave(saved) {
   if ((saved.version || 1) < 10 && merged.settings.control === 'stick') {
     merged.settings.control = 'dpad';
   }
+  // v11 records outdoor bicycle mileage and completed rides separately. The
+  // additive defaults above are the migration: prior saves keep every mile
+  // they already earned and begin the two new counters at zero.
   merged.version = SAVE_VERSION;
 
   // v3 also moved "today" from a UTC date to a LOCAL one. A pre-v3

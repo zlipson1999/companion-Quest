@@ -174,6 +174,7 @@ function reducer(state, action) {
     case 'ADD_DISTANCE': {
       const mi = Math.max(0, action.payload.miles || 0);
       const steps = Math.max(0, Math.floor(action.payload.steps || 0));
+      const ride = action.payload.activity === 'ride';
       if (mi <= 0 && steps <= 0) return state;
       const pacing = pacingForGoal(state.goalId);
       let routeMi = state.stats.routeMi + mi;
@@ -199,7 +200,8 @@ function reducer(state, action) {
         mem = liveOnMember(mem, 'distance', {
           miles: mi,
           routeId: action.payload.routeId,
-          outdoor: !!action.payload.routeId,
+          outdoor: !!action.payload.routeId || ride,
+          activity: action.payload.activity,
           milestone: hitMilestones > 0,
           todayMiles: todayMi,
         }, state);
@@ -211,15 +213,35 @@ function reducer(state, action) {
         ...withEvo,
         trails,
         credits: earned.credits,
-        history: remember(state, { steps, distanceMi: mi, load: mi * LOAD_PER_MILE, xp: walkXp }),
+        history: remember(state, {
+          steps,
+          distanceMi: mi,
+          cyclingMi: ride ? mi : 0,
+          load: mi * LOAD_PER_MILE,
+          xp: walkXp,
+        }),
         stats: {
           ...state.stats,
           xpCarry: carry - walkXp,
           creditCarry: earned.creditCarry,
           totalSteps: state.stats.totalSteps + steps,
           distanceMi: state.stats.distanceMi + mi,
+          cyclingMi: (state.stats.cyclingMi || 0) + (ride ? mi : 0),
           routeMi,
           milestonesReached,
+        },
+      };
+    }
+
+    case 'COMPLETE_CARDIO': {
+      const { station, miles = 0, seconds = 0 } = action.payload || {};
+      if (station !== 'bike' || miles < 0.01 || seconds < 5) return state;
+      return {
+        ...state,
+        history: remember(state, { rides: 1 }),
+        stats: {
+          ...state.stats,
+          ridesDone: (state.stats.ridesDone || 0) + 1,
         },
       };
     }

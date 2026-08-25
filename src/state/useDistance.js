@@ -1,6 +1,6 @@
 // Distance engine. Real movement drives the game: your steps become miles
-// (~2000 steps/mi) indoors, and a GPS "Start Run" measures real outdoor miles.
-// While a run is active, steps are ignored for distance so miles aren't double
+// (~2000 steps/mi) indoors, and GPS measures real outdoor runs or bicycle rides.
+// While GPS is active, steps are ignored for distance so miles aren't double
 // counted. When no pedometer exists (desktop/sim), a dev injector is exposed.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -206,7 +206,7 @@ export function useDistance() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setGpsError('Location permission is needed for GPS runs.');
+        setGpsError('Location permission is needed for GPS tracking.');
         return false;
       }
       lastCoordRef.current = null;
@@ -234,14 +234,24 @@ export function useDistance() {
   const stopRun = useCallback(() => {
     runningRef.current = false;
     setRunning(false);
-    if (gpsSubRef.current && gpsSubRef.current.remove) gpsSubRef.current.remove();
+    try {
+      if (gpsSubRef.current && gpsSubRef.current.remove) gpsSubRef.current.remove();
+    } catch (_error) {
+      // Expo Location's web shim can throw after it has already detached its
+      // browser watcher. Ending a ride must still return the player to the gym.
+    }
     gpsSubRef.current = null;
     lastCoordRef.current = null;
   }, []);
 
   useEffect(
     () => () => {
-      if (gpsSubRef.current && gpsSubRef.current.remove) gpsSubRef.current.remove();
+      try {
+        if (gpsSubRef.current && gpsSubRef.current.remove) gpsSubRef.current.remove();
+      } catch (_error) {
+        // The watcher is already ending; never turn a platform cleanup quirk
+        // into an unmount crash.
+      }
     },
     []
   );
