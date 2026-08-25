@@ -5,11 +5,11 @@ import { migrateGoalId } from '../data/goals';
 import { emptyTrails, normalizeTrails } from '../data/routes';
 import { rollAllModules, todayKey } from '../modules';
 import { DEFAULT_BODY_WEIGHT_LB } from './cardioMaths';
-import { normalizeCardioSessions } from './cardioHistory';
+import { cardioTotals, normalizeCardioSessions } from './cardioHistory';
 import { normalizeGymCheckIns } from './gymCheckIns';
 import { trim } from './history';
 
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
@@ -48,6 +48,12 @@ export const FRESH = {
     rowerStrokes: 0,
     stairFloors: 0,
     ellipticalStrides: 0,
+    // v14: lifetime metres pulled, and lifetime sessions per machine. The
+    // Phone's by-machine panel used to count sessions out of the bounded
+    // 120-row log while reading its distances from these lifetime counters,
+    // so after 120 sessions the two halves of a single row disagreed.
+    rowerMeters: 0,
+    machineSessions: {},
     routeMi: 0,
     xpCarry: 0,       // fractional walking XP not yet paid out
     creditCarry: 0,   // ...and the same for credit
@@ -113,7 +119,12 @@ export function hydrateSave(saved) {
     // Saves written before the Forge Might / Travel Light / Take Root goal
     // set carry the old ids; translate once so nothing downstream has to.
     goalId: migrateGoalId(saved.goalId) || null,
-    stats: { ...FRESH.stats, ...(saved.stats || {}), exercises: { ...((saved.stats || {}).exercises || {}) } },
+    stats: {
+      ...FRESH.stats,
+      ...(saved.stats || {}),
+      exercises: { ...((saved.stats || {}).exercises || {}) },
+      machineSessions: { ...((saved.stats || {}).machineSessions || {}) },
+    },
     bag: { ...(saved.bag || {}) },
     discoveredCharms: { ...(saved.discoveredCharms || {}) },
     quests: {
@@ -189,6 +200,18 @@ export function hydrateSave(saved) {
   // so nothing here can promote one to a rewarded completion). Running this
   // again changes nothing — normalization is idempotent.
   merged.cardioSessions = normalizeCardioSessions(saved.cardioSessions);
+  // v14 promotes per-machine session counts and rowed metres to lifetime
+  // counters. These are seeded ONCE from the retained log — the exact figures
+  // the Phone was already showing, so nobody's panel drops on upgrade — and
+  // are exact from then on. The seed is version-gated because running it
+  // twice would double-count every session still in the log.
+  if ((saved.version || 1) < 14) {
+    const seeded = cardioTotals(merged.cardioSessions);
+    merged.stats.machineSessions = Object.fromEntries(
+      Object.entries(seeded.byMachine).map(([id, m]) => [id, m.sessions]),
+    );
+    merged.stats.rowerMeters = seeded.byMachine.rower.machineMeters;
+  }
   // Old check-ins kept only the day; the timestamp is synthesized at local
   // noon because the record never held the real arrival time. New check-ins
   // keep the exact first arrival of each day.

@@ -273,8 +273,15 @@ function reducer(state, action) {
           cardioCreditsEarned: (state.stats.cardioCreditsEarned || 0) + (s.creditsAwarded || 0),
           treadmillMi: (state.stats.treadmillMi || 0) + (s.station === 'treadmill' ? s.miles : 0),
           rowerStrokes: (state.stats.rowerStrokes || 0) + s.strokes,
+          rowerMeters: (state.stats.rowerMeters || 0) + s.machineMeters,
           stairFloors: (state.stats.stairFloors || 0) + s.floors,
           ellipticalStrides: (state.stats.ellipticalStrides || 0) + s.strides,
+          // Lifetime, unlike the 120-row log: the by-machine panel reads
+          // these so its session counts never fall behind its distances.
+          machineSessions: {
+            ...state.stats.machineSessions,
+            [s.station]: ((state.stats.machineSessions || {})[s.station] || 0) + 1,
+          },
         },
       };
     }

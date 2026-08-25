@@ -16,6 +16,11 @@ import { cardioCredits } from './economy';
 export const KEEP_CARDIO_SESSIONS = 120;
 export const CARDIO_STATIONS = CARDIO_MACHINE_IDS;
 
+// A session the phone could not sense at all is still a session if the player
+// stayed on the machine for at least this long AND finished by entering what
+// its own display said. Below it, with nothing entered, it is console noise.
+export const CARDIO_LOGGABLE_SEC = 60;
+
 const round3 = (n) => Math.round(n * 1000) / 1000;
 
 const num = (v, max = Infinity) => {
@@ -29,30 +34,46 @@ export function cardioSession(raw) {
   if (!endedAt || Number.isNaN(Date.parse(endedAt))) return null;
   const seconds = Math.max(0, Math.floor(num(raw.seconds)));
   const activeSeconds = Math.max(0, Math.floor(num(raw.activeSeconds))) || seconds;
-  // Anything under five active seconds is console noise, not a workout.
-  if (activeSeconds < 5) return null;
+  const inactiveSeconds = Math.max(0, Math.floor(num(raw.inactiveSeconds)));
+  const pausedSeconds = Math.max(0, Math.floor(num(raw.pausedSeconds)));
   const miles = round3(num(raw.miles, 500));
+  const strokes = Math.floor(num(raw.strokes, 3000));
+  const floors = Math.floor(num(raw.floors, 400));
+  const machineMiles = round3(num(raw.machineMiles, 20));
+  // A rower speaks metres, not miles; kept in its own units rather than
+  // converted, so the split it reports is the split the machine showed.
+  const machineMeters = Math.floor(num(raw.machineMeters, 42000));
+  // Five active seconds is a workout. So is a machine the phone never sensed
+  // — a rower nobody tapped through, a treadmill walked with the phone in a
+  // locker — PROVIDED the player stayed on it a real minute and finished by
+  // typing in what its display said. That row is honest history: zero
+  // measured active time, zero credits, no quest progress, and the figure
+  // marked manual. Without the figure there is nothing to keep.
+  const loggedWork = strokes > 0 || floors > 0 || machineMiles > 0 || machineMeters > 0;
+  const elapsed = activeSeconds + inactiveSeconds + pausedSeconds;
+  if (activeSeconds < 5 && !(loggedWork && elapsed >= CARDIO_LOGGABLE_SEC)) return null;
   return {
     id: typeof raw.id === 'string' && raw.id ? raw.id : `${endedAt}:${raw.station}`,
     station: raw.station,
     startedAt: typeof raw.startedAt === 'string' && !Number.isNaN(Date.parse(raw.startedAt)) ? raw.startedAt : null,
     endedAt,
     // `seconds` stays the legacy display field; activeSeconds is canonical.
+    // They are deliberately the SAME number: a hand-logged row must not be
+    // able to report elapsed time here, or code reading `seconds` as a
+    // fallback would let typed figures buy quest progress.
     seconds: activeSeconds,
     activeSeconds,
-    inactiveSeconds: Math.max(0, Math.floor(num(raw.inactiveSeconds))),
-    pausedSeconds: Math.max(0, Math.floor(num(raw.pausedSeconds))),
+    inactiveSeconds,
+    pausedSeconds,
     miles,
     steps: Math.floor(num(raw.steps, 200000)),
-    strokes: Math.floor(num(raw.strokes, 3000)),
-    floors: Math.floor(num(raw.floors, 400)),
+    strokes,
+    floors,
     strides: Math.floor(num(raw.strides, 200000)),
     level: Math.floor(num(raw.level, 25)),
     cadence: Math.floor(num(raw.cadence, 200)),
-    machineMiles: round3(num(raw.machineMiles, 20)),
-    // A rower speaks metres, not miles; kept in its own units rather than
-    // converted, so the split it reports is the split the machine showed.
-    machineMeters: Math.floor(num(raw.machineMeters, 42000)),
+    machineMiles,
+    machineMeters,
     kcal: Math.floor(num(raw.kcal, 5000)),
     creditsAwarded: Math.max(0, Math.floor(num(raw.creditsAwarded, 15))),
     source: ['sensor', 'gps', 'manual', 'timer', 'mixed', 'legacy'].includes(raw.source) ? raw.source : 'legacy',
@@ -81,7 +102,11 @@ export function finishCardioSession({
     }
   });
   const auto = usedGps ? 'gps' : usedSensor ? 'sensor' : 'timer';
-  const source = usedManual ? 'mixed' : auto;
+  // 'mixed' means the phone measured something and the player topped it up
+  // from the display. When nothing was measured at all, the row is purely
+  // 'manual' and should say so rather than implying a sensor contributed.
+  const measured = usedGps || usedSensor || activeSeconds >= 5;
+  const source = usedManual ? (measured ? 'mixed' : 'manual') : auto;
   return cardioSession({
     id: `${startedAt || endedAt}:${station}`,
     station,
@@ -164,6 +189,7 @@ export function cardioTotals(sessions) {
 
 export default {
   KEEP_CARDIO_SESSIONS,
+  CARDIO_LOGGABLE_SEC,
   CARDIO_STATIONS,
   cardioSession,
   finishCardioSession,
