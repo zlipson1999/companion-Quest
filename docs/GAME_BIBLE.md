@@ -456,41 +456,45 @@ showing up would have.
 
 ### 5.6b The Quest Ledger and Quest Tokens (`data/quests.js`)
 
-Quests are free: optional goals a player chooses at the reception desk,
-never purchased. Accepting, abandoning and turning in move no credits in
-either direction (`ACCEPT_QUEST` / `ABANDON_QUEST` / `TURN_IN_QUEST` — the
-`test_quest_ledger.mjs` guard reads the reducer source and fails if any of
-those cases so much as mentions credits). A quest is completed by real
-recorded behavior — the SAME stats and module buckets everything else
-keeps, measured against a snapshot taken at acceptance so only new effort
-counts — and turned in at the desk for its category Token plus a reward
-paid through the usual `{xp,bond,evo,heal}` contract.
+Quests are bought with Quest Credits — the other place besides the smoothie
+bar that credits are spent. Prices run 5–15,
+set by how easy the quest is and how good its reward is: the one-ride
+errand is the cheapest way in, the seven-day flagship with the Kinship
+Knot is the most expensive. Buying (`BUY_QUEST`) is the ONLY credit
+movement in the ledger: abandoning refunds nothing and turning in mints
+nothing (`test_quest_ledger.mjs` reads the reducer source and fails if the
+abandon or turn-in cases so much as mention credits). A quest is completed
+by real recorded behavior — the SAME stats and module buckets everything
+else keeps, measured against a snapshot taken at purchase so only new
+effort counts — and turned in at the desk for its category Token plus a
+reward paid through the usual `{xp,bond,evo,heal}` contract.
 7 Quest Tokens, one per category; 8 quests on
-the board; at most 3 active; 7-day windows;
-abandoning frees the slot with nothing lost because nothing was paid.
-Tokens are collectible proof of completion, never money: they cannot be
-spent or sold, never convert to credits, and never touch trail progress.
-Reception check-in is attendance only, once per local day, timestamped
-(§12 `gymCheckIns`); the Seven-Day Foundation counts post-acceptance
-check-in days.
+the board; at most 3 active; 7-day windows; abandoning frees the slot with
+no refund. Tokens are collectible proof of completion, never money: they
+cannot be spent or sold, never convert to credits, and never touch trail
+progress. Reception check-in is attendance only, once per local day,
+timestamped (§12 `gymCheckIns`); the Seven-Day Foundation counts
+post-purchase check-in days.
 
-| quest | token | requirements | reward |
-|---|---|---|---|
-| Ten-Minute Trek | Stride | walk 0.5 real mi | +40 XP |
-| Wheels in Motion | Stride | 1 Bike Ride | +30 XP |
-| Foundation Set | Forge | 2 strength sessions | +6 Evolve Points |
-| Balanced Bowl | Harvest | 3 meals logged | +30 Resolve, +6 bond |
-| Fill the Flask | Rill | water goal on 2 days | +35 Resolve |
-| Rest to Rise | Hearth | sleep logged 2 nights | Resolve fully restored |
-| Five Calm Breaths | Stillwater | 2 stillness sessions | +12 bond |
-| Seven-Day Foundation | Root | 3 check-ins, 2 strength, 1 cardio, water×4, meals×3, sleep×2, stillness×1 | +10 bond + 1 Kinship Knot |
+| quest | token | price | requirements | reward |
+|---|---|---|---|---|
+| Ten-Minute Trek | Stride | 6 | walk 0.5 real mi | +40 XP |
+| Wheels in Motion | Stride | 5 | 1 Bike Ride | +30 XP |
+| Foundation Set | Forge | 10 | 2 strength sessions | +6 Evolve Points |
+| Balanced Bowl | Harvest | 8 | 3 meals logged | +30 Resolve, +6 bond |
+| Fill the Flask | Rill | 8 | water goal on 2 days | +35 Resolve |
+| Rest to Rise | Hearth | 9 | sleep logged 2 nights | Resolve fully restored |
+| Five Calm Breaths | Stillwater | 7 | 2 stillness sessions | +12 bond |
+| Seven-Day Foundation | Root | 15 | 3 check-ins, 2 strength, 1 cardio, water×4, meals×3, sleep×2, stillness×1 | +10 bond + 1 Kinship Knot |
 
 Rewards are matched to what each category already pays elsewhere: movement
 is the XP engine, training earns Evolve Points, food and water restore,
 sleep is the full heal, stillness pays bond, and consistency earns a
-Kinship Knot. No quest mints credits, and no quest costs them. (For one
-release quests were bought with Quest Credits; the v12 migration refunds
-those historical prices exactly once, guarded by `quests.refundApplied`.)
+Kinship Knot. No quest mints credits — a bought quest that refunded its
+price would be a money printer, and the economy has none. (The launch
+ledger priced quests at 10–30; the v12 migration refunds those historical
+prices exactly once, guarded by `quests.refundApplied`, and the 5–15
+pricing applies from then on.)
 Token art: 7 painted plates in `assets/items/tokens/` (masters mirrored in
 `tools/reference_art/tokens/`), drawn via `data/tokenImages.js`.
 

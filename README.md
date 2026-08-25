@@ -29,8 +29,9 @@ Scan the QR code with **Expo Go** (iOS/Android).
   advance a trail or its milestones and never earn Quest Credits.
 - **Reception is attendance only:** walking into the desk records the local date
   and first arrival time for that day. Streaks, total check-in days and visit
-  history live in the Phone's Personal Tracker, and the desk's free Quest
-  Ledger hands out healthy-habit quests whose Tokens are proof, not currency.
+  history live in the Phone's Personal Tracker, and the desk's Quest Ledger
+  sells healthy-habit quests for 5–15 Quest Credits — their Tokens are proof,
+  not currency.
 - **On desktop/simulator/web:** a **DEV-ONLY step injector** appears on the Route
   screen and the treadmill/rower deck (`+0.05mi / +0.25mi / +1mi`) so the loop can be
   tested where there is no pedometer. It is gated on `__DEV__`, which is false in

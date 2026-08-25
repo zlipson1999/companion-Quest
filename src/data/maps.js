@@ -266,8 +266,9 @@ const INTERACTIONS = {
   // opens. Do not move the boards onto N.
   N: { screen: 'reception', label: 'Reception — check in and the Quest Ledger' },
   r: { screen: 'board', label: 'Noticeboard — how your friends are doing' },
-  // Front of house. The bar is the one place credit is spent, and credit is
-  // only ever minted by real effort — see src/state/economy.js.
+  // Front of house. The bar and the reception Quest Ledger are the only
+  // places credit is spent, and credit is only ever minted by real effort —
+  // see src/state/economy.js.
   J: { screen: 'smoothiebar', label: 'Smoothie bar — blends, and Kinship Knots' },
   I: { screen: 'smoothiebar', label: 'Smoothie bar — blends, and Kinship Knots' },
   // A flat bench is iron, not furniture. It used to open 'rest', which is the

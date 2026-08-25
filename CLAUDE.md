@@ -150,8 +150,9 @@ Bike Ride work is also kept separately in `stats.cyclingMi` and
 `cardioSessions`. Gym cardio (`activity: 'gym-cardio'` or `'ride'`) never
 advances trails, milestones, or Quest Credits — `src/state/distancePolicy.js`
 is the single gate, and it throws if gym cardio carries a `routeId`.
-Quests are free (`ACCEPT_QUEST`), tokens are proof, and reception check-in
-(`GYM_CHECK_IN`) is timestamped attendance, once per local day.
+Quests are bought with Quest Credits (`BUY_QUEST`, 5–15 by ease and reward),
+tokens are proof — never currency — and reception check-in (`GYM_CHECK_IN`)
+is timestamped attendance, once per local day.
 **Trail quotas** (miles + challenge reps) live in `state.trails` and only
 increment when `ADD_DISTANCE` / `LOG_EXERCISE` carry a `routeId` — gym cardio
 must not pass one. A full Circle (6) makes `CATCH` a no-op. The only start-over
@@ -184,7 +185,8 @@ in-character. The Anthropic key stays server-side. `check_docs.py` compares
 both copies of the jailbreak regex and the refusal line.
 
 **Quest Credits** cannot be bought. Minted by real effort only (`economy.js`).
-The smoothie bar spends it. A Kinship Knot is offered, never thrown.
+The smoothie bar and the reception Quest Ledger spend it. A Kinship Knot is
+offered, never thrown.
 
 **Friends / boards** live on the same proxy. The unit of sync is a **day**,
 never a lifetime total. See `docs/ACCOUNTS.md`.
