@@ -48,6 +48,12 @@ export default function CardioSummary({
   const machine = MACHINE_BY_ID[station];
   const qualified = activeSeconds >= CARDIO_MIN_ACTIVE_SEC;
   const short = Math.max(0, CARDIO_MIN_ACTIVE_SEC - activeSeconds);
+  // Nothing detected: a rower nobody tapped through, or a machine the phone
+  // could not sense. The workout still happened, so the summary asks for the
+  // display figure instead of quietly throwing the session away — and says
+  // plainly that without one there is no row to keep.
+  const unsensed = activeSeconds < 5;
+  const hasManual = Object.values(manual || {}).some((v) => Number(v) > 0);
 
   return (
     <View
@@ -97,7 +103,9 @@ export default function CardioSummary({
               FROM THE MACHINE DISPLAY — ENTERED BY HAND
             </PixelText>
             <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 4, lineHeight: 13 }}>
-              Optional. Read these off the machine now that you are stopped; your phone cannot measure them.
+              {unsensed
+                ? 'Read these off the machine now that you are stopped — with nothing measured, they are the only record this session can keep.'
+                : 'Optional. Read these off the machine now that you are stopped; your phone cannot measure them.'}
               {taps > 0 && machine.tapMetric ? ' A stroke total entered here replaces the ones you tapped, rather than adding to them.' : ''}
             </PixelText>
             {machine.manual.map((field) => (
@@ -135,9 +143,13 @@ export default function CardioSummary({
           </PixelText>
         </View>
         <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 4, lineHeight: 13 }}>
-          {qualified
-            ? 'Paid on detected active time alone — stationary, paused and background time earn nothing. Gym cardio, never trail progress.'
-            : `Too short to pay: ${formatClock(short)} more active time would qualify. Saved to your history all the same.`}
+          {unsensed
+            ? (hasManual
+              ? 'Your phone measured no active time here, so this pays nothing and counts toward no quest. What you entered above is kept as your own record of the work.'
+              : 'Your phone measured no active time here. Enter the machine\'s own totals above to keep this session in your history — without them there is nothing to save.')
+            : qualified
+              ? 'Paid on detected active time alone — stationary, paused and background time earn nothing. Gym cardio, never trail progress.'
+              : `Too short to pay: ${formatClock(short)} more active time would qualify. Saved to your history all the same.`}
         </PixelText>
       </View>
 
@@ -147,7 +159,11 @@ export default function CardioSummary({
           a session under the minimum already pays nothing and simply joins
           the history as what it was. */}
       <TrailAction
-        label={credits > 0 ? `Save session — collect ${credits}` : 'Save session'}
+        label={
+          credits > 0 ? `Save session — collect ${credits}`
+            : unsensed && !hasManual ? 'Nothing to save — step off'
+              : 'Save session'
+        }
         tone="primary"
         style={{ marginTop: space.sm }}
         onPress={onSave}

@@ -139,7 +139,7 @@ counts steps off the accelerometer: peak detection with hysteresis and a
 refractory gap, foreground-only. See `docs/STEP_COUNTING.md`.
 
 **State shape** (persisted to AsyncStorage, auto-migrated by `version`, currently
-**13**): `{ started, goalId, playerOutfit, playerGender, party:[{id,baseId,xp,
+**14**): `{ started, goalId, playerOutfit, playerGender, party:[{id,baseId,xp,
 bond,evo,hp,charm}], activeIndex, credits, stats, bag, discoveredCharms, quests,
 cardioSessions, gymCheckIns, dex, modules, history, settings, meta, trails }`.
 Companion XP is a lifetime total; level/HP are derived
@@ -154,7 +154,11 @@ pays Quest Credits
 at `economy.cardioCredits` (1 per 4 active minutes, 5-minute minimum, 15
 cap), identically on every machine. Step/GPS deltas gate the first four
 machines and recent logged strokes gate the rower; a stationary running
-console banks inactive time and earns nothing. The payment lease is
+console banks inactive time and earns nothing. A session the phone never
+sensed at all still reaches its summary once a real minute has elapsed, so a
+machine that has a display figure to enter (rower, climber, elliptical) can
+keep the row — with zero active seconds, zero credits and no quest progress,
+because typed numbers buy history and nothing else. The payment lease is
 deliberately longer than the animation hold (`screens/useCardio.js`): a
 pedometer reports about once a second, so a 900ms gate would drop real work. Payment happens once by
 `COMPLETE_CARDIO` — which

@@ -346,7 +346,7 @@ are grown, never knotted.
   machine stays indoors, but Start begins a real Bike Ride measured through
   the same GPS watcher as a run. Those deltas carry `activity: 'ride'`, add
   to `cyclingMi`, and never receive a `routeId`.
-- **Six trails** (`src/data/routes.js`), save `version: 13`. Maple Trail is
+- **Six trails** (`src/data/routes.js`), save `version: 14`. Maple Trail is
   unlocked from the start. Walk that trail's miles and confirm its reps in
   challenges, then Challenge the Warden. First win grants the Quest Pin, a
   Kinship Knot, and the next trail. Wild companion pick is random from that
@@ -539,8 +539,37 @@ duplicate finish event, a re-submitted summary, a reload or a replayed
 dispatch changes nothing. The award is stored on the record as
 `creditsAwarded`, and it is added to the credits pool directly rather than
 through `mint()`: the fractional `creditCarry` belongs to walked trail miles
-and gym cardio never touches it. A discarded session is never dispatched at
-all, and a session under the minimum saves its honest record and pays zero.
+and gym cardio never touches it. A session under the minimum saves its honest
+record and pays zero.
+
+**A session the phone could not sense is still a session.** The rower's only
+movement signal is the stroke the player taps, so a real row with no taps used
+to bank zero active seconds and be thrown away entire at the finish guard —
+twenty honest minutes, no row in the history, nothing to enter the machine's
+metres into. The same shape catches an elliptical, whose stride keeps a foot
+on the pedal and gives a pedometer very little to hear. So the guard now
+measures ELAPSED time: a console that ran for
+`CARDIO_LOGGABLE_SEC` (60s) opens its summary whatever the sensors heard,
+because the summary is where the machine's own display gets typed in. Save
+keeps that row only if a figure was actually entered (`cardioHistory` returns
+null otherwise, and the button says "Nothing to save — step off"). Only the
+rower, stair climber and elliptical have a work figure to enter, so only they
+can take this path: the treadmill and the bike measure their own distance and
+offer nothing to type in. The row
+is honest about what it is: `activeSeconds: 0`, `creditsAwarded: 0`, `source:
+'manual'`, and no quest progress — quest requirements count only sessions past
+`CARDIO_MIN_ACTIVE_SEC` of DETECTED active time. Typed numbers buy history,
+never credits and never progress. For the same reason `seconds` on a saved row
+is defined to equal `activeSeconds`: code that reads `seconds` as a fallback
+must not be able to see elapsed time.
+
+The rower's stroke lease (`STROKE_LEASE_MS`, 5s in `screens/useCardio.js`) is
+its animation hold and its payment lease at once — there is only the one
+signal, and it has to span a rowing cadence rather than a sensor's reporting
+gap. Unlike the sensor leases it is a timer the gym screen owns, so it is
+cleared explicitly on every transition out of a live rowing session (pause,
+resume, background, finish, leave, a new session, unmount). A lease left
+running across a pause would have paid for the seconds on the far side of it.
 
 **Trail isolation survives the credit change.** Earning Quest Credits does not
 make an activity trail work. No gym session advances trail mileage, fills a
@@ -554,7 +583,9 @@ distance never does.
 is timed, because a phone cannot feel a stroke; its strokes are the player's
 own taps or a figure read off the machine, and machine distance is entered by
 hand AFTER the session, off the equipment. Every record carries a `source`
-(`sensor`, `gps`, `timer`, `mixed`, or `legacy` for pre-v13 rows), and
+(`sensor`, `gps`, `timer`, `manual` for a row the phone never measured at all,
+`mixed` where it measured something and the player topped it up, or `legacy`
+for pre-v13 rows), and
 hand-entered figures are marked with a `*` wherever they are shown. Manual
 values are validated against per-field bounds and refused — not clamped —
 when impossible.
@@ -580,6 +611,16 @@ cannot be spent or sold, never convert to credits, and never touch trail
 progress. Reception check-in is attendance only, once per local day,
 timestamped (§12 `gymCheckIns`); the Seven-Day Foundation counts
 post-purchase check-in days.
+
+**Scopes are enforced, not decorative.** `data/activityScopes.js` stamps every
+requirement with the scopes its kind accepts, and `reqHave` now consults
+`reqAcceptsScope` before counting anything — it used to declare the scopes and
+never read them back. Each counter is a per-kind aggregate (`miles` reads one
+odometer that trail and deck steps both feed), so a requirement must accept
+EVERY scope its counter can contain or it measures nothing. Narrowing a
+declaration without narrowing the source therefore produces a visibly stuck
+quest instead of effort of the wrong kind quietly satisfying it, and no
+requirement kind reaches trail quotas at all.
 
 | quest | token | price | requirements | reward |
 |---|---|---|---|---|
@@ -1001,10 +1042,10 @@ board_update, friend_request, friend_accept + bgm_town / bgm_battle loops.
 `audio/sfx.js` wraps expo-av; every call degrades silently (web autoplay,
 early calls). BGM switching lives in Router via TOWN_BGM.
 
-## 12. Save format — `companionquest:save:v1` key, `version: 13`
+## 12. Save format — `companionquest:save:v1` key, `version: 14`
 
 ```js
-{ version: 13, started, goalId,                    // 'muscle'|'lean'|'root'
+{ version: 14, started, goalId,                    // 'muscle'|'lean'|'root'
   playerOutfit, playerGender,                     // one-time, v6
   party: [{ id, baseId, xp, bond, evo, hp,
             charm }],                             // ≤6; charm = worn Trail
@@ -1018,6 +1059,14 @@ early calls). BGM switching lives in Router via TOWN_BGM.
            cardioMinutes, cardioSessionsDone,     // v13 gym-cardio lifetime
            cardioCreditsEarned, treadmillMi,      // counters, per machine
            rowerStrokes, stairFloors, ellipticalStrides,
+           rowerMeters,                           // v14: lifetime metres and
+           machineSessions: { [machineId]: n },   // lifetime sessions per
+                                                  // machine, so the Phone's
+                                                  // by-machine panel is all
+                                                  // lifetime — it used to
+                                                  // count sessions out of the
+                                                  // bounded 120-row log
+
            sets, reps, holdSec,                   // real exercise done
            exercises: { [exerciseId|'workout:<id>']: amount } },
   bag: { itemId: count }, dex: { creatureId: 'owned'|'seen' },
@@ -1075,6 +1124,7 @@ Migrations, all in HYDRATE — and every one of them refuses to invent history:
 | v10→11 | `cyclingMi` / `ridesDone` default to zero, preserving all existing lifetime distance without inventing old bicycle history |
 | v12→13 | the five-machine cardio floor: legacy cardio rows carried forward through the unified normalizer (measurements kept, `creditsAwarded: 0` — duration pay starts at v13 and is never retroactive, and no interrupted session can become a rewarded one), new per-machine lifetime counters start at zero, and the whole migration is idempotent |
 | v11→12 | quests became free: priced-era purchases refunded at their exact historical prices exactly once (`quests.refundApplied`); `quests.checkIns` day strings become timestamped `gymCheckIns` (synthesized noon — the old record never held the real time); `cardioSessions` starts empty |
+| v13→14 | `machineSessions` and `rowerMeters` become lifetime counters. Unlike every migration above, these ARE seeded from existing data — once, from the retained 120-row log, because those are the exact figures the Phone was already displaying and an upgrade that reset them to zero would look like lost history. Version-gated: running the seed twice would double-count every session still in the log |
 
 Plus, every load: goal ids translated, `rollAllModules` day roll, and a
 `MODULE_RESET_DAY` self-heal from the Habits screens so a session left open past

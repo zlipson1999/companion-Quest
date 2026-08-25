@@ -53,6 +53,15 @@ export function payLeaseMs(gpsOnly) {
   return gpsOnly ? GPS_PAY_LEASE_MS : STEP_PAY_LEASE_MS;
 }
 
+// The rower has no sensor to lease against, so its movement signal is the
+// stroke the player logs, and the lease has to span a rowing cadence rather
+// than a sensor's reporting gap — a steady pull is one every two or three
+// seconds. It serves as both the animation hold and the payment lease, since
+// there is only the one signal. Like the others it refreshes only on a real
+// stroke, and unlike them the gym screen must clear it by hand whenever the
+// session stops being a rowing session.
+export const STROKE_LEASE_MS = 5000;
+
 export default function useCardio({ active = true, gpsOnly = false, activity, onDelta, onMilestone, routeId } = {}) {
   const { state, dispatch } = useGame();
   const dist = useDistance();

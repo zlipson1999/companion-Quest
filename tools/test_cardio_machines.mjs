@@ -415,7 +415,7 @@ const legacy = {
   gymCheckIns: [{ day: '2026-08-01', checkedAt: '2026-08-01T09:00:00.000Z' }],
 };
 const migrated = hydrateSave(structuredClone(legacy));
-equal('the save is v13', migrated.version, 13);
+equal('the save is v14', migrated.version, 14);
 equal('old cardio rows survive', migrated.cardioSessions.length, 2);
 equal('an old row keeps its measured distance', migrated.cardioSessions[0].miles, 1.2);
 equal('an old row keeps its duration as active time', migrated.cardioSessions[0].activeSeconds, 900);
@@ -427,15 +427,117 @@ equal('cardio minutes start at zero', migrated.stats.cardioMinutes, 0);
 equal('reception attendance survives', migrated.gymCheckIns.length, 1);
 check('the ledger refund flag survives', migrated.quests.refundApplied === true);
 equal('earned tokens survive', migrated.quests.tokens.stride, 1);
+// v14 seeds the lifetime per-machine counters ONCE from the retained log, so
+// nobody's Phone panel drops to zero on upgrade — and never twice.
+equal('v14 seeds treadmill sessions from the log', migrated.stats.machineSessions.treadmill, 1);
+equal('v14 seeds bike sessions from the log', migrated.stats.machineSessions.bike, 1);
+equal('v14 seeds nothing for a machine never used', migrated.stats.machineSessions.rower, 0);
 const again = hydrateSave(structuredClone(migrated));
 equal('migration is idempotent: rows', again.cardioSessions.length, 2);
 equal('migration is idempotent: credits', again.credits, 40);
+equal('the v14 seed does not run twice', again.stats.machineSessions.treadmill, 1);
 equal('migration never promotes an old row to rewarded', again.cardioSessions[1].creditsAwarded, 0);
 
 // Totals read the log without re-inventing it.
 const totals = cardioTotals(five);
 equal('totals count every machine once', totals.sessions, 5);
 equal('totals sum the shared credit award', totals.credits, five.reduce((n, s) => n + s.creditsAwarded, 0));
+
+// ---- A session the phone could not sense ----
+// The rower's only movement signal is a tapped stroke, so an honest row with
+// no taps banks zero active seconds. It used to be thrown away entire at the
+// finish guard, taking the chance to enter the machine's own metres with it.
+const unsensed = (over) => finishCardioSession({
+  station: 'rower',
+  startedAt: '2026-08-20T10:00:00.000Z',
+  endedAt: '2026-08-20T10:20:00.000Z',
+  activeSeconds: 0,
+  inactiveSeconds: 1200,
+  pausedSeconds: 0,
+  manual: { machineMeters: 4000 },
+  ...over,
+});
+const handLogged = unsensed();
+check('a hand-logged rower session is kept', !!handLogged);
+equal('...with the metres that were entered', handLogged.machineMeters, 4000);
+equal('...and zero measured active time', handLogged.activeSeconds, 0);
+equal('...paying nothing at all', handLogged.creditsAwarded, 0);
+equal('...marked manual, not mixed', handLogged.source, 'manual');
+// `seconds` must never expose elapsed time: quest code reads it as a fallback,
+// so a typed figure could otherwise buy progress it never earned.
+equal('...reporting no duration a fallback could mistake for work', handLogged.seconds, 0);
+check('nothing typed means nothing saved', unsensed({ manual: {} }) === null);
+check('a minute is the floor for a hand-logged row', unsensed({ inactiveSeconds: 40 }) === null);
+check('a level dial alone is not a workout', unsensed({ manual: { level: 8 } }) === null);
+// The same shape catches any machine whose display the player can read: an
+// elliptical stride keeps a foot on the pedal and gives a pedometer very
+// little to hear, so a whole session can land with nothing detected.
+const unheardStride = finishCardioSession({
+  station: 'elliptical',
+  startedAt: '2026-08-20T11:00:00.000Z',
+  endedAt: '2026-08-20T11:30:00.000Z',
+  activeSeconds: 0, inactiveSeconds: 1800, pausedSeconds: 0,
+  manual: { machineMiles: 2 },
+});
+check('an unsensed elliptical session is kept too', !!unheardStride);
+equal('...and still pays nothing', unheardStride.creditsAwarded, 0);
+// The treadmill and the bike measure their own distance and offer no
+// work field to type in, so there is nothing for this path to keep.
+check('a treadmill with nothing sensed has nothing to log', finishCardioSession({
+  station: 'treadmill',
+  startedAt: '2026-08-20T11:00:00.000Z',
+  endedAt: '2026-08-20T11:30:00.000Z',
+  activeSeconds: 0, inactiveSeconds: 1800, pausedSeconds: 0,
+  manual: { machineMiles: 2 },
+}) === null);
+// And it must not become quest progress: requirements count DETECTED time.
+const handRowerQuest = getQuest('pullwithpurpose');
+const withHandLogged = {
+  stats: { distanceMi: 0, ridesDone: 0, workoutsDone: 0 },
+  cardioSessions: [handLogged], gymCheckIns: [], modules: {},
+};
+const handProgress = questProgress(
+  handRowerQuest,
+  { questId: handRowerQuest.id, startedDay: '2026-08-19', base: questSnapshot({ ...withHandLogged, cardioSessions: [] }) },
+  withHandLogged,
+  '2026-08-20',
+);
+check('a hand-logged session progresses no quest', !handProgress.done && handProgress.reqs[0].have === 0);
+
+// ---- The rower's stroke lease ----
+// It is the animation hold AND the payment gate, so a lease left running
+// across a pause would pay for the seconds on the far side of it.
+const cardioSrc = src('src/screens/useCardio.js');
+check('the stroke lease is a named constant', /export const STROKE_LEASE_MS = 5000;/.test(cardioSrc));
+check('the gym uses that constant, not a literal', /setTapPulse\(false\), STROKE_LEASE_MS\)/.test(gymSrc));
+check('the lease is cleared, not only refreshed', /const clearTapLease = useCallback/.test(gymSrc));
+check('...on every transition of session identity and phase', /\[sessionKey, sessionPhase, clearTapLease\]/.test(gymSrc));
+check('...including unmount', /return clearTapLease;/.test(gymSrc));
+check('the phase is part of the key so pause clears it', /const sessionPhase = cardio \? cardio\.phase : null;/.test(gymSrc));
+
+// ---- Scopes are read, not just declared ----
+check(
+  'quest progress consults reqAcceptsScope',
+  /reqAcceptsScope/.test(src('src/data/quests.js')) && /reading\.every\(\(scope\) => reqAcceptsScope\(req, scope\)\)/.test(src('src/data/quests.js')),
+);
+// A requirement that narrows its scopes without narrowing its source measures
+// nothing — a visibly stuck quest, never effort of the wrong kind counting.
+const narrowed = { kind: 'miles', amount: 1, scopes: ['trail_activity'], label: 'trail only' };
+const milesState = { stats: { distanceMi: 5 }, cardioSessions: [], gymCheckIns: [], modules: {} };
+const narrowProgress = questProgress(
+  { id: 'x', reqs: [narrowed], days: 7 },
+  { questId: 'x', startedDay: '2026-08-19', base: { miles: 0 } },
+  milesState,
+  '2026-08-20',
+);
+equal('a narrowed requirement counts nothing', narrowProgress.reqs[0].have, 0);
+
+// ---- The by-machine panel is lifetime, end to end ----
+check('the Phone reads lifetime session counts', /machineSessions\('treadmill'\)/.test(bagSrc));
+check('...and lifetime rowed metres', /state\.stats\.rowerMeters/.test(bagSrc));
+check('the bounded log no longer feeds Cardio Totals', !/cardioTotals\(/.test(bagSrc));
+check('COMPLETE_CARDIO ticks the lifetime session counter', /machineSessions: \{/.test(reducerSrc));
+check('COMPLETE_CARDIO ticks lifetime metres', /rowerMeters: \(state\.stats\.rowerMeters \|\| 0\) \+ s\.machineMeters/.test(reducerSrc));
 
 // ---- Wording ----
 const wordFiles = [

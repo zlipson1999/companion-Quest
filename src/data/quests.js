@@ -22,7 +22,7 @@
 // and nothing here can touch a trail quota, which only `trail_activity`
 // (a delta carrying a real routeId) ever reaches.
 
-import { scopesForReqKind } from './activityScopes';
+import { reqAcceptsScope, scopesForReqKind } from './activityScopes';
 import { CARDIO_MACHINE_IDS } from './cardioMachines';
 import { CARDIO_MIN_ACTIVE_SEC } from '../state/economy';
 
@@ -141,7 +141,7 @@ export const QUESTS = [
     reqs: [
       { kind: 'checkins', amount: 3, label: 'Check in at reception on three days' },
       { kind: 'workouts', amount: 2, label: 'Two strength sessions' },
-      { kind: 'cardio', amount: 1, label: 'One cardio session (deck, ride or rower)' },
+      { kind: 'cardio', amount: 1, label: 'One qualifying session on any cardio machine' },
       { kind: 'moduleGoalDays', moduleId: 'hydration', amount: 4, label: 'Water goal on four days' },
       { kind: 'moduleLogs', moduleId: 'diet', amount: 3, label: 'Three real meals logged' },
       { kind: 'moduleLogs', moduleId: 'sleep', amount: 2, label: 'Sleep logged on two nights' },
@@ -197,6 +197,15 @@ export function questSnapshot(state) {
 }
 
 function reqHave(req, active, state) {
+  // Scopes are enforced here, not merely declared. Each counter below is a
+  // per-KIND aggregate — `miles` reads one odometer that trail and deck steps
+  // both feed — so the requirement has to accept every scope its counter can
+  // contain before a single unit of it counts. Narrow the declaration without
+  // narrowing the source and the requirement measures nothing, which is a
+  // visibly stuck quest rather than effort of the wrong kind quietly
+  // satisfying it. An unknown kind reads nothing at all.
+  const reading = scopesForReqKind(req.kind);
+  if (!reading.length || !reading.every((scope) => reqAcceptsScope(req, scope))) return 0;
   const base = active.base || {};
   switch (req.kind) {
     case 'miles':

@@ -111,7 +111,7 @@ export default function BoardScreen() {
             {'\n'}{localWeek.cardioSessions || 0} cardio {localWeek.cardioSessions === 1 ? 'session' : 'sessions'} · {localWeek.cardioMin || 0} active min
           </PixelText>
           <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 6, lineHeight: 15 }}>
-            Bike mileage is cardio history only. It never adds trail progress or Quest Credits.
+            Gym cardio pays Quest Credits for active time, but no gym mile advances a trail.
           </PixelText>
         </FieldCard>
         <View style={{ marginTop: 'auto' }}>
@@ -164,6 +164,10 @@ export default function BoardScreen() {
       <FieldCard tone="paper" title="Your bike log" caption="saved on this phone" style={{ marginBottom: space.sm }}>
         <PixelText size="small" color={tokens.textOnPaper}>
           {(localWeek.cyclingMi || 0).toFixed(1)} mi · {localWeek.rides || 0} {localWeek.rides === 1 ? 'ride' : 'rides'} this week
+          {/* The bike is one of five machines. Signing in used to hide the
+              other four from this card, so the board said less about your
+              week the moment you joined a circle. */}
+          {'\n'}{localWeek.cardioSessions || 0} cardio {localWeek.cardioSessions === 1 ? 'session' : 'sessions'} · {localWeek.cardioMin || 0} active min
         </PixelText>
         <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 6, lineHeight: 15 }}>
           The Bike board shares checked cycling miles with your accepted circle. Gym cardio pays Quest Credits for active time, but no gym mile advances a trail.

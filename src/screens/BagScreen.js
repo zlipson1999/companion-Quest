@@ -7,7 +7,7 @@ import React, { useMemo, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import { Screen, Window, PixelText, PixelButton, PixelSprite, CardioHistoryList, GymCheckInList } from '../components';
 import { palette, space } from '../theme';
-import { cardioTotals, gymCheckInStats, useGame, useCompanion } from '../state';
+import { gymCheckInStats, useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
 import { playSfx } from '../audio';
 import { ITEMS, getItem } from '../data/items';
@@ -101,7 +101,12 @@ export default function BagScreen() {
   const exerciseEntries = Object.entries(state.stats.exercises || {}).filter(([id]) => !id.startsWith('workout:'));
   const routineEntries = Object.entries(state.stats.exercises || {}).filter(([id]) => id.startsWith('workout:'));
   const checkIns = gymCheckInStats(state.gymCheckIns);
-  const cardio = cardioTotals(state.cardioSessions);
+  // Every figure in Cardio Totals is a LIFETIME counter. It used to mix these
+  // with rollups of state.cardioSessions, which keeps only the last 120 rows,
+  // so one line could report more distance than the sessions beside it could
+  // account for. The bounded log still feeds Recent Cardio below, where
+  // "recent" is the whole point of it.
+  const machineSessions = (id) => (state.stats.machineSessions || {})[id] || 0;
 
   // Named consumeItem, not useItem: a plain function whose name starts with
   // `use` reads as a React hook to both a reviewer and the hooks lint rule,
@@ -218,11 +223,11 @@ export default function BagScreen() {
         <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: space.sm, letterSpacing: 1 }}>
           BY MACHINE
         </PixelText>
-        {statRow('Treadmill', `${(state.stats.treadmillMi || 0).toFixed(1)} mi · ${cardio.byMachine.treadmill.sessions} sessions`)}
+        {statRow('Treadmill', `${(state.stats.treadmillMi || 0).toFixed(1)} mi · ${machineSessions('treadmill')} sessions`)}
         {statRow('Bike Ride', `${(state.stats.cyclingMi || 0).toFixed(1)} mi · ${state.stats.ridesDone || 0} rides`)}
-        {statRow('Rower', `${cardio.byMachine.rower.machineMeters || 0} m · ${cardio.byMachine.rower.sessions} sessions`)}
-        {statRow('Stair Climber', `${state.stats.stairFloors || 0} floors · ${cardio.byMachine.stairclimber.sessions} sessions`)}
-        {statRow('Elliptical', `${state.stats.ellipticalStrides || 0} strides · ${cardio.byMachine.elliptical.sessions} sessions`)}
+        {statRow('Rower', `${state.stats.rowerMeters || 0} m · ${machineSessions('rower')} sessions`)}
+        {statRow('Stair Climber', `${state.stats.stairFloors || 0} floors · ${machineSessions('stairclimber')} sessions`)}
+        {statRow('Elliptical', `${state.stats.ellipticalStrides || 0} strides · ${machineSessions('elliptical')} sessions`)}
       </Window>
 
       <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>

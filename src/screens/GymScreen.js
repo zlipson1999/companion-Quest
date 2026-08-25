@@ -6,7 +6,7 @@
 // the system that piece stands for. That replaces a screen of buttons
 // explaining the systems with a room that demonstrates them.
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 import { WorldScreen, CompanionStatus, CardioConsole, CardioSummary, DialogueBox } from '../components';
 import { useGame, useCompanion } from '../state';
@@ -16,13 +16,14 @@ import {
 } from '../state/cardioSession';
 import { getCardioMachine } from '../data/cardioMachines';
 import { cardioCredits } from '../state/economy';
+import { CARDIO_LOGGABLE_SEC } from '../state/cardioHistory';
 import { useNav } from './navContext';
 import { SPAR_PARAMS } from './SparIntroScreen';
 import { playSfx } from '../audio';
 import { GYM, mapWithout, isWalkable, tileAt, triggerForCode, interactionForCode } from '../data/maps';
 import { recallSpot, rememberSpot } from './placeMemory';
 import { useKeepAwake } from 'expo-keep-awake';
-import useCardio from './useCardio';
+import useCardio, { STROKE_LEASE_MS } from './useCardio';
 import { DEFAULT_BODY_WEIGHT_LB } from '../state/cardioMaths';
 import { breakdownSince, formatBreakdown } from '../data/exercises';
 import { getWorkout } from '../data/workouts';
@@ -309,15 +310,31 @@ export default function GymScreen() {
   // the player logs; everything else animates on real measured movement.
   const [tapPulse, setTapPulse] = useState(false);
   const tapTimer = useRef(null);
+  const clearTapLease = useCallback(() => {
+    if (tapTimer.current) clearTimeout(tapTimer.current);
+    tapTimer.current = null;
+    setTapPulse(false);
+  }, []);
   const pulseTap = () => {
     setTapPulse(true);
     if (tapTimer.current) clearTimeout(tapTimer.current);
     // A normal rowing cadence leaves a few seconds between strokes. Keep the
     // movement lease long enough to bridge that gap, then stop paid time and
     // animation automatically when no further stroke is logged.
-    tapTimer.current = setTimeout(() => setTapPulse(false), 5000);
+    tapTimer.current = setTimeout(() => setTapPulse(false), STROKE_LEASE_MS);
   };
-  useEffect(() => () => tapTimer.current && clearTimeout(tapTimer.current), []);
+  // The lease is a movement signal, so it must never outlive the thing it
+  // describes. Pausing, backgrounding, finishing, leaving and starting a
+  // fresh session all end the rowing; a lease still running across any of
+  // those would hand the seconds on the far side of the transition paid time
+  // nobody pulled for. Keying on the session identity AND its phase clears it
+  // on every one of them, and on unmount.
+  const sessionKey = cardio ? `${cardio.machineId}:${cardio.startedAt}` : null;
+  const sessionPhase = cardio ? cardio.phase : null;
+  useEffect(() => {
+    clearTapLease();
+    return clearTapLease;
+  }, [sessionKey, sessionPhase, clearTapLease]);
   const machineMoving = machine && machine.tracking === 'timer' ? tapPulse : moving;
   // Animation follows `moving` (tight, so the character stops when you do).
   // Payment follows `paying`, a longer lease that bridges the sensor's own
@@ -354,7 +371,7 @@ export default function GymScreen() {
       m.tracking === 'gps'
         ? 'The in-game bike starts a Bike Ride. GPS begins only when you press Start.'
         : m.tracking === 'timer'
-        ? 'Log strokes as you pull. The paid clock runs only while strokes are detected; enter the machine total after.'
+        ? 'Log strokes as you pull — tapped strokes are what the paid clock runs on. Row without tapping and the session still saves, from the metres you enter after; it just pays nothing.'
         : Platform.OS === 'web'
         ? 'A browser cannot count steps on this machine. Use a phone — there are no walk buttons.'
         : null
@@ -405,12 +422,17 @@ export default function GymScreen() {
   };
 
   // Finish: stop the sensors, hold the completed session in `done`, and show
-  // the summary. NOTHING is written yet — Save writes it, Discard drops it.
+  // the summary. NOTHING is written yet — Save is what writes it.
   const finishSession = () => {
     if (!cardio) return;
-    // A machine that never started measured nothing; leave rather than
-    // offering a summary of zeros.
-    if (cardio.activeSeconds < 5) { abandonUnstarted(); return; }
+    // Under five detected active seconds nothing was measured — but a real
+    // workout the phone could not see looks exactly the same from here: a
+    // rower nobody tapped through, a treadmill walked with the phone in a
+    // locker. So a console that ran for a real minute still opens its
+    // summary, because the summary is where the machine's own display gets
+    // typed in. Step on and straight off again and there is nothing to show.
+    const elapsed = cardio.activeSeconds + (cardio.inactiveSeconds || 0) + cardio.pausedSeconds;
+    if (cardio.activeSeconds < 5 && elapsed < CARDIO_LOGGABLE_SEC) { abandonUnstarted(); return; }
     playSfx('confirm');
     if (machine && machine.tracking === 'gps' && dist.running) dist.stopRun();
     setDone({ ...cardio, phase: 'summary', endedAt: new Date().toISOString(), metrics });
@@ -447,9 +469,14 @@ export default function GymScreen() {
       bodyWeightLb: bodyWeight,
       endedAt: done.endedAt,
     });
+    // No record means the phone measured nothing AND nothing was entered from
+    // the machine's display. There is no honest row to write, so this is the
+    // way off the summary rather than a save — the button says as much.
     if (record) {
       dispatch({ type: 'COMPLETE_CARDIO', payload: record });
       playSfx(record.creditsAwarded > 0 ? 'victory' : 'confirm');
+    } else {
+      playSfx('cancel');
     }
     leaveMachine();
   };
