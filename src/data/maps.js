@@ -256,14 +256,15 @@ const INTERACTIONS = {
   // `c` is a kitchen counter at home, whose map-local interaction overrides
   // this one. In the gym it is the cycle station; TileMap has the matching
   // map-local prop override so the code cannot draw a counter on the cardio wall.
-  c: { cardio: 'bike', label: 'Bike — start a real outdoor GPS ride' },
+  c: { cardio: 'bike', label: 'Bike — start a Bike Ride, measured by GPS' },
   q: { cardio: 'rower', label: 'Rower — cardio, no interruptions' },
   Z: { screen: 'week', label: "Whiteboard — this week's work" },
   L: { screen: 'bag', label: 'Lockers — your supplies' },
-  // Reception is the record. The cork noticeboard is the friends board — the
-  // same BoardScreen Friends opens. Do not cork Summary, and do not move the
-  // boards onto N.
-  N: { screen: 'reception', label: 'Reception — check in, your record, and the Quest Ledger' },
+  // Reception is attendance and the Quest Ledger. Walking into the desk
+  // records today's first arrival time; the Phone owns the broader record.
+  // The cork noticeboard is the friends board — the same BoardScreen Friends
+  // opens. Do not move the boards onto N.
+  N: { screen: 'reception', label: 'Reception — check in and the Quest Ledger' },
   r: { screen: 'board', label: 'Noticeboard — how your friends are doing' },
   // Front of house. The bar is the one place credit is spent, and credit is
   // only ever minted by real effort — see src/state/economy.js.

@@ -5,9 +5,11 @@ import { migrateGoalId } from '../data/goals';
 import { emptyTrails, normalizeTrails } from '../data/routes';
 import { rollAllModules, todayKey } from '../modules';
 import { DEFAULT_BODY_WEIGHT_LB } from './cardioMaths';
+import { normalizeCardioSessions } from './cardioHistory';
+import { normalizeGymCheckIns } from './gymCheckIns';
 import { trim } from './history';
 
-export const SAVE_VERSION = 11;
+export const SAVE_VERSION = 12;
 
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
@@ -60,10 +62,15 @@ export const FRESH = {
   },
   bag: {},
   discoveredCharms: {},
-  // The Quest Ledger: reception check-in days, quests bought and in progress
-  // (each with the stat snapshot taken at purchase), the archive, and the
-  // Token Case. Tokens are proof, never money.
-  quests: { checkIns: [], active: [], completed: [], tokens: {} },
+  // The Quest Ledger: quests accepted (free) and in progress, each with the
+  // stat snapshot taken at acceptance, the archive, and the Token Case.
+  // Tokens are proof, never money.
+  quests: { active: [], completed: [], tokens: {} },
+  // Gym cardio sessions (deck, ride, rower): fitness history only, bounded,
+  // and never a route into trail rewards.
+  cardioSessions: [],
+  // Reception attendance: first timestamped arrival per local day.
+  gymCheckIns: [],
   dex: {},
   modules: {},
   history: {},
@@ -86,7 +93,7 @@ export const FRESH = {
 export const HYDRATE_KEYS = [
   'version', 'started', 'playerOutfit', 'playerGender', 'goalId',
   'party', 'activeIndex', 'credits', 'stats', 'bag', 'discoveredCharms', 'quests', 'dex',
-  'modules', 'history', 'settings', 'meta', 'trails',
+  'modules', 'history', 'settings', 'meta', 'trails', 'cardioSessions', 'gymCheckIns',
 ];
 
 export function hydrateSave(saved) {
@@ -100,7 +107,7 @@ export function hydrateSave(saved) {
     bag: { ...(saved.bag || {}) },
     discoveredCharms: { ...(saved.discoveredCharms || {}) },
     quests: {
-      checkIns: [], active: [], completed: [], tokens: {},
+      active: [], completed: [], tokens: {},
       ...(saved.quests || {}),
     },
     dex: { ...(saved.dex || {}) },
@@ -163,6 +170,35 @@ export function hydrateSave(saved) {
   // v11 records outdoor bicycle mileage and completed rides separately. The
   // additive defaults above are the migration: prior saves keep every mile
   // they already earned and begin the two new counters at zero.
+  // v12: the Quest Ledger became free and reception attendance became
+  // timestamped.
+  merged.cardioSessions = normalizeCardioSessions(saved.cardioSessions);
+  // Old check-ins kept only the day; the timestamp is synthesized at local
+  // noon because the record never held the real arrival time. New check-ins
+  // keep the exact first arrival of each day.
+  merged.gymCheckIns = normalizeGymCheckIns(
+    saved.gymCheckIns
+    || ((saved.quests && saved.quests.checkIns) || []).map((day) => ({
+      day, checkedAt: new Date(`${day}T12:00:00`).toISOString(),
+    })),
+  );
+  delete merged.quests.checkIns;
+  // Quests were briefly PURCHASED with Quest Credits. That design is gone —
+  // quests are free commitments — so anyone who provably paid is refunded
+  // the exact historical price of each quest still active or already
+  // completed, exactly once: the refundApplied flag persists in the save,
+  // and the price table below is the frozen launch pricing, not a live
+  // tuning value (the live quests no longer have prices at all).
+  if (!(saved.quests && saved.quests.refundApplied)) {
+    const PAID = {
+      tenminutetrek: 15, wheelsinmotion: 10, foundationset: 15,
+      balancedbowl: 15, filltheflask: 15, resttorise: 15,
+      fivecalmbreaths: 15, sevendayfoundation: 30,
+    };
+    const bought = [...merged.quests.active, ...merged.quests.completed];
+    merged.credits += bought.reduce((sum, q) => sum + (PAID[q.questId] || 0), 0);
+  }
+  merged.quests.refundApplied = true;
   merged.version = SAVE_VERSION;
 
   // v3 also moved "today" from a UTC date to a LOCAL one. A pre-v3

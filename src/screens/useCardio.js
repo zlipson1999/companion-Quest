@@ -6,17 +6,25 @@
 // "real movement counts" is exactly the thing this game cannot afford to have
 // drift, so there is one.
 //
-// What it deliberately does NOT do is roll encounters. That belongs to the
-// trail and only to the trail — indoors there is nothing to meet — so the
-// caller gets the delta and decides.
+// What it deliberately does NOT do is decide rewards or roll encounters. The
+// reducer's distance policy reserves trail quota, milestones and Quest Credits
+// for a selected route; the trail caller alone decides encounters.
 
 import { useEffect, useRef, useState } from 'react';
 import { useGame, useDistance } from '../state';
 import { PICKUP_POOL, getItem } from '../data/items';
 import { playSfx } from '../audio';
 
-// How long the walking pulse stays lit after the last step arrives.
-const MOVING_MS = 900;
+// A step counter speaks at footfall cadence; GPS speaks in coarser samples.
+// Holding the bike pose across the expected gap prevents a rider from visibly
+// freezing between valid location updates. Both return to idle when their real
+// sensor goes quiet.
+export const STEP_MOVING_MS = 900;
+export const GPS_MOVING_MS = 3200;
+
+export function movementHoldMs(gpsOnly) {
+  return gpsOnly ? GPS_MOVING_MS : STEP_MOVING_MS;
+}
 
 export default function useCardio({ active = true, gpsOnly = false, activity, onDelta, onMilestone, routeId } = {}) {
   const { state, dispatch } = useGame();
@@ -57,7 +65,7 @@ export default function useCardio({ active = true, gpsOnly = false, activity, on
 
     setMoving(true);
     if (moveTimer.current) clearTimeout(moveTimer.current);
-    moveTimer.current = setTimeout(() => setMoving(false), MOVING_MS);
+    moveTimer.current = setTimeout(() => setMoving(false), movementHoldMs(gpsOnly));
 
     if (cbs.current.onDelta) cbs.current.onDelta(dM, dS);
     // eslint-disable-next-line react-hooks/exhaustive-deps

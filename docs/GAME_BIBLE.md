@@ -169,7 +169,7 @@ the bed sleeps or logs last night, the desk is your habits,
 the kitchen counters log a meal, the kitchen shelf is the cookbook, the sofa is
 stillness, the wardrobe is your bag.
 
-## 4. Screens (all 32, registered in `screens/Router.js`)
+## 4. Screens (all 31, registered in `screens/Router.js`)
 
 Router holds the `SCREENS` map, `navigate(name, params)`, `toBattle(params)`
 (which plays the `BattleTransition` flash/wipe first), a `TOWN_BGM` set — every
@@ -337,13 +337,16 @@ are grown, never knotted.
   copy of that, and two copies of "real movement counts" is the last thing this
   game can afford to let drift. Encounters stay with the trail — indoors there
   is nothing to meet — so the hook hands back the delta and the caller decides.
-  **Gym cardio must not pass `routeId`.** Indoor miles still count as real
-  movement (XP, credit, lifetime stats) but they do not fill a trail quota.
-  The gym bike is the deliberate hybrid: the in-game machine stays indoors,
-  but Start begins a real outdoor bicycle ride through the same GPS watcher as
-  a run. Those deltas carry `activity: 'ride'`, add to `cyclingMi`, pay normal
-  distance rewards and never receive a `routeId`.
-- **Six trails** (`src/data/routes.js`), save `version: 11`. Maple Trail is
+  **Gym cardio must not pass `routeId`** — `state/distancePolicy.js` throws
+  if it does. Indoor miles still count as real movement (XP, lifetime stats,
+  `cardioSessions` history) but `ADD_DISTANCE` gates the trail meter,
+  milestones, trail-mile minting and `creditCarry` on the policy: a delta
+  with `activity: 'gym-cardio'` or `'ride'` advances none of them and mints
+  no Quest Credits. The gym bike is the deliberate hybrid: the in-game
+  machine stays indoors, but Start begins a real Bike Ride measured through
+  the same GPS watcher as a run. Those deltas carry `activity: 'ride'`, add
+  to `cyclingMi`, and never receive a `routeId`.
+- **Six trails** (`src/data/routes.js`), save `version: 12`. Maple Trail is
   unlocked from the start. Walk that trail's miles and confirm its reps in
   challenges, then Challenge the Warden. First win grants the Quest Pin, a
   Kinship Knot, and the next trail. Wild companion pick is random from that
@@ -453,33 +456,41 @@ showing up would have.
 
 ### 5.6b The Quest Ledger and Quest Tokens (`data/quests.js`)
 
-The other place credits are spent — and the reason the reception tour line
-says "purchase quests". A quest is bought at the desk, completed by real
-recorded behavior (the SAME stats and module buckets everything else keeps,
-measured against a snapshot taken at purchase so only new effort counts),
-and turned in for its category Token plus a reward paid through the usual
-`{xp,bond,evo,heal}` contract. 7 Quest Tokens, one per category; 8 quests on
-the board; at most 3 active; 7-day windows; abandoning frees the slot with
-no refund. Tokens are collectible proof, never money: they cannot be spent,
-never convert to credits, and never touch trail progress. Check-in records
-attendance only, once per day.
+Quests are free: optional goals a player chooses at the reception desk,
+never purchased. Accepting, abandoning and turning in move no credits in
+either direction (`ACCEPT_QUEST` / `ABANDON_QUEST` / `TURN_IN_QUEST` — the
+`test_quest_ledger.mjs` guard reads the reducer source and fails if any of
+those cases so much as mentions credits). A quest is completed by real
+recorded behavior — the SAME stats and module buckets everything else
+keeps, measured against a snapshot taken at acceptance so only new effort
+counts — and turned in at the desk for its category Token plus a reward
+paid through the usual `{xp,bond,evo,heal}` contract.
+7 Quest Tokens, one per category; 8 quests on
+the board; at most 3 active; 7-day windows;
+abandoning frees the slot with nothing lost because nothing was paid.
+Tokens are collectible proof of completion, never money: they cannot be
+spent or sold, never convert to credits, and never touch trail progress.
+Reception check-in is attendance only, once per local day, timestamped
+(§12 `gymCheckIns`); the Seven-Day Foundation counts post-acceptance
+check-in days.
 
-| quest | token | price | requirements | reward |
-|---|---|---|---|---|
-| Ten-Minute Trek | Stride | 15 | walk 0.5 real mi | +40 XP |
-| Wheels in Motion | Stride | 10 | 1 Bike Ride | +30 XP |
-| Foundation Set | Forge | 15 | 2 strength sessions | +6 Evolve Points |
-| Balanced Bowl | Harvest | 15 | 3 meals logged | +30 Resolve, +6 bond |
-| Fill the Flask | Rill | 15 | water goal on 2 days | +35 Resolve |
-| Rest to Rise | Hearth | 15 | sleep logged 2 nights | Resolve fully restored |
-| Five Calm Breaths | Stillwater | 15 | 2 stillness sessions | +12 bond |
-| Seven-Day Foundation | Root | 30 | 3 check-ins, 2 strength, 1 cardio, water×4, meals×3, sleep×2, stillness×1 | +10 bond + 1 Kinship Knot |
+| quest | token | requirements | reward |
+|---|---|---|---|
+| Ten-Minute Trek | Stride | walk 0.5 real mi | +40 XP |
+| Wheels in Motion | Stride | 1 Bike Ride | +30 XP |
+| Foundation Set | Forge | 2 strength sessions | +6 Evolve Points |
+| Balanced Bowl | Harvest | 3 meals logged | +30 Resolve, +6 bond |
+| Fill the Flask | Rill | water goal on 2 days | +35 Resolve |
+| Rest to Rise | Hearth | sleep logged 2 nights | Resolve fully restored |
+| Five Calm Breaths | Stillwater | 2 stillness sessions | +12 bond |
+| Seven-Day Foundation | Root | 3 check-ins, 2 strength, 1 cardio, water×4, meals×3, sleep×2, stillness×1 | +10 bond + 1 Kinship Knot |
 
 Rewards are matched to what each category already pays elsewhere: movement
 is the XP engine, training earns Evolve Points, food and water restore,
 sleep is the full heal, stillness pays bond, and consistency earns a
-Kinship Knot. No quest mints credits — a bought quest that refunded its
-price in credits would be a money printer, and the economy has none.
+Kinship Knot. No quest mints credits, and no quest costs them. (For one
+release quests were bought with Quest Credits; the v12 migration refunds
+those historical prices exactly once, guarded by `quests.refundApplied`.)
 Token art: 7 painted plates in `assets/items/tokens/` (masters mirrored in
 `tools/reference_art/tokens/`), drawn via `data/tokenImages.js`.
 
@@ -824,7 +835,7 @@ whose stages are too similar. The `sphere()` + `eye()` recipe is how
 the first trail pass came out as twelve interchangeable blobs and is
 not used again.
 
-## 9. UI components (30)
+## 9. UI components (32)
 
 `src/components/index.js` exports 30. HorizonSky is its own painter so the
 stage and the walk cannot drift; GrowthCeremony is the evolution hold, not a
@@ -876,10 +887,10 @@ board_update, friend_request, friend_accept + bgm_town / bgm_battle loops.
 `audio/sfx.js` wraps expo-av; every call degrades silently (web autoplay,
 early calls). BGM switching lives in Router via TOWN_BGM.
 
-## 12. Save format — `companionquest:save:v1` key, `version: 11`
+## 12. Save format — `companionquest:save:v1` key, `version: 12`
 
 ```js
-{ version: 11, started, goalId,                    // 'muscle'|'lean'|'root'
+{ version: 12, started, goalId,                    // 'muscle'|'lean'|'root'
   playerOutfit, playerGender,                     // one-time, v6
   party: [{ id, baseId, xp, bond, evo, hp,
             charm }],                             // ≤6; charm = worn Trail
@@ -893,11 +904,15 @@ early calls). BGM switching lives in Router via TOWN_BGM.
            sets, reps, holdSec,                   // real exercise done
            exercises: { [exerciseId|'workout:<id>']: amount } },
   bag: { itemId: count }, dex: { creatureId: 'owned'|'seen' },
-  quests: { checkIns: ['YYYY-MM-DD'],             // reception attendance
-            active: [{ questId, startedDay,
-                       base }],                   // stat snapshot at purchase
+  quests: { active: [{ questId, startedDay,
+                       base }],                   // stat snapshot at acceptance
             completed: [{ questId, day }],
-            tokens: { tokenId: count } },         // the Token Case
+            tokens: { tokenId: count },           // the Token Case
+            refundApplied },                      // v12 one-time refund flag
+  cardioSessions: [{ station, miles, seconds,     // gym cardio history only,
+                     endedAt }],                  // last 120 (v12)
+  gymCheckIns: [{ day: 'YYYY-MM-DD',              // reception attendance:
+                  checkedAt }],                   // first arrival per day (v12)
   modules: { [id]: { date, count, entries, goalHit, streak, bestStreak,
                      lastGoalDate, goalDays, totalCount, totalLogs,
                      paid?, goalCredit?, bonusPaid?,        // replaces-modules
@@ -933,6 +948,7 @@ Migrations, all in HYDRATE — and every one of them refuses to invent history:
 | v8→9 | `trails` — Maple Trail at zero miles/reps, no pins. Older miles are not back-credited: they were not trail-tagged, and gym miles must never fill a trail quota |
 | v9→10 | D-Pad becomes the default; a stored `stick` from before the choice existed migrates once |
 | v10→11 | `cyclingMi` / `ridesDone` default to zero, preserving all existing lifetime distance without inventing old bicycle history |
+| v11→12 | quests became free: priced-era purchases refunded at their exact historical prices exactly once (`quests.refundApplied`); `quests.checkIns` day strings become timestamped `gymCheckIns` (synthesized noon — the old record never held the real time); `cardioSessions` starts empty |
 
 Plus, every load: goal ids translated, `rollAllModules` day roll, and a
 `MODULE_RESET_DAY` self-heal from the Habits screens so a session left open past

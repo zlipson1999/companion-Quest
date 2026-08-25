@@ -258,9 +258,13 @@ export default function FriendsScreen() {
 
             <FieldCard tone="paper" title="What is shared" style={{ marginTop: space.md }}>
               <Line label="Days of training" value={String(payload.days.length)} />
+              <Line
+                label="Bike miles in those days"
+                value={payload.days.reduce((sum, day) => sum + (day.cyclingMi || 0), 0).toFixed(1)}
+              />
               <Line label="Personal bests" value={String(payload.records.length)} />
               <PixelText size="tiny" color={tokens.textOnPaperDim} style={{ marginTop: 8, lineHeight: 14 }}>
-                One row per day — miles, steps, sessions and sets. Never a running total, so
+                One row per day — total miles, bike miles, rides, steps, sessions and sets. Never a running total, so
                 the server can check a day against what a person can actually do.
               </PixelText>
             </FieldCard>

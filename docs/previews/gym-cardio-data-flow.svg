@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="860" viewBox="0 0 1400 860">
+  <defs>
+    <style>
+      .bg { fill: #17252a; }
+      .panel { fill: #f4ead5; stroke: #1a1715; stroke-width: 6; }
+      .gym { fill: #dbe8cc; stroke: #1a1715; stroke-width: 6; }
+      .gate { fill: #f3c969; stroke: #1a1715; stroke-width: 6; }
+      .blocked { fill: #f1c1b5; stroke: #1a1715; stroke-width: 6; }
+      .title { font: 700 34px DejaVu Sans, sans-serif; fill: #f3c969; }
+      .h { font: 700 25px DejaVu Sans, sans-serif; fill: #1a1715; }
+      .t { font: 20px DejaVu Sans, sans-serif; fill: #2c2926; }
+      .small { font: 17px DejaVu Sans, sans-serif; fill: #514b45; }
+      .micro { font: 14px DejaVu Sans, sans-serif; fill: #514b45; }
+      .footer { font: 17px DejaVu Sans, sans-serif; fill: #c8bda8; }
+      .arrow { fill: none; stroke: #f3c969; stroke-width: 8; marker-end: url(#tip); }
+      .no { fill: none; stroke: #df6c5b; stroke-width: 8; marker-end: url(#redtip); }
+    </style>
+    <marker id="tip" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#f3c969"/>
+    </marker>
+    <marker id="redtip" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#df6c5b"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1400" height="860"/>
+  <text class="title" x="70" y="64">QUEST FITNESS CARDIO: RECORDED, NEVER A TRAIL</text>
+
+  <rect class="gym" x="70" y="115" rx="16" width="350" height="260"/>
+  <text class="h" x="100" y="158">QUEST FITNESS ONLY</text>
+  <text class="t" x="100" y="207">Treadmill</text>
+  <text class="small" x="100" y="237">real phone step deltas</text>
+  <text class="t" x="100" y="287">Stationary in-game bike</text>
+  <text class="small" x="100" y="317">real outdoor bicycle + GPS</text>
+  <text class="small" x="100" y="350">The rider sprite stays in the gym.</text>
+
+  <path class="arrow" d="M420 245 H520"/>
+
+  <rect class="gate" x="530" y="115" rx="16" width="350" height="260"/>
+  <text class="h" x="560" y="158">GYM DISTANCE POLICY</text>
+  <text class="t" x="560" y="207">No routeId allowed</text>
+  <text class="t" x="560" y="252">Saved as real cardio</text>
+  <text class="small" x="560" y="286">distance + cycling subset</text>
+  <text class="small" x="560" y="316">duration + machine + date</text>
+  <text class="small" x="560" y="346">general companion distance XP</text>
+
+  <path class="no" d="M880 245 H980"/>
+
+  <rect class="blocked" x="990" y="115" rx="16" width="340" height="260"/>
+  <text class="h" x="1020" y="158">HARD-BLOCKED</text>
+  <text class="t" x="1020" y="207">Trail quota</text>
+  <text class="t" x="1020" y="247">Trail milestones</text>
+  <text class="t" x="1020" y="287">Trail encounters</text>
+  <text class="t" x="1020" y="327">Trail Credit</text>
+
+  <path class="arrow" d="M705 375 V455"/>
+
+  <rect class="panel" x="70" y="470" rx="16" width="1260" height="310"/>
+  <text class="h" x="100" y="515">EVERY PLACE BIKE HISTORY NOW APPEARS</text>
+
+  <rect class="gym" x="105" y="555" rx="12" width="230" height="86"/>
+  <text class="t" x="132" y="592">Phone tracker</text>
+  <text class="micro" x="132" y="619">today / lifetime / recent log</text>
+
+  <rect class="gym" x="365" y="555" rx="12" width="230" height="86"/>
+  <text class="t" x="397" y="592">Reception</text>
+  <text class="small" x="397" y="619">week + recent cardio</text>
+
+  <rect class="gym" x="625" y="555" rx="12" width="230" height="86"/>
+  <text class="t" x="662" y="592">Week view</text>
+  <text class="micro" x="650" y="619">bike miles / rides / sessions</text>
+
+  <rect class="gym" x="885" y="555" rx="12" width="400" height="86"/>
+  <text class="t" x="915" y="592">Noticeboard + day sync</text>
+  <text class="small" x="915" y="619">local bike card + accepted-circle Bike tab</text>
+
+  <rect class="gate" x="220" y="675" rx="12" width="300" height="70"/>
+  <text class="t" x="258" y="716">Maple's full gym tour</text>
+
+  <rect class="gate" x="550" y="675" rx="12" width="300" height="70"/>
+  <text class="t" x="615" y="716">Coach context</text>
+
+  <rect class="gate" x="880" y="675" rx="12" width="300" height="70"/>
+  <text class="t" x="930" y="704">Save v12</text>
+  <text class="small" x="924" y="730">latest 120 cardio sessions</text>
+
+  <text class="footer" x="70" y="828">Selected outdoor trails keep their existing mileage rewards. Gym bike and treadmill sessions cannot enter that path.</text>
+</svg>

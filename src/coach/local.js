@@ -273,12 +273,12 @@ const INTENTS = [
   },
   {
     id: 'steps',
-    test: /\b(step|walk|distance|mile|run|running|cardio|pedometer)\b/i,
+    test: /\b(step|walk|distance|mile|run|running|cardio|pedometer|bike|biking|bicycle|cycling|treadmill|ride)\b/i,
     answer: (f) => {
       const mi = Math.round(f.recent.distanceMi * 10) / 10;
-      if (!mi) return 'No distance logged in the last two weeks. Trails move on real steps or a GPS run; a Bike Ride earns cardio progress but never fills a walking trail.';
+      if (!mi) return 'No distance logged in the last two weeks. Trails move only after you choose one outside. The gym bike and treadmill keep separate cardio records, but add no trail progress or Quest Credits.';
       const cycled = Math.round((f.recent.cyclingMi || 0) * 10) / 10;
-      return `${mi} total miles over the last ${RECENT_DAYS} days${cycled ? `, including ${cycled} cycled` : ''}; ${Math.round(f.week.distanceMi * 10) / 10} miles this week. Only miles logged on a selected trail advance that trail and roll encounters. Bike rides still earn distance XP and Quest Credits, but stay out of walking-trail quotas.`;
+      return `${mi} total miles over the last ${RECENT_DAYS} days${cycled ? `, including ${cycled} cycled across ${f.recent.rides || 0} rides` : ''}; ${Math.round(f.week.distanceMi * 10) / 10} miles this week. Only miles logged on a selected outdoor trail advance its quota, milestones, encounters, or Quest Credits. Gym bike and treadmill miles stay in cardio history instead.`;
     },
   },
 ];
