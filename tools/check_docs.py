@@ -189,6 +189,57 @@ def paired_source_checks():
     return bad
 
 
+def repeated_figure_checks():
+    """Figures the bible states in more than ONE sentence.
+
+    CHECKS above matches once — re.search stops at the first hit — so a number
+    quoted twice can pass while one of the two occurrences is stale. That is
+    not hypothetical. #91 moved the rower's animation hold from 1.2s to 3s and
+    updated the sentence in the cardio section, while the animation-holds
+    paragraph a hundred lines earlier kept saying 1.2s. Nothing caught it: the
+    hold was not a checked figure, and even as one it would have matched the
+    corrected sentence first and reported ok.
+
+    So these are checked by EVERY occurrence. Each pattern must be present and
+    each captured value must agree with the source, or the build fails. A
+    pattern that stops matching is also a failure — a sentence someone deleted
+    or reworded is exactly how the second copy goes unwatched again.
+    """
+    bible = read('docs/GAME_BIBLE.md')
+    hook = read('src/screens/useCardio.js')
+
+    def seconds(ms):
+        # 3000 -> '3', 2500 -> '2.5', 1200 -> '1.2'. The bible writes these
+        # holds in seconds; the source declares them in milliseconds.
+        return f'{int(ms) / 1000:g}'
+
+    groups = [
+        ('rower animation hold',
+         seconds(first(r'STROKE_MOVING_MS = (\d+)', hook, 'STROKE_MOVING_MS')),
+         bible,
+         [(r'([\d.]+)s for a rower tap', 'animation-holds paragraph'),
+          (r'tap starts only a ([\d.]+)s animation pulse', 'cardio floor section')]),
+    ]
+
+    bad = []
+    patterns = 0
+    for label, actual, doc, wanted in groups:
+        for pattern, where in wanted:
+            patterns += 1
+            found = re.findall(pattern, doc)
+            if not found:
+                bad.append(f'{label} — {where}')
+                print(f'DRIFT {label:<30} not found in the {where}')
+                continue
+            stale = [c for c in found if c != actual]
+            if stale:
+                bad.append(f'{label} — {where}')
+                print(f'DRIFT {label:<30} doc={stale[0]}s  code={actual}s  ({where})')
+            else:
+                print(f'ok   {label:<30} {actual}s in the {where}')
+    return bad, patterns
+
+
 def banned_name_checks():
     """Renames are forever, and agents regenerate text constantly.
 
@@ -246,6 +297,8 @@ def main():
         if not good:
             bad.append(label)
 
+    repeated_bad, repeated_n = repeated_figure_checks()
+    bad += repeated_bad
     bad += paired_source_checks()
     bad += banned_name_checks()
 
@@ -256,7 +309,7 @@ def main():
             print(f'  - {b}')
         print('\nFix the doc (and the prose around the number, not just the digit).')
         return 1
-    print(f'The docs agree with the code on all {len(checks) + len(other)} checked figures,\nand the coach guardrail matches on both sides.')
+    print(f'The docs agree with the code on all {len(checks) + len(other) + repeated_n} checked figures,\nand the coach guardrail matches on both sides.')
     return 0
 
 
