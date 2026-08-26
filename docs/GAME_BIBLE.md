@@ -493,7 +493,7 @@ reporting gap for that sensor. There is no forward-looking payment lease: the
 unconfirmed tail after the final step, GPS sample or stroke earns nothing.
 
 **Animation holds never decide payment** (`screens/useCardio.js`). Animation
-uses 900ms for steps, 3.2s for GPS and 1.2s for a rower tap so the character is
+uses 900ms for steps, 3.2s for GPS and 3s for a rower tap so the character is
 readable without pretending the next seconds contain work. Confirmation may
 bridge up to 3s between step reports, 3.2s between GPS reports and 5s between
 rower strokes, but only after a second real signal proves the preceding
