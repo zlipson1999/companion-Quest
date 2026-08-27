@@ -40,6 +40,9 @@ const WALL_FIELD_BY_MAP = { home: 'tile_home_wall', gym: 'tile_gym_block' };
 const ROOF_CODES = new Set(['h', 'y']);
 const BUILDING_WALL_CODES = new Set(['H', 'Y', 'D', 'd']);
 
+// Scatter that draws OVER the ground rather than replacing it.
+const SCATTER_OVERLAY = { ',': 'prop_flowers', '^': 'prop_tallgrass' };
+
 // Tile code -> sprite key. Animated tiles list their frames.
 const TILE_SPRITES = {
   '.': ['tile_grass', 'tile_grass_b'],
@@ -53,7 +56,6 @@ const TILE_SPRITES = {
   Y: ['tile_window'],
   D: ['tile_door'],
   d: ['tile_door'],
-  '^': ['tile_tallgrass'],
   // Quest Fitness interior
   W: ['tile_wall'],
   '=': ['tile_gym_wall'],
@@ -325,7 +327,9 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
   // What the CODE is, not where it is. Folding `zoneField` in here meant every
   // square inside a zone counted as bare floor, so the whole rack row drew as
   // empty platform: the props never reached their own branch.
-  const isFloorCode = code === '.' || code === ',';
+  // ',' and '^' are ground with something growing on it, not their own
+  // surfaces — both draw the field and then an overlay.
+  const isFloorCode = code === '.' || code === ',' || code === '^';
 
   let layers;
   // The gate takes the path's own autotiling. It used to render a wooden door
@@ -347,9 +351,13 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
       ...innerCorners(map, x, y, WATER_CODES, 'tile_water'),
     ];
   } else if (isFloorCode) {
-    // Flowers are an overlay now, so the ground runs on underneath them.
-    layers = code === ',' && !floor
-      ? [{ key: ground }, ...edges, { key: 'prop_flowers' }]
+    // Flowers and tall grass are overlays, so the ground runs on underneath
+    // them. Both used to be tiles carrying their own plate of ground, which
+    // stamped a hard 16px square of a different texture into continuous grass
+    // — on a trail that is a fifth tall grass, hundreds of them.
+    const overlay = !floor ? SCATTER_OVERLAY[code] : null;
+    layers = overlay
+      ? [{ key: ground }, ...edges, { key: overlay }]
       : [{ key: ground }, ...edges];
   } else if (propFor(map, code)) {
     // Wall dressing hangs on the wall, not on the floor.

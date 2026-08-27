@@ -60,6 +60,10 @@ def rgb_to_hex(c):
     return '#%02x%02x%02x' % tuple(max(0, min(255, int(round(v)))) for v in c)
 
 
+def _luma(c):
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+
+
 def rgb_to_hsv(c):
     r, g, b = [v / 255.0 for v in c]
     mx, mn = max(r, g, b), min(r, g, b)
@@ -2280,6 +2284,49 @@ def blended_tile(ground, over, mask, seed, rim_mul=0.72):
 FIELD_SPAN = 4          # tiles across one field texture
 
 
+# How much to settle each traced ground field, 0 = untouched.
+#
+# The outdoor ground was drawn tuft-to-tuft: every square inch of grass carries
+# a bright sprig, so detail is uniform and maximal and the eye has nowhere to
+# rest. On a phone that reads as a wall of pixels rather than as a field —
+# "pixelated and full". The drawing is good; there is just no quiet in it.
+#
+# So keep every shape and take the SHOUT out: pull each palette colour's
+# luminance toward the field's own mean. The tufts settle into the mat and read
+# as texture instead of as hundreds of separate objects.
+#
+# The obvious alternative — deleting some tufts to open up bare patches — was
+# tried and is not here. Any cell-based thinning puts back a visible grid, the
+# same artefact that removing light_pool() from the interiors just took out.
+CALM_FIELDS = {
+    'field_grass': 0.40,
+    'field_tree': 0.30,
+    'field_path': 0.22,
+}
+
+
+def calm_palette(colors, t):
+    """Compress a palette toward its own mean luminance."""
+    if not t:
+        return colors
+    real = [hex_to_rgb(c) for c in colors if c != 'transparent']
+    if not real:
+        return colors
+    def lum(c):
+        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+    mean = sum(lum(c) for c in real) / len(real)
+    out = []
+    for c in colors:
+        if c == 'transparent':
+            out.append(c)
+            continue
+        rgb = hex_to_rgb(c)
+        L = lum(rgb)
+        k = 1.0 if L <= 0 else (L + (mean - L) * t) / L
+        out.append(rgb_to_hex(tuple(v * k for v in rgb)))
+    return out
+
+
 def field_slices(name, span=FIELD_SPAN):
     """Cut one large texture into span x span tiles that line up edge to edge.
 
@@ -2454,24 +2501,66 @@ def ao_overlay(sides):
     return c
 
 
-def tile_tallgrass():
-    """Has to read as TALLER than the field it sits in, at a glance, because
-    walking into it is what starts an encounter.
+def prop_tallgrass(field='field_grass'):
+    """Tall stems drawn OVER whatever ground they stand in, in that ground's
+    own colours.
 
-    Three clumps, not five evenly spaced columns: a picket fence of stems every
-    three pixels turns a field of these into corduroy.
+    Two things were wrong with what stood here.
+
+    It was a TILE — an opaque 16x16 square carrying its own shaded ground — and
+    on a trail that is a fifth tall grass it stamped hundreds of hard dark
+    squares across a continuous field. That is the chunk, and it is the same
+    mistake the flower tile made before `prop_flowers` replaced it: "a solid
+    16x16 square of a different texture, which in the middle of continuous
+    grass is exactly the chunk we are trying to get rid of."
+
+    And its colours came from the procedural `terra` ramp while the field it
+    stands in is traced art with a quite different green. Drawn that way the
+    clumps read as sage-coloured plastic planted in an olive meadow. A blade
+    has to be the same PLANT as the field, so the palette is taken from the
+    field's own: tip near the top of its range, blade fading down through the
+    middle, shadow and contact well below. Pick by luminance rank rather than
+    by index — a traced palette is in no particular order.
+
+    Heights vary inside each clump. Stems of equal height every two pixels read
+    as a picket fence, which is the other way this goes wrong.
     """
-    c = tile('terra')
-    mottle(c, 'body', 0.40, 0.04, 31)              # shaded ground between clumps
-    for cx, cy, n in ((3, 9, 3), (9, 6, 4), (13, 12, 2)):
-        for i in range(n):
-            bx = cx + i * 2 - n
-            top = cy - 5 + (i % 2) * 2
-            c.rect(bx, top, bx, cy, 'body', 0.90)          # stem
-            c.rect(bx + 1, top + 1, bx + 1, cy, 'body', 0.28)   # its shadow
-            c.put(bx, top - 1, 'body', 0.98)               # tip catches the sun
-        c.rect(cx - n, cy + 1, cx + n - 1, cy + 1, 'body', 0.20)   # contact shadow
-    return c
+    blob = _raw_traced(field)
+    if not blob:
+        return None
+    pal = list(blob['palette'])
+    order = sorted(range(len(pal)), key=lambda i: _luma(hex_to_rgb(pal[i])))
+
+    def at(frac):
+        return order[max(0, min(len(order) - 1, int(frac * (len(order) - 1))))] + 1
+
+    tip, hi, lo, shadow, contact = at(0.96), at(0.86), at(0.62), at(0.22), at(0.10)
+    size = TILE * TILE_SCALE
+    grid = [[0] * size for _ in range(size)]
+
+    def put(x, y, v):
+        if 0 <= x < size and 0 <= y < size:
+            grid[y][x] = v
+
+    # (clump centre, ground line, blade heights) at 32px resolution.
+    for cx, cy, hs in ((7, 23, (14, 10, 16)), (18, 17, (12, 18, 10, 14)), (27, 29, (10, 14))):
+        span = len(hs)
+        for i, hgt in enumerate(hs):
+            bx = cx + (i - span // 2) * 2
+            top = cy - hgt
+            put(bx, top, tip)
+            put(bx + 1, top + 1, tip)
+            for y in range(top + 1, cy + 1):
+                t = (y - top) / float(max(1, cy - top))
+                v = hi if t < 0.55 else lo
+                put(bx, y, v)
+                put(bx + 1, y, v if t < 0.30 else lo)
+                put(bx + 2, y, shadow)
+        base = cx - (span // 2) * 2
+        for x in range(base - 1, base + span * 2):
+            put(x, cy + 1, contact)
+    rows = [''.join(TRANSPARENT if v == 0 else DIGITS[v] for v in row) for row in grid]
+    return ['transparent'] + pal, rows
 
 
 def tile_path(variant=0):
@@ -2538,13 +2627,15 @@ def tile_water(frame=0):
 
 def tile_flowers():
     c = tile_grass(0)
+    # Petals at 0.95 and a centre at full white read as sparkles rather than as
+    # flowers once there are hundreds of them across a trail.
     for fx, fy, petal in ((4, 5, 'leaf'), (11, 9, 'belly'), (8, 13, 'leaf')):
-        c.put(fx, fy - 1, petal, 0.95)
-        c.put(fx - 1, fy, petal, 0.95)
-        c.put(fx + 1, fy, petal, 0.78)
-        c.put(fx, fy + 1, petal, 0.70)
-        c.put(fx, fy, 'belly', 1.0)              # bright centre
-        c.put(fx + 1, fy + 1, 'body', 0.32)      # shadow on the grass
+        c.put(fx, fy - 1, petal, 0.80)
+        c.put(fx - 1, fy, petal, 0.80)
+        c.put(fx + 1, fy, petal, 0.66)
+        c.put(fx, fy + 1, petal, 0.60)
+        c.put(fx, fy, 'belly', 0.86)             # bright centre
+        c.put(fx + 1, fy + 1, 'body', 0.34)      # shadow on the grass
     return c
 
 
@@ -3266,11 +3357,13 @@ def prop_flowers():
         (3, 5, 'leaf'), (9, 3, 'belly'), (13, 8, 'leaf'),
         (6, 11, 'belly'), (11, 13, 'leaf'), (2, 12, 'belly'),
     ):
-        c.put(cx, cy, ramp, 0.92)
-        c.put(cx - 1, cy, ramp, 0.74)
-        c.put(cx + 1, cy, ramp, 0.74)
-        c.put(cx, cy - 1, ramp, 0.80)
-        c.put(cx, cy + 1, ramp, 0.46)
+        # Same reason as tile_flowers: six blossoms per tile at 0.92 across a
+        # whole trail is a field of confetti, not a meadow.
+        c.put(cx, cy, ramp, 0.78)
+        c.put(cx - 1, cy, ramp, 0.63)
+        c.put(cx + 1, cy, ramp, 0.63)
+        c.put(cx, cy - 1, ramp, 0.68)
+        c.put(cx, cy + 1, ramp, 0.44)
         c.put(cx, cy + 2, 'body', 0.40)      # a short stem
     return c
 
@@ -4052,7 +4145,11 @@ def build_all():
 
     # tiles
     add('tile_grass', tile_grass(0)); add('tile_grass_b', tile_grass(1))
-    add('tile_tallgrass', tile_tallgrass())
+    _tg = prop_tallgrass()
+    if _tg:
+        _tgc, _tgr = _tg
+        traced_palettes['art_prop_tallgrass'] = _tgc
+        s['prop_tallgrass'] = {'palette': 'art_prop_tallgrass', 'grid': _tgr}
     add('tile_path', tile_path(0)); add('tile_path_b', tile_path(1))
 
     # Autotiles: one per cardinal-neighbour mask, plus the diagonal notches and
@@ -4089,6 +4186,12 @@ def build_all():
         for i, rows in enumerate(field_from_canvas(canvas)):
             s['%s_f%d' % (prefix, i)] = {'palette': pal, 'grid': rows}
 
+    def calmed(field, slices):
+        t = CALM_FIELDS.get(field)
+        if not slices or not t:
+            return slices
+        return [(calm_palette(colors, t), rows) for colors, rows in slices]
+
     for _field, _prefix in (
         ('field_grass', 'tile_grass'),
         ('field_path', 'tile_path'),
@@ -4099,7 +4202,7 @@ def build_all():
         ('field_roof_rest', 'tile_roof_rest'),
         ('field_roof_gym', 'tile_roof_gym'),
     ):
-        if add_field(_prefix, field_slices(_field)):
+        if add_field(_prefix, calmed(_field, field_slices(_field))):
             used_traced.add(_field)
 
     add_canvas_field('tile_home_floor', home_floor_field())

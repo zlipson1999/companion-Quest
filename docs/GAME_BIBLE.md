@@ -985,6 +985,21 @@ Kinship Knot.
   indoor floors, the rug, the kitchen vinyl, the gym's rubber/wood/turf/matting
   are 64×64 textures windowed across a 4×4 tile block by world position, so
   they run continuously and repeat four tiles apart.
+- Outdoor ground is SETTLED on the way out (`CALM_FIELDS` in `make_sprites.py`:
+  grass 0.40, tree 0.30, path 0.22). The traced grass is drawn tuft-to-tuft, so
+  detail is uniform and maximal and the eye has nowhere to rest — a wall of
+  pixels rather than a field. Every colour's luminance is pulled toward the
+  field's own mean, which keeps every shape and takes out the shout. Deleting
+  tufts to open bare patches was tried instead; any cell-based thinning puts a
+  visible grid back.
+- Scatter — flowers and tall grass — draws OVER the ground, never as its own
+  tile. `SCATTER_OVERLAY` in `TileMap.js` maps `,` → `prop_flowers` and `^` →
+  `prop_tallgrass`; both codes are floor codes, so the field runs underneath
+  unbroken. Tall grass was a tile until it wasn't: an opaque square carrying
+  its own plate of ground, stamped onto a fifth of every trail tile. Its
+  palette is taken from the field it stands in, picked by luminance rank —
+  drawn on the procedural `terra` ramp it came out sage plastic in an olive
+  meadow. `^` is cosmetic and walkable; encounters are distance-driven.
 - Interiors are lit by ONE image — `assets/tiles/room-light.png`, stretched over
   the whole map by `TileMap`: open in the middle, sitting back at the edges.
   There used to be a second, per-field layer: `light_pool()` baked a ceiling
