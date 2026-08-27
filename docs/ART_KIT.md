@@ -163,12 +163,13 @@ ramp, so a room had no visible corners. Interior plaster has its own `plaster`
 palette now — cool and pale against a honey board floor — and that difference IS
 the edge of the room.
 
-`light_pool()` bakes a ceiling fixture's pool into a floor field. A field is
-exactly one fixture cell across, so the pools land on a regular grid for free
-and the floor between them falls away instead of being one flat sheet. Drawn as
-its OWN dithered layer first, which is what a single-colour overlay has to do to
-fake a gradient, and at this tile size the scatter read as television static laid
-over the rubber. It belongs in the material's own ramp. Where a dither IS
+Room lighting is ONE image — `assets/tiles/room-light.png`, stretched over the
+whole map. Do not bake it per tile or per field. `light_pool()` used to put a
+ceiling fixture's pool into each floor field and is gone: a gradient baked into
+a repeating unit cannot cross that unit's boundary, so tiling it lit the floor
+as a grid of 4×4 chunks. Light that describes a ROOM has to be authored at the
+room's scale. (It was a dithered overlay before that, which at this tile size
+read as television static.) Where a dither IS
 unavoidable — the zone joints — use an **ordered Bayer threshold**, which reads
 as a ramp where hash noise reads as static. Note it is deliberately NOT applied
 to walls: a wall is vertical, and running the pool across it put a visible 2x2

@@ -985,10 +985,17 @@ Kinship Knot.
   indoor floors, the rug, the kitchen vinyl, the gym's rubber/wood/turf/matting
   are 64×64 textures windowed across a 4×4 tile block by world position, so
   they run continuously and repeat four tiles apart.
-- Interiors are lit by `light_pool()`, baked into the material's own ramp. A
-  field is exactly one fixture cell across, so the pools land on the fixture
-  grid for free. Drawn as its own dithered layer first, it read as television
-  static over the rubber.
+- Interiors are lit by ONE image — `assets/tiles/room-light.png`, stretched over
+  the whole map by `TileMap`: open in the middle, sitting back at the edges.
+  There used to be a second, per-field layer: `light_pool()` baked a ceiling
+  fixture's pool into each floor field, radial, bright at the field's centre and
+  dropping below zero at its corners. The idea followed from the field system —
+  a field is exactly one fixture cell across, so pools land every four tiles for
+  free — but a gradient baked per field cannot cross a field boundary. Tiled, it
+  gave every 4×4 block its own bright middle and dark rim, and that grid of
+  chunks was most of what made the floors read as blocky. Removed from all seven
+  indoor fields. A periodic falloff tiles seamlessly and was tried: it trades
+  the grid for soft blobs that read as dirt.
 - Multi-tile furniture autotiles (`RUN_PROPS`): a two-tile sofa was two sofas
   with four arms. `_l`/`_m`/`_r` are picked from a prop's own neighbours, the
   same way a path picks its edge.

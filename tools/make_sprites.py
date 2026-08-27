@@ -2711,7 +2711,6 @@ def home_floor_field(span=FIELD_SPAN):
                     if rx * rx * 0.5 + ry * ry <= 4 and 0 <= ky + ry < px:
                         c._set(kx + rx, ky + ry, 'body', tone - 0.12)
             c._set(kx, ky, 'body', tone - 0.19)
-    light_pool(c, 0.15)
     return c
 
 
@@ -2772,7 +2771,6 @@ def home_rug_field(span=FIELD_SPAN):
                         c._set(cx + dx, cy + dy, 'leaf', 0.60)
                     elif d <= 4:
                         c._set(cx + dx, cy + dy, 'leaf', 0.48)
-    light_pool(c, 0.12)
     return c
 
 
@@ -2798,7 +2796,6 @@ def home_kitchen_field(span=FIELD_SPAN):
                 c._set(x, y, 'belly', 0.46)
             elif n > 0.885:
                 c._set(x, y, 'accent', 0.42)      # the odd fleck of warmth
-    light_pool(c, 0.14)
     return c
 
 
@@ -2825,7 +2822,6 @@ def gym_floor_field(span=FIELD_SPAN):
         c.rect_px(k + 1, 0, k + 1, px - 1, 'belly', 0.56)
         c.rect_px(0, k, px - 1, k, 'belly', 0.47)
         c.rect_px(0, k + 1, px - 1, k + 1, 'belly', 0.56)
-    light_pool(c, 0.22)
     return c
 
 
@@ -2848,7 +2844,6 @@ def gym_platform_field(span=FIELD_SPAN):
                 c._set(x, y, 'body', tone + grain + (hsh(x // 2, y, 217) - 0.5) * 0.016)
         c.rect_px(0, top, px - 1, top, 'body', tone - 0.09)
         c.rect_px(0, top + 1, px - 1, top + 1, 'body', tone + 0.07)
-    light_pool(c, 0.15)
     return c
 
 
@@ -2867,7 +2862,6 @@ def gym_turf_field(span=FIELD_SPAN):
                 c._set(x, y, 'body', 0.27)          # blade flecks
     for lane in range(0, px, 64):                    # one lane line every two tiles
         c.rect_px(lane, 0, lane, px - 1, 'belly', 0.90)
-    light_pool(c, 0.13)
     return c
 
 
@@ -2896,7 +2890,6 @@ def gym_mat_field(span=FIELD_SPAN):
         c.rect_px(k + 1, 0, k + 1, px - 1, 'belly', 0.51)    # bevel catching the light
         c.rect_px(0, k, px - 1, k, 'belly', 0.22)
         c.rect_px(0, k + 1, px - 1, k + 1, 'belly', 0.51)
-    light_pool(c, 0.19)
     return c
 
 
@@ -2910,31 +2903,23 @@ def _ordered(x, y):
     return (BAYER4[y % 4][x % 4] + 0.5) / 16.0
 
 
-def light_pool(c, amount=0.12):
-    """Bake a hall fixture's pool of light into a floor field.
-
-    The first pass drew the lighting as its OWN dithered layer over the floor.
-    A single-colour layer can only fake a gradient by scattering, and at this
-    tile size the scatter read as television static laid over the rubber.
-
-    A floor field is already exactly one fixture cell across, so the light
-    belongs in the material's own ramp: every pixel is lifted or dropped by
-    where it sits under the fixture. That is a real gradient rather than a
-    dither, it costs no extra layer, and the pools land every four tiles
-    because that is where the lights are.
-    """
-    px = c.w
-    cx = cy = (px - 1) / 2.0
-    reach = px * 0.62
-    for y in range(px):
-        for x in range(px):
-            cur = c.px[y][x]
-            if cur is None:
-                continue
-            d = math.hypot(x - cx, y - cy) / reach
-            ramp, shade, cov, lit = cur
-            c.px[y][x] = (ramp, max(0.0, min(1.0, shade + amount * (1.0 - d * d))), cov, lit)
-    return c
+# light_pool — REMOVED.
+#
+# It baked a fixture's pool of light into each floor field: a radial gradient,
+# bright at the field's centre and dropping below zero at its corners. The idea
+# was right — a field is exactly one fixture cell across, so the pools land
+# every four tiles because that is where the lights are — but a gradient baked
+# per field cannot cross a field boundary. Tile it and every 4x4 block gets its
+# own bright middle and dark rim, which is precisely the "everything is blocky"
+# read: the floor was lit as a grid of chunks.
+#
+# Making the falloff periodic (a cosine with the field's own period) tiles
+# seamlessly and was tried; it trades the grid for soft blobs that read as dirt.
+#
+# The room is already lit. TileMap stretches assets/tiles/room-light.png across
+# the whole map — one image describing the whole space, open in the middle and
+# sitting back at the edges — which is the effect this was reaching for, at the
+# scale where it actually works.
 
 
 def zone_edge(side):
