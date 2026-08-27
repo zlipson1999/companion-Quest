@@ -66,7 +66,7 @@ export default function OutfitSelectScreen() {
         <View style={{ alignItems: 'center', marginTop: space.md }}>
           <PixelSprite
             spriteKey={playerSprite(gender)}
-            palette={outfitPalette(selected, gender)}
+            palette={outfitPalette(selected, gender, playerSprite(gender))}
             size={36}
             bob
           />

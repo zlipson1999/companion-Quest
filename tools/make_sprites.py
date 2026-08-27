@@ -25,10 +25,17 @@ work; the shapes are all built from primitives in this file.
 """
 import os, struct, zlib, json, math, glob
 
+import cubecast
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 
 TRANSPARENT = '.'
+
+# Clothing/skin/hair slot spans for the cube people, filled by build_all() and
+# merged into SPRITE_RAMPS on write. Their palettes are per-character, so the
+# creature ramp layout does not describe them.
+PERSON_RAMP_SPANS = {}
 # Palette indices, at the practical maximum: every printable ASCII character
 # except '.' (transparent), plus the quote, double-quote and backslash that
 # would need escaping in JSON or in the JS literal that reads it. Ninety
@@ -1768,160 +1775,20 @@ HERO_W, HERO_H = 24, 32
 
 
 # =========================================================================
-# WALK SETS
+# WALK SETS — removed. The people now come from tools/cubecast.py.
 #
-# The overworld sprite has to be the person on the character card, not a chunky
-# stand-in that merely shares its colours. The card is one front-facing pose,
-# so the rest of the set is derived from it rather than drawn again:
+# What stood here derived all twelve overworld frames from ONE traced
+# front-facing card: strided legs for the steps, a horizontal squeeze for the
+# profile, a mirror of that for the other side, and the face painted over in
+# hair for the back. It bought four facings from one drawing, and it capped
+# out — left was right reversed, the back of a head was a face with the
+# features hidden, and a squeezed front view has no profile.
 #
-#   down   the traced pose, plus two stride frames
-#   up     the same silhouette with the face covered by hair
-#   left   the figure narrowed, which is what turning actually does to a
-#          silhouette; right is its mirror
-#
-# Working on the traced indices keeps every frame in the card's own palette, so
-# a facing can never drift away from the character.
+# cubecast authors each facing instead. The traced_walk_*.json it fed on are
+# gone with it; assets/characters/player-selection-lineup-v1.png and
+# coach-maple-*.png are still committed, so `tools/convert_character.py
+# --figure N` regenerates them if this is ever reverted.
 # =========================================================================
-def _walk_rows(blob):
-    """Traced rows as palette indices (0 = transparent)."""
-    return [[0 if ch == '.' else TRACE_INDEX[ch] for ch in row] for row in blob['rows']]
-
-
-def _figure_bounds(grid):
-    rows = [y for y, row in enumerate(grid) if any(row)]
-    if not rows:
-        return 0, len(grid) - 1
-    return min(rows), max(rows)
-
-
-def _blank(w, h):
-    return [[0] * w for _ in range(h)]
-
-
-def _stride(grid, phase):
-    """Swing the legs. The split is the figure's own centre line, so a leg goes
-    forward rather than the whole lower half sliding sideways."""
-    h = len(grid)
-    w = len(grid[0])
-    top, bottom = _figure_bounds(grid)
-    hip = top + int((bottom - top) * 0.62)
-    xs = [x for y in range(h) for x in range(w) if grid[y][x]]
-    mid = (min(xs) + max(xs)) // 2 if xs else w // 2
-
-    out = [row[:] for row in grid]
-    for y in range(hip, h):
-        for x in range(w):
-            out[y][x] = 0
-    for y in range(hip, h):
-        for x in range(w):
-            if not grid[y][x]:
-                continue
-            near = (x <= mid) if phase > 0 else (x > mid)
-            ny = y - 2 if near else y
-            if 0 <= ny < h:
-                out[ny][x] = grid[y][x]
-    return out
-
-
-def _back_view(grid, palette):
-    """Cover the face. Turning around should show hair, not a face on backwards."""
-    h = len(grid)
-    w = len(grid[0])
-    top, bottom = _figure_bounds(grid)
-    head_bottom = top + int((bottom - top) * 0.20)
-
-    # Take the first few rows of the head that are actually wide enough to hold
-    # hair. Scanning a fixed band instead picked up whatever the sparse crown
-    # rows happened to contain — skin on one character, jacket on another.
-    tally = {}
-    taken = 0
-    for y in range(top, head_bottom + 1):
-        run = [x for x in range(w) if grid[y][x]]
-        if len(run) < 5:
-            continue
-        for x in range(min(run) + 1, max(run)):
-            if grid[y][x]:
-                tally[grid[y][x]] = tally.get(grid[y][x], 0) + 1
-        taken += 1
-        # Only the very top of the head is reliably hair. One character's crop
-        # is two rows deep before the face begins, and four rows of tally handed
-        # back skin.
-        if taken >= 2:
-            break
-    if not tally:
-        return [row[:] for row in grid]
-    hair = max(tally, key=tally.get)
-
-    out = [row[:] for row in grid]
-    for y in range(top, head_bottom + 1):
-        run = [x for x in range(w) if grid[y][x]]
-        if len(run) < 3:
-            continue
-        # keep the outline column either side so the head keeps its edge
-        for x in range(min(run) + 1, max(run)):
-            if grid[y][x]:
-                out[y][x] = hair
-    return out
-
-
-def _narrow(grid, factor=0.68):
-    """Squeeze horizontally. A front view compressed toward its centre line is
-    what a turn looks like in silhouette, and it costs no new artwork."""
-    h = len(grid)
-    w = len(grid[0])
-    xs = [x for y in range(h) for x in range(w) if grid[y][x]]
-    if not xs:
-        return [row[:] for row in grid]
-    lo, hi = min(xs), max(xs)
-    span = hi - lo + 1
-    new_span = max(3, int(round(span * factor)))
-    start = lo + (span - new_span) // 2
-
-    out = _blank(w, h)
-    for y in range(h):
-        for i in range(new_span):
-            sx = lo + int(i / factor)
-            if sx > hi:
-                sx = hi
-            value = grid[y][sx]
-            if value:
-                out[y][start + i] = value
-    return out
-
-
-def _mirror(grid):
-    return [list(reversed(row)) for row in grid]
-
-
-def _encode(grid, palette):
-    colors = ['transparent'] + list(palette)
-    rows = [''.join(TRANSPARENT if v == 0 else DIGITS[v] for v in row) for row in grid]
-    return colors, rows
-
-
-def walk_set(name):
-    """{suffix: (palette, rows)} for one character, or None with no traced art."""
-    blob = _raw_traced('walk_%s' % name)
-    if not blob:
-        return None
-    base = _walk_rows(blob)
-    palette = blob['palette']
-
-    poses = {}
-    down = {'': base, '_a': _stride(base, 1), '_b': _stride(base, -1)}
-    back = _back_view(base, palette)
-    up = {'': back, '_a': _stride(back, 1), '_b': _stride(back, -1)}
-    side = _narrow(base)
-    left = {'': side, '_a': _stride(side, 1), '_b': _stride(side, -1)}
-
-    for suffix, grid in down.items():
-        poses['down' + suffix] = _encode(grid, palette)
-    for suffix, grid in up.items():
-        poses['up' + suffix] = _encode(grid, palette)
-    for suffix, grid in left.items():
-        poses['left' + suffix] = _encode(grid, palette)
-        poses['right' + suffix] = _encode(_mirror(grid), palette)
-    return poses
 
 
 def hero(facing='down', step=0, pal='hero', hair='short'):
@@ -2024,49 +1891,6 @@ def hero(facing='down', step=0, pal='hero', hair='short'):
     c.rim('leaf')
     c.outline()
     return c
-
-
-def coach_maple():
-    """Trail mentor: silver curls, green field jacket, orange scarf, satchel.
-
-    The ramps used to be crossed here — hair was drawn on 'body' and the jacket
-    on 'leaf', and since this ran on the player's navy 'hero' palette it put a
-    blue-haired stranger on the title screen. On the 'coach' palette the roles
-    are the same as every other person: body is the jacket, leaf is the hair,
-    belly is skin, accent is the scarf.
-
-    Draw order matters as much as colour. The head is laid down before the
-    scarf, because a face sphere wide enough to hold two eyes also covers the
-    collar, and painting it last wiped the scarf off her neck entirely.
-    """
-    c = Canvas(48, 64, 'coach')
-    c.shadow(24, 61, 15, 3)
-
-    # legs and shoes
-    c.rect(15, 44, 22, 57, 'body', 0.10); c.rect(26, 44, 33, 57, 'body', 0.10)
-    c.rect(13, 57, 22, 60, 'accent', 0.08); c.rect(26, 57, 35, 60, 'accent', 0.08)
-
-    # jacket. Head is roughly a quarter of the figure, not a third — at the old
-    # radius she read as a bobblehead next to her own portrait.
-    c.sphere(24, 36, 12, 13, 'body', ambient=0.48)
-    c.rect(11, 28, 15, 46, 'body', 0.26); c.rect(33, 28, 37, 46, 'body', 0.26)   # sleeves
-    c.blob(12, 47, 2.6, 2.8, 'belly', 0.80); c.blob(36, 47, 2.6, 2.8, 'belly', 0.80)
-    c.rect(31, 34, 41, 45, 'body', 0.44)                                          # satchel
-    for i in range(12):
-        c.rect(29 + i // 2, 24 + i, 31 + i // 2, 26 + i, 'body', 0.58)            # strap
-    c.rect(22, 26, 26, 42, 'accent', 0.58)                                        # open placket
-    c.blob(17, 33, 2.4, 3.4, 'accent', 0.86)                                      # leaf badge
-
-    # head, then the collar that sits on top of it
-    c.sphere(24, 14, 9, 9.5, 'belly')
-    for cx, cy in ((15, 9), (19, 5.4), (24, 4.4), (29, 5.4), (33, 9), (14, 15), (34, 15)):
-        c.sphere(cx, cy, 4.4, 3.8, 'leaf', ambient=0.62)
-    c.eye(20, 14, 1.9); c.eye(28, 14, 1.9)
-    c.blob(24, 18.5, 1.7, 0.7, 'eye', 0.0)                                        # smile
-    c.rect(20, 22, 28, 26, 'accent', 0.80)                                        # scarf
-    c.rect(17, 23, 31, 25, 'accent', 0.70)
-
-    c.rim('leaf'); c.outline(); return c
 
 
 # =========================================================================
@@ -4114,6 +3938,7 @@ def build_all():
     # walk set derives twelve sprites from one traced pose, and a blended tile
     # composites two sources into a third name.
     used_traced = set()
+    person_spans = {}      # published into PERSON_RAMP_SPANS at the end
 
     def add(name, canvas=None):
         # Isolated masters win. Trail faces have no sphere() fallback.
@@ -4167,10 +3992,27 @@ def build_all():
     add('couchlurk', couchlurk()); add('achefang', achefang())
     add('brinegnash', brinegnash()); add('cindergrind', cindergrind())
 
-    # People. Each player character gets its own four facings x three frames on
-    # its own palette, so picking a character changes who walks around rather
-    # than just which colour the same body is painted. hero_* stays as the
-    # unstyled fallback for any save or screen that has no character yet.
+    # People. Each one gets its own four facings x three frames on its own
+    # palette, so picking a character changes who walks around rather than just
+    # which colour the same body is painted. hero_* stays as the unstyled
+    # fallback for any save or screen that has no character yet.
+    #
+    # The bodies come from tools/cubecast.py, which AUTHORS each facing instead
+    # of deriving all four from one front-facing drawing the way walk_set() does.
+    # walk_set squeezed the front view horizontally for a profile and mirrored
+    # it for the other side, so left was right reversed and the back of a head
+    # was a face painted over. Four drawings fix all three at once. walk_set
+    # stays for anything still driven by a traced card.
+    def emit_person(prefix, poses, spans):
+        for facing in ('down', 'up', 'left', 'right'):
+            for suffix in ('', '_a', '_b'):
+                key = '%s_%s%s' % (prefix, facing, suffix)
+                colors, rows = poses[facing + suffix]
+                pal_key = 'art_' + key
+                traced_palettes[pal_key] = colors
+                person_spans[pal_key] = spans
+                s[key] = {'palette': pal_key, 'grid': rows}
+
     for who, pal, hair in (
         (None, 'hero', 'short'),
         ('woman', 'pc_woman', 'bun'),
@@ -4178,35 +4020,29 @@ def build_all():
         ('nonbinary', 'pc_nonbinary', 'swept'),
     ):
         prefix = 'hero' if who is None else 'hero_%s' % who
-        # The traced card art wins when it exists; the drawn set stays as the
-        # fallback for the unstyled 'hero' and for a build with no cards.
-        poses = walk_set(who) if who else None
+        poses = cubecast.cube_walk(who, DIGITS) if who else None
         if poses:
-            used_traced.add('walk_%s' % who)
-        for facing in ('down', 'up', 'left', 'right'):
-            for suffix, step in (('', 0), ('_a', 1), ('_b', 3)):
-                key = '%s_%s%s' % (prefix, facing, suffix)
-                pose = poses.get(facing + suffix) if poses else None
-                if pose:
-                    colors, rows = pose
-                    pal_key = 'art_' + key
-                    traced_palettes[pal_key] = colors
-                    s[key] = {'palette': pal_key, 'grid': rows}
-                else:
-                    add(key, hero(facing, step, pal, hair))
+            emit_person(prefix, poses, cubecast.ramp_spans(who))
+        else:
+            for facing in ('down', 'up', 'left', 'right'):
+                for suffix, step in (('', 0), ('_a', 1), ('_b', 3)):
+                    add('%s_%s%s' % (prefix, facing, suffix), hero(facing, step, pal, hair))
 
-    # Coach Maple walks the same way she is drawn on her card.
-    maple = walk_set('maple')
-    if maple:
-        used_traced.add('walk_maple')
-        for key, (colors, rows) in (('coach_maple', maple['down']),) + tuple(
-            ('coach_maple_%s' % k, v) for k, v in maple.items()
-        ):
-            pal_key = 'art_' + key
-            traced_palettes[pal_key] = colors
-            s[key] = {'palette': pal_key, 'grid': rows}
-    else:
-        add('coach_maple', coach_maple())
+    # Rowan gets a body of his own. Until now rowanSprite() resolved to the
+    # hero_man kit, so the man who challenges you to a push-up contest WAS the
+    # male player character in a different palette — which is a large part of
+    # why the world reads as empty.
+    emit_person('hero_rowan', cubecast.cube_walk('rowan', DIGITS), cubecast.ramp_spans('rowan'))
+
+    # Coach Maple, same pipeline. 'coach_maple' with no facing is the parked
+    # pose several screens ask for by name.
+    maple = cubecast.cube_walk('maple', DIGITS)
+    _mspans = cubecast.ramp_spans('maple')
+    emit_person('coach_maple', maple, _mspans)
+    _mc, _mr = maple['down']
+    traced_palettes['art_coach_maple'] = _mc
+    person_spans['art_coach_maple'] = _mspans
+    s['coach_maple'] = {'palette': 'art_coach_maple', 'grid': _mr}
 
     # Portraits traced straight off the character cards, for the screens that
     # show a face big enough to read one.
@@ -4391,6 +4227,7 @@ def build_all():
         )
 
     PALETTES.update(traced_palettes)
+    PERSON_RAMP_SPANS.update(person_spans)
     return s
 
 
@@ -4583,6 +4420,10 @@ def emit_js():
             first = RAMP_INDEX[key][(name, 0)]
             spans[name] = [first, first + RAMP_LEN[key] - 1]
         ramp_spans[key] = spans
+    # The cube people carry their own palettes, so their clothing ramp is not
+    # at the creature layout's offsets. Without these an outfit recolour lands
+    # on whatever happens to sit at index 1..26 — hair and skin.
+    ramp_spans.update(PERSON_RAMP_SPANS)
     body += 'export const SPRITE_RAMPS = ' + json.dumps(ramp_spans, indent=2) + ';\n\n'
     # Anything in the tile atlas is drawn from the PNG, so shipping its grid in
     # JS as well would be a megabyte of dead weight parsed on every cold start.

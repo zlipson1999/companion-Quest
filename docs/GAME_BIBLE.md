@@ -914,7 +914,7 @@ faint.
 4. `backlight()` (rim opposite the key light) and `spec()` (hotspots) are what
    read as "modern".
 
-### 8.3 Sprite inventory (295 runtime sprites + 419 atlas cells)
+### 8.3 Sprite inventory (307 runtime sprites + 419 atlas cells)
 
 The count includes the traced regalia set landed with the Warden/badge/charm
 plates: 10 unique Warden bodies (the Horizon Wardens no longer wear recolored
@@ -956,10 +956,21 @@ Kinship Knot.
   itself and followed `evolvesTo` exactly once: it listed 13 of the 22 and not
   one final evolution among them, while `EVOLVE` was stamping
   `dex[groveheart] = 'owned'` for a row the page could never print.
-- Hero: the sprites actually rendered are the traced per-character sets at
-  26×48 (Coach Maple 30×48), 4 facings × 3 frames, resolved by
-  `playerSprite()` in `data/characters.js`. `hero_*` at 24×32 is the fallback
-  used only when no character cards are present.
+- People: six cube-built figures at 32×52, 4 facings × 3 frames each, drawn by
+  `tools/cubecast.py` — the three player characters, **Rowan**, Coach Maple, and
+  `hero_*` at 24×32 as the unstyled fallback. Resolved by `playerSprite()` /
+  `coachSprite()` / `rowanSprite()` / `wardenSprite()` in `data/characters.js`.
+  Every volume is a box showing three faces at three values (lit top, mid front,
+  shaded side); each figure's palette is 50 colours — seven six-step material
+  ramps plus one hue-shifted outline each.
+  Each facing is AUTHORED. The previous set derived all twelve frames from one
+  traced front-facing card by squeezing it horizontally for the profile,
+  mirroring that for the other side, and painting the face over in hair for the
+  back — so left was right reversed and a turned back was a hidden face. Build
+  differs per person (torso half-width 5–8, head half-width 6–7, head top 1–5),
+  which is what makes five people readable by outline rather than by colour.
+  Rowan no longer resolves to the `hero_man` kit; trail keepers still do
+  (`wardens.js` `kit`), which is the next gap.
 - Items/module icons 24×24: apple, water, energybar, charm, **knot**, three
   smoothie blends (green/berry/gold, one drawing and three palettes), droplet,
   plate, check (fallback), barbell, moon, still.

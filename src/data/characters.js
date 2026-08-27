@@ -51,10 +51,12 @@ export function coachSprite(facing = 'down', frame = 0) {
   return kitWalk('coach_maple', facing, frame, ['coach_maple']);
 }
 
-// Rowan uses the existing man kit walk (walk_set('man')), not a frozen
-// hero_man_down literal. There is no second Rowan card and no new walk pipeline.
+// Rowan has his own body. He used to resolve to the hero_man kit, which meant
+// the man who challenges you to a push-up contest WAS the male player character
+// in a different palette — a large part of why the world read as empty. He is
+// broader and taller than any player kit, so you know him by his outline.
 export function rowanSprite(facing = 'down', frame = 0) {
-  return kitWalk('hero_man', facing, frame, ['hero_man_down', 'hero_down']);
+  return kitWalk('hero_rowan', facing, frame, ['hero_rowan_down', 'hero_man_down', 'hero_down']);
 }
 
 export function wardenSprite(kit = 'hero_man', facing = 'down', frame = 0) {

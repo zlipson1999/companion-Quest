@@ -627,7 +627,7 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
         >
           <PixelSprite
             spriteKey={spriteKey}
-            palette={outfitPalette(state.playerOutfit, state.playerGender)}
+            palette={outfitPalette(state.playerOutfit, state.playerGender, spriteKey)}
             size={widthForHeight(spriteKey, s * (sideOnPose ? 1.5 : 1.85))}
           />
         </View>

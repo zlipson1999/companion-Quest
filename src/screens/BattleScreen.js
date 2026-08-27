@@ -539,14 +539,12 @@ export default function BattleScreen({ params }) {
           <Animated.View style={{ alignItems: 'center', marginTop: 2, transform: [{ translateX: wildEnter }] }}>
             {params.warden && params.trainer ? (
               <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+                {/* No palette prop. Each person sprite carries its own, and
+                    naming one here overrode it — a keeper drawn through
+                    'pc_man' decoded their art against a ramp that had nothing
+                    to do with it and came out a flat colour field. */}
                 <PixelSprite
                   spriteKey={wardenSprite(params.trainerKit || 'hero_man', 'down', 0)}
-                  palette={
-                    params.trainerKit === 'hero_woman' ? 'pc_woman'
-                      : params.trainerKit === 'hero_nonbinary' ? 'pc_nonbinary'
-                        : params.trainerKit === 'coach_maple' ? 'coach'
-                          : 'pc_man'
-                  }
                   size={40}
                 />
                 <PixelSprite

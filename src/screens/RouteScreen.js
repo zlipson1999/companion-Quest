@@ -341,7 +341,12 @@ export default function RouteScreen({ params = {} }) {
         <ScrollingScene width={screen.width} height={screen.height} moving={running} trailId={route.id} />
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: screen.height * 0.30, alignItems: 'center' }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-            <PixelSprite spriteKey={playerSprite(state.playerGender, 'down', stride)} palette={outfitPalette(state.playerOutfit, state.playerGender)} size={40} bob={running} />
+            <PixelSprite
+              spriteKey={playerSprite(state.playerGender, 'down', stride)}
+              palette={outfitPalette(state.playerOutfit, state.playerGender, playerSprite(state.playerGender, 'down', stride))}
+              size={40}
+              bob={running}
+            />
             {companion ? (
               <>
                 <View style={{ width: 10 }} />
