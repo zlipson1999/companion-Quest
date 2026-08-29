@@ -4420,6 +4420,11 @@ def emit_room_light(size=96):
     print('  wrote %s (%dx%d)' % (os.path.join('assets', 'tiles', 'room-light.png'), size, size))
 
 
+# Gutter around each atlas cell, in authored pixels. Two is enough for the
+# bilinear taps a device-pixel-ratio upscale takes at a cell edge.
+ATLAS_PAD = 2
+
+
 def emit_tile_atlas():
     """Pack every tile and prop into one PNG plus a frame table.
 
@@ -4442,17 +4447,40 @@ def emit_tile_atlas():
             sized.append(name)
     cols = int(math.ceil(math.sqrt(len(sized)))) or 1
     rows_n = (len(sized) + cols - 1) // cols
-    width, height = cols * cell, rows_n * cell
+    # Every cell gets a GUTTER, filled by extending its own edge outward.
+    #
+    # Cells used to be packed edge to edge. A tile is drawn by stretching the
+    # whole atlas and sliding the wanted cell into a clipping window, and the
+    # device pixel ratio scales that image again — so the sampler blends across
+    # the cell boundary and picks up whatever tile happens to be packed next to
+    # it. On continuous ground that lands as a darker line on EVERY tile edge:
+    # the whole outdoors reads as a grid of squares, however seamless the
+    # material itself is, because the seam is in the packing rather than in
+    # the art.
+    #
+    # A gutter of the cell's own edge pixels means that blend has nothing to
+    # find but more of the same tile. This is the standard fix for texture
+    # atlases and it is invisible in the frame table: the recorded origin still
+    # points at the cell's true top-left, so TILE_CELL and TileImage's
+    # arithmetic are unchanged.
+    stride = cell + ATLAS_PAD * 2
+    width, height = cols * stride, rows_n * stride
 
     buf = [[0, 0, 0, 0] for _ in range(width * height)]
     frames = {}
     for i, name in enumerate(sized):
         spr = SPRITES[name]
         pal = PALETTES[spr['palette']]
-        ox, oy = (i % cols) * cell, (i // cols) * cell
+        grid = spr['grid']
+        ox = (i % cols) * stride + ATLAS_PAD
+        oy = (i // cols) * stride + ATLAS_PAD
         frames[name] = [ox, oy]
-        for y, row in enumerate(spr['grid']):
-            for x, ch in enumerate(row):
+        # Draw the cell plus its gutter in one pass, clamping the read back
+        # into the cell so the ring repeats the edge.
+        for y in range(-ATLAS_PAD, cell + ATLAS_PAD):
+            row = grid[min(cell - 1, max(0, y))]
+            for x in range(-ATLAS_PAD, cell + ATLAS_PAD):
+                ch = row[min(cell - 1, max(0, x))]
                 if ch == TRANSPARENT:
                     continue
                 color = pal[DIGITS.index(ch)]

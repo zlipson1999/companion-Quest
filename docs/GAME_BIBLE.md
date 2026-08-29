@@ -976,7 +976,16 @@ Kinship Knot.
   plate, check (fallback), barbell, moon, still.
 - **Tiles and props do not live in `sprites.js` any more.** They are packed
   into `assets/tiles/tile-atlas.png` with a frame table in `data/tileAtlas.js`
-  (416 cells) and drawn by `TileImage`, which crops the atlas. `PixelArt` emits
+  (419 cells) and drawn by `TileImage`, which crops the atlas. Every cell is
+  packed with a **2px gutter of its own edge pixels** (`ATLAS_PAD`). A tile is
+  drawn by stretching the whole atlas and sliding one cell into a clipping
+  window, and the device pixel ratio scales that image again, so the sampler
+  blends across the cell boundary and picks up whichever tile is packed beside
+  it. Packed edge to edge that landed as a darker line on EVERY tile edge and
+  the outdoors read as a grid of squares — the seam was in the packing, not in
+  the art, so no amount of work on the materials could reach it. The frame
+  table still records the cell's true top-left, so `TILE_CELL` and TileImage's
+  arithmetic are unchanged. `PixelArt` emits
   a View per colour run per row — 236 Views for one grass tile, ~28,000 for a
   map — and that was the ceiling that made higher resolution impossible. The
   live page is ~1,350 nodes at 4× the art resolution. `TILE_SCALE = 2`, so a

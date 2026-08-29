@@ -135,6 +135,9 @@ the live page went from 28,000+ to about 1,350 for the entire screen.
 of dead JSON parsed on every cold start. Characters and creatures stay on
 `PixelArt`: only a few are on screen at once, and they need runtime palette
 swaps for outfits, which an atlas cannot do.
+Cells carry a 2px gutter of their own edge pixels — see `ATLAS_PAD`. Without
+it the sampler blends each cell edge into its neighbour in the PACKING and
+every tile boundary shows as a line.
 
 Raising resolution further is now a question about atlas file size rather than
 frame rate: change `TILE_SCALE`, re-run the two tools.
