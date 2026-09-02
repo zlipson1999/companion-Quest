@@ -2252,7 +2252,24 @@ def _shift(hex_color, mul):
 
 
 def blended_tile(ground, over, mask, seed, rim_mul=0.72):
-    """One painted material laid over another along a soft, noisy boundary."""
+    """The EDGE of one painted material over another, along a soft, noisy
+    boundary. The material's interior is left transparent.
+
+    These sixteen sprites used to carry their own interior fill, and the
+    renderer drew one of them per square. There are only sixteen, so every
+    square in the middle of a path or a pond got the identical tile — the
+    material's own texture repeating once per tile, which is a grid of squares
+    however well the seams between them are hidden.
+
+    Punching the interior out makes each one an OVERLAY. The renderer lays the
+    continuous field down first — one texture windowed across a 4x4 block — and
+    drops this on top, so the middle of a path is the field running unbroken
+    and only its edge is autotiled. An edge is the one place a repeat does not
+    show, because the shape changes from tile to tile anyway.
+
+    `scatter` stays opaque: it is material dithered OUT into the ground, which
+    lives outside the interior and has nothing under it to show through.
+    """
     g = _raw_traced(ground)
     o = _raw_traced(over)
     if not g or not o:
@@ -2273,7 +2290,9 @@ def blended_tile(ground, over, mask, seed, rim_mul=0.72):
             oi = TRACE_INDEX[o['rows'][y][x]] - 1
             if (x, y) in rim:
                 row += DIGITS[rim_base + oi]
-            elif (x, y) in inside or (x, y) in scatter:
+            elif (x, y) in inside:
+                row += TRANSPARENT              # the field shows through here
+            elif (x, y) in scatter:
                 row += DIGITS[o_off + oi]
             else:
                 row += DIGITS[g_off + gi]

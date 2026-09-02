@@ -217,6 +217,18 @@ const FIELD_BY_MAP = {
   route_deephorizon: 'tile_gym_floor',
 };
 
+// Autotile sprites are EDGE OVERLAYS, not whole tiles.
+//
+// There are only sixteen of them — one per arrangement of same-material
+// neighbours — so drawing one per square stamped the identical sprite across
+// the middle of every path and pond: the material's own texture repeating once
+// per tile, which reads as a grid of squares however well the seams are hidden.
+//
+// Their interiors are punched out in `blended_tile`, so every square draws the
+// continuous field FIRST and the mask on top. The middle of a path is the field
+// running unbroken; only its edge is autotiled, and an edge is the one place a
+// repeat cannot show, because its shape changes tile to tile anyway.
+
 function groundKey(prefix, x, y) {
   const col = ((x % FIELD_SPAN) + FIELD_SPAN) % FIELD_SPAN;
   const row = ((y % FIELD_SPAN) + FIELD_SPAN) % FIELD_SPAN;
@@ -342,11 +354,18 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
   // does not need '#' to mean rubber.
   if (PATH_CODES.has(code)) {
     const mask = maskAt(map, x, y, PATH_CODES);
-    layers = [{ key: `tile_path_m${mask}` }, ...innerCorners(map, x, y, PATH_CODES, 'tile_path')];
+    layers = [
+      { key: groundKey('tile_path', x, y) },
+      { key: `tile_path_m${mask}` },
+      ...innerCorners(map, x, y, PATH_CODES, 'tile_path'),
+    ];
   } else if (!floor && WATER_CODES.has(code)) {
     const mask = maskAt(map, x, y, WATER_CODES);
     const suffix = frame % 2 ? '_b' : '';
     layers = [
+      // The second animation frame has its own field, so open water is as
+      // continuous as a path and still blinks.
+      { key: groundKey(suffix ? 'tile_waterb' : 'tile_water', x, y) },
       { key: `tile_water_m${mask}${suffix}` },
       ...innerCorners(map, x, y, WATER_CODES, 'tile_water'),
     ];

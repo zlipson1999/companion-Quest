@@ -1020,6 +1020,15 @@ Kinship Knot.
   chunks was most of what made the floors read as blocky. Removed from all seven
   indoor fields. A periodic falloff tiles seamlessly and was tried: it trades
   the grid for soft blobs that read as dirt.
+- Autotile masks are EDGE OVERLAYS, not whole tiles. There are only sixteen per
+  material — one per arrangement of same-material neighbours — so drawing one
+  per square stamped the identical sprite across the middle of every path and
+  pond: the material's own texture repeating once per tile, which reads as a
+  grid of squares however well the seams between them are hidden. `blended_tile`
+  punches the interior out, and `TileMap` lays the continuous FIELD down first
+  and the mask on top. The middle of a path is the field running unbroken; only
+  its edge is autotiled, and an edge is the one place a repeat cannot show,
+  because its shape changes tile to tile anyway.
 - Multi-tile furniture autotiles (`RUN_PROPS`): a two-tile sofa was two sofas
   with four arms. `_l`/`_m`/`_r` are picked from a prop's own neighbours, the
   same way a path picks its edge.
