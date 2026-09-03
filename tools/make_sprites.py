@@ -2317,22 +2317,48 @@ FIELD_SPAN = 4          # tiles across one field texture
 # The obvious alternative — deleting some tufts to open up bare patches — was
 # tried and is not here. Any cell-based thinning puts back a visible grid, the
 # same artefact that removing light_pool() from the interiors just took out.
+# A float is a calm amount on its own; a dict can also dim (`gain`) and drain
+# (`sat`) the material.
 CALM_FIELDS = {
     'field_grass': 0.40,
     'field_tree': 0.30,
     'field_path': 0.22,
+    # Open water was drawn as tropical shallows: a bright caustic net at full
+    # strength over every square inch, the same value from bank to bank. It read
+    # as a swimming pool because a pond does not — a pond is DEEP in the middle
+    # and bright only where it runs out at the shore. Dimming and settling the
+    # field is what supplies the deep middle; the shallow edge was already
+    # there, in the autotile masks, whose wet margin is drawn brighter than the
+    # water (`rim_mul` 1.18). The two only read as depth together.
+    #
+    # The masks composite the small `tile_water` tile rather than this field, so
+    # they keep their brightness while the open water drops away from them.
+    'field_water': dict(calm=0.30, gain=0.80, sat=0.92),
+    # The two animation frames are drawn 19 luminance steps apart, so the pond
+    # used to flash rather than shimmer: the whole surface changed brightness
+    # twice a second. Water shimmers in its DETAIL. Frame B is lifted back to
+    # frame A's level so the caustics move and the level does not.
+    'field_water_b': dict(calm=0.30, gain=0.95, sat=0.92),
 }
 
 
-def calm_palette(colors, t):
-    """Compress a palette toward its own mean luminance."""
-    if not t:
+def calm_palette(colors, spec):
+    """Settle a palette: compress toward its own mean luminance, and optionally
+    dim it and drain some saturation."""
+    if not spec:
         return colors
+    if not isinstance(spec, dict):
+        spec = {'calm': spec}
+    calm = spec.get('calm', 0.0)
+    gain = spec.get('gain', 1.0)
+    sat = spec.get('sat', 1.0)
     real = [hex_to_rgb(c) for c in colors if c != 'transparent']
     if not real:
         return colors
+
     def lum(c):
         return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+
     mean = sum(lum(c) for c in real) / len(real)
     out = []
     for c in colors:
@@ -2341,8 +2367,12 @@ def calm_palette(colors, t):
             continue
         rgb = hex_to_rgb(c)
         L = lum(rgb)
-        k = 1.0 if L <= 0 else (L + (mean - L) * t) / L
-        out.append(rgb_to_hex(tuple(v * k for v in rgb)))
+        k = 1.0 if L <= 0 else (L + (mean - L) * calm) / L
+        rgb = tuple(max(0.0, min(255.0, v * k * gain)) for v in rgb)
+        if sat != 1.0:
+            h, sv, v = rgb_to_hsv(rgb)
+            rgb = hsv_to_rgb(h, max(0.0, min(1.0, sv * sat)), v)
+        out.append(rgb_to_hex(rgb))
     return out
 
 

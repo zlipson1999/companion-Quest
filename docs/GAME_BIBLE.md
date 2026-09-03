@@ -995,12 +995,26 @@ Kinship Knot.
   are 64×64 textures windowed across a 4×4 tile block by world position, so
   they run continuously and repeat four tiles apart.
 - Outdoor ground is SETTLED on the way out (`CALM_FIELDS` in `make_sprites.py`:
-  grass 0.40, tree 0.30, path 0.22). The traced grass is drawn tuft-to-tuft, so
+  grass 0.40, tree 0.30, path 0.22; water takes a dict that also dims and
+  drains it — calm 0.30, gain 0.80, sat 0.92). The traced grass is drawn tuft-to-tuft, so
   detail is uniform and maximal and the eye has nowhere to rest — a wall of
   pixels rather than a field. Every colour's luminance is pulled toward the
   field's own mean, which keeps every shape and takes out the shout. Deleting
   tufts to open bare patches was tried instead; any cell-based thinning puts a
   visible grid back.
+- **Water reads as depth, not as a texture.** Open water was drawn as tropical
+  shallows: a bright caustic net at full strength over every square inch, the
+  same value bank to bank, which reads as a swimming pool. A pond is DEEP in the
+  middle and bright only where it runs out at the shore. Dimming and settling
+  the `field_water` field supplies the deep middle; the shallow edge was already
+  there, in the autotile masks, whose wet margin is drawn BRIGHTER than the
+  water (`rim_mul` 1.18). Neither reads as depth alone. The masks composite the
+  small `tile_water` tile rather than the field, so they keep their brightness
+  while the open water drops away from them.
+  The two animation frames are drawn 19 luminance steps apart, so the pond used
+  to flash rather than shimmer — the whole surface changing brightness twice a
+  second. `field_water_b` carries a higher gain (0.95) to sit level with frame
+  A, leaving the caustics to move and the level to hold. Swing: 18.6 → 3.4.
 - Scatter — flowers and tall grass — draws OVER the ground, never as its own
   tile. `SCATTER_OVERLAY` in `TileMap.js` maps `,` → `prop_flowers` and `^` →
   `prop_tallgrass`; both codes are floor codes, so the field runs underneath
