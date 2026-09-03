@@ -187,7 +187,9 @@ export default function CardioConsole({
       <View
         style={[
           {
-            backgroundColor: '#101219ee',
+            // The console's own sunken surface, from the same token set as every
+            // other panel — it was a hand-typed hex that happened to match.
+            backgroundColor: `${tokens.surfaceSunken}ee`,
             borderColor: tokens.line,
             borderWidth: 3,
             borderRadius: scale.radius.panel,

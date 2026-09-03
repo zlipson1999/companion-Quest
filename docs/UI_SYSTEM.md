@@ -52,3 +52,25 @@ debug sheet, not a page.
 4. Screenshot the screen. A bundle is not a visual check.
 5. Do not change copy that names Quest Fitness / the gym / Sunkist Lane /
    the trails.
+
+
+## One panel, two stocks
+
+`DialogueBox` and `CardioConsole` are on the token system now, so the game has
+one idea of what a panel is instead of three.
+
+The dialogue used to be a `Window`: cream fill, purple frame, bevelled
+highlights — chrome that appeared nowhere else, so which panel you saw depended
+on which screen you were standing on. It is a `FieldCard` with `tone="paper"`
+now: the same card the lane and the objective ribbon use, in the same tokens,
+with the same offset shadow, border and stepped corner.
+
+Paper is kept on purpose. Dialogue reading as a page is the point, and the token
+set already carries the stock for it (`sheet`, `sheetEdge`, `textOnPaper`). What
+went is the one-off frame, not the character. A card is ink OR paper — pass
+`tone`, and mind that it is `tone="paper"` and not an `onPaper` flag: spelling
+it wrong renders an ink card with paper-coloured text, which is dark ink on a
+dark surface and cannot be read.
+
+The console's shell was a hand-typed `#101219ee` that happened to equal
+`tokens.surfaceSunken`. It asks for the token now.

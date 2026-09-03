@@ -7,10 +7,10 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, View } from 'react-native';
-import Window from './Window';
+import FieldCard from './FieldCard';
 import PixelText from './PixelText';
 import Triangle from './Triangle';
-import { palette, space } from '../theme';
+import { tokens, space } from '../theme';
 import { playSfx } from '../audio';
 
 export default function DialogueBox({ lines, onComplete, speed = 30, style }) {
@@ -84,33 +84,36 @@ export default function DialogueBox({ lines, onComplete, speed = 30, style }) {
 
   return (
     <Pressable onPress={handlePress} style={style}>
-      {speaker ? (
-        <View style={{ flexDirection: 'row', marginBottom: -5, marginLeft: space.sm, zIndex: 2 }}>
-          <Window pad={6} studs={false}>
-            <PixelText size="small" color={palette.accentDark}>
-              {speaker}
-            </PixelText>
-          </Window>
+      {/* One panel language.
+          This used to be a `Window`: cream fill, purple frame, bevelled
+          highlights — chrome that appeared nowhere else, so the game showed
+          three different ideas of "a panel" depending on which screen you were
+          standing on. It is a FieldCard on its PAPER surface now, which is the
+          same card the lane and the objective ribbon use, in the same token
+          system, with the same offset shadow and border.
+          Paper is kept on purpose: dialogue reading as a page is the point, and
+          the token system already has the stock for it. What goes is the
+          one-off frame, not the character. */}
+      <FieldCard tone="paper" accent={tokens.accentDeep} title={speaker || undefined}>
+        <View style={{ minHeight: 88 }}>
+          <PixelText size="body" color={tokens.textOnPaper} style={{ lineHeight: 22 }}>
+            {full.slice(0, shown)}
+          </PixelText>
         </View>
-      ) : null}
-      <Window pad={14} innerStyle={{ minHeight: 96, justifyContent: 'flex-start' }}>
-        <PixelText size="body" color={palette.windowText} style={{ lineHeight: 22 }}>
-          {full.slice(0, shown)}
-        </PixelText>
         <Animated.View
           style={{
             position: 'absolute',
-            right: 12,
-            bottom: 10,
+            right: 4,
+            bottom: 0,
             opacity: arrow,
             // it bobs as well as blinks — a static blinking arrow reads as a
             // cursor, a bobbing one reads as "there is more, tap me"
             transform: [{ translateY: arrow.interpolate({ inputRange: [0, 1], outputRange: [2, -2] }) }],
           }}
         >
-          <Triangle direction="down" size={6} color={palette.accentDark} />
+          <Triangle direction="down" size={6} color={tokens.textOnPaperDim} />
         </Animated.View>
-      </Window>
+      </FieldCard>
     </Pressable>
   );
 }
