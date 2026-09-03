@@ -3453,6 +3453,52 @@ def prop_ridge():
     return c
 
 
+def prop_verge(side):
+    """The roof's SIDE edge — the barge board at a gable end.
+
+    The eave gives a roof thickness along its bottom and the ridge gives it an
+    apex, but its left and right just stopped: the shingle field ran to the tile
+    boundary and grass began, so a building read as a coloured rectangle someone
+    had cut out with scissors.
+
+    The two sides are NOT the same board. World light is upper-left, so the left
+    verge catches it and the right one is the shaded side. Drawing both lit —
+    which is what a first pass did — closes a bright line around all four edges
+    and the roof comes out as a framed picture rather than a solid with a near
+    side and a far one. Asymmetry is the whole point of it.
+    """
+    c = _prop('couch')
+    if side == 'l':
+        c.rect(0, 0, 0, 15, 'leaf', 0.72)        # barge board catching the light
+        c.rect(1, 0, 1, 15, 'leaf', 0.44)        # its shaded face
+    else:
+        c.rect(15, 0, 15, 15, 'leaf', 0.26)      # the far side, in its own shade
+        c.rect(14, 0, 14, 15, 'ink', 0)          # shadow thrown back on the pitch
+    return c
+
+
+def prop_footing():
+    """Where a building meets the ground.
+
+    A wall's bottom row ended on a clean horizontal cut and the grass began, so
+    the building did not sit on the ground so much as get pasted over it. Real
+    walls have a base course, and everything standing in sunlight throws a
+    little shade at its own feet. Both, in four rows: a plinth, its lit top
+    edge, and the contact shadow spilling onto whatever the building stands on.
+
+    Applied to any wall with no building below it, the same way the eave is
+    applied to any wall with a roof above.
+    """
+    c = _prop('couch')
+    # Two rows, not four. A facade here is ONE tile tall, so a proper base
+    # course covers a quarter of it and swallows the doors and windows whole —
+    # which is exactly what the first pass did. At this size the whole job is a
+    # lit sill and the shade under it, and at the door that reads as a step.
+    c.rect(0, 14, 15, 14, 'leaf', 0.52)      # lit sill
+    c.rect(0, 15, 15, 15, 'ink', 0)          # contact shadow on the ground
+    return c
+
+
 def prop_signpost():
     """A fingerpost at the gate. Lettering illegible on purpose — the arrow is
     the message, and inventing a legible word at this size means inventing a
@@ -4294,6 +4340,9 @@ def build_all():
                     lambda c=_corner: inner_corner(c, 'body', 0.58))
     for _sides in ('n', 'w', 'nw'):
         add('tile_ao_%s' % _sides, ao_overlay(_sides))
+    for _side in ('l', 'r'):
+        add('prop_verge_%s' % _side, prop_verge(_side))
+    add('prop_footing', prop_footing())
     add('tile_tree', tile_tree())
     add_blended('tile_tree_b', flipped_traced('tile_tree', horizontal=True), tile_tree)
     add('tile_water', tile_water(0)); add('tile_water_b', tile_water(1))

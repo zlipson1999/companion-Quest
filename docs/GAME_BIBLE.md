@@ -914,7 +914,7 @@ faint.
 4. `backlight()` (rim opposite the key light) and `spec()` (hotspots) are what
    read as "modern".
 
-### 8.3 Sprite inventory (307 runtime sprites + 419 atlas cells)
+### 8.3 Sprite inventory (307 runtime sprites + 422 atlas cells)
 
 The count includes the traced regalia set landed with the Warden/badge/charm
 plates: 10 unique Warden bodies (the Horizon Wardens no longer wear recolored
@@ -976,7 +976,7 @@ Kinship Knot.
   plate, check (fallback), barbell, moon, still.
 - **Tiles and props do not live in `sprites.js` any more.** They are packed
   into `assets/tiles/tile-atlas.png` with a frame table in `data/tileAtlas.js`
-  (419 cells) and drawn by `TileImage`, which crops the atlas. Every cell is
+  (422 cells) and drawn by `TileImage`, which crops the atlas. Every cell is
   packed with a **2px gutter of its own edge pixels** (`ATLAS_PAD`). A tile is
   drawn by stretching the whole atlas and sliding one cell into a clipping
   window, and the device pixel ratio scales that image again, so the sampler
@@ -1043,6 +1043,17 @@ Kinship Knot.
   and the mask on top. The middle of a path is the field running unbroken; only
   its edge is autotiled, and an edge is the one place a repeat cannot show,
   because its shape changes tile to tile anyway.
+- A building gets its form from its own SHAPE, not from extra codes in the map.
+  Four overlays land on neighbour tests: `prop_ridge` on a roof with no roof
+  above, `prop_eave` on a wall with a roof above, `prop_verge_l`/`_r` on a roof
+  with no roof beside it, and `prop_footing` on a wall with no building below.
+  Before the verges the shingle field ran to the tile boundary and grass began,
+  so a building read as a rectangle cut out with scissors. The two verges are
+  deliberately NOT the same board — world light is upper-left, so the left one
+  catches it and the right one is the shaded side; drawing both lit closes a
+  bright line around all four edges and the roof comes out as a framed picture.
+  The footing is two rows, not four: a facade here is one tile tall, so a proper
+  base course covers a quarter of it and swallows the doors and windows.
 - Multi-tile furniture autotiles (`RUN_PROPS`): a two-tile sofa was two sofas
   with four arms. `_l`/`_m`/`_r` are picked from a prop's own neighbours, the
   same way a path picks its edge.

@@ -405,6 +405,22 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
   if (ROOF_CODES.has(code) && !ROOF_CODES.has(codeAt(map, x, y - 1))) {
     layers.push({ key: 'prop_ridge' });
   }
+  // ...and its SIDES, from the same kind of test. Without these the shingle
+  // field ran to the tile boundary and grass began, so a building read as a
+  // rectangle cut out with scissors. A roof overhangs its wall on every side.
+  if (ROOF_CODES.has(code)) {
+    if (!ROOF_CODES.has(codeAt(map, x - 1, y))) layers.push({ key: 'prop_verge_l' });
+    if (!ROOF_CODES.has(codeAt(map, x + 1, y))) layers.push({ key: 'prop_verge_r' });
+  }
+  // Where the building meets the ground it gets a base course and a contact
+  // shadow. Without one the wall ended on a clean cut and the building was
+  // pasted onto the grass rather than standing on it.
+  if (BUILDING_WALL_CODES.has(code)) {
+    const below = codeAt(map, x, y + 1);
+    if (!BUILDING_WALL_CODES.has(below) && !ROOF_CODES.has(below)) {
+      layers.push({ key: 'prop_footing' });
+    }
+  }
 
   // Contact shading, only onto ground the player can see past — a wall does not
   // need shade painted over its own face.
