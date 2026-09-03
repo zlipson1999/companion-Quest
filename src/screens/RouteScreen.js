@@ -273,6 +273,10 @@ export default function RouteScreen({ params = {} }) {
 
   const trailPanel = (
     <CardioConsole
+      // The trail is not a machine. Left unset this defaulted to 'treadmill',
+      // so a footpath printed the deck's stat line and told you to stay on the
+      // deck while it moves.
+      station={null}
       title={route.name.toUpperCase()}
       seconds={seconds}
       miles={sessionMiles}
