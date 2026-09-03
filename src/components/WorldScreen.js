@@ -194,9 +194,23 @@ export default function WorldScreen({
         }}
         style={{
           flex: 1,
-          backgroundColor: voidColor,
+          // Indoors the slack belongs WITH the panel, not around the room.
+          //
+          // A contained room is roughly square and a phone is not, so the map
+          // can never fill this band: the Hall is 17 tiles wide in 420 points,
+          // which pins the tile size at width and leaves the height over. That
+          // slack used to be split above and below a centred map, in a slate
+          // that matched nothing, so the room read as a small picture hung in a
+          // void — a third of the screen on the way in.
+          //
+          // Nothing is cropped to fix it; the whole room still shows. The map
+          // is anchored to the top and the leftover carries the panel's own
+          // colour, so it reads as one band of interface under the room rather
+          // than as a gap nobody filled.
+          backgroundColor: outdoor ? voidColor : palette.bgAlt,
           alignItems: 'center',
-          justifyContent: outdoor ? 'flex-end' : 'center',
+          justifyContent: outdoor ? 'flex-end' : 'flex-start',
+          paddingTop: outdoor ? 0 : TOP_INSET,
         }}
       >
         {outdoor ? (
