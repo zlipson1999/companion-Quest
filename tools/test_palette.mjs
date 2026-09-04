@@ -49,7 +49,19 @@ for (const id of ids) {
   if (!table) unresolved.push(`${id}: palette "${chosen}" is not in SPRITE_PALETTES`);
 }
 
-ok('most of the roster is traced art', tracedCount > 150, `${tracedCount} traced`);
+// EVERY companion, not most. This is the gate for anything added later: a new
+// creature drawn on a procedural ramp instead of traced from a reference will
+// fail here rather than quietly shipping as a flat silhouette, which is how the
+// existing 179 got in. See docs/CREATING_CHARACTERS.md.
+const untraced = ids.filter((id) => {
+  const s2 = SPRITES[CREATURES[id].sprite];
+  return s2 && !isTraced(s2.palette);
+});
+ok('every companion is traced art, not a procedural ramp',
+  untraced.length === 0,
+  untraced.length
+    ? `${untraced.join(', ')} — trace it (docs/CREATING_CHARACTERS.md) or it renders as a silhouette`
+    : `${tracedCount} of ${ids.length}`);
 ok('a passed palette can never override traced art',
   overridden.length === 0, overridden.slice(0, 5).join('; ') || `${tracedCount} checked`);
 ok('every chosen palette exists', unresolved.length === 0, unresolved.slice(0, 5).join('; '));
@@ -78,6 +90,16 @@ ok('procedural art falls back to its own palette when none is passed',
 ok('traced art ignores a passed palette',
   paletteFor({ palette: 'art_groveheart', grid: ['..'] }, 'grove') === 'art_groveheart');
 ok('a missing sprite does not throw', paletteFor(null, 'grove') === 'grove');
+
+// The gate above is only worth having if it fires. These are the actual ramp
+// names the 179 were wrongly decoded against — the predicate must reject them,
+// or a newly added companion drawn on one would sail through.
+ok('the traced gate rejects the procedural ramps by name',
+  !isTraced('grove') && !isTraced('ember') && !isTraced('dew') && !isTraced('sprout'),
+  'grove, ember, dew, sprout all correctly not-traced');
+ok('the traced gate accepts traced art', isTraced('art_groveheart'));
+ok('the traced gate is not fooled by a lookalike',
+  !isTraced('artichoke') && !isTraced(undefined) && !isTraced(null));
 
 // ---- the colours are actually different ---------------------------------
 

@@ -34,6 +34,30 @@ The executable generation prompt is `tools/CHARACTER_PROMPT.md`.
    **Do not close a gap by rendering a PNG out of the indexed JSON.**
 6. **Eyeball `tools/sprite_preview.png` after `make_sprites.py`.** The
    checkers cannot see whether a face is good.
+7. **Never hand a traced sprite a palette.** The art carries the colours it
+   was drawn in, under an `art_<id>` key emitted by `make_sprites.py`. Do NOT
+   add a matching entry to a procedural ramp table and do NOT pass
+   `palette={creature.palette}` expecting it to be used — `PixelSprite` asks
+   `data/spritePalette.js`, and for traced art the drawing wins.
+   This is enforced (`tools/test_palette.mjs`), and it is enforced because it
+   went wrong three times: the overworld player rendered as a flat blue ghost,
+   then every trail keeper in battle, then **179 of the 190 companions**.
+   Groveheart is drawn on `art_groveheart` — bark brown, olive, a tan heart,
+   black eyes — and every screen passed `grove`, a single-hue ramp predating
+   the traced roster. A ramp climbs in luminance by design, so neighbouring
+   indices in the traced art became neighbouring brightnesses and the creature
+   rendered flat green in horizontal bands. Outlines and colour, no creature.
+   The first two were fixed at the call site instead of at the rule, which is
+   exactly why the third happened. A new companion drawn on a procedural ramp
+   rather than traced now FAILS `test_palette.mjs` by name.
+8. **Check it is legible at the size it is drawn at, not just at 96.** A face
+   lives in about ten of a companion's 96 rows. `PixelArt` draws one View per
+   run of pixels, so below roughly 1.5 device pixels per sprite pixel the
+   layout merges neighbouring runs and the face is gone — a 96-row creature at
+   44 points is 0.92. `data/spriteLod.js` handles this by dropping to an
+   averaged half-resolution grid and snapping to whole device pixels, but it
+   cannot invent detail: if a new companion's design only reads at full size,
+   the call site needs to be bigger, not the resampler cleverer.
 
 `sphere()` + `eye()` is not this type. It copies the belly and the eyes and
 loses the design.
