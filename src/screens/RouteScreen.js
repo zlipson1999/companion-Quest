@@ -5,7 +5,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Screen, Window, ProgressBar, PixelText, PixelSprite, PixelButton, TrailAction, CardioConsole, Tile, MenuButton, TOP_INSET, HorizonSky } from '../components';
+import { Screen, ProgressBar, PixelText, PixelSprite, PixelButton, TrailAction, CardioConsole, Tile, MenuButton, TOP_INSET, HorizonSky, FieldCard } from '../components';
 import { palette, space, screen, tokens } from '../theme';
 import { sceneTone } from '../data/sceneSky';
 import { useGame, useCompanion } from '../state';
@@ -299,7 +299,7 @@ export default function RouteScreen({ params = {} }) {
   );
 
   const stepPanel = dist.showInjector ? (
-    <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
+    <FieldCard tone="ink" pad={10} style={{ marginBottom: space.sm }}>
       <PixelText size="tiny" color={palette.danger}>No step counter available</PixelText>
       {dist.pedDiag ? (
         <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 5, lineHeight: 13 }}>
@@ -315,9 +315,9 @@ export default function RouteScreen({ params = {} }) {
           <PixelButton key={n} label={label} tone="primary" size="small" style={{ flex: 1, marginRight: i < 2 ? 6 : 0, paddingVertical: 8 }} sound="cursor" onPress={() => dist.injectSteps(n)} />
         ))}
       </View>
-    </Window>
+    </FieldCard>
   ) : (
-    <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
+    <FieldCard tone="ink" pad={10} style={{ marginBottom: space.sm }}>
       <PixelText size="tiny" color={palette.hpHigh}>
         {dist.source === 'pedometer'
           ? 'Step counter connected — walk to advance!'
@@ -336,7 +336,7 @@ export default function RouteScreen({ params = {} }) {
           ? 'Your phone counts steps even with the screen off. Tap Start Run for GPS distance.'
           : 'No step counter on this build, so the app is reading motion itself — that only works while this screen is open. Start Run uses GPS instead and works better outdoors.'}
       </PixelText>
-    </Window>
+    </FieldCard>
   );
 
   return (
@@ -366,9 +366,9 @@ export default function RouteScreen({ params = {} }) {
         </View>
 
         <View style={{ position: 'absolute', left: space.sm, right: space.sm, bottom: space.lg }}>
-          <Window tone="cream" pad={12} innerStyle={{ minHeight: 56 }}>
+          <FieldCard tone="paper" pad={12} style={{ minHeight: 56 }}>
             <PixelText size="small" color={palette.windowText} style={{ lineHeight: 18 }}>{message}</PixelText>
-          </Window>
+          </FieldCard>
           {onWeb && dist.source === 'none' && !dist.running && !dist.showInjector ? (
             <PixelText size="tiny" color={palette.secondary} style={{ marginTop: space.sm, lineHeight: 14 }}>
               Published web cannot count steps, and there are no walk buttons. GPS on a desktop almost never works. The engine lives on a phone.

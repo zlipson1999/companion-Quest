@@ -17,7 +17,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
-import { Screen, Window, DialogueBox, PixelText, PixelButton, PixelSprite, ProgressBar } from '../components';
+import { Screen, DialogueBox, PixelText, PixelButton, PixelSprite, ProgressBar, FieldCard } from '../components';
 import { palette, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { levelFromXp } from '../state/leveling';
@@ -241,7 +241,7 @@ export default function MapleSessionScreen() {
       {/* The card floats centred in the slack a tall phone leaves, rather than
           stretching a mostly-empty window down to the buttons. */}
       <View style={{ flex: 1, justifyContent: 'center' }}>
-      <Window tone="cream" pad={14}>
+      <FieldCard tone="paper" pad={14}>
         <PixelText size="body" color={palette.windowText} align="center">
           {shown.name}
         </PixelText>
@@ -301,7 +301,7 @@ export default function MapleSessionScreen() {
             </>
           )}
         </View>
-      </Window>
+      </FieldCard>
       </View>
 
       <View style={{ flexDirection: 'row', marginTop: space.sm }}>

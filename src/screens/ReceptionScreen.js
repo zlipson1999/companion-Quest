@@ -7,7 +7,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
-import { Screen, Window, PixelText, PixelButton } from '../components';
+import { Screen, PixelText, PixelButton, FieldCard } from '../components';
 import { palette, space } from '../theme';
 import { useGame, useCompanion, gymLocalDayKey, gymCheckInStats } from '../state';
 import { useNav } from './navContext';
@@ -105,7 +105,7 @@ export default function ReceptionScreen() {
         <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
           Quest Ledger
         </PixelText>
-        <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
+        <FieldCard tone="ink" pad={10} style={{ marginBottom: space.sm }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <PixelText size="tiny" color={palette.windowFill}>{`${quests.active.length}/${MAX_ACTIVE_QUESTS} active`}</PixelText>
             <PixelText size="tiny" color={palette.secondary}>{`${credits} Quest Credits`}</PixelText>
@@ -113,14 +113,14 @@ export default function ReceptionScreen() {
           <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 4, lineHeight: 13 }}>
             Buy a quest, live it out there, come back to claim its Token. Prices follow effort and reward. Tokens are proof of completion, not currency — turning in never pays credits back.
           </PixelText>
-        </Window>
+        </FieldCard>
         <ScrollView showsVerticalScrollIndicator={false}>
           {quests.active.map((active) => {
             const quest = getQuest(active.questId);
             if (!quest) return null;
             const prog = questProgress(quest, active, state, today);
             return (
-              <Window key={quest.id} tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+              <FieldCard key={quest.id} tone="paper" pad={12} style={{ marginBottom: space.sm }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <TokenBadge tokenId={quest.tokenId} size={44} />
                   <View style={{ flex: 1, marginLeft: space.sm }}>
@@ -144,7 +144,7 @@ export default function ReceptionScreen() {
                 ) : (
                   <PixelButton label="Abandon (no refund)" tone="plain" size="tiny" sound="cancel" style={{ marginTop: space.sm }} onPress={() => abandon(quest)} />
                 )}
-              </Window>
+              </FieldCard>
             );
           })}
 
@@ -154,7 +154,7 @@ export default function ReceptionScreen() {
           {offered.map((quest) => {
             const short = credits < quest.price;
             return (
-              <Window key={quest.id} tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+              <FieldCard key={quest.id} tone="paper" pad={12} style={{ marginBottom: space.sm }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <TokenBadge tokenId={quest.tokenId} size={44} />
                   <View style={{ flex: 1, marginLeft: space.sm }}>
@@ -181,7 +181,7 @@ export default function ReceptionScreen() {
                   style={{ marginTop: space.sm }}
                   onPress={() => buy(quest)}
                 />
-              </Window>
+              </FieldCard>
             );
           })}
         </ScrollView>
@@ -201,13 +201,13 @@ export default function ReceptionScreen() {
       <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
         Reception
       </PixelText>
-      <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="ink" pad={10} style={{ marginBottom: space.sm }}>
         <PixelText size="tiny" color={palette.windowFill} style={{ lineHeight: 13 }}>
           Walking up checked you in. The desk also holds the Quest Ledger — healthy-habit quests bought with Quest Credits. Progress and attendance live on your Phone.
         </PixelText>
-      </Window>
+      </FieldCard>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+        <FieldCard tone="paper" pad={12} style={{ marginBottom: space.sm }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <PixelText size="body" color={palette.windowText}>Checked In</PixelText>
             <PixelText size="tiny" color={palette.accentDark}>{`${attendance.totalDays} day${attendance.totalDays === 1 ? '' : 's'} total`}</PixelText>
@@ -218,18 +218,18 @@ export default function ReceptionScreen() {
           <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 13 }}>
             Attendance only — no reward attached, one record per day. Streaks and the full history are on your Phone under Personal.
           </PixelText>
-        </Window>
+        </FieldCard>
 
-        <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+        <FieldCard tone="paper" pad={12} style={{ marginBottom: space.sm }}>
           <PixelText size="body" color={palette.windowText}>Quest Ledger</PixelText>
           <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 13 }}>
             {`Optional healthy-habit quests, 5–15 Quest Credits each. ${quests.active.length} active${readyCount ? `, ${readyCount} ready to turn in` : ''}.`}
           </PixelText>
           <PixelButton label={readyCount ? `Open Ledger — ${readyCount} ready` : 'Open Ledger'} tone="gold" size="small" style={{ marginTop: space.sm }} onPress={() => { playSfx('confirm'); setPhase('ledger'); }} />
-        </Window>
+        </FieldCard>
 
         {/* The showcase fills as categories are completed — quiet bragging. */}
-        <Window tone="dark" pad={12} style={{ marginBottom: space.sm }}>
+        <FieldCard tone="ink" pad={12} style={{ marginBottom: space.sm }}>
           <PixelText size="tiny" color={palette.windowFill} style={{ letterSpacing: 1 }}>TOKEN SHOWCASE</PixelText>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.sm }}>
             {TOKENS.map((t) => (
@@ -239,7 +239,7 @@ export default function ReceptionScreen() {
           <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: space.sm }}>
             {`${earned} of ${TOKENS.length} categories earned — proof of completion, not currency`}
           </PixelText>
-        </Window>
+        </FieldCard>
       </ScrollView>
       <PixelButton label={back.label} tone="plain" sound="cancel" style={{ marginTop: space.sm }} onPress={goBack} />
     </Screen>

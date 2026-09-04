@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import { Screen, Window, PixelText, PixelButton, PixelSprite } from '../components';
+import { Screen, PixelText, PixelButton, PixelSprite, FieldCard } from '../components';
 import { palette, space } from '../theme';
 import { useGame } from '../state';
 import { useNav } from './navContext';
@@ -41,7 +41,7 @@ export default function GoalSelectScreen() {
       </PixelText>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Window tone="dark" pad={14} style={{ marginTop: space.md }}>
+        <FieldCard tone="ink" pad={14} style={{ marginTop: space.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around' }}>
             {starters.map(({ companion }) => {
               const isSel = selected === companion.id;
@@ -80,23 +80,23 @@ export default function GoalSelectScreen() {
           <PixelText size="tiny" color={palette.windowFill} align="center" style={{ marginTop: 5, lineHeight: 14 }}>
             {current.goal.tagline}
           </PixelText>
-        </Window>
+        </FieldCard>
 
-        <Window tone="cream" pad={12} style={{ marginTop: space.md }}>
+        <FieldCard tone="paper" pad={12} style={{ marginTop: space.md }}>
           <PixelText size="tiny" color={palette.windowText} style={{ lineHeight: 16 }}>
             {current.companion.flavor}
           </PixelText>
           <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 8, lineHeight: 16 }}>
             {current.goal.description}
           </PixelText>
-        </Window>
+        </FieldCard>
 
-        <Window tone="dark" pad={12} style={{ marginTop: space.md, marginBottom: space.md }}>
+        <FieldCard tone="ink" pad={12} style={{ marginTop: space.md, marginBottom: space.md }}>
           <PixelText size="small" color={palette.secondary}>Coach Maple listens...</PixelText>
           <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 8, lineHeight: 16 }}>
             {current.companion.name} recognized that season in you.
           </PixelText>
-        </Window>
+        </FieldCard>
       </ScrollView>
 
       <PixelButton label="This Is My Companion" tone="gold" onPress={confirm} style={{ marginTop: space.sm }} />

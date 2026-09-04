@@ -5,7 +5,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Screen, DualPane, Window, Menu, DialogueBox, BattleStage, Platform, StatusPlate, PixelText, PixelSprite, PixelButton, GrowthCeremony } from '../components';
+import { Screen, DualPane, Menu, DialogueBox, BattleStage, Platform, StatusPlate, PixelText, PixelSprite, PixelButton, GrowthCeremony, FieldCard } from '../components';
 import { palette, space } from '../theme';
 import { useGame, useCompanion, useParty } from '../state';
 import { levelFromXp } from '../state/leveling';
@@ -687,7 +687,7 @@ export default function BattleScreen({ params }) {
   } else if (phase === 'doing') {
     bottom = (
       <View style={{ flex: 1, padding: space.md, justifyContent: 'flex-end' }}>
-        <Window tone="cream" pad={14} style={{ marginBottom: space.sm }}>
+        <FieldCard tone="paper" pad={14} style={{ marginBottom: space.sm }}>
           <PixelText size="body" color={palette.windowText} style={{ lineHeight: 22 }}>
             {movePrompt(move)}
           </PixelText>
@@ -696,7 +696,7 @@ export default function BattleScreen({ params }) {
               {hold > 0 ? `${hold}` : 'GO!'}
             </PixelText>
           ) : null}
-        </Window>
+        </FieldCard>
         <View style={{ flexDirection: 'row' }}>
           <PixelButton label="Cancel" tone="plain" sound="cancel" style={{ flex: 1, marginRight: 6 }} onPress={() => setPhase('menu')} />
           <PixelButton label={holdReady ? 'Confirm' : 'Hold...'} tone="gold" disabled={!holdReady} style={{ flex: 1, marginLeft: 6 }} onPress={confirmMove} />

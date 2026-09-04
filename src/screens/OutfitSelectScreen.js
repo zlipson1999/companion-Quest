@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { Screen, Window, PixelText, PixelSprite, PixelButton } from '../components';
+import { Screen, PixelText, PixelSprite, PixelButton, FieldCard } from '../components';
 import { palette, space } from '../theme';
 import { useGame } from '../state';
 import { useNav } from './navContext';
@@ -34,7 +34,7 @@ export default function OutfitSelectScreen() {
         Three faces on one plate. Pick who you are on the trail.
       </PixelText>
 
-      <Window tone="dark" pad={14} style={{ marginTop: space.md }}>
+      <FieldCard tone="ink" pad={14} style={{ marginTop: space.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around' }}>
           {CHARACTERS.map((item) => {
             const isSel = gender === item.id;
@@ -79,7 +79,7 @@ export default function OutfitSelectScreen() {
         <PixelText size="tiny" color={palette.windowFill} align="center" style={{ marginTop: 5 }}>
           {outfit.blurb}
         </PixelText>
-      </Window>
+      </FieldCard>
 
       <PixelText size="small" color={palette.secondary} style={{ marginTop: space.md }}>Gym Outfit</PixelText>
       <View style={{ marginTop: space.sm }}>

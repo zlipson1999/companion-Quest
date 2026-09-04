@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
-import Window from './Window';
+import FieldCard from './FieldCard';
 import PixelText from './PixelText';
 import Triangle from './Triangle';
 import { palette, space } from '../theme';
@@ -91,8 +91,8 @@ export default function Menu({ options, onSelect, columns = 1, framed = true, to
 
   if (!framed) return <View style={style}>{list}</View>;
   return (
-    <Window tone={tone} pad={pad} style={style}>
+    <FieldCard tone={tone === 'dark' ? 'ink' : 'paper'} pad={pad} style={style}>
       {list}
-    </Window>
+    </FieldCard>
   );
 }

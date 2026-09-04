@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Screen, Window, DialogueBox, PixelText, PixelButton, PixelSprite } from '../components';
+import { Screen, DialogueBox, PixelText, PixelButton, PixelSprite, FieldCard } from '../components';
 import { palette, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { levelFromXp } from '../state/leveling';
@@ -95,7 +95,7 @@ export default function WorkoutScreen({ params = {} }) {
           {workout.name}
         </PixelText>
         <ScrollView showsVerticalScrollIndicator={false}>
-          <Window tone="cream" pad={14}>
+          <FieldCard tone="paper" pad={14}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: space.sm }}>
               <PixelText size="tiny" color={palette.accentDark}>
                 {workout.intensity}
@@ -114,12 +114,12 @@ export default function WorkoutScreen({ params = {} }) {
                 </PixelText>
               </View>
             ))}
-          </Window>
-          <Window tone="dark" pad={12} style={{ marginTop: space.sm }}>
+          </FieldCard>
+          <FieldCard tone="ink" pad={12} style={{ marginTop: space.sm }}>
             <PixelText size="tiny" color={palette.secondary}>
               Reward: +{workout.reward.xp} XP, +{workout.reward.bond} bond
             </PixelText>
-          </Window>
+          </FieldCard>
         </ScrollView>
         <View style={{ flexDirection: 'row', marginTop: space.sm }}>
           <PixelButton
@@ -146,7 +146,7 @@ export default function WorkoutScreen({ params = {} }) {
       <ScrollView showsVerticalScrollIndicator={false}>
         {WORKOUTS.filter((w) => !w.guided).map((w) => (
           <View key={w.id} style={{ marginBottom: space.sm }}>
-            <Window tone="cream" pad={12}>
+            <FieldCard tone="paper" pad={12}>
               <View onTouchEnd={() => { playSfx('confirm'); setSelected(w.id); setPhase('detail'); }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   <PixelText size="body" color={palette.windowText}>
@@ -160,7 +160,7 @@ export default function WorkoutScreen({ params = {} }) {
                   {w.description}  ·  +{w.reward.xp} XP
                 </PixelText>
               </View>
-            </Window>
+            </FieldCard>
           </View>
         ))}
       </ScrollView>

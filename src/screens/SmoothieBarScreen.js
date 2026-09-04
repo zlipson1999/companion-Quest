@@ -10,7 +10,7 @@
 
 import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Screen, PixelText, PixelSprite, FieldCard, TrailAction, Window } from '../components';
+import { Screen, PixelText, PixelSprite, FieldCard, TrailAction } from '../components';
 import { palette, space, tokens, scale } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
@@ -107,11 +107,11 @@ export default function SmoothieBarScreen() {
         <Wallet credits={credits} />
       </View>
 
-      <Window tone="cream" pad={10} style={{ marginTop: space.sm }}>
+      <FieldCard tone="paper" pad={10} style={{ marginTop: space.sm }}>
         <PixelText size="tiny" color={palette.windowText} style={{ lineHeight: 14 }}>
           {toast}
         </PixelText>
-      </Window>
+      </FieldCard>
 
       <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: space.sm }}>
         {shelves.map((shelf) => (

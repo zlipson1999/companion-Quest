@@ -9,7 +9,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import { Screen, Window, DialogueBox, BodyMap3D, PixelText, PixelButton, PixelSprite, Triangle, GrowthCeremony } from '../components';
+import { Screen, DialogueBox, BodyMap3D, PixelText, PixelButton, PixelSprite, Triangle, GrowthCeremony, FieldCard } from '../components';
 import { palette, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { levelFromXp } from '../state/leveling';
@@ -78,7 +78,7 @@ function BlockRow({ block, performed, index, done, onToggle, onForm, onEdit, pr,
   if (!mv) return null;
   const changed = performed.amount !== block.amount || weightOf(performed) !== weightOf(block);
   return (
-    <Window tone="cream" pad={11} style={{ marginBottom: space.sm }}>
+    <FieldCard tone="paper" pad={11} style={{ marginBottom: space.sm }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <Pressable onPress={onToggle} style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
           <View style={{ width: 18, height: 18, borderWidth: 3, borderColor: palette.ink, backgroundColor: done ? palette.success : palette.windowFillAlt, marginRight: space.sm }} />
@@ -132,7 +132,7 @@ function BlockRow({ block, performed, index, done, onToggle, onForm, onEdit, pr,
           Beats your best of {formatRecord(pr, mv, units)}.
         </PixelText>
       ) : null}
-    </Window>
+    </FieldCard>
   );
 }
 
@@ -355,7 +355,7 @@ export default function ForgeScreen({ params }) {
         <PixelText size="heading" color={palette.secondary} align="center" style={{ marginVertical: space.sm }}>
           {plan.name}
         </PixelText>
-        <Window tone="dark" pad={11} style={{ marginBottom: space.sm }}>
+        <FieldCard tone="ink" pad={11} style={{ marginBottom: space.sm }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <PixelText size="tiny" color={palette.secondary}>
               {doneCount} / {total} done
@@ -369,7 +369,7 @@ export default function ForgeScreen({ params }) {
               {recovery.advice} You can absolutely still train — just going in with your eyes open.
             </PixelText>
           ) : null}
-        </Window>
+        </FieldCard>
         <ScrollView showsVerticalScrollIndicator={false}>
           {plan.blocks.map((b, i) => (
             <BlockRow
@@ -417,11 +417,11 @@ export default function ForgeScreen({ params }) {
           {plan.name}
         </PixelText>
         <ScrollView showsVerticalScrollIndicator={false}>
-          <Window tone="dark" pad={3}>
+          <FieldCard tone="ink" pad={3}>
             <BodyMap3D muscle={analysis.muscle} height={220} />
-          </Window>
+          </FieldCard>
 
-          <Window tone="dark" pad={12} style={{ marginTop: space.sm }}>
+          <FieldCard tone="ink" pad={12} style={{ marginTop: space.sm }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <PixelText size="small" color={palette.secondary}>{analysis.focus}</PixelText>
               <PixelText size="tiny" color={palette.windowBorderLight}>~{analysis.minutes} min</PixelText>
@@ -436,9 +436,9 @@ export default function ForgeScreen({ params }) {
               <PixelText size="tiny" color={palette.accent}>+{analysis.reward.bond} bond</PixelText>
               {analysis.reward.heal ? <PixelText size="tiny" color={palette.hpHigh}>+{analysis.reward.heal} HP</PixelText> : null}
             </View>
-          </Window>
+          </FieldCard>
 
-          <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
+          <FieldCard tone="paper" pad={12} style={{ marginTop: space.sm }}>
             <PixelText size="small" color={palette.accentDark}>Perks the Forge read into this</PixelText>
             {analysis.perks.length ? (
               <View>
@@ -456,9 +456,9 @@ export default function ForgeScreen({ params }) {
                 Not enough here yet for the Forge to call it anything. Four sets is roughly the floor.
               </PixelText>
             )}
-          </Window>
+          </FieldCard>
 
-          <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
+          <FieldCard tone="paper" pad={12} style={{ marginTop: space.sm }}>
             <PixelText size="small" color={palette.accentDark}>Last time</PixelText>
             {prog ? (
               <View>
@@ -487,10 +487,10 @@ export default function ForgeScreen({ params }) {
                 Never run. Do it once and the Forge starts tracking what to beat.
               </PixelText>
             )}
-          </Window>
+          </FieldCard>
 
           {targets.some((t) => t.pr || t.beats) ? (
-            <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
+            <FieldCard tone="paper" pad={12} style={{ marginTop: space.sm }}>
               <PixelText size="small" color={palette.accentDark}>Personal bests</PixelText>
               {targets.map((t) => {
                 const mv = getMovement(t.movementId);
@@ -504,10 +504,10 @@ export default function ForgeScreen({ params }) {
                   </View>
                 );
               })}
-            </Window>
+            </FieldCard>
           ) : null}
 
-          <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
+          <FieldCard tone="paper" pad={12} style={{ marginTop: space.sm }}>
             <PixelText size="small" color={palette.accentDark}>Trained</PixelText>
             {analysis.trained.length ? (
               <PixelText size="tiny" color={palette.windowText} style={{ marginTop: 8, lineHeight: 15 }}>
@@ -519,7 +519,7 @@ export default function ForgeScreen({ params }) {
             <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 10, lineHeight: 14 }}>
               {notes[0]}
             </PixelText>
-          </Window>
+          </FieldCard>
 
           <View style={{ flexDirection: 'row', marginTop: space.sm }}>
             <PixelButton label="Edit" tone="plain" style={{ flex: 1, marginRight: 6 }} onPress={() => navigate('forgeEdit', { planId: plan.id })} />
@@ -547,7 +547,7 @@ export default function ForgeScreen({ params }) {
       </PixelText>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Window tone="dark" pad={12} style={{ marginBottom: space.sm }}>
+        <FieldCard tone="ink" pad={12} style={{ marginBottom: space.sm }}>
           <PixelText size="tiny" color={palette.secondary}>COACH SESSION</PixelText>
           <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6, lineHeight: 14 }}>
             {coachIdea.plan.note}
@@ -558,12 +558,12 @@ export default function ForgeScreen({ params }) {
             style={{ marginTop: space.sm }}
             onPress={importCoachPlan}
           />
-        </Window>
+        </FieldCard>
         {plans.map((p) => {
           const a = analysePlan(p);
           return (
             <Pressable key={p.id} onPressIn={() => playSfx('cursor')} onPress={() => open(p)} style={{ marginBottom: space.sm }}>
-              <Window tone="cream" pad={12}>
+              <FieldCard tone="paper" pad={12}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <View style={{ flex: 1 }}>
                     <PixelText size="body" color={palette.windowText}>{p.name}</PixelText>
@@ -583,16 +583,16 @@ export default function ForgeScreen({ params }) {
                     +{a.reward.xp} XP   +{a.reward.bond} bond
                   </PixelText>
                 ) : null}
-              </Window>
+              </FieldCard>
             </Pressable>
           );
         })}
         {!plans.length ? (
-          <Window tone="cream" pad={14}>
+          <FieldCard tone="paper" pad={14}>
             <PixelText size="tiny" color={palette.windowText} style={{ lineHeight: 15 }}>
               Nothing forged yet. Make a plan and it will show you what it trains.
             </PixelText>
-          </Window>
+          </FieldCard>
         ) : null}
         <View style={{ height: space.sm }} />
       </ScrollView>
