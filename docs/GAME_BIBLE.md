@@ -983,7 +983,7 @@ Kinship Knot.
   On top of the grain sit a few strokes drawn on purpose: hair strands and a
   brow shadow, two creases and a hem on the torso, a seam down the outside of
   each leg, a sole under the shoe trim. Grain shifts the ramp INDEX, never the
-  colour, so all of it costs nothing: still 50 colours a figure.
+  colour, so texture itself costs no palette at all.
   Each facing is AUTHORED. The previous set derived all twelve frames from one
   traced front-facing card by squeezing it horizontally for the profile,
   mirroring that for the other side, and painting the face over in hair for the

@@ -137,8 +137,19 @@ export default function WorldScreen({
   // gets and fit the WHOLE map inside it; the guess only covers the first
   // frame before onLayout answers.
   const [avail, setAvail] = useState(null);
+  // The inset is PADDING on the measured container, so onLayout reports a
+  // height the room is not actually free to use. Reserve it here or a
+  // height-constrained map sizes itself to the full band and then gets pushed
+  // down by the padding, and its bottom rows run behind the panel — which is
+  // the opposite of the whole-room containment this is for. Width-constrained
+  // maps (the Hall) never noticed; the gym tour, where dialogue and status
+  // squeeze the band, is where it bites.
+  const inset = OUTDOOR_MAPS.has(map.id) ? 0 : TOP_INSET;
   const tile = avail
-    ? Math.max(10, Math.floor(Math.min(avail.w / map.cols, avail.h / map.rows)))
+    ? Math.max(10, Math.floor(Math.min(
+      avail.w / map.cols,
+      Math.max(1, avail.h - inset) / map.rows
+    )))
     : worldTileFor(map);
   const worldW = map.cols * tile;
   const worldH = map.rows * tile;
@@ -210,7 +221,7 @@ export default function WorldScreen({
           backgroundColor: outdoor ? voidColor : palette.bgAlt,
           alignItems: 'center',
           justifyContent: outdoor ? 'flex-end' : 'flex-start',
-          paddingTop: outdoor ? 0 : TOP_INSET,
+          paddingTop: inset,
         }}
       >
         {outdoor ? (

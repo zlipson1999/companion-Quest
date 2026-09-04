@@ -43,6 +43,13 @@ const BUILDING_WALL_CODES = new Set(['H', 'Y', 'D', 'd']);
 // Scatter that draws OVER the ground rather than replacing it.
 const SCATTER_OVERLAY = { ',': 'prop_flowers', '^': 'prop_tallgrass' };
 
+// Flowers and tall grass are outdoor things. This used to be inferred from
+// whether the map had its own ground field, which is not the same question:
+// two dozen ROUTES name a field so their biome gets the right floor, and the
+// test threw the scatter away on every one of them. Canopy Run is 28% tall
+// grass, the highest in the game, and rendered none of it.
+const INTERIOR_MAPS = new Set(['gym', 'home']);
+
 // Tile code -> sprite key. Animated tiles list their frames.
 const TILE_SPRITES = {
   '.': ['tile_grass', 'tile_grass_b'],
@@ -374,7 +381,7 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
     // them. Both used to be tiles carrying their own plate of ground, which
     // stamped a hard 16px square of a different texture into continuous grass
     // — on a trail that is a fifth tall grass, hundreds of them.
-    const overlay = !floor ? SCATTER_OVERLAY[code] : null;
+    const overlay = map && INTERIOR_MAPS.has(map.id) ? null : SCATTER_OVERLAY[code];
     layers = overlay
       ? [{ key: ground }, ...edges, { key: overlay }]
       : [{ key: ground }, ...edges];
