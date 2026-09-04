@@ -10,6 +10,7 @@ import { palette, space } from '../theme';
 import { useGame, useCompanion, useParty } from '../state';
 import { levelFromXp } from '../state/leveling';
 import { useNav } from './navContext';
+import useReducedMotion from '../state/useReducedMotion';
 import { playSfx } from '../audio';
 import { ENCOUNTERS } from '../data/obstacles';
 import { getCreature } from '../data/creatures';
@@ -139,12 +140,21 @@ export default function BattleScreen({ params }) {
 
   const wildEnter = useRef(new Animated.Value(90)).current;
   const compEnter = useRef(new Animated.Value(-110)).current;
+  const reduceMotion = useReducedMotion();
   useEffect(() => {
+    // Both combatants slide in from off-screen, which is a lot of travel at
+    // once. Reduced motion puts them where they belong and lets the scene
+    // simply be there.
+    if (reduceMotion) {
+      wildEnter.setValue(0);
+      compEnter.setValue(0);
+      return;
+    }
     Animated.stagger(160, [
       Animated.timing(wildEnter, { toValue: 0, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       Animated.timing(compEnter, { toValue: 0, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]).start();
-  }, [wildEnter, compEnter]);
+  }, [wildEnter, compEnter, reduceMotion]);
   const [wildFaint, setWildFaint] = useState(false);
   const [companionFaint, setCompanionFaint] = useState(false);
   const [ceremony, setCeremony] = useState(null);

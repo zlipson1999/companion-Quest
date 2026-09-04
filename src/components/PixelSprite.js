@@ -17,6 +17,7 @@ import { Animated, Easing, Image, PixelRatio } from 'react-native';
 import PixelArt from './PixelArt';
 import { SPRITES } from '../data/sprites';
 import { idleFrame } from '../data/idleFrame';
+import useReducedMotion from '../state/useReducedMotion';
 import { lodGrid } from '../data/spriteLod';
 import { paletteFor } from '../data/spritePalette';
 import { standinSprite } from '../data/spriteStandins';
@@ -50,7 +51,10 @@ export default function PixelSprite({
   const flash = useRef(new Animated.Value(0)).current;
   const faint = useRef(new Animated.Value(0)).current;
   const lunge = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  // Used instead of the white flash when motion is reduced.
+  const hitDim = useRef(new Animated.Value(0)).current;
   const [squashed, setSquashed] = useState(false);
+  const reduce = useReducedMotion();
   const firstHit = useRef(true);
   const firstLunge = useRef(true);
   const png = ITEM_IMAGES[spriteKey];
@@ -61,20 +65,23 @@ export default function PixelSprite({
   // motion stops reading as one thing. The interval owns the beat and the
   // translate follows the state it sets.
   useEffect(() => {
-    if (!bob) {
+    // A breath is small and continuous, but it is on every companion on every
+    // screen at once — which is the definition of the thing this setting turns
+    // off. It holds still instead.
+    if (!bob || reduce) {
       setSquashed(false);
       return undefined;
     }
     const timer = setInterval(() => setSquashed((v) => !v), IDLE_BEAT_MS);
     return () => clearInterval(timer);
-  }, [bob]);
+  }, [bob, reduce]);
 
   // Tall on the up beat, squashed on the down beat — a creature is at its
   // shortest when it has just settled, not when it is rising. The translate is
   // the smaller half of the motion now; the drawn frame carries the breath, and
   // at the old three pixels the slide swamped the pixel the drawing was worth.
   useEffect(() => {
-    if (!bob) {
+    if (!bob || reduce) {
       Animated.timing(bobY, { toValue: 0, duration: 200, useNativeDriver: true }).start();
       return;
     }
@@ -84,11 +91,22 @@ export default function PixelSprite({
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: true,
     }).start();
-  }, [bob, squashed, bobY]);
+  }, [bob, squashed, bobY, reduce]);
 
   useEffect(() => {
     if (firstHit.current) {
       firstHit.current = false;
+      return;
+    }
+    if (reduce) {
+      // A hit still has to be legible — the HP bar alone is easy to miss in the
+      // middle of a turn — but a 60ms white overlay on a sprite being hit
+      // repeatedly is a strobe, and the shake is the vestibular half. One slow
+      // dip in opacity says "that landed" without flashing or moving anything.
+      Animated.sequence([
+        Animated.timing(hitDim, { toValue: 1, duration: 160, useNativeDriver: true }),
+        Animated.timing(hitDim, { toValue: 0, duration: 260, useNativeDriver: true }),
+      ]).start();
       return;
     }
     Animated.sequence([
@@ -101,13 +119,16 @@ export default function PixelSprite({
       Animated.timing(flash, { toValue: 1, duration: 60, useNativeDriver: true }),
       Animated.timing(flash, { toValue: 0, duration: 120, useNativeDriver: true }),
     ]).start();
-  }, [hitCount, shakeX, flash]);
+  }, [hitCount, shakeX, flash, hitDim, reduce]);
 
   useEffect(() => {
     if (firstLunge.current) {
       firstLunge.current = false;
       return;
     }
+    // A lunge is the largest movement a sprite makes, so it is the first thing
+    // to go: the attack still reads from the opponent's dip and the HP bar.
+    if (reduce) return;
     // Sharp out, soft back: the strike is fast and the recovery settles.
     Animated.sequence([
       Animated.timing(lunge, {
@@ -131,9 +152,12 @@ export default function PixelSprite({
 
   const faintTranslate = faint.interpolate({ inputRange: [0, 1], outputRange: [0, 14] });
   const faintOpacity = faint.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
+  // Fainting and being hit can overlap, so the two opacities multiply rather
+  // than one winning.
+  const hitOpacity = hitDim.interpolate({ inputRange: [0, 1], outputRange: [1, 0.45] });
   const motionStyle = [
     {
-      opacity: faintOpacity,
+      opacity: Animated.multiply(faintOpacity, hitOpacity),
       transform: [
         { translateX: Animated.add(shakeX, lunge.x) },
         { translateY: Animated.add(lunge.y, Animated.add(bobY, faintTranslate)) },

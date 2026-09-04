@@ -1588,14 +1588,24 @@ A change is done only when all applicable items are true:
 1. **No agreed product/release contract** — audience, primary platform, MVP
    boundary, supported devices, business model and launch content are open
    (§13.1).
-2. **No automated quality gate** — no tests, lint/typecheck, PR CI, content
-   validation or migration suite (§13.5).
+2. **(partly closed) Automated quality gate.** `npm test` runs lint, both
+   doc/art checkers and every node suite; `.github/workflows` runs the
+   checkers on each PR. Still missing: typecheck, a migration suite across
+   all save versions, and content validation beyond the art and doc gates.
 3. **Background step counting is unproven in a standalone app** — accelerometer
    fallback works only in the foreground. EAS physical-device proof is a gate.
 4. **Save failure shows a red banner** (`saveError` on GameProvider / Router).
    Corrupt-save recovery, backup/export and cloud remain open.
-5. **Accessibility is unspecified** — especially tiny pixel text, focus/labels,
-   touch targets and reduced-motion alternatives for flashes/strobes.
+5. **Accessibility is partly specified.** Reduced motion is honoured now
+   (`state/useReducedMotion.js`, one copy of the question, checked by
+   `tools/test_motion.mjs`): the two flashes are REMOVED rather than
+   shortened under it — `BattleTransition`'s four full-screen white flashes
+   at 70ms each, about seven a second against a published threshold of
+   three, and `PixelSprite`'s per-hit white overlay on a screen where you
+   are hit repeatedly. A hit still reads, as an opacity dip. Large travel
+   (lunges, the battle entrance, the idle breath) stops too.
+   Still open: tiny pixel text, focus order and labels, touch targets, and
+   whether audio needs the same treatment.
 6. **Privacy/safety/service operations are undocumented** — no privacy policy,
    coach retention/deletion contract, production rate limits or release safety
    language.
@@ -1605,13 +1615,15 @@ A change is done only when all applicable items are true:
 
 ### Product/content debt
 
-9. **The six obstacle creatures remain procedural.** All thirty-six
-   trail forms are designed reference art. The original 18 companion
-   forms (18 masters, including Dewbble) and 14 world materials
-   also derive from authored art.
+9. **(closed) Every creature is traced.** All 190, obstacles included — the
+   entry claiming six procedural obstacles was stale. `tools/test_palette.mjs`
+   now fails if a companion is added on a procedural ramp, and enforces that
+   traced art keeps its own palette: 179 of the 190 were being decoded
+   against a single-hue ramp and rendered flat and banded.
 10. `state/usePedometer.js` is gone (deleted in Phase 14).
-11. Evolution ceremony is a strobe + swap; it needs both a stronger scene and a
-    reduced-motion alternative.
+11. **(closed) Evolution ceremony.** `GrowthCeremony` replaced the 120ms
+    strobe with a single held beat and names both forms in text under reduced
+    motion. This entry described the code it replaced.
 12. No per-movement progression charts despite weight-aware PR data.
 13. Train (presets) vs Forge (builder) naming still confuses (user-reported).
 14. (closed) `dusk` battle tone deleted — no caller, no trail used it.

@@ -5,33 +5,18 @@
 // settles. Reduced motion skips the fade and names both forms in text.
 
 import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, View } from 'react-native';
+import { Animated, View } from 'react-native';
 import PixelSprite from './PixelSprite';
 import PixelText from './PixelText';
 import { motion, tokens, scale } from '../theme';
+import useReducedMotion from '../state/useReducedMotion';
 
 export default function GrowthCeremony({ fromCreature, toCreature, checks, onDone }) {
   const fade = useRef(new Animated.Value(1)).current;
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
-  const [reduce, setReduce] = useState(false);
+  const reduce = useReducedMotion();
   const [shown, setShown] = useState('from');
-
-  useEffect(() => {
-    let alive = true;
-    if (AccessibilityInfo.isReduceMotionEnabled) {
-      AccessibilityInfo.isReduceMotionEnabled().then((v) => {
-        if (alive) setReduce(!!v);
-      });
-    }
-    const sub =
-      AccessibilityInfo.addEventListener &&
-      AccessibilityInfo.addEventListener('reduceMotionChanged', (v) => setReduce(!!v));
-    return () => {
-      alive = false;
-      if (sub && sub.remove) sub.remove();
-    };
-  }, []);
 
   useEffect(() => {
     if (!fromCreature || !toCreature) return undefined;
