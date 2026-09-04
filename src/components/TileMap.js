@@ -15,7 +15,8 @@ import { palette } from '../theme';
 import { SPRITES } from '../data/sprites';
 import { outfitPalette } from '../data/outfits';
 import { playerSprite, coachSprite, rowanSprite } from '../data/characters';
-import { useGame } from '../state';
+import { useCompanion, useGame } from '../state';
+import { restingSpot } from '../data/follower';
 
 // Codes whose material is large enough to show its repeat get the same field
 // treatment as the ground: a canopy or a roof reads as one mass rather than the
@@ -40,6 +41,16 @@ const WALL_FIELD_BY_MAP = { home: 'tile_home_wall', gym: 'tile_gym_block' };
 const ROOF_CODES = new Set(['h', 'y']);
 const BUILDING_WALL_CODES = new Set(['H', 'Y', 'D', 'd']);
 
+// Scatter that draws OVER the ground rather than replacing it.
+const SCATTER_OVERLAY = { ',': 'prop_flowers', '^': 'prop_tallgrass' };
+
+// Flowers and tall grass are outdoor things. This used to be inferred from
+// whether the map had its own ground field, which is not the same question:
+// two dozen ROUTES name a field so their biome gets the right floor, and the
+// test threw the scatter away on every one of them. Canopy Run is 28% tall
+// grass, the highest in the game, and rendered none of it.
+const INTERIOR_MAPS = new Set(['gym', 'home']);
+
 // Tile code -> sprite key. Animated tiles list their frames.
 const TILE_SPRITES = {
   '.': ['tile_grass', 'tile_grass_b'],
@@ -53,7 +64,6 @@ const TILE_SPRITES = {
   Y: ['tile_window'],
   D: ['tile_door'],
   d: ['tile_door'],
-  '^': ['tile_tallgrass'],
   // Quest Fitness interior
   W: ['tile_wall'],
   '=': ['tile_gym_wall'],
@@ -215,6 +225,18 @@ const FIELD_BY_MAP = {
   route_deephorizon: 'tile_gym_floor',
 };
 
+// Autotile sprites are EDGE OVERLAYS, not whole tiles.
+//
+// There are only sixteen of them — one per arrangement of same-material
+// neighbours — so drawing one per square stamped the identical sprite across
+// the middle of every path and pond: the material's own texture repeating once
+// per tile, which reads as a grid of squares however well the seams are hidden.
+//
+// Their interiors are punched out in `blended_tile`, so every square draws the
+// continuous field FIRST and the mask on top. The middle of a path is the field
+// running unbroken; only its edge is autotiled, and an edge is the one place a
+// repeat cannot show, because its shape changes tile to tile anyway.
+
 function groundKey(prefix, x, y) {
   const col = ((x % FIELD_SPAN) + FIELD_SPAN) % FIELD_SPAN;
   const row = ((y % FIELD_SPAN) + FIELD_SPAN) % FIELD_SPAN;
@@ -325,7 +347,9 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
   // What the CODE is, not where it is. Folding `zoneField` in here meant every
   // square inside a zone counted as bare floor, so the whole rack row drew as
   // empty platform: the props never reached their own branch.
-  const isFloorCode = code === '.' || code === ',';
+  // ',' and '^' are ground with something growing on it, not their own
+  // surfaces — both draw the field and then an overlay.
+  const isFloorCode = code === '.' || code === ',' || code === '^';
 
   let layers;
   // The gate takes the path's own autotiling. It used to render a wooden door
@@ -338,18 +362,29 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
   // does not need '#' to mean rubber.
   if (PATH_CODES.has(code)) {
     const mask = maskAt(map, x, y, PATH_CODES);
-    layers = [{ key: `tile_path_m${mask}` }, ...innerCorners(map, x, y, PATH_CODES, 'tile_path')];
+    layers = [
+      { key: groundKey('tile_path', x, y) },
+      { key: `tile_path_m${mask}` },
+      ...innerCorners(map, x, y, PATH_CODES, 'tile_path'),
+    ];
   } else if (!floor && WATER_CODES.has(code)) {
     const mask = maskAt(map, x, y, WATER_CODES);
     const suffix = frame % 2 ? '_b' : '';
     layers = [
+      // The second animation frame has its own field, so open water is as
+      // continuous as a path and still blinks.
+      { key: groundKey(suffix ? 'tile_waterb' : 'tile_water', x, y) },
       { key: `tile_water_m${mask}${suffix}` },
       ...innerCorners(map, x, y, WATER_CODES, 'tile_water'),
     ];
   } else if (isFloorCode) {
-    // Flowers are an overlay now, so the ground runs on underneath them.
-    layers = code === ',' && !floor
-      ? [{ key: ground }, ...edges, { key: 'prop_flowers' }]
+    // Flowers and tall grass are overlays, so the ground runs on underneath
+    // them. Both used to be tiles carrying their own plate of ground, which
+    // stamped a hard 16px square of a different texture into continuous grass
+    // — on a trail that is a fifth tall grass, hundreds of them.
+    const overlay = map && INTERIOR_MAPS.has(map.id) ? null : SCATTER_OVERLAY[code];
+    layers = overlay
+      ? [{ key: ground }, ...edges, { key: overlay }]
       : [{ key: ground }, ...edges];
   } else if (propFor(map, code)) {
     // Wall dressing hangs on the wall, not on the floor.
@@ -377,6 +412,22 @@ function layersFor(map, code, x, y, frame, floor, wallField) {
   // somebody has to remember to place.
   if (ROOF_CODES.has(code) && !ROOF_CODES.has(codeAt(map, x, y - 1))) {
     layers.push({ key: 'prop_ridge' });
+  }
+  // ...and its SIDES, from the same kind of test. Without these the shingle
+  // field ran to the tile boundary and grass began, so a building read as a
+  // rectangle cut out with scissors. A roof overhangs its wall on every side.
+  if (ROOF_CODES.has(code)) {
+    if (!ROOF_CODES.has(codeAt(map, x - 1, y))) layers.push({ key: 'prop_verge_l' });
+    if (!ROOF_CODES.has(codeAt(map, x + 1, y))) layers.push({ key: 'prop_verge_r' });
+  }
+  // Where the building meets the ground it gets a base course and a contact
+  // shadow. Without one the wall ended on a clean cut and the building was
+  // pasted onto the grass rather than standing on it.
+  if (BUILDING_WALL_CODES.has(code)) {
+    const below = codeAt(map, x, y + 1);
+    if (!BUILDING_WALL_CODES.has(below) && !ROOF_CODES.has(below)) {
+      layers.push({ key: 'prop_footing' });
+    }
   }
 
   // Contact shading, only onto ground the player can see past — a wall does not
@@ -465,6 +516,89 @@ function Walker({ walker, s }) {
       }}
     >
       <PixelSprite spriteKey={key} size={widthForHeight(key, s * 1.85)} />
+    </Animated.View>
+  );
+}
+
+// The companion, walking in the player's footprints.
+//
+// It existed in menus and in battles and nowhere in the world you actually walk
+// through, which is a strange thing for the creature the game is named after.
+//
+// It occupies the tile the player has just LEFT rather than computing a path of
+// its own: no pathfinding to get stuck, no chance of it standing somewhere it
+// could not have walked, and a following creature that is always exactly one
+// step behind is what reads as following. When the map changes it teleports
+// rather than walking, because the tile it was standing on is in another
+// building.
+//
+// Creature sprites are drawn front-facing only, so it does not turn. That is
+// the art being honest about itself rather than a shortcut — flipping a
+// front-facing creature to fake a profile is what the old walk_set did to the
+// player, and it is why the player had to be redrawn.
+// Of a tile. The player is 1.85, and a companion has to read as the smaller of
+// the two at a glance — but creature grids are 96x96 with the subject filling
+// maybe four fifths of that, where a person's 32x52 is filled almost edge to
+// edge, so the same number is a much bigger creature. 1.35 lands a companion at
+// roughly three quarters of the player's height.
+const FOLLOW_HEIGHT = 1.35;
+
+function Follower({ player, map, s }) {
+  const companion = useCompanion();
+  const spriteKey = companion && companion.creature ? companion.creature.sprite : null;
+  // Where the player was one step ago.
+  const [at, setAt] = useState(() => restingSpot(map, player.x, player.y, player.facing));
+  const prev = useRef({ x: player.x, y: player.y });
+  const mapId = useRef(map.id);
+  const start = useRef(restingSpot(map, player.x, player.y, player.facing)).current;
+  const pos = useRef(new Animated.ValueXY({ x: start.x * s, y: start.y * s })).current;
+
+  useEffect(() => {
+    if (mapId.current !== map.id) {
+      // A new room. The footprint it was standing in is in another building, so
+      // it arrives with the player instead of walking there.
+      mapId.current = map.id;
+      prev.current = { x: player.x, y: player.y };
+      const spot = restingSpot(map, player.x, player.y, player.facing);
+      setAt(spot);
+      pos.setValue({ x: spot.x * s, y: spot.y * s });
+      return;
+    }
+    const before = prev.current;
+    if (before.x !== player.x || before.y !== player.y) {
+      setAt(before);
+      prev.current = { x: player.x, y: player.y };
+    }
+  }, [player.x, player.y, player.facing, map, s, pos]);
+
+  useEffect(() => {
+    Animated.timing(pos, {
+      toValue: { x: at.x * s, y: at.y * s },
+      duration: STEP_MS,
+      useNativeDriver: true,
+    }).start();
+  }, [at.x, at.y, s, pos]);
+
+  if (!spriteKey || !SPRITES[spriteKey]) return null;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        width: s,
+        height: s,
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        transform: [{ translateX: pos.x }, { translateY: pos.y }],
+      }}
+    >
+      <PixelSprite
+        spriteKey={spriteKey}
+        palette={companion.creature.palette}
+        size={widthForHeight(spriteKey, s * FOLLOW_HEIGHT)}
+        bob
+        accessibilityLabel={`${companion.creature.name}, following you`}
+      />
     </Animated.View>
   );
 }
@@ -607,6 +741,9 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
         style={{ position: 'absolute', left: 0, top: 0, width: map.cols * s, height: map.rows * s }}
       />
       {walker ? <Walker walker={walker} s={s} /> : null}
+      {/* Drawn before the player, so when they end up on adjacent tiles the
+          player reads as the one in front. */}
+      <Follower player={player} map={map} s={s} />
       <Animated.View
         style={{
           position: 'absolute',
@@ -627,7 +764,7 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
         >
           <PixelSprite
             spriteKey={spriteKey}
-            palette={outfitPalette(state.playerOutfit, state.playerGender)}
+            palette={outfitPalette(state.playerOutfit, state.playerGender, spriteKey)}
             size={widthForHeight(spriteKey, s * (sideOnPose ? 1.5 : 1.85))}
           />
         </View>

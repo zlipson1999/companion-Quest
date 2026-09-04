@@ -6,7 +6,7 @@
 // shorter length; assuming the creature layout here would have quietly repainted
 // hair and skin the moment a player picked anything but the default body.
 
-import { SPRITE_PALETTES, SPRITE_RAMPS } from './sprites';
+import { SPRITES, SPRITE_PALETTES, SPRITE_RAMPS } from './sprites';
 import { getCharacter } from './characters';
 
 export const OUTFITS = [
@@ -31,14 +31,24 @@ function mix(a, b, t) {
   return `#${c.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
-// The palette a character's sprites are generated against.
-function basePaletteKey(characterId) {
+// The palette a character's sprites are actually generated against.
+//
+// Ask the SPRITE, don't guess from the character id. Every person now carries a
+// per-sprite palette (`art_hero_woman_down` and so on) because each figure is
+// drawn on its own ramps. Returning `pc_woman` here regardless meant the
+// overworld decoded traced art through a palette that had nothing to do with
+// it, and the player rendered as a flat blue ghost — on `main`, for every
+// character, since the traced sets landed. `pc_*` stays as the fallback for the
+// drawn `hero_*` set, which really is generated on it.
+function basePaletteKey(characterId, spriteKey) {
+  const sprite = spriteKey ? SPRITES[spriteKey] : null;
+  if (sprite && typeof sprite.palette === 'string') return sprite.palette;
   const { id } = getCharacter(characterId);
   return id ? `pc_${id}` : 'hero';
 }
 
-export function outfitPalette(outfitId, characterId) {
-  const key = basePaletteKey(characterId);
+export function outfitPalette(outfitId, characterId, spriteKey) {
+  const key = basePaletteKey(characterId, spriteKey);
   const base = SPRITE_PALETTES[key] || SPRITE_PALETTES.hero;
   const outfit = OUTFITS.find((item) => item.id === outfitId);
   if (!outfit) return base;

@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import { Screen, Window, PixelText, PixelButton, PixelSprite } from '../components';
+import { Screen, PixelText, PixelButton, PixelSprite, FieldCard } from '../components';
 import { palette, space } from '../theme';
 import { useGame } from '../state';
 import { useNav } from './navContext';
@@ -54,7 +54,7 @@ function FamilyRow({ rootId, dex, trails, expanded, onToggle, partyBond }) {
   const habitat = habitatOf(focus);
 
   return (
-    <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+    <FieldCard tone="paper" pad={12} style={{ marginBottom: space.sm }}>
       <Pressable
         accessible
         accessibilityRole="button"
@@ -139,7 +139,7 @@ function FamilyRow({ rootId, dex, trails, expanded, onToggle, partyBond }) {
           ) : null}
         </View>
       ) : null}
-    </Window>
+    </FieldCard>
   );
 }
 

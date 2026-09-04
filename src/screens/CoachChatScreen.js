@@ -4,7 +4,7 @@
 
 import React, { useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, TextInput, View } from 'react-native';
-import { Screen, Window, PixelText, PixelButton, PixelSprite } from '../components';
+import { Screen, PixelText, PixelButton, PixelSprite, FieldCard } from '../components';
 import { palette, space, FONT_FAMILY } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
@@ -34,11 +34,11 @@ function Bubble({ role, text, companion }) {
   return (
     <View style={{ alignSelf: 'flex-start', maxWidth: '86%', marginBottom: space.sm, flexDirection: 'row', alignItems: 'flex-end' }}>
       <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={28} style={{ marginRight: 6, marginBottom: 4 }} />
-      <Window tone="cream" pad={10} style={{ flexShrink: 1 }}>
+      <FieldCard tone="paper" pad={10} style={{ flexShrink: 1 }}>
         <PixelText size="small" color={palette.windowText} style={{ lineHeight: 16 }}>
           {text}
         </PixelText>
-      </Window>
+      </FieldCard>
     </View>
   );
 }
@@ -124,7 +124,7 @@ export default function CoachChatScreen() {
   if (!companion) {
     return (
       <Screen style={{ padding: space.md, justifyContent: 'center' }}>
-        <Window tone="cream" pad={14}>
+        <FieldCard tone="paper" pad={14}>
           <PixelText
             size="body"
             color={palette.windowText}
@@ -134,7 +134,7 @@ export default function CoachChatScreen() {
           >
             Meet Coach Maple in the gym. She will introduce you to a companion — then this chat is theirs.
           </PixelText>
-        </Window>
+        </FieldCard>
         <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
       </Screen>
     );
@@ -159,7 +159,7 @@ export default function CoachChatScreen() {
               ? 'Fitness, food, hydration & recovery only. Not medical advice.'
               : 'Answers come from what you have logged. Not medical advice.'}
           </PixelText>
-          <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
+          <FieldCard tone="ink" pad={10} style={{ marginBottom: space.sm }}>
             <PixelText size="tiny" color={palette.secondary}>COACH SESSION</PixelText>
             <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 6, lineHeight: 13 }}>
               {coachIdea.plan.note}
@@ -180,7 +180,7 @@ export default function CoachChatScreen() {
                 navigate('forge');
               }}
             />
-          </Window>
+          </FieldCard>
 
           <ScrollView ref={scrollRef} style={{ flex: 1 }} showsVerticalScrollIndicator={false} onContentSizeChange={scrollDown}>
             {messages.map((m, i) => (
@@ -188,11 +188,11 @@ export default function CoachChatScreen() {
             ))}
             {loading ? (
               <View style={{ alignSelf: 'flex-start', marginBottom: space.sm }}>
-                <Window tone="cream" pad={10}>
+                <FieldCard tone="paper" pad={10}>
                   <PixelText size="small" color={palette.windowTextDim}>
                     {companion.creature.name} is thinking...
                   </PixelText>
-                </Window>
+                </FieldCard>
               </View>
             ) : null}
           </ScrollView>

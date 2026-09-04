@@ -9,8 +9,8 @@
 // A calorie estimate printed in the same style as a distance reads as a fourth
 // measurement, which would be the display lying about how much it knows.
 
-import React from 'react';
-import { View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, View } from 'react-native';
 import PixelText from './PixelText';
 import PixelButton from './PixelButton';
 import TrailAction from './TrailAction';
@@ -99,7 +99,12 @@ export default function CardioConsole({
   compact = false,
 }) {
   const bike = station === 'bike';
-  const machine = MACHINE_BY_ID[station];
+  // `station` can be null — the trail is not a machine. It used to default to
+  // 'treadmill' for every caller, so the TRAIL screen introduced itself as a
+  // treadmill: it printed the deck's stat line and told you to stay on the deck
+  // while it moves, out on a footpath.
+  const machine = station ? MACHINE_BY_ID[station] : null;
+  const [notesOpen, setNotesOpen] = useState(false);
   const pace = paceFor(miles, seconds);
   const speed = speedFor(miles, seconds);
   const paused = phase === 'paused';
@@ -182,7 +187,9 @@ export default function CardioConsole({
       <View
         style={[
           {
-            backgroundColor: '#101219ee',
+            // The console's own sunken surface, from the same token set as every
+            // other panel — it was a hand-typed hex that happened to match.
+            backgroundColor: `${tokens.surfaceSunken}ee`,
             borderColor: tokens.line,
             borderWidth: 3,
             borderRadius: scale.radius.panel,
@@ -340,17 +347,35 @@ export default function CardioConsole({
         </View>
       ) : null}
 
-      {/* Which of these the machine actually knows, and what it pays. */}
-      <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: space.sm, lineHeight: 13 }}>
-        {machine ? machine.statLine : ''}
-      </PixelText>
-      <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 5, lineHeight: 13 }}>
-        {`Gym cardio: detected active time pays Quest Credits (${credits} so far); stationary and paused time pay nothing. It never advances a trail, its milestones or encounters. Kcal is an estimate.`}
-      </PixelText>
-      {machine && machine.safety ? (
-        <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 5, lineHeight: 13 }}>
-          {machine.safety}
-        </PixelText>
+      {/* What the machine knows and what it pays — folded away by default.
+          Seven lines of standing explanation that never change pushed the world
+          off the trail screen, and none of it is anything you read twice. It is
+          one tap from here and it stays honest; it just stops being the view.
+          Only a MACHINE says any of this: on the trail there is no deck, no
+          console figure to type in, and nothing that fails to advance a trail. */}
+      {machine ? (
+        <View style={{ marginTop: space.sm }}>
+          <Pressable onPress={() => setNotesOpen((v) => !v)} accessibilityRole="button">
+            <PixelText size="tiny" color={palette.secondary} style={{ letterSpacing: 1 }}>
+              {notesOpen ? '- WHAT COUNTS' : '+ WHAT COUNTS'}
+            </PixelText>
+          </Pressable>
+          {notesOpen ? (
+            <View style={{ marginTop: 5 }}>
+              <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ lineHeight: 13 }}>
+                {machine.statLine}
+              </PixelText>
+              <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 5, lineHeight: 13 }}>
+                {`Detected active time pays Quest Credits (${credits} so far); stationary and paused time pay nothing. It never advances a trail, its milestones or encounters. Kcal is an estimate.`}
+              </PixelText>
+              {machine.safety ? (
+                <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 5, lineHeight: 13 }}>
+                  {machine.safety}
+                </PixelText>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
       ) : null}
 
 

@@ -6,9 +6,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import {
-  Screen, PixelText, FieldCard, TrailAction, ObjectiveRibbon, PixelSprite,
-} from '../components';
+import { Screen, PixelText, FieldCard, TrailAction, ObjectiveRibbon, PixelSprite } from '../components';
 import { palette, space, tokens, scale } from '../theme';
 import { useGame } from '../state';
 import { useNav } from './navContext';

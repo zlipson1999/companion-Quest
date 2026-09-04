@@ -22,11 +22,45 @@ screens are not 28px tall.
 Title, Options, Week — journal screens that were still Window/PixelButton
 for no reason other than they had not been touched.
 
-## Stay legacy, and why
+## Nothing is legacy any more
 
-These keep `Window` / `PixelButton` on purpose. Converting them in the
-same pass as the journal screens would make a half-finished Forge or
-challenge console, which is worse than a known leftover.
+The table below used to say which screens kept `Window` and why. All of
+them have moved: nineteen files, seventy-nine panels, in one pass.
+
+The reasoning it replaced was sound at the time — converting a dense
+screen like the Forge alongside the journal ones would leave it
+half-finished, worse than a known leftover. What changed is that the
+conversion turned out not to be a redesign. `Window`'s cream fill sits at
+luminance 243 and `FieldCard`'s paper at 244; its dark fill at 28 and ink
+at 44. Every text colour that was readable on the old surface is readable
+on the new one, so the migration is a frame swap and the dense screens
+keep their layouts intact. `pad` moved onto `FieldCard` rather than being
+dropped, because a status strip at 3 and a summary at 18 are different
+objects and collapsing both to 12 loses that.
+
+Two things did NOT come across and had to be handled by hand:
+
+- **`tone` is `ink` / `paper`, never `cream` / `dark`.** Hand a card the
+  old vocabulary and `onPaper` is simply false, so it falls through to ink
+  — with the cream-page text still on it. Two sites passed a computed tone
+  (`tone={active ? 'dark' : 'cream'}`) and a mechanical rewrite left both
+  props in place, where the last one silently wins. `PartyScreen`'s roster
+  rendered every row dark with unreadable dim text until it was fixed.
+- **`innerStyle` has no equivalent.** One site used it for a minimum
+  height, which is a style on the card.
+
+`tools/test_panels.mjs` now holds all of it: no file renders a `Window`,
+no card is handed `cream`/`dark`, no tag carries two `tone` props, and
+every text colour inside a card clears 45 luminance against its surface.
+That last one is the check that matters — the failure it catches lints
+clean and type-checks, and screenshots only reach the screen you happen to
+be looking at. It reads 243 colours across every screen at once.
+
+### The old table, kept for the reasoning
+
+These were the arguments for leaving each one alone. They are worth
+keeping because most of them are still the right argument for any FUTURE
+sweep that is a redesign rather than a frame swap.
 
 | Screen | Why it stays |
 |---|---|
@@ -40,8 +74,8 @@ challenge console, which is worse than a known leftover.
 | Goal, Outfit, Pairing, Intro | First-rendition plates. They show the three-face card; Window is the mat. |
 | Loading | No chrome. |
 
-Cookbook / SmoothieBar / Route keep a Window where it is a receipt or a
-debug sheet, not a page.
+None of them keep a Window now; the receipt and debug sheets are cards on
+the same two stocks as everything else.
 
 ## How to convert a leftover
 
@@ -52,3 +86,25 @@ debug sheet, not a page.
 4. Screenshot the screen. A bundle is not a visual check.
 5. Do not change copy that names Quest Fitness / the gym / Sunkist Lane /
    the trails.
+
+
+## One panel, two stocks
+
+`DialogueBox` and `CardioConsole` are on the token system now, so the game has
+one idea of what a panel is instead of three.
+
+The dialogue used to be a `Window`: cream fill, purple frame, bevelled
+highlights — chrome that appeared nowhere else, so which panel you saw depended
+on which screen you were standing on. It is a `FieldCard` with `tone="paper"`
+now: the same card the lane and the objective ribbon use, in the same tokens,
+with the same offset shadow, border and stepped corner.
+
+Paper is kept on purpose. Dialogue reading as a page is the point, and the token
+set already carries the stock for it (`sheet`, `sheetEdge`, `textOnPaper`). What
+went is the one-off frame, not the character. A card is ink OR paper — pass
+`tone`, and mind that it is `tone="paper"` and not an `onPaper` flag: spelling
+it wrong renders an ink card with paper-coloured text, which is dark ink on a
+dark surface and cannot be read.
+
+The console's shell was a hand-typed `#101219ee` that happened to equal
+`tokens.surfaceSunken`. It asks for the token now.

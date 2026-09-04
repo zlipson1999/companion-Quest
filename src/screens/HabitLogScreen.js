@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Screen, Window, ProgressBar, PixelText, PixelButton, PixelSprite } from '../components';
+import { Screen, ProgressBar, PixelText, PixelButton, PixelSprite, FieldCard } from '../components';
 import { palette, space } from '../theme';
 import { useGame, useCompanion } from '../state';
 import { levelFromXp } from '../state/leveling';
@@ -72,11 +72,11 @@ export default function HabitLogScreen({ params }) {
   if (!module) {
     return (
       <Screen style={{ padding: space.md, justifyContent: 'center' }}>
-        <Window tone="cream" pad={14}>
+        <FieldCard tone="paper" pad={14}>
           <PixelText size="body" color={palette.windowText} style={{ lineHeight: 20 }}>
             That habit isn't installed.
           </PixelText>
-        </Window>
+        </FieldCard>
         <PixelButton label={back.label} tone="plain" sound="cancel" onPress={goBack} style={{ marginTop: space.sm }} />
       </Screen>
     );
@@ -124,7 +124,7 @@ export default function HabitLogScreen({ params }) {
       </PixelText>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Window tone="dark" pad={14}>
+        <FieldCard tone="ink" pad={14}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <PixelSprite spriteKey={moduleSprite(module)} palette={module.spritePalette} size={56} bob={progress.done} />
             <View style={{ flex: 1, marginLeft: space.md }}>
@@ -164,7 +164,7 @@ export default function HabitLogScreen({ params }) {
               {modState.goalDays} good days
             </PixelText>
           </View>
-        </Window>
+        </FieldCard>
 
         <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: space.md, marginBottom: space.sm, lineHeight: 14 }}>
           {module.blurb}
@@ -184,7 +184,7 @@ export default function HabitLogScreen({ params }) {
         ))}
 
         {feedback ? (
-          <Window tone="cream" pad={12} style={{ marginTop: space.xs }}>
+          <FieldCard tone="paper" pad={12} style={{ marginTop: space.xs }}>
             <PixelText size="small" color={palette.accentDark}>
               {feedback.title}
             </PixelText>
@@ -193,11 +193,11 @@ export default function HabitLogScreen({ params }) {
                 {line}
               </PixelText>
             ))}
-          </Window>
+          </FieldCard>
         ) : null}
 
         {modState.entries.length ? (
-          <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
+          <FieldCard tone="paper" pad={12} style={{ marginTop: space.sm }}>
             <PixelText size="small" color={palette.accentDark} style={{ marginBottom: 4 }} accessibilityRole="header">
               Logged today
             </PixelText>
@@ -214,9 +214,9 @@ export default function HabitLogScreen({ params }) {
                   </PixelText>
                 </View>
               ))}
-          </Window>
+          </FieldCard>
         ) : (
-          <Window tone="cream" pad={12} style={{ marginTop: space.sm }}>
+          <FieldCard tone="paper" pad={12} style={{ marginTop: space.sm }}>
             <PixelText
               size="tiny"
               color={palette.windowTextDim}
@@ -225,7 +225,7 @@ export default function HabitLogScreen({ params }) {
             >
               Nothing logged today. The first check-in is the one that counts.
             </PixelText>
-          </Window>
+          </FieldCard>
         )}
 
         <View style={{ height: space.sm }} />

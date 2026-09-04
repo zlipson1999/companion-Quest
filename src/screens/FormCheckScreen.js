@@ -11,7 +11,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Screen, Window, PixelText, PixelButton } from '../components';
+import { Screen, PixelText, PixelButton, FieldCard } from '../components';
 import { palette, space } from '../theme';
 import { getMovement } from '../data/movements';
 import { MUSCLES } from '../data/muscles';
@@ -76,7 +76,7 @@ export default function FormCheckScreen({ params }) {
       </PixelText>
 
       {/* upper pane: the mirror, or the offer of one */}
-      <Window tone="dark" pad={3}>
+      <FieldCard tone="ink" pad={3}>
         <View style={{ height: 250, backgroundColor: palette.ink, overflow: 'hidden' }}>
           {mirror && granted ? (
             <CameraView style={{ flex: 1 }} facing="front" />
@@ -102,12 +102,12 @@ export default function FormCheckScreen({ params }) {
             </View>
           ) : null}
         </View>
-      </Window>
+      </FieldCard>
 
       {/* the cue, big and one at a time — only when a movement asked for one.
           Arriving from the gym wall there is nothing to cue, so the mirror is
           just a mirror and a set clock, which is what a mirror is. */}
-      <Window tone="cream" pad={14} style={{ marginTop: space.sm }}>
+      <FieldCard tone="paper" pad={14} style={{ marginTop: space.sm }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <PixelText size="small" color={palette.accentDark}>
             {movement ? movement.name : 'Set clock'}
@@ -132,7 +132,7 @@ export default function FormCheckScreen({ params }) {
             </PixelText>
           </>
         ) : null}
-      </Window>
+      </FieldCard>
 
       <PixelText size="tiny" color={palette.windowTextDim} align="center" style={{ marginTop: space.sm, lineHeight: 14 }}>
         Mirror and cues only — nothing is recorded, and the app is not judging your form. You are.

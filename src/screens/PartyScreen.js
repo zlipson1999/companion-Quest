@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { ScrollView, View } from 'react-native';
-import { Screen, Window, HPBar, PixelText, PixelButton, PixelSprite, Triangle } from '../components';
+import { Screen, HPBar, PixelText, PixelButton, PixelSprite, Triangle, FieldCard } from '../components';
 import { palette, space } from '../theme';
 import { useGame, useParty } from '../state';
 import { useNav } from './navContext';
@@ -31,7 +31,7 @@ export default function PartyScreen() {
       </PixelText>
       <ScrollView showsVerticalScrollIndicator={false}>
         {party.members.length === 0 ? (
-          <Window tone="cream" pad={16}>
+          <FieldCard tone="paper" pad={16}>
             <PixelText
               size="small"
               color={palette.windowTextDim}
@@ -41,13 +41,13 @@ export default function PartyScreen() {
             >
               No companions yet. Meet Coach Maple in the gym — then this list is yours.
             </PixelText>
-          </Window>
+          </FieldCard>
         ) : null}
         {party.members.map((m, i) => {
           const active = i === party.activeIndex;
           return (
             <View key={i} style={{ marginBottom: space.sm }}>
-              <Window tone={active ? 'dark' : 'cream'} pad={12} style={active ? { borderColor: palette.accent } : null}>
+              <FieldCard tone={active ? 'ink' : 'paper'} pad={12} style={active ? { borderColor: palette.accent } : null}>
                 <View onTouchEnd={() => setActive(i)} style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <View style={{ width: 16, justifyContent: 'center' }}>
                     {active ? <Triangle direction="right" size={6} color={palette.accent} /> : null}
@@ -76,7 +76,7 @@ export default function PartyScreen() {
                     ) : null}
                   </View>
                 </View>
-              </Window>
+              </FieldCard>
             </View>
           );
         })}

@@ -20,7 +20,9 @@ import PixelText from './PixelText';
 import Screen from './Screen';
 import HorizonSky from './HorizonSky';
 import { palette, space, screen, tokens, scale } from '../theme';
-import { OUTDOOR_WORLD_TONE, sceneTone } from '../data/sceneSky';
+import { OUTDOOR_WORLD_TONE } from '../data/sceneSky';
+import { veilFor } from '../data/daylight';
+import useDaylight, { useSceneTone } from '../state/useDaylight';
 import { tileAt, isWalkable, interactionForCode } from '../data/maps';
 
 // What is within reach: the interactive thing on the tile the player faces,
@@ -137,13 +139,31 @@ export default function WorldScreen({
   // gets and fit the WHOLE map inside it; the guess only covers the first
   // frame before onLayout answers.
   const [avail, setAvail] = useState(null);
+  // The inset is PADDING on the measured container, so onLayout reports a
+  // height the room is not actually free to use. Reserve it here or a
+  // height-constrained map sizes itself to the full band and then gets pushed
+  // down by the padding, and its bottom rows run behind the panel — which is
+  // the opposite of the whole-room containment this is for. Width-constrained
+  // maps (the Hall) never noticed; the gym tour, where dialogue and status
+  // squeeze the band, is where it bites.
+  const inset = OUTDOOR_MAPS.has(map.id) ? 0 : TOP_INSET;
   const tile = avail
-    ? Math.max(10, Math.floor(Math.min(avail.w / map.cols, avail.h / map.rows)))
+    ? Math.max(10, Math.floor(Math.min(
+      avail.w / map.cols,
+      Math.max(1, avail.h - inset) / map.rows
+    )))
     : worldTileFor(map);
   const worldW = map.cols * tile;
   const worldH = map.rows * tile;
   const outdoor = OUTDOOR_MAPS.has(map.id);
-  const voidColor = VOID_BY_MAP[map.id] || (outdoor ? sceneTone(OUTDOOR_WORLD_TONE).ground : palette.grassDark);
+  // The letterbox behind an outdoor map is the same ground the sky dissolves
+  // into, so it has to travel with the hour or the world sits in a noon frame.
+  const phase = useDaylight();
+  const worldTone = useSceneTone(OUTDOOR_WORLD_TONE);
+  const voidColor = VOID_BY_MAP[map.id] || (outdoor ? worldTone.ground : palette.grassDark);
+  // Interiors are lit by their own lamps, not by the sky. A kitchen at 9pm
+  // looks like a kitchen; only the outdoors takes the hour.
+  const veil = outdoor ? veilFor(phase) : null;
 
   const sheet = (
     <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
@@ -194,9 +214,23 @@ export default function WorldScreen({
         }}
         style={{
           flex: 1,
-          backgroundColor: voidColor,
+          // Indoors the slack belongs WITH the panel, not around the room.
+          //
+          // A contained room is roughly square and a phone is not, so the map
+          // can never fill this band: the Hall is 17 tiles wide in 420 points,
+          // which pins the tile size at width and leaves the height over. That
+          // slack used to be split above and below a centred map, in a slate
+          // that matched nothing, so the room read as a small picture hung in a
+          // void — a third of the screen on the way in.
+          //
+          // Nothing is cropped to fix it; the whole room still shows. The map
+          // is anchored to the top and the leftover carries the panel's own
+          // colour, so it reads as one band of interface under the room rather
+          // than as a gap nobody filled.
+          backgroundColor: outdoor ? voidColor : palette.bgAlt,
           alignItems: 'center',
-          justifyContent: outdoor ? 'flex-end' : 'center',
+          justifyContent: outdoor ? 'flex-end' : 'flex-start',
+          paddingTop: inset,
         }}
       >
         {outdoor ? (
@@ -213,6 +247,20 @@ export default function WorldScreen({
             walker={walker}
             playerActivity={playerActivity}
           />
+          {veil && veil.opacity > 0 ? (
+            <View
+              pointerEvents="none"
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 0,
+                backgroundColor: veil.color,
+                opacity: veil.opacity,
+              }}
+            />
+          ) : null}
         </View>
         {worldOverlay ? (
           <View

@@ -5,7 +5,7 @@
 
 import React, { useEffect } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import { Screen, Window, PixelText, PixelButton, PixelSprite, Triangle } from '../components';
+import { Screen, PixelText, PixelButton, PixelSprite, Triangle, FieldCard } from '../components';
 import { dayIn } from '../state/history';
 import { todayKey } from '../modules';
 import { palette, space } from '../theme';
@@ -25,7 +25,7 @@ function ModuleCard({ module, state, progress, onPress }) {
       }}
       style={{ marginBottom: space.sm }}
     >
-      <Window tone="cream" pad={12}>
+      <FieldCard tone="paper" pad={12}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <PixelSprite spriteKey={moduleSprite(module)} palette={module.spritePalette} size={40} />
           <View style={{ flex: 1, marginLeft: space.md }}>
@@ -69,7 +69,7 @@ function ModuleCard({ module, state, progress, onPress }) {
         <PixelText size="tiny" color={palette.windowText} style={{ marginTop: space.sm, lineHeight: 14 }}>
           {moduleSummary(module, state)}
         </PixelText>
-      </Window>
+      </FieldCard>
     </Pressable>
   );
 }
@@ -97,7 +97,7 @@ export default function HabitsScreen() {
         Life Habits
       </PixelText>
 
-      <Window tone="dark" pad={12} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="ink" pad={12} style={{ marginBottom: space.sm }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {companion ? (
             <PixelSprite
@@ -119,12 +119,12 @@ export default function HabitsScreen() {
             {state.stats.habitLogs || 0} logs all-time
           </PixelText>
         </View>
-      </Window>
+      </FieldCard>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Recovery sits above the modules on purpose: when it has something to
             say, it matters more than any of them. */}
-        <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+        <FieldCard tone="paper" pad={12} style={{ marginBottom: space.sm }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <PixelText size="body" color={palette.windowText}>Recovery</PixelText>
             <PixelText
@@ -161,7 +161,7 @@ export default function HabitsScreen() {
           <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 7, lineHeight: 14 }}>
             Rest pays bond and healing, never XP. It is a training decision, not a way to earn.
           </PixelText>
-        </Window>
+        </FieldCard>
 
         {modules.map(({ module, state: modState, progress }) => (
           <ModuleCard

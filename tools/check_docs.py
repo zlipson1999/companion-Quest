@@ -103,6 +103,35 @@ def build_checks():
          first(r"'pace-token': \{ incomingMult: ([\d.]+)", charm_battle, 'pace token mult')),
     ]
 
+    # The daylight transform. Both of these are quoted in prose that explains
+    # WHY they are what they are — the five phases and the night veil's ceiling —
+    # so a silent change to either leaves the reasoning describing a different
+    # system.
+    # How tall the companion is drawn beside the player. Quoted with the
+    # reasoning about grid fill, so a silent change leaves the argument stale.
+    checks.append(('follower height', r'Drawn at \*\*([\d.]+)\*\* tiles to the player',
+                   first(r'const FOLLOW_HEIGHT = ([\d.]+);', read('src/components/TileMap.js'),
+                         'FOLLOW_HEIGHT')))
+
+    # The idle squash: the band it takes a row from and the travel it targets
+    # are both quoted with the reasoning for the value, so both are watched.
+    idle = read('src/data/idleFrame.js')
+    checks += [
+        ('idle squash band', r'band \*\*([\d]+%–[\d]+%)\*\* down the subject',
+         '{}%–{}%'.format(int(float(first(r'BAND_TOP = ([\d.]+)', idle, 'band top')) * 100),
+                          int(float(first(r'BAND_BOTTOM = ([\d.]+)', idle, 'band bottom')) * 100))),
+        ('idle squash travel', r'targeting\n  \*\*([\d.]+)pt\*\* of travel',
+         first(r'TARGET_POINTS = ([\d.]+)', idle, 'target points')),
+    ]
+
+    daylight = read('src/data/daylight.js')
+    checks += [
+        ('daylight phases', r'one of \*\*(\w+) phases\*\*',
+         WORDS[len(re.findall(r'^  (\w+): \{$', daylight, re.M))]),
+        ('night veil opacity', r'Opacity runs 0 \(day\) to \*\*([\d.]+)\*\*',
+         first(r"night: \{ color: '#\w+', opacity: ([\d.]+) \}", daylight, 'night veil')),
+    ]
+
     quests_src = read('src/data/quests.js')
     checks += [
         ('quest tokens', r'(\d+) Quest Tokens, one per category',

@@ -4,7 +4,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, TextInput, View } from 'react-native';
-import { Screen, Window, BodyMap3D, PixelText, PixelButton } from '../components';
+import { Screen, BodyMap3D, PixelText, PixelButton, FieldCard } from '../components';
 import { palette, space, FONT_FAMILY } from '../theme';
 import { useGame } from '../state';
 import { moduleStateFor } from '../modules';
@@ -61,11 +61,11 @@ export default function ForgeEditScreen({ params }) {
   if (!draft || !analysis) {
     return (
       <Screen style={{ padding: space.md, justifyContent: 'center' }}>
-        <Window tone="cream" pad={14}>
+        <FieldCard tone="paper" pad={14}>
           <PixelText size="body" color={palette.windowText} style={{ lineHeight: 20 }}>
             That plan is gone.
           </PixelText>
-        </Window>
+        </FieldCard>
         <PixelButton label="Back" tone="plain" sound="cancel" onPress={() => navigate('forge')} style={{ marginTop: space.sm }} />
       </Screen>
     );
@@ -171,16 +171,16 @@ export default function ForgeEditScreen({ params }) {
           windowSize={7}
           removeClippedSubviews
           ListEmptyComponent={
-            <Window tone="cream" pad={14}>
+            <FieldCard tone="paper" pad={14}>
               <PixelText size="tiny" color={palette.windowText} style={{ lineHeight: 15 }}>
                 Nothing matches that. Try a muscle name, or clear the filters.
               </PixelText>
-            </Window>
+            </FieldCard>
           }
           ListFooterComponent={<View style={{ height: space.sm }} />}
           renderItem={({ item: mv }) => (
             <Pressable onPress={() => addMovement(mv)} style={{ marginBottom: 6 }}>
-              <Window tone="cream" pad={11}>
+              <FieldCard tone="paper" pad={11}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <PixelText size="small" color={palette.windowText} style={{ flex: 1 }}>
                     {mv.name}
@@ -192,7 +192,7 @@ export default function ForgeEditScreen({ params }) {
                 <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 14 }}>
                   {PATTERNS[mv.pattern].name}  ·  {mv.primary.map((id) => MUSCLES[id].name).join(', ')}
                 </PixelText>
-              </Window>
+              </FieldCard>
             </Pressable>
           )}
         />
@@ -229,11 +229,11 @@ export default function ForgeEditScreen({ params }) {
           }}
         />
 
-        <Window tone="dark" pad={3}>
+        <FieldCard tone="ink" pad={3}>
           <BodyMap3D muscle={analysis.muscle} height={200} />
-        </Window>
+        </FieldCard>
 
-        <Window tone="dark" pad={11} style={{ marginTop: space.sm }}>
+        <FieldCard tone="ink" pad={11} style={{ marginTop: space.sm }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <PixelText size="tiny" color={palette.secondary}>{analysis.focus}</PixelText>
             <PixelText size="tiny" color={palette.windowFill}>{analysis.sets} sets</PixelText>
@@ -252,7 +252,7 @@ export default function ForgeEditScreen({ params }) {
           <PixelText size="tiny" color={palette.windowBorderLight} style={{ marginTop: 9, lineHeight: 14 }}>
             {suggestionsFor(analysis)[0]}
           </PixelText>
-        </Window>
+        </FieldCard>
 
         <PixelText size="small" color={palette.secondary} style={{ marginTop: space.md, marginBottom: space.sm }}>
           Movements
@@ -262,7 +262,7 @@ export default function ForgeEditScreen({ params }) {
           const mv = getMovement(b.movementId);
           if (!mv) return null;
           return (
-            <Window key={`${b.movementId}-${i}`} tone="cream" pad={11} style={{ marginBottom: space.sm }}>
+            <FieldCard key={`${b.movementId}-${i}`} tone="paper" pad={11} style={{ marginBottom: space.sm }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <PixelText size="small" color={palette.windowText} style={{ flex: 1 }}>{mv.name}</PixelText>
                 <PixelButton
@@ -297,7 +297,7 @@ export default function ForgeEditScreen({ params }) {
                   onChange={(v) => setBlock(i, { weight: v || undefined })}
                 />
               </View>
-            </Window>
+            </FieldCard>
           );
         })}
 

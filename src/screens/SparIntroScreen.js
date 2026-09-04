@@ -13,10 +13,11 @@ import { palette, space } from '../theme';
 import { useNav } from './navContext';
 import { rowanSprite } from '../data/characters';
 
+// No palette here. Rowan's sprite carries its own, and naming one would
+// override it — the same override that was rendering people as flat colour.
 export const SPAR_PARTNER = {
   name: 'Rowan',
   sprite: rowanSprite('down', 0),
-  palette: 'pc_man',
 };
 
 export const SPAR_PARAMS = {

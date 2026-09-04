@@ -16,6 +16,11 @@ export default function FieldCard({
   caption,
   tone = 'ink',        // 'ink' (in the world) | 'paper' (a journal page)
   accent,              // optional left rule colour: use it to type the card
+  // Inset around the content. The default is the token gap and is what almost
+  // every card wants; it is a prop because the Window this replaced carried one
+  // and the call sites meant it — a status strip at 3 and a summary at 18 are
+  // different objects, and collapsing both to 12 loses that on purpose.
+  pad,
   children,
   style,
   ...rest
@@ -46,7 +51,7 @@ export default function FieldCard({
           borderColor: edge,
           borderWidth: 2,
           borderRadius: scale.radius.panel,
-          padding: scale.gap.md,
+          padding: pad === undefined ? scale.gap.md : pad,
         }}
       >
         {accent ? (

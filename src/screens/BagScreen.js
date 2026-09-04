@@ -5,7 +5,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
-import { Screen, Window, PixelText, PixelButton, PixelSprite, CardioHistoryList, GymCheckInList } from '../components';
+import { Screen, PixelText, PixelButton, PixelSprite, CardioHistoryList, GymCheckInList, FieldCard } from '../components';
 import { palette, space } from '../theme';
 import { gymCheckInStats, useGame, useCompanion } from '../state';
 import { useNav } from './navContext';
@@ -128,14 +128,14 @@ export default function BagScreen() {
 
   const renderPhone = () => (
     <>
-      <Window tone="dark" pad={12} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="ink" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="body" color={palette.secondary}>Personal Tracker</PixelText>
         <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 4, lineHeight: 13 }}>
           Real work done in Companion Quest feeds this tracker automatically. Care/imported health data can plug into this same view later.
         </PixelText>
-      </Window>
+      </FieldCard>
 
-      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="paper" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="small" color={palette.windowText}>Quest Log</PixelText>
         {(state.quests.active || []).length ? state.quests.active.map((active) => {
           const quest = getQuest(active.questId);
@@ -165,9 +165,9 @@ export default function BagScreen() {
           </PixelText>
         )}
         {statRow('Completed', (state.quests.completed || []).length)}
-      </Window>
+      </FieldCard>
 
-      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="paper" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="small" color={palette.windowText}>Token Case</PixelText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
           {TOKENS.map((t) => {
@@ -185,16 +185,16 @@ export default function BagScreen() {
         <PixelText size="tiny" color={palette.windowTextDim} style={{ lineHeight: 13 }}>
           Proof of finished quests, one per category. Collectible, never spendable.
         </PixelText>
-      </Window>
+      </FieldCard>
 
-      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="paper" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="small" color={palette.windowText}>Profile</PixelText>
         {statRow('Goal', goal ? goal.name : 'Not chosen yet')}
         {statRow('Weight', weightWasExplicitlyChanged ? `${displayWeight(bodyWeight, units)} ${units}` : 'Not logged yet')}
         <PixelButton label="Log / Update Weight" tone="plain" size="small" style={{ marginTop: space.sm }} onPress={() => navigate('options')} />
-      </Window>
+      </FieldCard>
 
-      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="paper" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="small" color={palette.windowText}>Mileage</PixelText>
         {statRow('Today — all', `${(today.distanceMi || 0).toFixed(1)} mi`)}
         {statRow('Today — bike', `${(today.cyclingMi || 0).toFixed(1)} mi`)}
@@ -202,9 +202,9 @@ export default function BagScreen() {
         {statRow('Lifetime — bike', `${(state.stats.cyclingMi || 0).toFixed(1)} mi`)}
         {statRow('Bike Rides', state.stats.ridesDone || 0)}
         {statRow('Steps', state.stats.totalSteps || 0)}
-      </Window>
+      </FieldCard>
 
-      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="paper" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="small" color={palette.windowText}>Personal — Gym Attendance</PixelText>
         {statRow('Current Streak', `${checkIns.currentStreak}d`)}
         {statRow('Longest Streak', `${checkIns.longestStreak}d`)}
@@ -213,9 +213,9 @@ export default function BagScreen() {
         <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: space.sm, lineHeight: 13 }}>
           Reception records your first desk check-in time each day. Your attendance stats live here in the Phone’s Personal section; reception does not track mileage or award anything.
         </PixelText>
-      </Window>
+      </FieldCard>
 
-      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="paper" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="small" color={palette.windowText}>Cardio Totals</PixelText>
         {statRow('Cardio minutes', state.stats.cardioMinutes || 0)}
         {statRow('Cardio sessions', state.stats.cardioSessionsDone || 0)}
@@ -228,26 +228,26 @@ export default function BagScreen() {
         {statRow('Rower', `${state.stats.rowerMeters || 0} m · ${machineSessions('rower')} sessions`)}
         {statRow('Stair Climber', `${state.stats.stairFloors || 0} floors · ${machineSessions('stairclimber')} sessions`)}
         {statRow('Elliptical', `${state.stats.ellipticalStrides || 0} strides · ${machineSessions('elliptical')} sessions`)}
-      </Window>
+      </FieldCard>
 
-      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="paper" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="small" color={palette.windowText}>Recent Cardio</PixelText>
         <CardioHistoryList sessions={state.cardioSessions} limit={8} />
         <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: space.sm, lineHeight: 13 }}>
           All five machines land here. Their active time pays Quest Credits; none of it advances a trail, its milestones or its encounters. A * marks a figure read off the machine and entered by hand.
         </PixelText>
-      </Window>
+      </FieldCard>
 
-      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="paper" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="small" color={palette.windowText}>Gym Work</PixelText>
         {statRow('Workouts', state.stats.workoutsDone || 0)}
         {statRow('Sets', state.stats.sets || 0)}
         {statRow('Reps', state.stats.reps || 0)}
         {statRow('Hold Time', `${state.stats.holdSec || 0}s`)}
         {statRow('Routines Logged', routineEntries.length)}
-      </Window>
+      </FieldCard>
 
-      <Window tone="cream" pad={12} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="paper" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="small" color={palette.windowText}>Exercise Records</PixelText>
         {exerciseEntries.length ? exerciseEntries.slice(0, 10).map(([id, value]) => statRow(titleCase(id), exerciseSummary(value))) : (
           <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6 }}>No gym exercises logged yet.</PixelText>
@@ -255,22 +255,22 @@ export default function BagScreen() {
         <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: space.sm, lineHeight: 13 }}>
           Bike rides, runs, lifts, and true max/PR records appear as those sources expose structured records. We do not fabricate a PR from total reps.
         </PixelText>
-      </Window>
+      </FieldCard>
     </>
   );
 
   const renderBadges = () => (
     <>
-      <Window tone="dark" pad={12} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="ink" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="body" color={palette.secondary}>Regional Badge Case</PixelText>
         <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 4 }}>
           {`${REGIONAL_BADGES.filter((b) => state.trails.progress[b.trailId] && state.trails.progress[b.trailId].pin).length} / ${REGIONAL_BADGES.length} earned`}
         </PixelText>
-      </Window>
+      </FieldCard>
       {REGIONAL_BADGES.map((badge, index) => {
         const earned = !!(state.trails.progress[badge.trailId] && state.trails.progress[badge.trailId].pin);
         return (
-          <Window key={badge.id} tone="cream" pad={10} style={{ marginBottom: space.sm }}>
+          <FieldCard key={badge.id} tone="paper" pad={10} style={{ marginBottom: space.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={{ width: 62, height: 62, alignItems: 'center', justifyContent: 'center', borderWidth: earned ? 0 : 1, borderColor: palette.windowTextDim }}>
                 <PixelSprite
@@ -290,7 +290,7 @@ export default function BagScreen() {
                 </PixelText>
               </View>
             </View>
-          </Window>
+          </FieldCard>
         );
       })}
     </>
@@ -298,17 +298,17 @@ export default function BagScreen() {
 
   const renderGear = () => (
     <>
-      <Window tone="dark" pad={12} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="ink" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="body" color={palette.secondary}>Trail Gear</PixelText>
         <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 4, lineHeight: 13 }}>
           Guardian Charms you have discovered. First clear gives one; Maple stocks extras afterward. Your active companion wears ONE — its effect is live in every battle.
         </PixelText>
-      </Window>
+      </FieldCard>
       {ownedCharms.length ? ownedCharms.map((charm) => {
         const count = state.bag[charm.id] || 0;
         const worn = !!(companion && companion.charm === charm.id);
         return (
-          <Window key={charm.id} tone="cream" pad={10} style={{ marginBottom: space.sm }}>
+          <FieldCard key={charm.id} tone="paper" pad={10} style={{ marginBottom: space.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={{ width: 64, height: 64, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
                 <PixelSprite spriteKey={charm.id} palette={`art_${charm.id}`} size={64} accessibilityLabel={charm.name} />
@@ -335,26 +335,26 @@ export default function BagScreen() {
                 onPress={() => { dispatch({ type: 'EQUIP_CHARM', payload: { charmId: charm.id } }); setToast(`${companion.creature.name} wears the ${charm.name}.`); }}
               />
             ) : null}
-          </Window>
+          </FieldCard>
         );
       }) : (
-        <Window tone="cream" pad={16}>
+        <FieldCard tone="paper" pad={16}>
           <PixelText size="small" color={palette.windowTextDim} align="center">No Trail Gear discovered yet.</PixelText>
-        </Window>
+        </FieldCard>
       )}
     </>
   );
 
   const renderFood = () => (
     <>
-      <Window tone="dark" pad={12} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="ink" pad={12} style={{ marginBottom: space.sm }}>
         <PixelText size="body" color={palette.secondary}>Smoothies & Snacks</PixelText>
         <PixelText size="tiny" color={palette.windowFill} style={{ marginTop: 4 }}>Food, drinks, and recovery items you are carrying.</PixelText>
-      </Window>
+      </FieldCard>
       {ownedFood.length ? ownedFood.map((id) => {
         const item = getItem(id);
         return (
-          <Window key={id} tone="cream" pad={10} style={{ marginBottom: space.sm }}>
+          <FieldCard key={id} tone="paper" pad={10} style={{ marginBottom: space.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <PixelSprite spriteKey={item.sprite} palette={item.palette} size={48} accessibilityLabel={item.name} />
               <View style={{ flex: 1, marginLeft: space.md }}>
@@ -366,10 +366,10 @@ export default function BagScreen() {
               </View>
             </View>
             {item.effect ? <PixelButton label="Use" tone="gold" size="small" style={{ marginTop: space.sm }} onPress={() => consumeItem(id)} /> : null}
-          </Window>
+          </FieldCard>
         );
       }) : (
-        <Window tone="cream" pad={16}><PixelText size="small" color={palette.windowTextDim} align="center">No snacks or smoothies packed right now.</PixelText></Window>
+        <FieldCard tone="paper" pad={16}><PixelText size="small" color={palette.windowTextDim} align="center">No snacks or smoothies packed right now.</PixelText></FieldCard>
       )}
     </>
   );
@@ -377,7 +377,7 @@ export default function BagScreen() {
   const renderKnots = () => {
     const count = state.bag.knot || 0;
     return (
-      <Window tone="cream" pad={18}>
+      <FieldCard tone="paper" pad={18}>
         <View style={{ alignItems: 'center' }}>
           <PixelSprite spriteKey="item_knot" palette="art_item_knot" size={92} accessibilityLabel="Kinship Knot" />
           <PixelText size="heading" color={palette.windowText} style={{ marginTop: space.sm }}>Kinship Knots</PixelText>
@@ -389,18 +389,18 @@ export default function BagScreen() {
             Knots cannot be used directly from the backpack.
           </PixelText>
         </View>
-      </Window>
+      </FieldCard>
     );
   };
 
   const renderPersonal = () => (
-    <Window tone="cream" pad={18}>
+    <FieldCard tone="paper" pad={18}>
       <PixelText size="body" color={palette.windowText}>Personal Items</PixelText>
       <PixelText size="small" color={palette.windowTextDim} style={{ marginTop: space.sm, lineHeight: 16 }}>
         This pocket is ready for future phone accessories, story keepsakes, photos, keys, cosmetics, event items, and other personal collectibles.
       </PixelText>
       <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: space.md }}>EMPTY FOR NOW</PixelText>
-    </Window>
+    </FieldCard>
   );
 
   const renderPocket = () => {
@@ -419,24 +419,24 @@ export default function BagScreen() {
         Backpack
       </PixelText>
 
-      <Window tone="dark" pad={10} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="ink" pad={10} style={{ marginBottom: space.sm }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <PixelText size="tiny" color={palette.windowFill}>{companion ? `Traveling with ${companion.creature.name}` : 'Your personal pack'}</PixelText>
           <PixelText size="tiny" color={palette.secondary}>{`${state.credits || 0} Quest Credits`}</PixelText>
         </View>
-      </Window>
+      </FieldCard>
 
-      <Window tone="cream" pad={8} style={{ marginBottom: space.sm }}>
+      <FieldCard tone="paper" pad={8} style={{ marginBottom: space.sm }}>
         <PixelText size="tiny" color={palette.windowTextDim}>{toast}</PixelText>
-      </Window>
+      </FieldCard>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 72 }}>
         {!pocket ? (
           POCKETS.map((p) => (
-            <Window key={p.id} tone="cream" pad={10} style={{ marginBottom: space.sm }}>
+            <FieldCard key={p.id} tone="paper" pad={10} style={{ marginBottom: space.sm }}>
               <PixelButton label={p.label} tone="plain" onPress={() => { playSfx('confirm'); setPocket(p.id); setToast(p.sub); }} />
               <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, textAlign: 'center' }}>{p.sub}</PixelText>
-            </Window>
+            </FieldCard>
           ))
         ) : renderPocket()}
       </ScrollView>

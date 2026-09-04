@@ -914,7 +914,7 @@ faint.
 4. `backlight()` (rim opposite the key light) and `spec()` (hotspots) are what
    read as "modern".
 
-### 8.3 Sprite inventory (295 runtime sprites + 419 atlas cells)
+### 8.3 Sprite inventory (307 runtime sprites + 422 atlas cells)
 
 The count includes the traced regalia set landed with the Warden/badge/charm
 plates: 10 unique Warden bodies (the Horizon Wardens no longer wear recolored
@@ -956,16 +956,57 @@ Kinship Knot.
   itself and followed `evolvesTo` exactly once: it listed 13 of the 22 and not
   one final evolution among them, while `EVOLVE` was stamping
   `dex[groveheart] = 'owned'` for a row the page could never print.
-- Hero: the sprites actually rendered are the traced per-character sets at
-  26×48 (Coach Maple 30×48), 4 facings × 3 frames, resolved by
-  `playerSprite()` in `data/characters.js`. `hero_*` at 24×32 is the fallback
-  used only when no character cards are present.
+- People: six cube-built figures at 32×52, 4 facings × 3 frames each, drawn by
+  `tools/cubecast.py` — the three player characters, **Rowan**, Coach Maple, and
+  `hero_*` at 24×32 as the unstyled fallback. Resolved by `playerSprite()` /
+  `coachSprite()` / `rowanSprite()` / `wardenSprite()` in `data/characters.js`.
+  Every volume is a box showing three faces at three values (lit top, mid front,
+  shaded side); each figure's palette is 57 colours — seven six-step material
+  ramps plus TWO edge colours each.
+  **The figure has an edge, not an outline.** It used to be 0.30 of the material
+  all the way round — nominally hue-shifted, in practice black, and a uniform
+  black line is what makes a sprite look like a sticker laid on the scene rather
+  than somebody standing in it. It is much lighter now (0.46), so you can still
+  read the material's colour in it, and it takes a SIDE: world light is
+  upper-left, so the edge facing the light is a rim that catches it (0.72) and
+  only the edge facing away is in shade. An outline that is identical all the
+  way round describes nothing about where the light is. Dropping the line
+  entirely was tried — the figure loses its silhouette against grass, and the
+  eyes go with it, because they are drawn in the same colour.
+  **Texture is per material and has a DIRECTION** (`TEXTURE` in cubecast.py).
+  One speckle over everything is not texture, it is noise: the first pass ran a
+  single hash over skin, wool, denim and hair, so a face came out as pitted as a
+  jumper. Hair breaks into strands down its length, denim into courses across
+  it, cloth into an even scatter, and skin barely at all (8%) because a face is
+  not gravel. Cloth is deliberately NOT diagonal — a diagonal hash marches, so
+  the break repeats every few diagonals and a jumper comes out wearing stripes.
+  On top of the grain sit a few strokes drawn on purpose: hair strands and a
+  brow shadow, two creases and a hem on the torso, a seam down the outside of
+  each leg, a sole under the shoe trim. Grain shifts the ramp INDEX, never the
+  colour, so texture itself costs no palette at all.
+  Each facing is AUTHORED. The previous set derived all twelve frames from one
+  traced front-facing card by squeezing it horizontally for the profile,
+  mirroring that for the other side, and painting the face over in hair for the
+  back — so left was right reversed and a turned back was a hidden face. Build
+  differs per person (torso half-width 5–8, head half-width 6–7, head top 1–5),
+  which is what makes five people readable by outline rather than by colour.
+  Rowan no longer resolves to the `hero_man` kit; trail keepers still do
+  (`wardens.js` `kit`), which is the next gap.
 - Items/module icons 24×24: apple, water, energybar, charm, **knot**, three
   smoothie blends (green/berry/gold, one drawing and three palettes), droplet,
   plate, check (fallback), barbell, moon, still.
 - **Tiles and props do not live in `sprites.js` any more.** They are packed
   into `assets/tiles/tile-atlas.png` with a frame table in `data/tileAtlas.js`
-  (416 cells) and drawn by `TileImage`, which crops the atlas. `PixelArt` emits
+  (422 cells) and drawn by `TileImage`, which crops the atlas. Every cell is
+  packed with a **2px gutter of its own edge pixels** (`ATLAS_PAD`). A tile is
+  drawn by stretching the whole atlas and sliding one cell into a clipping
+  window, and the device pixel ratio scales that image again, so the sampler
+  blends across the cell boundary and picks up whichever tile is packed beside
+  it. Packed edge to edge that landed as a darker line on EVERY tile edge and
+  the outdoors read as a grid of squares — the seam was in the packing, not in
+  the art, so no amount of work on the materials could reach it. The frame
+  table still records the cell's true top-left, so `TILE_CELL` and TileImage's
+  arithmetic are unchanged. `PixelArt` emits
   a View per colour run per row — 236 Views for one grass tile, ~28,000 for a
   map — and that was the ceiling that made higher resolution impossible. The
   live page is ~1,350 nodes at 4× the art resolution. `TILE_SCALE = 2`, so a
@@ -974,10 +1015,192 @@ Kinship Knot.
   indoor floors, the rug, the kitchen vinyl, the gym's rubber/wood/turf/matting
   are 64×64 textures windowed across a 4×4 tile block by world position, so
   they run continuously and repeat four tiles apart.
-- Interiors are lit by `light_pool()`, baked into the material's own ramp. A
-  field is exactly one fixture cell across, so the pools land on the fixture
-  grid for free. Drawn as its own dithered layer first, it read as television
-  static over the rubber.
+- Outdoor ground is SETTLED on the way out (`CALM_FIELDS` in `make_sprites.py`:
+  grass 0.40, tree 0.30, path 0.22; water takes a dict that also dims and
+  drains it — calm 0.30, gain 0.80, sat 0.92). The traced grass is drawn tuft-to-tuft, so
+  detail is uniform and maximal and the eye has nowhere to rest — a wall of
+  pixels rather than a field. Every colour's luminance is pulled toward the
+  field's own mean, which keeps every shape and takes out the shout. Deleting
+  tufts to open bare patches was tried instead; any cell-based thinning puts a
+  visible grid back.
+- **Water reads as depth, not as a texture.** Open water was drawn as tropical
+  shallows: a bright caustic net at full strength over every square inch, the
+  same value bank to bank, which reads as a swimming pool. A pond is DEEP in the
+  middle and bright only where it runs out at the shore. Dimming and settling
+  the `field_water` field supplies the deep middle; the shallow edge was already
+  there, in the autotile masks, whose wet margin is drawn BRIGHTER than the
+  water (`rim_mul` 1.18). Neither reads as depth alone. The masks composite the
+  small `tile_water` tile rather than the field, so they keep their brightness
+  while the open water drops away from them.
+  The two animation frames are drawn 19 luminance steps apart, so the pond used
+  to flash rather than shimmer — the whole surface changing brightness twice a
+  second. `field_water_b` carries a higher gain (0.95) to sit level with frame
+  A, leaving the caustics to move and the level to hold. Swing: 18.6 → 3.4.
+- Scatter — flowers and tall grass — draws OVER the ground, never as its own
+  tile. `SCATTER_OVERLAY` in `TileMap.js` maps `,` → `prop_flowers` and `^` →
+  `prop_tallgrass`; both codes are floor codes, so the field runs underneath
+  unbroken. Tall grass was a tile until it wasn't: an opaque square carrying
+  its own plate of ground, stamped onto a fifth of every trail tile. Its
+  palette is taken from the field it stands in, picked by luminance rank —
+  drawn on the procedural `terra` ramp it came out sage plastic in an olive
+  meadow. `^` is cosmetic and walkable; encounters are distance-driven.
+- **The sky is bands plus one achromatic veil.** `HorizonSky` paints the trail,
+  the challenge stage and the slack above the lane as weighted horizontal bands
+  mixed from the scene's own tone. A band is a stripe, though, and eight of them
+  read as a gradient tool rather than as air. Two things fix it and neither is
+  thirty painted skies. `assets/tiles/sky-veil.png` (generated by
+  `emit_sky_veil()`) is white where cloud catches the light, cool dark
+  underneath, and an ordered dither everywhere else — no hue at all, so laid
+  over any of the thirty tones it takes that tone's colour. It is authored at
+  420×168, the width of a phone in points, so one veil pixel lands on two device
+  pixels like everything else; at 128 wide it stretched six device pixels per
+  veil pixel and the dither came out as a checkerboard over the sky. And
+  `SKY_WEIGHTS` is twenty bands rather than eight: the veil's grain is
+  deliberately far weaker than an eight-band step, so asking it to hide one only
+  made the step look noisy. Fine bands, then grain to finish them.
+  `skyBands()` also mixes zenith → sky → haze now. It went straight from zenith
+  to haze, so the middle colour every tone declares was dead code and all thirty
+  skies were two-point ramps.
+- **The stations stand on the floor** (`ground_shadow()` in `make_sprites.py`).
+  Nine of the ten gym stations grounded themselves with
+  `c.rect(0, 15, 15, 15, 'ink', 0)` — a hard black line across the full sixteen
+  pixels of the cell. A treadmill is ten pixels wide, so that is not a shadow,
+  it is a stripe painted on the floor beside the machine, and the Hall showed
+  nine of them in a row. `ground_shadow()` derives the shadow from what was
+  actually drawn: per column, find the lowest inked row and lay two rows under
+  THAT, near row darker than far, columns the machine does not occupy left
+  clear. It must be called last, since it reads the canvas.
+  The buildings got verges and a footing in this pass for the same reason. The
+  equipment a player walks into to start a session had never had either.
+- **The rower is on the gym ramp.** It was the only one of the five cardio
+  machines drawn on `rock` — the stone ramp — while the treadmill, bike,
+  climber and elliptical are all on `gymkit`. Painted in rubble beside four
+  machines in gym grey and blue, it read as a boulder next to a crate. Its forms
+  were the other half: a 5×8 box for the seat is larger than the flywheel
+  housing and dominated the silhouette, which is backwards. The housing is the
+  mass now, the seat is a saddle on a thin bright rail, and the handle is in
+  `accent` like the bike's pedals.
+  **Still open:** the ten stations are procedural, not traced. `CLAUDE.md`
+  allows that for tiles, items and module icons, and the stations are arguably
+  the interface rather than scenery — you walk into a treadmill to start cardio.
+  Tracing them needs designed reference plates in `assets/characters/` that do
+  not exist, so this pass fixed lighting, grounding and the one machine that did
+  not read; it did not raise them to the traced bar.
+- **The companion walks with you** (`components/TileMap.js` `Follower`,
+  `data/follower.js`). It existed in menus and in battles and nowhere in the
+  world you actually walk through, which is a strange absence for the creature
+  the game is named after.
+  It occupies the tile the player has just LEFT rather than pathing on its own:
+  nothing to get stuck on, no chance of it standing where it could not have
+  walked, and a creature exactly one step behind is what reads as following.
+  Arrival is the case with a real decision in it — on a map change the footprint
+  it was standing in is in another building, so it appears rather than walks,
+  and `restingSpot()` puts it one tile back along the player's facing. On the
+  player's own tile it would render as one sprite drawn over another, which
+  reads as a bug rather than as company; where the space behind is a wall it
+  falls back to overlapping, which looks worse than it is wrong, unlike standing
+  inside masonry. Drawn at **1.35** tiles to the player's 1.85 — creature grids
+  are 96×96 with the subject filling about four fifths, where a person's 32×52
+  is filled nearly edge to edge, so the same number is a much bigger creature.
+  It does not turn: creature sprites are drawn front-facing only, and flipping
+  one to fake a profile is exactly what `walk_set` did to the player and why the
+  player had to be redrawn. `tools/test_follower.mjs` runs the placement rule
+  over every walkable tile of all four hand-built maps at all four facings —
+  2,224 placements, none inside a wall, none off the map, none further than one
+  tile, and never on top of the player where there is room to step back.
+- **Creatures breathe, in two drawn frames** (`data/idleFrame.js`). All 194
+  creature sprites were a single plate, and `PixelSprite` translated it three
+  pixels on a loop and called that an idle. That slides a rigid card: the
+  silhouette never changes, so nothing about the creature moves. The player
+  character had twelve authored frames after the cube-cast pass; the animal the
+  game is about had none.
+  The second frame is a SQUASH, which is what a two-frame creature idle has
+  always been — the body compresses, the head rides down with it, the feet stay
+  planted. It happens in the pixel grid, which is the point: a `scaleY` moves
+  the contact point and resamples the art off its own grid, while deleting a row
+  re-forms the silhouette with every pixel still on a pixel.
+  The row comes out of the band **55%–86%** down the subject, never the middle,
+  because a front-facing companion's face sits there and compressing it warps
+  the expression the design is carrying. Within that band it takes the row that
+  already differs least from the row above it, so the deletion reads as
+  compression rather than as lost detail.
+  It is DERIVED, not authored: 194 more 96×96 grids would have added ~1.8MB to
+  a `sprites.js` already at 2.8MB to encode a one-row difference. It is a few
+  thousand character comparisons per creature, once, cached for the session.
+  The amount scales with the RENDER size, not the grid (`squashRows`, targeting
+  **0.75pt** of travel, capped at 3): a 96-row creature at size 110 gets 1.15
+  points per row and one row is a visible breath, but the same creature at 44 in
+  the status strip gets 0.46 and one row is under a device pixel — present and
+  invisible. Same lesson as the sky veil, authored at display width.
+  One timer drives both halves. An `Animated.loop` for the movement plus a
+  separate interval for the frame is two clocks, and two clocks drift until the
+  squash lands while the sprite is rising.
+  What it deliberately does not attempt: blinks, ear flicks, tail sway. Those
+  need to know where an eye IS, and a wrong guess puts a blink on a kneecap.
+  Objects are excluded by NAME, not by size — `item_knot` is a full 96×96
+  painted plate, the exact dimensions of a creature, and a Kinship Knot does not
+  inhale. `tools/test_idle.mjs` runs the whole roster: feet planted, shorter
+  never taller, seam between 50% and 92%, dimensions kept, registry unmutated.
+- **The world runs on the device clock** (`data/daylight.js`, `state/useDaylight.js`).
+  `phaseAt(date)` maps the local hour to one of **five phases** — night (21–03),
+  dawn (04–06), golden hour (07 and 17–18), day (08–16), dusk (19–20) — and
+  `daylightTone(tone, phase)` returns that biome's sky as it looks then.
+  It is a TRANSFORM OVER a tone, not another entry in `SCENE_TONES`, because
+  those thirty entries are PLACES: giving the lane a "dusk" tone would not make
+  it evening, it would make it somewhere else. As a transform it reaches all
+  twenty-eight trails and the challenge stage without a line of per-map work.
+  Noon is an exact identity, so the authored tones are what you see by day.
+  Each phase moves zenith, sky and haze by its OWN amount toward its OWN target
+  rather than applying one multiply: at dawn and dusk the sun is on the horizon,
+  so the haze warms hard while the zenith goes *darker*, and that opposition is
+  what reads as low sun. Warm all three equally and you get orange fog. At night
+  colour drains before light does — `desaturate()` runs before the darkening —
+  because a desaturated blue dark reads as night while an equally dark but still
+  vivid green reads as a bug.
+  The GROUND is baked atlas PNGs and no tone maths reaches it, so each phase
+  also carries one translucent plate (`VEILS`) drawn over the tiles: without it
+  a midnight sky sits over noon-bright grass, which reads as broken rather than
+  as late. Opacity runs 0 (day) to **0.52** (night).
+  **Night has a deliberate floor.** This is a game played while walking outside
+  at 9pm, so night dims the air hard and the ground much less — the darkness is
+  carried by the sky, which has nothing in it to read, while the tiles being
+  navigated stay legible. Interiors take no phase at all: a kitchen is lit by
+  its own lamps and looks like a kitchen at any hour.
+  `tools/test_daylight.mjs` holds the invariants — noon identity, the zenith
+  ordering night < dusk < dawn < day, every phase visibly not-noon somewhere,
+  golden hour landing on the horizon rather than overhead, and every one of the
+  thirty biomes keeping a distinct sky at night.
+- Interiors are lit by ONE image — `assets/tiles/room-light.png`, stretched over
+  the whole map by `TileMap`: open in the middle, sitting back at the edges.
+  There used to be a second, per-field layer: `light_pool()` baked a ceiling
+  fixture's pool into each floor field, radial, bright at the field's centre and
+  dropping below zero at its corners. The idea followed from the field system —
+  a field is exactly one fixture cell across, so pools land every four tiles for
+  free — but a gradient baked per field cannot cross a field boundary. Tiled, it
+  gave every 4×4 block its own bright middle and dark rim, and that grid of
+  chunks was most of what made the floors read as blocky. Removed from all seven
+  indoor fields. A periodic falloff tiles seamlessly and was tried: it trades
+  the grid for soft blobs that read as dirt.
+- Autotile masks are EDGE OVERLAYS, not whole tiles. There are only sixteen per
+  material — one per arrangement of same-material neighbours — so drawing one
+  per square stamped the identical sprite across the middle of every path and
+  pond: the material's own texture repeating once per tile, which reads as a
+  grid of squares however well the seams between them are hidden. `blended_tile`
+  punches the interior out, and `TileMap` lays the continuous FIELD down first
+  and the mask on top. The middle of a path is the field running unbroken; only
+  its edge is autotiled, and an edge is the one place a repeat cannot show,
+  because its shape changes tile to tile anyway.
+- A building gets its form from its own SHAPE, not from extra codes in the map.
+  Four overlays land on neighbour tests: `prop_ridge` on a roof with no roof
+  above, `prop_eave` on a wall with a roof above, `prop_verge_l`/`_r` on a roof
+  with no roof beside it, and `prop_footing` on a wall with no building below.
+  Before the verges the shingle field ran to the tile boundary and grass began,
+  so a building read as a rectangle cut out with scissors. The two verges are
+  deliberately NOT the same board — world light is upper-left, so the left one
+  catches it and the right one is the shaded side; drawing both lit closes a
+  bright line around all four edges and the roof comes out as a framed picture.
+  The footing is two rows, not four: a facade here is one tile tall, so a proper
+  base course covers a quarter of it and swallows the doors and windows.
 - Multi-tile furniture autotiles (`RUN_PROPS`): a two-tile sofa was two sofas
   with four arms. `_l`/`_m`/`_r` are picked from a prop's own neighbours, the
   same way a path picks its edge.

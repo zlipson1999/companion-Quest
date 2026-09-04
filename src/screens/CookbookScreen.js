@@ -19,7 +19,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
-import { Screen, PixelText, FieldCard, TrailAction, Window } from '../components';
+import { Screen, PixelText, FieldCard, TrailAction } from '../components';
 import { palette, space, tokens, scale, FONT_FAMILY } from '../theme';
 import { useGame } from '../state';
 import { useNav } from './navContext';
@@ -192,11 +192,11 @@ export default function CookbookScreen() {
           </FieldCard>
 
           {logged ? (
-            <Window tone="cream" pad={10} style={{ marginTop: space.sm }}>
+            <FieldCard tone="paper" pad={10} style={{ marginTop: space.sm }}>
               <PixelText size="tiny" color={palette.windowText} style={{ lineHeight: 14 }}>
                 {logged}
               </PixelText>
-            </Window>
+            </FieldCard>
           ) : null}
         </ScrollView>
 
