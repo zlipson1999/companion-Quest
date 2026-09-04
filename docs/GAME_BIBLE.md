@@ -1061,6 +1061,39 @@ Kinship Knot.
   `skyBands()` also mixes zenith → sky → haze now. It went straight from zenith
   to haze, so the middle colour every tone declares was dead code and all thirty
   skies were two-point ramps.
+- **Creatures breathe, in two drawn frames** (`data/idleFrame.js`). All 194
+  creature sprites were a single plate, and `PixelSprite` translated it three
+  pixels on a loop and called that an idle. That slides a rigid card: the
+  silhouette never changes, so nothing about the creature moves. The player
+  character had twelve authored frames after the cube-cast pass; the animal the
+  game is about had none.
+  The second frame is a SQUASH, which is what a two-frame creature idle has
+  always been — the body compresses, the head rides down with it, the feet stay
+  planted. It happens in the pixel grid, which is the point: a `scaleY` moves
+  the contact point and resamples the art off its own grid, while deleting a row
+  re-forms the silhouette with every pixel still on a pixel.
+  The row comes out of the band **55%–86%** down the subject, never the middle,
+  because a front-facing companion's face sits there and compressing it warps
+  the expression the design is carrying. Within that band it takes the row that
+  already differs least from the row above it, so the deletion reads as
+  compression rather than as lost detail.
+  It is DERIVED, not authored: 194 more 96×96 grids would have added ~1.8MB to
+  a `sprites.js` already at 2.8MB to encode a one-row difference. It is a few
+  thousand character comparisons per creature, once, cached for the session.
+  The amount scales with the RENDER size, not the grid (`squashRows`, targeting
+  **0.75pt** of travel, capped at 3): a 96-row creature at size 110 gets 1.15
+  points per row and one row is a visible breath, but the same creature at 44 in
+  the status strip gets 0.46 and one row is under a device pixel — present and
+  invisible. Same lesson as the sky veil, authored at display width.
+  One timer drives both halves. An `Animated.loop` for the movement plus a
+  separate interval for the frame is two clocks, and two clocks drift until the
+  squash lands while the sprite is rising.
+  What it deliberately does not attempt: blinks, ear flicks, tail sway. Those
+  need to know where an eye IS, and a wrong guess puts a blink on a kneecap.
+  Objects are excluded by NAME, not by size — `item_knot` is a full 96×96
+  painted plate, the exact dimensions of a creature, and a Kinship Knot does not
+  inhale. `tools/test_idle.mjs` runs the whole roster: feet planted, shorter
+  never taller, seam between 50% and 92%, dimensions kept, registry unmutated.
 - **The world runs on the device clock** (`data/daylight.js`, `state/useDaylight.js`).
   `phaseAt(date)` maps the local hour to one of **five phases** — night (21–03),
   dawn (04–06), golden hour (07 and 17–18), day (08–16), dusk (19–20) — and

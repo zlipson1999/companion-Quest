@@ -107,6 +107,17 @@ def build_checks():
     # WHY they are what they are — the five phases and the night veil's ceiling —
     # so a silent change to either leaves the reasoning describing a different
     # system.
+    # The idle squash: the band it takes a row from and the travel it targets
+    # are both quoted with the reasoning for the value, so both are watched.
+    idle = read('src/data/idleFrame.js')
+    checks += [
+        ('idle squash band', r'band \*\*([\d]+%–[\d]+%)\*\* down the subject',
+         '{}%–{}%'.format(int(float(first(r'BAND_TOP = ([\d.]+)', idle, 'band top')) * 100),
+                          int(float(first(r'BAND_BOTTOM = ([\d.]+)', idle, 'band bottom')) * 100))),
+        ('idle squash travel', r'targeting\n  \*\*([\d.]+)pt\*\* of travel',
+         first(r'TARGET_POINTS = ([\d.]+)', idle, 'target points')),
+    ]
+
     daylight = read('src/data/daylight.js')
     checks += [
         ('daylight phases', r'one of \*\*(\w+) phases\*\*',
