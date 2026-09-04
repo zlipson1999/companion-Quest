@@ -1099,15 +1099,59 @@ Kinship Knot.
   player's own tile it would render as one sprite drawn over another, which
   reads as a bug rather than as company; where the space behind is a wall it
   falls back to overlapping, which looks worse than it is wrong, unlike standing
-  inside masonry. Drawn at **1.35** tiles to the player's 1.85 — creature grids
-  are 96×96 with the subject filling about four fifths, where a person's 32×52
-  is filled nearly edge to edge, so the same number is a much bigger creature.
+  inside masonry. Drawn at **1.85** tiles, the same figure as the player.
+  It began at 1.35, reasoning that creature grids are 96×96 with the subject
+  filling about four fifths where a person's 32×52 is filled nearly edge to
+  edge, so the same number is a much bigger creature. That arithmetic is right
+  and the conclusion was wrong: what actually made the companion unreadable was
+  its palette and its pixel density, and shrinking it only removed the rows the
+  face lives in. At parity it reads, and the size difference between a person
+  and a small creature comes from the art rather than from the scale factor.
   It does not turn: creature sprites are drawn front-facing only, and flipping
   one to fake a profile is exactly what `walk_set` did to the player and why the
   player had to be redrawn. `tools/test_follower.mjs` runs the placement rule
   over every walkable tile of all four hand-built maps at all four facings —
   2,224 placements, none inside a wall, none off the map, none further than one
   tile, and never on top of the player where there is room to step back.
+- **Traced art owns its palette** (`data/spritePalette.js`). A `palette` prop
+  used to win over the sprite's own, unconditionally. That prop exists for
+  PROCEDURAL art, where one grid really is recoloured — module icons, stand-ins,
+  an outfit swap on a hero kit — and it was never meant for art traced from a
+  drawing, which arrives with the colours it was drawn in.
+  It has now been the same bug three times: the overworld player as a flat blue
+  ghost, every trail keeper in `BattleScreen`, and then **179 of the 190
+  creatures**. Groveheart is drawn on `art_groveheart` — bark brown, olive, a
+  tan heart, black eyes — and every screen passed `grove`, a single-hue ramp
+  from before the roster was traced. That ramp climbs in luminance for 94% of
+  its steps, because that is what a ramp is; the art's own palette climbs for
+  67%. So neighbouring indices in the traced art became neighbouring
+  brightnesses and the companion rendered flat green in horizontal bands —
+  outlines and colour, no creature.
+  The first two were fixed at the call sites that caused them, which is exactly
+  why the third survived. The rule lives in one place now: a palette whose name
+  begins `art_` came off a drawing and cannot be overridden.
+  `tools/test_palette.mjs` checks it over the whole roster. `creature.palette`
+  still disagrees with the art for 179 of them and no longer matters.
+- **Sprites snap to whole device pixels, and drop resolution when they must**
+  (`data/spriteLod.js`). `PixelArt` draws one View per run of pixels at
+  `size / cols` points. Creature grids are 96 rows and the screens asked for 44
+  points — **0.92 device pixels per sprite pixel** — so the layout had to snap
+  sub-pixel boxes and neighbouring runs merged into each other. The player's own
+  grid is 32×52 drawn at 48 points, which is 1.85, and that is precisely why the
+  player looked right standing next to a companion that did not.
+  Two halves are needed and neither works alone. `lodGrid` averages each 2×2
+  block and re-quantises to the sprite's own palette, so a downsample carries
+  the detail it drops instead of discarding three pixels in four; below
+  **1.5** device pixels per sprite pixel it halves, never past 24 rows. Then
+  `PixelSprite` rounds a sprite pixel to a whole number of device pixels — 48
+  rows at 44 points is 1.83 per row, and a row cannot be 1.83 pixels tall, so
+  the layout gave some rows two and some one and the creature came out in
+  horizontal stripes. Fixing the density without the snapping only trades a blob
+  for a barcode.
+  Companion sizes went up to match: the strip draws at **72**, the roster and
+  the trail at 96 and 92, and the overworld follower at 1.85 tiles. The art
+  carries a face in about ten of its 96 rows, and at 44 points that is twenty
+  device pixels.
 - **Creatures breathe, in two drawn frames** (`data/idleFrame.js`). All 194
   creature sprites were a single plate, and `PixelSprite` translated it three
   pixels on a loop and called that an idle. That slides a rigid card: the

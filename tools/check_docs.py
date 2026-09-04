@@ -107,9 +107,19 @@ def build_checks():
     # WHY they are what they are — the five phases and the night veil's ceiling —
     # so a silent change to either leaves the reasoning describing a different
     # system.
+    # The density floor below which a sprite drops a level, and the size the
+    # status strip draws a companion at. Both are quoted with the reasoning.
+    lod = read('src/data/spriteLod.js')
+    checks += [
+        ('lod density floor', r'below\n  \*\*([\d.]+)\*\* device pixels per sprite pixel it halves',
+         first(r'MIN_DENSITY = ([\d.]+)', lod, 'MIN_DENSITY')),
+        ('companion strip size', r'the strip draws at \*\*(\d+)\*\*',
+         first(r'CREATURE_SIZE = (\d+)', read('src/components/CompanionStatus.js'), 'CREATURE_SIZE')),
+    ]
+
     # How tall the companion is drawn beside the player. Quoted with the
     # reasoning about grid fill, so a silent change leaves the argument stale.
-    checks.append(('follower height', r'Drawn at \*\*([\d.]+)\*\* tiles to the player',
+    checks.append(('follower height', r'Drawn at \*\*([\d.]+)\*\* tiles',
                    first(r'const FOLLOW_HEIGHT = ([\d.]+);', read('src/components/TileMap.js'),
                          'FOLLOW_HEIGHT')))
 

@@ -541,7 +541,7 @@ function Walker({ walker, s }) {
 // maybe four fifths of that, where a person's 32x52 is filled almost edge to
 // edge, so the same number is a much bigger creature. 1.35 lands a companion at
 // roughly three quarters of the player's height.
-const FOLLOW_HEIGHT = 1.35;
+const FOLLOW_HEIGHT = 1.85;
 
 function Follower({ player, map, s }) {
   const companion = useCompanion();
