@@ -963,6 +963,17 @@ Kinship Knot.
   Every volume is a box showing three faces at three values (lit top, mid front,
   shaded side); each figure's palette is 50 colours — seven six-step material
   ramps plus one hue-shifted outline each.
+  **Texture is per material and has a DIRECTION** (`TEXTURE` in cubecast.py).
+  One speckle over everything is not texture, it is noise: the first pass ran a
+  single hash over skin, wool, denim and hair, so a face came out as pitted as a
+  jumper. Hair breaks into strands down its length, denim into courses across
+  it, cloth into an even scatter, and skin barely at all (8%) because a face is
+  not gravel. Cloth is deliberately NOT diagonal — a diagonal hash marches, so
+  the break repeats every few diagonals and a jumper comes out wearing stripes.
+  On top of the grain sit a few strokes drawn on purpose: hair strands and a
+  brow shadow, two creases and a hem on the torso, a seam down the outside of
+  each leg, a sole under the shoe trim. Grain shifts the ramp INDEX, never the
+  colour, so all of it costs nothing: still 50 colours a figure.
   Each facing is AUTHORED. The previous set derived all twelve frames from one
   traced front-facing card by squeezing it horizontally for the profile,
   mirroring that for the other side, and painting the face over in hair for the

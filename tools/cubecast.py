@@ -62,12 +62,54 @@ def outline_of(c):
     return (int(r * 0.30), int(g * 0.28), min(255, int(b * 0.36) + 10))
 
 
-def grain(x, y, s=0):
-    """Low-frequency index jitter — the block-texture read. Roughly a quarter
-    of pixels move one ramp step, which is visible as texture without breaking
-    the flat plane into noise."""
-    v = (x * 73 + y * 151 + s * 31) % 17
-    return -1 if v < 4 else (1 if v > 13 else 0)
+# How each material breaks up, and in which DIRECTION.
+#
+# One speckle for everything is not texture, it is noise: the first pass ran the
+# same hash over skin, wool, denim and hair, so a face came out as pitted as a
+# jumper and none of the four read as its own stuff. Cloth, hair and skin do not
+# fail in the same way — cloth has a weave running across it, hair falls in
+# strands down it, skin is smooth and only breaks where it turns.
+#
+# `rate` is roughly the share of pixels that move one ramp step. `axis` is what
+# the break follows: 'v' strands down, 'h' courses across, 'n' scattered.
+TEXTURE = {
+    'skin':   dict(rate=0.08, axis='n'),   # smooth; a face is not gravel
+    'hair_c': dict(rate=0.42, axis='v'),   # strands, falling
+    # Scattered, NOT diagonal. A diagonal hash marches — (x+y) steps by one per
+    # pixel, so the break repeats every few diagonals and a jumper comes out
+    # wearing stripes. At this size a knit is a fine even scatter; the fold and
+    # the hem below carry the structure.
+    'top':    dict(rate=0.26, axis='n'),
+    'shirt':  dict(rate=0.18, axis='n'),
+    'leg':    dict(rate=0.26, axis='h'),   # denim courses across the leg
+    'shoe':   dict(rate=0.16, axis='h'),
+    'flash':  dict(rate=0.12, axis='n'),
+}
+
+
+def grain(x, y, s=0, mat=None):
+    """One ramp step up or down, following the material's own grain direction.
+
+    Shifts the ramp INDEX rather than the colour, so texture costs no palette:
+    a figure is still its seven ramps and nothing else.
+    """
+    spec = TEXTURE.get(mat)
+    if spec is None:
+        spec = {'rate': 0.24, 'axis': 'n'}
+    axis = spec['axis']
+    if axis == 'v':
+        # Mostly a function of x, so runs hold together down the sprite.
+        h = (x * 149 + (y // 3) * 17 + s * 31) % 23
+    elif axis == 'h':
+        h = (y * 149 + (x // 3) * 17 + s * 31) % 23
+    else:
+        h = (x * 73 + y * 151 + s * 31) % 23
+    band = spec['rate'] * 23 / 2.0
+    if h < band:
+        return -1
+    if h > 22 - band:
+        return 1
+    return 0
 
 
 # --------------------------------------------------------------- the cast ---
@@ -124,7 +166,7 @@ class Canvas:
         """One flat plane of a box, grained."""
         for y in range(y0, y1 + 1):
             for x in range(x0, x1 + 1):
-                i = max(0, min(RAMP_N - 1, idx + grain(x, y, seed)))
+                i = max(0, min(RAMP_N - 1, idx + grain(x, y, seed, mat)))
                 self.px(x, y, (mat, i))
 
     def flat(self, x0, y0, x1, y1, cell):
@@ -182,6 +224,17 @@ def head(c, k, top, mode):
         c.face(CX - 2, y1 - 1, CX + 1, y1, 'skin', 2, 3)
     else:
         c.box(x0, y0, x1, y0 + hw - 1, 'hair_c', top=3, side=2, lit=lit, seed=2)
+
+    # A few strands drawn ON PURPOSE, over the directional grain. The grain
+    # gives hair its break; these give it a fall, so the box reads as something
+    # that hangs rather than a lid.
+    if mode != 'back':
+        for i, sx in enumerate(range(x0 + 1, x1, 3)):
+            c.flat(sx, y0 + 1, sx, y0 + hw - 2 - (i % 2), ('hair_c', 1))
+        c.flat(x0, y0 + hw - 1, x1, y0 + hw - 1, ('hair_c', 0))   # brow shadow
+    else:
+        for i, sx in enumerate(range(x0 + 1, x1, 3)):
+            c.flat(sx, y0 + 2, sx, y1 - 2 - (i % 3), ('hair_c', 1))
 
     style = k['hair']
     if style == 'long':
@@ -262,6 +315,13 @@ def body(c, k, ty, mode, swing, fwd):
     lit = 'r' if mode == 'r' else 'l'
     c.box(CX - sw, ty, CX + sw - 1, ty + 13, 'top', top=2, side=2, lit=lit, seed=20)
 
+    # Two soft creases where a shirt gathers, and the hem it ends on. Flat cloth
+    # over a whole torso is the one place the eye asks what the material is.
+    if mode in ('front', 'back'):
+        for fx in (CX - sw + 2, CX + sw - 3):
+            c.face(fx, ty + 4, fx, ty + 11, 'top', 2, 30)
+    c.face(CX - sw, ty + 13, CX + sw - 1, ty + 13, 'top', 1, 31)      # hem
+
     def arm(x, s, side_lit):
         # Lift alone carries the swing. An earlier pass also pushed the arm a
         # pixel outward, which opened a gap at the shoulder and made the arms
@@ -295,9 +355,14 @@ def body(c, k, ty, mode, swing, fwd):
             short = 1 if f > 0 else 0
             c.box(lx, ly + d, lx + 3, ly + 8 + d - short, 'leg',
                   top=1, side=1, lit=sl, seed=27)
+            # The seam down the outside of the leg. Trousers were a dark slab.
+            seam = lx + 3 if sl == 'r' else lx
+            c.face(seam, ly + d, seam, ly + 8 + d - short, 'leg', 1, 32)
             toe0, toe1 = (lx - 1, lx + 3) if sl == 'l' else (lx, lx + 4)
             c.box(toe0, ly + 9 + d - short, toe1, ly + 11 + d - short, 'shoe',
                   top=1, side=1, lit=sl, seed=28)
+            # Sole under the trim, so a shoe has a bottom rather than a stripe.
+            c.face(toe0, ly + 10 + d - short, toe1, ly + 10 + d - short, 'shoe', 1, 33)
             c.face(toe0, ly + 11 + d - short, toe1, ly + 11 + d - short, 'flash', 3, 29)
 
 
