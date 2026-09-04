@@ -13,6 +13,13 @@ import ProgressBar from './ProgressBar';
 import { palette, space, tokens } from '../theme';
 import { idleLine, encourageLine } from '../data/personality';
 
+// Creature art is a 96-row grid and it carries a face in about ten of those
+// rows. At the 44 this used to be, ten rows is twenty device pixels and there
+// is no face — the companion reads as an outline and a colour, which is exactly
+// what it looked like. Seventy-two is the most the strip can give without
+// pushing the stat lines around, and it is enough to see who it is.
+const CREATURE_SIZE = 72;
+
 export default function CompanionStatus({ companion, stats, style }) {
   if (!companion) {
     return (
@@ -41,7 +48,7 @@ export default function CompanionStatus({ companion, stats, style }) {
       <PixelSprite
         spriteKey={companion.creature.sprite}
         palette={companion.creature.palette}
-        size={44}
+        size={CREATURE_SIZE}
         bob
       />
       <View style={{ flex: 1, marginLeft: space.sm }}>

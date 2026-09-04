@@ -13,10 +13,12 @@
 // three it swamped the one pixel the drawing was worth.
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image } from 'react-native';
+import { Animated, Easing, Image, PixelRatio } from 'react-native';
 import PixelArt from './PixelArt';
 import { SPRITES } from '../data/sprites';
 import { idleFrame } from '../data/idleFrame';
+import { lodGrid } from '../data/spriteLod';
+import { paletteFor } from '../data/spritePalette';
 import { standinSprite } from '../data/spriteStandins';
 import { ITEM_IMAGES } from '../data/itemImages';
 
@@ -161,13 +163,41 @@ export default function PixelSprite({
   }
 
   if (!sprite) return null;
-  const pal = palette || sprite.palette;
-  // The idle's second frame. Same dimensions, so everything below is unchanged.
-  const grid = bob && squashed ? idleFrame(resolvedKey, sprite.grid, size) : sprite.grid;
+  // Traced art owns its palette; see data/spritePalette.js for why this is
+  // decided in one place rather than at each call site.
+  const pal = paletteFor(sprite, palette);
+  // The idle's second frame, squashed at FULL resolution — squashRows is
+  // measured against the grid it is given, and taking the row before the
+  // downsample keeps the breath a whole pixel after it.
+  const framed = bob && squashed ? idleFrame(resolvedKey, sprite.grid, size) : sprite.grid;
+  // Then the drawing that actually fits. A 96-row creature at 44 points gives
+  // each sprite pixel 0.92 of a device pixel, and PixelArt lays one View per
+  // run — so the layout has to snap sub-pixel boxes and neighbouring runs merge
+  // into each other. That is what turned every companion outside battle into a
+  // coloured blob. The cache key carries the squash, or the breathing frame and
+  // the still one would share an entry and the idle would stop moving.
+  const grid = lodGrid(
+    squashed ? `${resolvedKey}~sq` : resolvedKey,
+    framed,
+    pal,
+    size,
+    PixelRatio.get()
+  );
   const cols = grid[0].length;
   const rows = grid.length;
-  // Fractional cells so `size` is honoured exactly — see PixelArt.
-  const px = size / cols;
+  // Then snap a sprite pixel to a WHOLE number of device pixels.
+  //
+  // Choosing the right resolution is only half of it. 48 rows at 44 points is
+  // 1.83 device pixels per row, and a row cannot be 1.83 pixels tall — so the
+  // layout gives some rows two and some rows one, and the creature comes out
+  // in horizontal stripes. Fixing the density without fixing the snapping just
+  // trades a blob for a barcode; both halves are needed.
+  //
+  // The sprite therefore ends up a little larger or smaller than the size
+  // asked for — 44 becomes 48 here. That is the right trade at these scales:
+  // a few points of layout against every pixel landing where it was drawn.
+  const dpr = PixelRatio.get() || 1;
+  const px = Math.max(1, Math.round((size / cols) * dpr)) / dpr;
   const w = cols * px;
   const h = rows * px;
   // Must cover the full 90-index alphabet: at 8 entries the flash overlay

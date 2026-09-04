@@ -354,7 +354,7 @@ export default function RouteScreen({ params = {} }) {
             {companion ? (
               <>
                 <View style={{ width: 10 }} />
-                <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={60} bob={running} />
+                <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={92} bob={running} />
               </>
             ) : null}
           </View>

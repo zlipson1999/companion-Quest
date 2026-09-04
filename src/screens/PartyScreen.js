@@ -52,7 +52,7 @@ export default function PartyScreen() {
                   <View style={{ width: 16, justifyContent: 'center' }}>
                     {active ? <Triangle direction="right" size={6} color={palette.accent} /> : null}
                   </View>
-                  <PixelSprite spriteKey={m.creature.sprite} palette={m.creature.palette} size={52} bob={active} />
+                  <PixelSprite spriteKey={m.creature.sprite} palette={m.creature.palette} size={96} bob={active} />
                   <View style={{ flex: 1, marginLeft: space.md }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                       <PixelText size="body" color={active ? palette.secondary : palette.windowText}>
