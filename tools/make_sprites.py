@@ -3131,6 +3131,45 @@ def _prop(pal):
     return tile(pal).clear()
 
 
+def ground_shadow(c, rows=2, near=0.10, far=0.05):
+    """A contact shadow that follows the object's OWN footprint.
+
+    Every station used to ground itself with `c.rect(0, 15, 15, 15, 'ink', 0)` —
+    a hard black line spanning the full sixteen-pixel cell. A treadmill is ten
+    pixels wide, so that is not a shadow, it is a stripe painted on the floor
+    behind and beside the machine, and the gym floor showed nine of them in a
+    row. The buildings in this branch got verges and a footing for exactly this
+    reason; the equipment the player actually walks into to use never did.
+
+    So the shadow is derived from what was drawn: for each column, find the
+    lowest inked row, and lay the shadow under THAT. Columns the machine does
+    not occupy get none. The near row is darker than the far one, because
+    contact is darkest where the object meets the ground and opens up behind it.
+
+    Call it LAST — it reads the canvas, so anything drawn afterwards casts
+    nothing.
+    """
+    base = []
+    for x in range(c.w):
+        low = None
+        for y in range(c.h):
+            if c.px[y][x] is not None:
+                low = y
+        base.append(low)
+    for x, low in enumerate(base):
+        if low is None:
+            continue
+        for r in range(rows):
+            y = low + 1 + r
+            if y >= c.h:
+                break
+            # Already something there (a wheel, a foot rail) — leave it alone
+            # rather than painting over the machine.
+            if c.px[y][x] is not None:
+                continue
+            c.px[y][x] = ('ink', near if r == 0 else far, 1.0, False)
+
+
 def prop_bed_head():
     """Head of the bed — pillow and turned-down sheet."""
     c = _prop('ember')
@@ -3616,9 +3655,8 @@ def prop_pullup_bar():
     c.rect(1, 1, 1, 15, 'body', 0.54); c.rect(12, 1, 12, 15, 'body', 0.54)
     c.rect(1, 2, 14, 3, 'body', 0.68)                        # the bar
     c.rect(1, 2, 14, 2, 'body', 0.88)
-    c.rect(1, 15, 14, 15, 'ink', 0)
+    ground_shadow(c)
     return c
-
 
 def prop_kettlebells():
     c = _prop('rock')
@@ -3632,16 +3670,44 @@ def prop_kettlebells():
 
 
 def prop_rower():
-    c = _prop('rock')
-    c.rect(1, 6, 14, 9, 'body', 0.30)                        # rail
-    c.rect(1, 6, 14, 6, 'body', 0.52)
-    c.rect(9, 4, 13, 11, 'body', 0.40)                       # seat
-    c.rect(9, 4, 13, 4, 'body', 0.62)
-    c.sphere(4, 7.5, 3.4, 3.4, 'body', ambient=0.30)         # flywheel housing
-    c.rect(1, 12, 3, 15, 'body', 0.24); c.rect(12, 12, 14, 15, 'body', 0.24)
-    c.rect(1, 15, 14, 15, 'ink', 0)
-    return c
+    """Flywheel housing, rail, seat and footplates.
 
+    This was the only cardio machine drawn on the `rock` ramp — the stone one —
+    while the treadmill, bike, climber and elliptical are all on `gymkit`. So it
+    was painted in rubble, and next to four machines in gym grey and blue it
+    read as a boulder beside a crate rather than as equipment. It is on the same
+    ramp as its neighbours now.
+
+    The forms were the other half. A five-by-eight box for the seat is bigger
+    than the housing and dominates the silhouette, which is backwards: on a real
+    rower the flywheel case is the mass and the seat is a small saddle that
+    slides. Contrast does the reading — the housing dark with a lit cowl, the
+    rail a thin bright line, the handle in accent like the bike's pedals, and a
+    lit readout in belly like the treadmill's console.
+    """
+    c = _prop('gymkit')
+    # The rail runs the length of the tile: one thin bright line, so the machine
+    # reads as long and low rather than as a slab.
+    c.rect(3, 8, 14, 9, 'body', 0.26)
+    c.rect(3, 8, 14, 8, 'body', 0.60)                        # lit top edge
+    # Flywheel housing at the head, the heaviest thing in the silhouette.
+    c.sphere(4, 7, 3.6, 3.4, 'body', ambient=0.22)
+    c.rect(2, 4, 6, 5, 'body', 0.54)                         # lit cowl over it
+    c.rect(3, 5, 5, 5, 'belly', 0.90)                        # readout
+    # Footplates, angled off the housing.
+    c.rect(1, 10, 3, 12, 'body', 0.44)
+    c.rect(1, 10, 3, 10, 'body', 0.66)
+    # The seat: small, on the rail, toward the far end.
+    c.rect(10, 6, 13, 8, 'body', 0.38)
+    c.rect(10, 6, 13, 6, 'body', 0.64)
+    # Handle and chain back to the housing — the part that says "you pull this".
+    c.rect(7, 6, 9, 6, 'accent', 0.62)
+    c.rect(6, 6, 6, 6, 'ink', 0.16)
+    # Feet, so it stands on something.
+    c.rect(2, 13, 4, 14, 'body', 0.20)
+    c.rect(12, 10, 14, 12, 'body', 0.20)
+    ground_shadow(c)
+    return c
 
 def prop_reception():
     """Front desk — the Hall should greet you."""
@@ -3652,8 +3718,8 @@ def prop_reception():
     c.rect(2, 7, 6, 10, 'leaf', 0.72)                        # ledger
     c.rect(10, 7, 13, 9, 'leaf', 0.44)                       # a cup and a stack
     c.rect(0, 13, 15, 14, 'body', 0.18)
+    ground_shadow(c)
     return c
-
 
 def prop_noticeboard():
     """The friends noticeboard, hung on the wall by reception.
@@ -3739,10 +3805,9 @@ def prop_rack_barbell():
         c.rect(cx - 1, 3, cx + 1, 12, ramp, 0.36)
         c.rect(cx - 1, 3, cx - 1, 12, ramp, 0.66)
         c.rect(cx, 5, cx, 10, ramp, 0.82)
-        c.rect(cx + 1, 4, cx + 1, 11, ramp, 0.20)
-    c.rect(0, 15, 15, 15, 'ink', 0)                                          # contact shadow
+        c.rect(cx + 1, 4, cx + 1, 11, ramp, 0.20)                                          # contact shadow
+    ground_shadow(c)
     return c
-
 
 def prop_rack_dumbbell():
     """Two-tier rack. Pairs get smaller left to right so it reads as a set."""
@@ -3756,9 +3821,8 @@ def prop_rack_dumbbell():
             c.rect(cx - 1, top, cx + 1, top + 2, ramp, 0.34)                 # bells
             c.rect(cx - 1, top, cx - 1, top + 2, ramp, 0.62)
             c.rect(cx, top + 1, cx, top + 1, 'body', 0.80)                   # handle
-    c.rect(0, 15, 15, 15, 'ink', 0)
+    ground_shadow(c)
     return c
-
 
 def prop_machine():
     """Selectorised stack: housing, plates, pulley, seat pad."""
@@ -3775,9 +3839,8 @@ def prop_machine():
     c.rect(10, 9, 15, 11, 'leaf', 0.36)                                      # seat pad
     c.rect(10, 9, 15, 9, 'leaf', 0.58)
     c.rect(11, 12, 12, 15, 'body', 0.24)                                     # seat post
-    c.rect(0, 15, 15, 15, 'ink', 0)
+    ground_shadow(c)
     return c
-
 
 def prop_treadmill():
     """Deck, belt and a lit console."""
@@ -3791,9 +3854,8 @@ def prop_treadmill():
     c.rect(3, 1, 12, 1, 'body', 0.70)
     c.rect(5, 2, 10, 2, 'belly', 0.92)                                       # readout, lit
     c.rect(3, 4, 3, 6, 'body', 0.44); c.rect(12, 4, 12, 6, 'body', 0.44)     # uprights
-    c.rect(0, 15, 15, 15, 'ink', 0)
+    ground_shadow(c)
     return c
-
 
 def prop_bike():
     """Stationary cycle used as the in-world start point for a real GPS ride."""
@@ -3813,9 +3875,8 @@ def prop_bike():
     c.rect(11, 2, 14, 4, 'belly', 0.76)                     # ride display
     c.rect(12, 3, 13, 3, 'accent', 0.82)
     c.limb(3, 14, 13, 14, 0.55, 0.55, 'body', ambient=0.24) # floor rail
-    c.rect(1, 15, 15, 15, 'ink', 0)                         # contact shadow
+    ground_shadow(c)
     return c
-
 
 def prop_stairclimber():
     """Stair climber: a visible staircase of two pedals under a console mast.
@@ -3842,10 +3903,9 @@ def prop_stairclimber():
     c.rect(3, 5, 9, 5, 'body', 0.50)
     c.rect(8, 0, 14, 3, 'body', 0.32)                        # console head
     c.rect(8, 0, 14, 0, 'body', 0.64)
-    c.rect(9, 1, 13, 2, 'belly', 0.90)                       # readout, lit
-    c.rect(0, 15, 15, 15, 'ink', 0)                          # contact shadow
+    c.rect(9, 1, 13, 2, 'belly', 0.90)                       # readout, lit                          # contact shadow
+    ground_shadow(c)
     return c
-
 
 def prop_elliptical():
     """Elliptical: front flywheel, long low rails, two swinging arm poles.
@@ -3875,10 +3935,9 @@ def prop_elliptical():
     c.limb(3, 8, 7, 11, 0.45, 0.45, 'body', ambient=0.34)    # drive arm to pedal
     c.rect(11, 3, 15, 6, 'belly', 0.82)                      # console display
     c.rect(12, 4, 14, 4, 'accent', 0.80)
-    c.rect(12, 6, 13, 12, 'body', 0.36)                      # console mast
-    c.rect(0, 15, 15, 15, 'ink', 0)                          # contact shadow
+    c.rect(12, 6, 13, 12, 'body', 0.36)                      # console mast                          # contact shadow
+    ground_shadow(c)
     return c
-
 
 def prop_bench():
     """Flat bench: pad, frame, feet."""

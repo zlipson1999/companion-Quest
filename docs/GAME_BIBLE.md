@@ -1061,6 +1061,31 @@ Kinship Knot.
   `skyBands()` also mixes zenith → sky → haze now. It went straight from zenith
   to haze, so the middle colour every tone declares was dead code and all thirty
   skies were two-point ramps.
+- **The stations stand on the floor** (`ground_shadow()` in `make_sprites.py`).
+  Nine of the ten gym stations grounded themselves with
+  `c.rect(0, 15, 15, 15, 'ink', 0)` — a hard black line across the full sixteen
+  pixels of the cell. A treadmill is ten pixels wide, so that is not a shadow,
+  it is a stripe painted on the floor beside the machine, and the Hall showed
+  nine of them in a row. `ground_shadow()` derives the shadow from what was
+  actually drawn: per column, find the lowest inked row and lay two rows under
+  THAT, near row darker than far, columns the machine does not occupy left
+  clear. It must be called last, since it reads the canvas.
+  The buildings got verges and a footing in this pass for the same reason. The
+  equipment a player walks into to start a session had never had either.
+- **The rower is on the gym ramp.** It was the only one of the five cardio
+  machines drawn on `rock` — the stone ramp — while the treadmill, bike,
+  climber and elliptical are all on `gymkit`. Painted in rubble beside four
+  machines in gym grey and blue, it read as a boulder next to a crate. Its forms
+  were the other half: a 5×8 box for the seat is larger than the flywheel
+  housing and dominated the silhouette, which is backwards. The housing is the
+  mass now, the seat is a saddle on a thin bright rail, and the handle is in
+  `accent` like the bike's pedals.
+  **Still open:** the ten stations are procedural, not traced. `CLAUDE.md`
+  allows that for tiles, items and module icons, and the stations are arguably
+  the interface rather than scenery — you walk into a treadmill to start cardio.
+  Tracing them needs designed reference plates in `assets/characters/` that do
+  not exist, so this pass fixed lighting, grounding and the one machine that did
+  not read; it did not raise them to the traced bar.
 - **The companion walks with you** (`components/TileMap.js` `Follower`,
   `data/follower.js`). It existed in menus and in battles and nowhere in the
   world you actually walk through, which is a strange absence for the creature
