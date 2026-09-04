@@ -55,11 +55,26 @@ def ramp(base, lo=0.46, hi=1.22):
     return out
 
 
-def outline_of(c):
-    """A dark of the material, pushed toward blue. Pure black around a warm
-    skin tone reads as a hole; a cool dark reads as an edge in shade."""
+def outline_of(c, lit=False):
+    """The figure's edge, as a value of the MATERIAL rather than a keyline.
+
+    This was 0.30 of the material — nominally hue-shifted, in practice black,
+    and a uniform black line all the way round is what makes a sprite look like
+    a sticker laid on the scene instead of somebody standing in it.
+
+    Two changes. It is much lighter: a dark of the material you can still read
+    the colour of. And it takes a side. World light is upper-left, so the edge
+    facing the light is a rim that catches it and only the edge facing away is
+    in shade. An outline that is the same all the way round describes nothing
+    about where the light is.
+
+    Dropping the line entirely was tried. The figure loses its silhouette
+    against grass, and the eyes go with it — they are drawn in this same colour.
+    """
     r, g, b = c
-    return (int(r * 0.30), int(g * 0.28), min(255, int(b * 0.36) + 10))
+    if lit:
+        return (int(r * 0.72), int(g * 0.70), min(255, int(b * 0.80) + 12))
+    return (int(r * 0.46), int(g * 0.44), min(255, int(b * 0.54) + 10))
 
 
 # How each material breaks up, and in which DIRECTION.
@@ -191,20 +206,29 @@ class Canvas:
                 self.face(x1, y0 + top, x1, y1, mat, 4, seed + 3)
 
     def outline(self):
-        """One outline pixel wherever a filled pixel meets empty space, taking
-        its hue from whichever material it touches most."""
+        """One edge pixel wherever a filled pixel meets empty space, taking its
+        hue from whichever material it touches most — and its VALUE from which
+        side of the figure it is on. World light is upper-left, so an edge with
+        the body below-right of it faces the light and gets the rim; one with
+        the body above-left of it is in the figure's own shade."""
         add = {}
         for y in range(H):
             for x in range(W):
                 if self.g[y][x] is not None:
                     continue
                 tally = {}
+                toward_light = 0
                 for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
                     n = self.get(x + dx, y + dy)
-                    if n is not None and n[1] != 'o':
-                        tally[n[0]] = tally.get(n[0], 0) + 1
+                    if n is None or n[1] in ('o', 'r'):
+                        continue
+                    tally[n[0]] = tally.get(n[0], 0) + 1
+                    # A filled neighbour to the south or east means this pixel
+                    # sits on the figure's north-west face.
+                    toward_light += 1 if (dx > 0 or dy > 0) else -1
                 if tally:
-                    add[(x, y)] = (max(tally, key=tally.get), 'o')
+                    key = 'r' if toward_light > 0 else 'o'
+                    add[(x, y)] = (max(tally, key=tally.get), key)
         for pos, cell in add.items():
             self.px(pos[0], pos[1], cell)
 
@@ -401,9 +425,11 @@ def palette_for(name):
         for i, col in enumerate(steps):
             slots[(mat, i)] = len(colors)
             colors.append(_hex(col))
-        spans[mat] = [start, len(colors) - 1]      # outline excluded on purpose
+        spans[mat] = [start, len(colors) - 1]      # edges excluded on purpose
         slots[(mat, 'o')] = len(colors)
         colors.append(_hex(outline_of(steps[2])))
+        slots[(mat, 'r')] = len(colors)
+        colors.append(_hex(outline_of(steps[2], lit=True)))
     return colors, slots, spans
 
 

@@ -961,8 +961,18 @@ Kinship Knot.
   `hero_*` at 24×32 as the unstyled fallback. Resolved by `playerSprite()` /
   `coachSprite()` / `rowanSprite()` / `wardenSprite()` in `data/characters.js`.
   Every volume is a box showing three faces at three values (lit top, mid front,
-  shaded side); each figure's palette is 50 colours — seven six-step material
-  ramps plus one hue-shifted outline each.
+  shaded side); each figure's palette is 57 colours — seven six-step material
+  ramps plus TWO edge colours each.
+  **The figure has an edge, not an outline.** It used to be 0.30 of the material
+  all the way round — nominally hue-shifted, in practice black, and a uniform
+  black line is what makes a sprite look like a sticker laid on the scene rather
+  than somebody standing in it. It is much lighter now (0.46), so you can still
+  read the material's colour in it, and it takes a SIDE: world light is
+  upper-left, so the edge facing the light is a rim that catches it (0.72) and
+  only the edge facing away is in shade. An outline that is identical all the
+  way round describes nothing about where the light is. Dropping the line
+  entirely was tried — the figure loses its silhouette against grass, and the
+  eyes go with it, because they are drawn in the same colour.
   **Texture is per material and has a DIRECTION** (`TEXTURE` in cubecast.py).
   One speckle over everything is not texture, it is noise: the first pass ran a
   single hash over skin, wool, denim and hair, so a face came out as pitted as a
