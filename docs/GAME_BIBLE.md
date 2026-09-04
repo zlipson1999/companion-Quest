@@ -1061,6 +1061,28 @@ Kinship Knot.
   `skyBands()` also mixes zenith → sky → haze now. It went straight from zenith
   to haze, so the middle colour every tone declares was dead code and all thirty
   skies were two-point ramps.
+- **The companion walks with you** (`components/TileMap.js` `Follower`,
+  `data/follower.js`). It existed in menus and in battles and nowhere in the
+  world you actually walk through, which is a strange absence for the creature
+  the game is named after.
+  It occupies the tile the player has just LEFT rather than pathing on its own:
+  nothing to get stuck on, no chance of it standing where it could not have
+  walked, and a creature exactly one step behind is what reads as following.
+  Arrival is the case with a real decision in it — on a map change the footprint
+  it was standing in is in another building, so it appears rather than walks,
+  and `restingSpot()` puts it one tile back along the player's facing. On the
+  player's own tile it would render as one sprite drawn over another, which
+  reads as a bug rather than as company; where the space behind is a wall it
+  falls back to overlapping, which looks worse than it is wrong, unlike standing
+  inside masonry. Drawn at **1.35** tiles to the player's 1.85 — creature grids
+  are 96×96 with the subject filling about four fifths, where a person's 32×52
+  is filled nearly edge to edge, so the same number is a much bigger creature.
+  It does not turn: creature sprites are drawn front-facing only, and flipping
+  one to fake a profile is exactly what `walk_set` did to the player and why the
+  player had to be redrawn. `tools/test_follower.mjs` runs the placement rule
+  over every walkable tile of all four hand-built maps at all four facings —
+  2,224 placements, none inside a wall, none off the map, none further than one
+  tile, and never on top of the player where there is room to step back.
 - **Creatures breathe, in two drawn frames** (`data/idleFrame.js`). All 194
   creature sprites were a single plate, and `PixelSprite` translated it three
   pixels on a loop and called that an idle. That slides a rigid card: the

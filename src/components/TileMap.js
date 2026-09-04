@@ -15,7 +15,8 @@ import { palette } from '../theme';
 import { SPRITES } from '../data/sprites';
 import { outfitPalette } from '../data/outfits';
 import { playerSprite, coachSprite, rowanSprite } from '../data/characters';
-import { useGame } from '../state';
+import { useCompanion, useGame } from '../state';
+import { restingSpot } from '../data/follower';
 
 // Codes whose material is large enough to show its repeat get the same field
 // treatment as the ground: a canopy or a roof reads as one mass rather than the
@@ -519,6 +520,89 @@ function Walker({ walker, s }) {
   );
 }
 
+// The companion, walking in the player's footprints.
+//
+// It existed in menus and in battles and nowhere in the world you actually walk
+// through, which is a strange thing for the creature the game is named after.
+//
+// It occupies the tile the player has just LEFT rather than computing a path of
+// its own: no pathfinding to get stuck, no chance of it standing somewhere it
+// could not have walked, and a following creature that is always exactly one
+// step behind is what reads as following. When the map changes it teleports
+// rather than walking, because the tile it was standing on is in another
+// building.
+//
+// Creature sprites are drawn front-facing only, so it does not turn. That is
+// the art being honest about itself rather than a shortcut — flipping a
+// front-facing creature to fake a profile is what the old walk_set did to the
+// player, and it is why the player had to be redrawn.
+// Of a tile. The player is 1.85, and a companion has to read as the smaller of
+// the two at a glance — but creature grids are 96x96 with the subject filling
+// maybe four fifths of that, where a person's 32x52 is filled almost edge to
+// edge, so the same number is a much bigger creature. 1.35 lands a companion at
+// roughly three quarters of the player's height.
+const FOLLOW_HEIGHT = 1.35;
+
+function Follower({ player, map, s }) {
+  const companion = useCompanion();
+  const spriteKey = companion && companion.creature ? companion.creature.sprite : null;
+  // Where the player was one step ago.
+  const [at, setAt] = useState(() => restingSpot(map, player.x, player.y, player.facing));
+  const prev = useRef({ x: player.x, y: player.y });
+  const mapId = useRef(map.id);
+  const start = useRef(restingSpot(map, player.x, player.y, player.facing)).current;
+  const pos = useRef(new Animated.ValueXY({ x: start.x * s, y: start.y * s })).current;
+
+  useEffect(() => {
+    if (mapId.current !== map.id) {
+      // A new room. The footprint it was standing in is in another building, so
+      // it arrives with the player instead of walking there.
+      mapId.current = map.id;
+      prev.current = { x: player.x, y: player.y };
+      const spot = restingSpot(map, player.x, player.y, player.facing);
+      setAt(spot);
+      pos.setValue({ x: spot.x * s, y: spot.y * s });
+      return;
+    }
+    const before = prev.current;
+    if (before.x !== player.x || before.y !== player.y) {
+      setAt(before);
+      prev.current = { x: player.x, y: player.y };
+    }
+  }, [player.x, player.y, player.facing, map, s, pos]);
+
+  useEffect(() => {
+    Animated.timing(pos, {
+      toValue: { x: at.x * s, y: at.y * s },
+      duration: STEP_MS,
+      useNativeDriver: true,
+    }).start();
+  }, [at.x, at.y, s, pos]);
+
+  if (!spriteKey || !SPRITES[spriteKey]) return null;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        width: s,
+        height: s,
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        transform: [{ translateX: pos.x }, { translateY: pos.y }],
+      }}
+    >
+      <PixelSprite
+        spriteKey={spriteKey}
+        palette={companion.creature.palette}
+        size={widthForHeight(spriteKey, s * FOLLOW_HEIGHT)}
+        bob
+        accessibilityLabel={`${companion.creature.name}, following you`}
+      />
+    </Animated.View>
+  );
+}
+
 export default function TileMap({ map, player, tileSize, style, viewport, walker, playerActivity }) {
   const { state } = useGame();
   const s = tileSize;
@@ -657,6 +741,9 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
         style={{ position: 'absolute', left: 0, top: 0, width: map.cols * s, height: map.rows * s }}
       />
       {walker ? <Walker walker={walker} s={s} /> : null}
+      {/* Drawn before the player, so when they end up on adjacent tiles the
+          player reads as the one in front. */}
+      <Follower player={player} map={map} s={s} />
       <Animated.View
         style={{
           position: 'absolute',

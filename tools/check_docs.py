@@ -107,6 +107,12 @@ def build_checks():
     # WHY they are what they are — the five phases and the night veil's ceiling —
     # so a silent change to either leaves the reasoning describing a different
     # system.
+    # How tall the companion is drawn beside the player. Quoted with the
+    # reasoning about grid fill, so a silent change leaves the argument stale.
+    checks.append(('follower height', r'Drawn at \*\*([\d.]+)\*\* tiles to the player',
+                   first(r'const FOLLOW_HEIGHT = ([\d.]+);', read('src/components/TileMap.js'),
+                         'FOLLOW_HEIGHT')))
+
     # The idle squash: the band it takes a row from and the travel it targets
     # are both quoted with the reasoning for the value, so both are watched.
     idle = read('src/data/idleFrame.js')
