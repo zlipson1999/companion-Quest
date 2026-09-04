@@ -4518,6 +4518,80 @@ def emit_room_light(size=96):
     print('  wrote %s (%dx%d)' % (os.path.join('assets', 'tiles', 'room-light.png'), size, size))
 
 
+def emit_sky_veil():
+    """One tone-neutral overlay that gives every sky texture.
+
+    The sky is painted in JS as a handful of flat horizontal bands mixed from
+    the scene's own colours. Bands are cheap and they tint per scene, but a
+    band is a stripe: eight of them across the top of a trail read as a
+    gradient tool rather than as air, and nothing is happening in them.
+
+    Painting thirty skies — one per scene tone — is not the answer. This is
+    ACHROMATIC instead: white where cloud catches the light, a cool dark
+    underneath it, and nothing else. Laid over any tone it takes that tone's
+    colour, so one image textures all thirty and none of them stops being its
+    own place.
+
+    Two things live in it:
+
+      DITHER, everywhere, at very low alpha. An ordered Bayer threshold breaks
+      the flat fill so the joins between bands stop being visible lines. This
+      is the same tool the zone joints use, for the same reason.
+
+      CLOUD, in a few flattened banks. Their edges dissolve through the same
+      threshold rather than ending on an outline, so they read as vapour and
+      not as stickers, and they sit low: a cloud at the very top of the frame
+      reads as a smudge on the screen.
+
+    Authored at 420x168 — the width of a phone in points — so one veil pixel
+    lands on two device pixels, the same scale everything else in the game is
+    drawn at. It matters: at 128 wide the image stretched six device pixels per
+    veil pixel and the dither came out as a checkerboard laid over the sky
+    rather than as grain inside it.
+    """
+    w, h = 420, 168
+    buf = []
+    # (centre row, half-thickness, horizontal period, phase, strength)
+    banks = ((0.30, 0.055, 2.1, 0.0, 0.72), (0.47, 0.075, 1.4, 2.2, 1.0),
+             (0.63, 0.05, 3.0, 4.1, 0.62), (0.76, 0.038, 1.9, 1.1, 0.44))
+    for y in range(h):
+        v = y / float(h - 1)
+        for x in range(w):
+            u = x / float(w)
+            r, g, b, a = 232, 240, 255, 0
+            # Cloud first; the dither underneath keeps working through it.
+            for cy, half, period, phase, strength in banks:
+                # A soft top edge and a flatter base — cloud sits ON the air.
+                roll = 0.6 + 0.4 * math.sin((u * period + phase) * 2 * math.pi)
+                top = cy - half * roll
+                bot = cy + half * 0.55
+                if not (top <= v <= bot):
+                    continue
+                # 1 at the lit crown, 0 at the base.
+                k = 1.0 - (v - top) / max(1e-4, bot - top)
+                edge = min(1.0, (min(v - top, bot - v)) / (half * 0.55))
+                lit = strength * k * k
+                if _ordered(x, y) < edge:
+                    if k > 0.45:
+                        a = max(a, int(96 * lit))
+                    else:
+                        r, g, b = 92, 108, 140            # shaded underside
+                        a = max(a, int(56 * (1.0 - k)))
+            # Low-level dither across the whole field, strongest at the zenith
+            # where the bands are widest and the steps show most.
+            n = _ordered(x + 2, y + 1)
+            grain_a = int(11 * (1.0 - v * 0.55))
+            if n > 0.72 and a == 0:
+                r, g, b, a = 236, 244, 255, grain_a
+            elif n < 0.24 and a == 0:
+                r, g, b, a = 40, 54, 84, grain_a
+            buf.append([r, g, b, a])
+    png_dir = os.path.join(ROOT, 'assets', 'tiles')
+    os.makedirs(png_dir, exist_ok=True)
+    write_png(os.path.join(png_dir, 'sky-veil.png'), buf, w, h)
+    print('  wrote %s (%dx%d)' % (os.path.join('assets', 'tiles', 'sky-veil.png'), w, h))
+
+
 # Gutter around each atlas cell, in authored pixels. Two is enough for the
 # bilinear taps a device-pixel-ratio upscale takes at a cell edge.
 ATLAS_PAD = 2
@@ -4600,6 +4674,7 @@ def emit_tile_atlas():
         '// emit_tile_atlas() for why tiles are not PixelArt any more.\n\n'
         'export const TILE_ATLAS = require(\'../../assets/tiles/tile-atlas.png\');\n'
         'export const ROOM_LIGHT = require(\'../../assets/tiles/room-light.png\');\n'
+        'export const SKY_VEIL = require(\'../../assets/tiles/sky-veil.png\');\n'
         'export const TILE_CELL = %d;\n'
         'export const ATLAS_WIDTH = %d;\n'
         'export const ATLAS_HEIGHT = %d;\n\n'
@@ -4659,5 +4734,6 @@ if __name__ == '__main__':
     render_contact_sheet()
     emit_tile_atlas()
     emit_room_light()
+    emit_sky_veil()
     emit_js()
     print('Done.')

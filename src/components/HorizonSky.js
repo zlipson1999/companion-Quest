@@ -7,7 +7,8 @@
 // that sit ON the join — half in the air, half over the first ground pixels.
 
 import React, { useMemo } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
+import { SKY_VEIL } from '../data/tileAtlas';
 import { hazeBands, sceneTone, skyBands } from '../data/sceneSky';
 
 const HAZE_PX = 4;
@@ -33,6 +34,19 @@ export default function HorizonSky({
         {sky.map((band, i) => (
           <View key={i} style={{ flex: band.weight, backgroundColor: band.color }} />
         ))}
+        {/* One achromatic overlay gives all thirty skies their texture: cloud
+            where it catches the light, a cool dark underneath, and an ordered
+            dither that breaks the joins between the bands. Bands alone are a
+            stripe, and eight stripes read as a gradient tool rather than air.
+            Painting thirty skies to fix that is the wrong trade; this takes
+            whatever tone it is laid over. */}
+        <Image
+          source={SKY_VEIL}
+          resizeMode="stretch"
+          fadeDuration={0}
+          pointerEvents="none"
+          style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
+        />
       </View>
       <View
         style={{

@@ -5,6 +5,7 @@
 
 export const TILE_ATLAS = require('../../assets/tiles/tile-atlas.png');
 export const ROOM_LIGHT = require('../../assets/tiles/room-light.png');
+export const SKY_VEIL = require('../../assets/tiles/sky-veil.png');
 export const TILE_CELL = 32;
 export const ATLAS_WIDTH = 756;
 export const ATLAS_HEIGHT = 756;

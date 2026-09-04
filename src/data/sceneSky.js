@@ -185,15 +185,37 @@ export function sceneTone(id) {
   return SCENE_TONES[id] || SCENE_TONES.maple;
 }
 
-const SKY_WEIGHTS = [0.2, 0.17, 0.15, 0.13, 0.12, 0.1, 0.08, 0.05];
+// Twenty bands, not eight.
+//
+// Eight steps across the top of a trail is a value jump you can see, and the
+// dither in the sky veil is deliberately far weaker than one of those jumps —
+// it is grain, not a gradient engine, and asking it to hide a step that size
+// only makes the step look noisy. Finer bands make each step small enough that
+// the grain can finish the job. Twenty Views cost nothing.
+//
+// Still weighted toward the zenith: equal-height bands read as a gradient tool,
+// and the air genuinely changes faster near the horizon.
+const SKY_WEIGHTS = (() => {
+  const n = 20;
+  const raw = Array.from({ length: n }, (_, i) => 1.6 - (i / (n - 1)) * 1.2);
+  const total = raw.reduce((a, b) => a + b, 0);
+  return raw.map((v) => v / total);
+})();
 
+// Three stops, not two. Every tone declares zenith, sky AND haze, and this
+// mixed straight from zenith to haze — so the middle colour of all thirty
+// scenes was dead code and each sky was a plain two-point ramp between its
+// darkest and lightest value.
 export function skyBands(tone) {
   const t = typeof tone === 'string' ? sceneTone(tone) : tone;
   const n = SKY_WEIGHTS.length;
-  return SKY_WEIGHTS.map((weight, i) => ({
-    color: mixHex(t.zenith, t.haze, i / (n - 1)),
-    weight,
-  }));
+  return SKY_WEIGHTS.map((weight, i) => {
+    const p = i / (n - 1);
+    return {
+      color: p < 0.5 ? mixHex(t.zenith, t.sky, p * 2) : mixHex(t.sky, t.haze, (p - 0.5) * 2),
+      weight,
+    };
+  });
 }
 
 const HAZE_STOPS = [0.15, 0.35, 0.55, 0.75, 0.9];
