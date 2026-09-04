@@ -9,7 +9,8 @@
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { screen, shade } from '../theme';
-import { sceneTone } from '../data/sceneSky';
+import { veilFor } from '../data/daylight';
+import useDaylight, { useSceneTone } from '../state/useDaylight';
 import { Tile } from './TileMap';
 import HorizonSky from './HorizonSky';
 
@@ -21,7 +22,8 @@ const DISC = [0.52, 0.78, 0.93, 1.0, 1.0, 0.96, 0.84, 0.62];
 const TILE_SIZE = 52;
 
 export function Platform({ width = 96, tone = 'grass' }) {
-  const t = sceneTone(tone);
+  // The disc is lit by the same sky the companion standing on it is.
+  const t = useSceneTone(tone);
   const px = 3;
   const last = DISC.length - 1;
   return (
@@ -106,12 +108,33 @@ function TileGround({ mapId, codes }) {
 
 // A full-bleed backdrop. `horizon` is where the ground starts, 0..1 from top.
 export default function BattleStage({ tone = 'grass', horizon = 0.52, children, style }) {
-  const t = sceneTone(tone);
+  const t = useSceneTone(tone);
+  const phase = useDaylight();
+  // The stage's ground is real atlas tiles drawn at 3x, so it needs the same
+  // plate of hour-light the overworld gets — otherwise a dusk fight happens on
+  // noon grass. It sits UNDER the combatants: they are lit by this light, not
+  // seen through it, and a veil over the companion would grey out the white
+  // flash it uses to show a hit.
+  const veil = veilFor(phase);
   return (
     <View style={[{ flex: 1, backgroundColor: t.ground }, style]}>
       <HorizonSky tone={tone} horizon={horizon} />
       <View style={{ position: 'absolute', left: 0, right: 0, top: `${horizon * 100}%`, bottom: 0 }}>
         <TileGround mapId={t.mapId} codes={t.codes} />
+        {veil.opacity > 0 ? (
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 0,
+              backgroundColor: veil.color,
+              opacity: veil.opacity,
+            }}
+          />
+        ) : null}
       </View>
       <View style={{ flex: 1 }}>{children}</View>
     </View>

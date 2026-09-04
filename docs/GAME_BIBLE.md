@@ -1061,6 +1061,35 @@ Kinship Knot.
   `skyBands()` also mixes zenith → sky → haze now. It went straight from zenith
   to haze, so the middle colour every tone declares was dead code and all thirty
   skies were two-point ramps.
+- **The world runs on the device clock** (`data/daylight.js`, `state/useDaylight.js`).
+  `phaseAt(date)` maps the local hour to one of **five phases** — night (21–03),
+  dawn (04–06), golden hour (07 and 17–18), day (08–16), dusk (19–20) — and
+  `daylightTone(tone, phase)` returns that biome's sky as it looks then.
+  It is a TRANSFORM OVER a tone, not another entry in `SCENE_TONES`, because
+  those thirty entries are PLACES: giving the lane a "dusk" tone would not make
+  it evening, it would make it somewhere else. As a transform it reaches all
+  twenty-eight trails and the challenge stage without a line of per-map work.
+  Noon is an exact identity, so the authored tones are what you see by day.
+  Each phase moves zenith, sky and haze by its OWN amount toward its OWN target
+  rather than applying one multiply: at dawn and dusk the sun is on the horizon,
+  so the haze warms hard while the zenith goes *darker*, and that opposition is
+  what reads as low sun. Warm all three equally and you get orange fog. At night
+  colour drains before light does — `desaturate()` runs before the darkening —
+  because a desaturated blue dark reads as night while an equally dark but still
+  vivid green reads as a bug.
+  The GROUND is baked atlas PNGs and no tone maths reaches it, so each phase
+  also carries one translucent plate (`VEILS`) drawn over the tiles: without it
+  a midnight sky sits over noon-bright grass, which reads as broken rather than
+  as late. Opacity runs 0 (day) to **0.52** (night).
+  **Night has a deliberate floor.** This is a game played while walking outside
+  at 9pm, so night dims the air hard and the ground much less — the darkness is
+  carried by the sky, which has nothing in it to read, while the tiles being
+  navigated stay legible. Interiors take no phase at all: a kitchen is lit by
+  its own lamps and looks like a kitchen at any hour.
+  `tools/test_daylight.mjs` holds the invariants — noon identity, the zenith
+  ordering night < dusk < dawn < day, every phase visibly not-noon somewhere,
+  golden hour landing on the horizon rather than overhead, and every one of the
+  thirty biomes keeping a distinct sky at night.
 - Interiors are lit by ONE image — `assets/tiles/room-light.png`, stretched over
   the whole map by `TileMap`: open in the middle, sitting back at the edges.
   There used to be a second, per-field layer: `light_pool()` baked a ceiling

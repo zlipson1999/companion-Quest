@@ -9,7 +9,8 @@
 import React, { useMemo } from 'react';
 import { Image, View } from 'react-native';
 import { SKY_VEIL } from '../data/tileAtlas';
-import { hazeBands, sceneTone, skyBands } from '../data/sceneSky';
+import { hazeBands, skyBands } from '../data/sceneSky';
+import { useSceneTone } from '../state/useDaylight';
 
 const HAZE_PX = 4;
 
@@ -18,7 +19,9 @@ export default function HorizonSky({
   horizon = 0.18,
   fillBelow = false,
 }) {
-  const t = sceneTone(tone);
+  // The tone as it is at this hour — one painter for the sky means one place
+  // the clock has to reach for every trail, the stage and the lane.
+  const t = useSceneTone(tone);
   const sky = useMemo(() => skyBands(t), [t]);
   const haze = useMemo(() => hazeBands(t), [t]);
   const skyH = `${horizon * 100}%`;

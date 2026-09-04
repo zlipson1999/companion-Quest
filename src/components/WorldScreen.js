@@ -20,7 +20,9 @@ import PixelText from './PixelText';
 import Screen from './Screen';
 import HorizonSky from './HorizonSky';
 import { palette, space, screen, tokens, scale } from '../theme';
-import { OUTDOOR_WORLD_TONE, sceneTone } from '../data/sceneSky';
+import { OUTDOOR_WORLD_TONE } from '../data/sceneSky';
+import { veilFor } from '../data/daylight';
+import useDaylight, { useSceneTone } from '../state/useDaylight';
 import { tileAt, isWalkable, interactionForCode } from '../data/maps';
 
 // What is within reach: the interactive thing on the tile the player faces,
@@ -154,7 +156,14 @@ export default function WorldScreen({
   const worldW = map.cols * tile;
   const worldH = map.rows * tile;
   const outdoor = OUTDOOR_MAPS.has(map.id);
-  const voidColor = VOID_BY_MAP[map.id] || (outdoor ? sceneTone(OUTDOOR_WORLD_TONE).ground : palette.grassDark);
+  // The letterbox behind an outdoor map is the same ground the sky dissolves
+  // into, so it has to travel with the hour or the world sits in a noon frame.
+  const phase = useDaylight();
+  const worldTone = useSceneTone(OUTDOOR_WORLD_TONE);
+  const voidColor = VOID_BY_MAP[map.id] || (outdoor ? worldTone.ground : palette.grassDark);
+  // Interiors are lit by their own lamps, not by the sky. A kitchen at 9pm
+  // looks like a kitchen; only the outdoors takes the hour.
+  const veil = outdoor ? veilFor(phase) : null;
 
   const sheet = (
     <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
@@ -238,6 +247,20 @@ export default function WorldScreen({
             walker={walker}
             playerActivity={playerActivity}
           />
+          {veil && veil.opacity > 0 ? (
+            <View
+              pointerEvents="none"
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 0,
+                backgroundColor: veil.color,
+                opacity: veil.opacity,
+              }}
+            />
+          ) : null}
         </View>
         {worldOverlay ? (
           <View

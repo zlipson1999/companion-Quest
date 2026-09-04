@@ -103,6 +103,18 @@ def build_checks():
          first(r"'pace-token': \{ incomingMult: ([\d.]+)", charm_battle, 'pace token mult')),
     ]
 
+    # The daylight transform. Both of these are quoted in prose that explains
+    # WHY they are what they are — the five phases and the night veil's ceiling —
+    # so a silent change to either leaves the reasoning describing a different
+    # system.
+    daylight = read('src/data/daylight.js')
+    checks += [
+        ('daylight phases', r'one of \*\*(\w+) phases\*\*',
+         WORDS[len(re.findall(r'^  (\w+): \{$', daylight, re.M))]),
+        ('night veil opacity', r'Opacity runs 0 \(day\) to \*\*([\d.]+)\*\*',
+         first(r"night: \{ color: '#\w+', opacity: ([\d.]+) \}", daylight, 'night veil')),
+    ]
+
     quests_src = read('src/data/quests.js')
     checks += [
         ('quest tokens', r'(\d+) Quest Tokens, one per category',

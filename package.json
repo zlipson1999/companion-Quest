@@ -7,7 +7,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "npm run lint && python3 tools/check_docs.py && python3 tools/check_art.py && node --import ./tools/register-esm.mjs tools/test_hydrate.mjs && node --import ./tools/register-esm.mjs tools/test_cardio.mjs && node --import ./tools/register-esm.mjs tools/test_gym_checkins.mjs && node --import ./tools/register-esm.mjs tools/test_gym_tour.mjs && node --import ./tools/register-esm.mjs tools/test_gym_cardio_ui.mjs && node --import ./tools/register-esm.mjs tools/test_trail_session.mjs && node --import ./tools/register-esm.mjs tools/test_quest_ledger.mjs && node --import ./tools/register-esm.mjs tools/test_cardio_machines.mjs && node --check server/index.js && npm --prefix server run test:auth && node tools/run_friends_test.js",
+    "test": "npm run lint && python3 tools/check_docs.py && python3 tools/check_art.py && node --import ./tools/register-esm.mjs tools/test_hydrate.mjs && node --import ./tools/register-esm.mjs tools/test_cardio.mjs && node --import ./tools/register-esm.mjs tools/test_gym_checkins.mjs && node --import ./tools/register-esm.mjs tools/test_gym_tour.mjs && node --import ./tools/register-esm.mjs tools/test_gym_cardio_ui.mjs && node --import ./tools/register-esm.mjs tools/test_trail_session.mjs && node --import ./tools/register-esm.mjs tools/test_quest_ledger.mjs && node --import ./tools/register-esm.mjs tools/test_cardio_machines.mjs && node --import ./tools/register-esm.mjs tools/test_daylight.mjs && node --check server/index.js && npm --prefix server run test:auth && node tools/run_friends_test.js",
     "lint": "eslint src tools server --ext .js,.mjs --max-warnings 20"
   },
   "dependencies": {
