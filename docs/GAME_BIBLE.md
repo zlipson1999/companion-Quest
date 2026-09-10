@@ -250,8 +250,8 @@ material does.
 |---|---|---|---|
 | Sunkist Lane (`HUB`) | 13×17 | — | a lane north to the trail, the two buildings facing each other across it, a green with a pond, bench and fenced plot |
 | Quest Fitness (`GYM`) | 17×19 | platform, turf, mats | the ordinary commercial convention: perimeter for what backs onto a wall, centre for what does not |
-| Downstairs (`DOWNSTAIRS`) | 13×15 | kitchen, rug | counter run on the north wall, dining on the vinyl, living room around the rug |
-| Bedroom (`BEDROOM`) | 11×13 | rug | narrower, because a one-person bedroom as wide as a hall reads as a hall |
+| Downstairs (`DOWNSTAIRS`) | 13×15 | kitchen, rug | north-wall kitchen, northeast dining group, southwest living group and clear eastern stair aisle |
+| Bedroom (`BEDROOM`) | 11×13 | rug | bed and bedside furniture northwest, desk and chair together, wardrobe northeast, central rug |
 
 The gym: **racks along the north wall** on the lifting platform (a power rack is
 bolted to a wall in every gym that owns one), **free weights down the west
@@ -376,8 +376,10 @@ are grown, never knotted.
 - RouteScreen used to carry a second mode for the cardio deck, rendered as
   the outdoor trail with its trees switched off; the deck lives in the gym
   now (§5.7).
-- The trail visual is a continuous landscape panel with blended repeat
-  boundaries; it scrolls only while distance is actually arriving and respects reduced motion.
+- The trail visual uses continuous panels with blended repeat boundaries.
+  Accumulated measured distance sets scenery position; pausing never resets it.
+  Near-ground details and inspectable trail markers pass at a separate depth.
+  Starting GPS alone does not animate travel. Reduced motion snaps to distance.
 - **Step sources, in priority order** (see docs/STEP_COUNTING.md):
   1. OS pedometer (`Pedometer.watchStepCount`) — counts with the screen off;
      needs Physical activity / Motion permission; NOT always reachable inside
@@ -788,7 +790,8 @@ milestone count) → `toBattle` flash → BattleScreen.
   (KO) at 430 after its flinch. Entry: wild slides in from +90 px right,
   companion from −110 left, staggered 160. All timers cleared on unmount.
 - **Stage**: continuous biome-specific encounter clearings with soft contact
-  shadows beneath independent combatants. The gym uses its architectural floor.
+  region-specific terrain platforms beneath independent combatants, with twelve
+  original surfaces matching the biome table. The gym uses its architectural floor.
   Battle controls scroll within a compact lower panel; combatant animation and
   the shared scene-tone mapping remain intact.
 - Defeat → `LOSE_BATTLE`, hub. Swap preserves per-member HP. Evolution beat:

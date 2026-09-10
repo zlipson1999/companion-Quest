@@ -36,9 +36,9 @@ import { forgetSpot, recallSpot, rememberSpot } from './placeMemory';
 import { DEFAULT_BODY_WEIGHT_LB, formatClock } from '../state/cardioMaths';
 import { saveGame } from '../state/storage';
 
-function ScrollingScene({ width, height, moving, trailId }) {
+function ScrollingScene({ width, height, moving, trailId, distanceMiles, onInspect }) {
   const route = getRoute(trailId);
-  return <EnvironmentLandscape width={width} height={height} moving={moving} tone={route.stageTone || trailId} />;
+  return <EnvironmentLandscape width={width} height={height} moving={moving} distanceMiles={distanceMiles} onInspect={onInspect} tone={route.stageTone || trailId} />;
 }
 
 export default function RouteScreen({ params = {} }) {
@@ -132,7 +132,7 @@ export default function RouteScreen({ params = {} }) {
     onMilestone: (item) => setMessage(`Milestone! ${pickupLine(item.name)} ${routeCheer()}`),
   });
 
-  const running = moving || dist.running;
+  const running = moving; // GPS tracking being enabled is not proof of movement.
   const sessionMiles = Math.max(0, state.stats.distanceMi - session.current.miles);
   const sessionSteps = Math.max(0, state.stats.totalSteps - session.current.steps);
   const breakdown = useMemo(
@@ -289,12 +289,12 @@ export default function RouteScreen({ params = {} }) {
   return (
     <Screen padTop={false} style={{ padding: 0 }}>
       <View style={{ flex: 1, backgroundColor: palette.grass }}>
-        <ScrollingScene width={screen.width} height={screen.height} moving={running} trailId={route.id} />
+        <ScrollingScene width={screen.width} height={screen.height} moving={running} trailId={route.id} distanceMiles={sessionMiles} onInspect={setMessage} />
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: screen.height * 0.30, alignItems: 'center' }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
             <PixelSprite
-              spriteKey={playerSprite(state.playerGender, 'down', stride)}
-              palette={outfitPalette(state.playerOutfit, state.playerGender, playerSprite(state.playerGender, 'down', stride))}
+              spriteKey={playerSprite(state.playerGender, 'up', stride)}
+              palette={outfitPalette(state.playerOutfit, state.playerGender, playerSprite(state.playerGender, 'up', stride))}
               size={48}
               bob={running}
             />

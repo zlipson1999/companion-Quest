@@ -1,11 +1,15 @@
 // Isolated visual-QA fixture. Render the REAL screens with a disposable save.
 // Never mounts persistence, cloud sync, or a real participant's account.
-import React, { useReducer } from 'react';
+import React, { useMemo, useReducer } from 'react';
 import { GameContext, reducer } from '../state/GameContext';
 import { FRESH } from '../state/hydrate';
 import Router from '../screens/Router';
 
 export default function VisualPreview({ route }) {
+  const initialParams = useMemo(() => {
+    const tone = new URLSearchParams(window.location.search).get('visualTone');
+    return ['maple', 'rill', 'gale', 'ember', 'cairn', 'canopy'].includes(tone) ? { stageTone: tone } : {};
+  }, []);
   const [state, dispatch] = useReducer(reducer, {
     ...FRESH,
     started: true,
@@ -17,6 +21,6 @@ export default function VisualPreview({ route }) {
     meta: { ...FRESH.meta, homeTourDone: true, mapleSessionDone: true, sparDone: true, gymTourDone: true },
   });
   return <GameContext.Provider value={{ state, dispatch, hydrated: true, saveError: null, visualPreview: true }}>
-    <Router initialRoute={route} />
+    <Router initialRoute={route} initialParams={initialParams} />
   </GameContext.Provider>;
 }

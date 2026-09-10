@@ -581,7 +581,7 @@ export default function BattleScreen({ params }) {
               />
             )}
             <DamagePop pop={wildPop} color={palette.secondary} />
-            <Platform width={params.warden && params.trainer ? 120 : 92} tone={stageTone} />
+            <Platform width={params.warden && params.trainer ? 188 : 164} tone={stageTone} />
           </Animated.View>
         </View>
 
@@ -601,7 +601,7 @@ export default function BattleScreen({ params }) {
               />
             </View>
             <DamagePop pop={compPop} color={palette.danger} />
-            <Platform width={108} tone={stageTone} />
+            <Platform width={172} tone={stageTone} />
           </Animated.View>
           <StatusPlate
             name={companion.creature.name}

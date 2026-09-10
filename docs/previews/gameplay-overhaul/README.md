@@ -38,3 +38,19 @@ Original raster assets were created with the built-in image generation tool. Dir
 - `battle-environments-v2.png`: corresponding 3-by-4 encounter clearings, with open space for separate combatant sprites.
 
 `SceneProps` crops original RGBA atlases using source alpha bounds in `propBounds.js`; pixels are not rewritten. `worldArt.js` selects room floors. `environmentArt.js` selects biome panels. Existing interaction codes remain authoritative. The old tile atlas remains available for fallback art.
+
+## Placement, travel and regional platforms follow-up
+
+Downstairs now groups kitchen counters on the north wall, dining furniture northeast, and the sofa/coffee table/TV around a southwest rug. The eastern aisle and entry remain clear. Upstairs the bedside lamp/nightstand and desk/chair form usable groups, with storage and a smaller central rug.
+
+Moved downstairs codes: `a`, `m`, `v`, `x`, `f`, `l`, `p`, `o`; upstairs: `k`, `m`, `o`, `v`, `l`, `p`. Doors, stairs and the bed trigger retain their coordinates. All codes have atlas renderers. The new reachability test checks every usable station and both floors' exits; the two bed codes represent one object. Browser checks covered the desk, dining table, return positions and stairs in both directions.
+
+Trail scenery now tracks accumulated measured distance instead of a repeating timer. No distance means no travel, including when GPS is enabled. Foreground details and inspectable trail markers use a separate travel depth; markers reveal regional observations without awarding progress. The player faces along the trail. Reduced motion snaps scenery to the new distance. A disposable development input of 0.05 miles moved the scene and marker; later paused scenery pixels matched exactly. No real fitness session was created.
+
+Battle platforms use twelve original transparent terrain patches, selected with the same biome index as the trail and clearing. Rill maps to coastal sand and Gale to open meadow. The gym uses a training mat.
+
+![Coastal battle](battle-coast.jpg)
+![Trail before distance](trail-before.jpg)
+![Trail after distance](trail.jpg)
+
+All 22 repository test commands passed individually, including the new placement/travel suite. Native sensor cadence and performance still need a phone.
