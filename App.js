@@ -22,7 +22,7 @@ export default function App() {
     return <LoadingScreen />;
   }
 
-  if (__DEV__ && typeof window !== 'undefined') {
+  if (__DEV__ && typeof window !== 'undefined' && typeof window.location?.search === 'string') {
     const preview = new URLSearchParams(window.location.search).get('visualPreview');
     if (['hub', 'gym', 'rest', 'route', 'battle', 'party', 'title'].includes(preview)) {
       const VisualPreview = require('./src/dev/VisualPreview').default;

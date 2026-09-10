@@ -4,6 +4,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Image, View } from 'react-native';
 import TileImage, { hasTile } from './TileImage';
+import SceneProps from './SceneProps';
 import { WORLD_BACKGROUNDS } from '../data/worldArt';
 import { ROOM_LIGHT } from '../data/tileAtlas';
 import PixelSprite from './PixelSprite';
@@ -504,6 +505,7 @@ function Walker({ walker, s }) {
       pointerEvents="none"
       style={{
         position: 'absolute',
+        zIndex: (walker.y + 1) * 10 + 1,
         width: s,
         height: s,
         alignItems: 'center',
@@ -581,6 +583,7 @@ function Follower({ player, map, s }) {
       pointerEvents="none"
       style={{
         position: 'absolute',
+        zIndex: (at.y + 1) * 10,
         width: s,
         height: s,
         alignItems: 'center',
@@ -727,6 +730,12 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
       ]}
     >
       {background ? <Image source={background} resizeMode="stretch" fadeDuration={0} style={{ position: 'absolute', left: 0, top: 0, width: worldW, height: worldH }} /> : rows}
+      {background ? <SceneProps map={map} s={s} /> : null}
+      {background ? map.grid.flatMap((row, y) => [...row].map((code, x) => code === 'C' || code === 'A' ? (
+        <View key={`person-${x}-${y}`} style={{ position: 'absolute', left: x * s, top: y * s, zIndex: (y + 1) * 10 }}>
+          <StandingSprite spriteKey={code === 'A' ? rowanSprite('down', 0) : coachSprite('down', 0)} s={s} />
+        </View>
+      ) : null)) : null}
       {/* Room lighting. Every other shading cue is baked per tile and so
           repeats with the field; this one image describes the whole space —
           open in the middle, sitting back at the edges. Drawn under the player
@@ -745,6 +754,7 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
       <Animated.View
         style={{
           position: 'absolute',
+          zIndex: (player.y + 1) * 10 + 1,
           width: s,
           height: s,
           alignItems: 'center',

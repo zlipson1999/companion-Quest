@@ -367,17 +367,17 @@ are grown, never knotted.
   | Rill Crossing | 12 | 220 | 20 | Brinegnash | Tide Pin |
   | Ember Grade | 18 | 320 | 24 | Cindergrind | Ember Pin |
 
-  Each trail is a different place: Maple trees and grass; Cairn packed earth
-  (`tile_gym_platform`); Gale open sky; Canopy shade on `tile_gym_turf`;
-  Rill water margins; Ember warm mats (`tile_gym_mats`). BattleStage tones
-  match. The Index silhouettes locked-trail creatures. Status lists Quest
+  Each trail is a different place: forest, earth, open grassland, shade,
+  water margins and warm uplands. `environmentArt.js` maps scene tones to
+  twelve continuous landscape families; matching encounter clearings
+  keep trail and BattleStage biomes consistent. The Index silhouettes locked-trail creatures. Status lists Quest
   Pins. Original terms only: trail, Warden, Quest Pin. `creatures.js` does
   not import `routes.js`.
 - RouteScreen used to carry a second mode for the cardio deck, rendered as
   the outdoor trail with its trees switched off; the deck lives in the gym
   now (§5.7).
-- The trail visual is a deterministic scrolling tile field (`trailRow` per
-  trail); it scrolls only while distance is actually arriving.
+- The trail visual is a continuous landscape panel with blended repeat
+  boundaries; it scrolls only while distance is actually arriving and respects reduced motion.
 - **Step sources, in priority order** (see docs/STEP_COUNTING.md):
   1. OS pedometer (`Pedometer.watchStepCount`) — counts with the screen off;
      needs Physical activity / Motion permission; NOT always reachable inside
@@ -787,12 +787,10 @@ milestone count) → `toBattle` flash → BattleScreen.
   flash + damage pop 140 → counter lunge 650 → counter flinch/pop 790 → faint
   (KO) at 430 after its flinch. Entry: wild slides in from +90 px right,
   companion from −110 left, staggered 160. All timers cleared on unmount.
-- **Stage**: real zoomed grass/path tiles (3× overworld scale) under the
-  shared `HorizonSky` painter (`src/data/sceneSky.js` — zenith/sky/haze
-  scanlines + a haze feather on the join, not a flat hex and a 4px line);
-  horizon at 0.16 so BOTH combatants stand on ground. Platforms are
-  stacked-rect discs with lit top / shaded underside. The trail and the
-  stage share one tone table so they cannot drift.
+- **Stage**: continuous biome-specific encounter clearings with soft contact
+  shadows beneath independent combatants. The gym uses its architectural floor.
+  Battle controls scroll within a compact lower panel; combatant animation and
+  the shared scene-tone mapping remain intact.
 - Defeat → `LOSE_BATTLE`, hub. Swap preserves per-member HP. Evolution beat:
   white strobe, sprite morph, EVOLVE action.
 
@@ -1003,7 +1001,7 @@ Kinship Knot.
   background; the invisible collision grid still owns doors and interactions.
   A following camera keeps characters readable, and MAP shows the entire map.
   The house doorstep is column 3; the pond and bench collision follow the art.
-  Interiors and routes still use the atlas described below.
+  Home and gym use continuous architectural floors with independently layered furniture in `SceneProps`. Trails and battles use biome-specific landscape panels in `EnvironmentLandscape`; the old atlas remains a fallback for other art.
 - **Tiles and props do not live in `sprites.js` any more.** They are packed
   into `assets/tiles/tile-atlas.png` with a frame table in `data/tileAtlas.js`
   (422 cells) and drawn by `TileImage`, which crops the atlas. Every cell is

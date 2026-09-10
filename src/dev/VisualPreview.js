@@ -16,7 +16,7 @@ export default function VisualPreview({ route }) {
     settings: { ...FRESH.settings, muted: true, bgmMuted: true },
     meta: { ...FRESH.meta, homeTourDone: true, mapleSessionDone: true, sparDone: true, gymTourDone: true },
   });
-  return <GameContext.Provider value={{ state, dispatch, hydrated: true, saveError: null }}>
+  return <GameContext.Provider value={{ state, dispatch, hydrated: true, saveError: null, visualPreview: true }}>
     <Router initialRoute={route} />
   </GameContext.Provider>;
 }

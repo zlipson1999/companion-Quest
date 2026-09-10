@@ -3,10 +3,10 @@
 // bad-habit obstacles are cleared. Rotate changes the Circle's lead.
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, View } from 'react-native';
+import { Animated, Easing, ScrollView, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Screen, DualPane, Menu, DialogueBox, BattleStage, Platform, StatusPlate, PixelText, PixelSprite, PixelButton, GrowthCeremony, FieldCard } from '../components';
-import { palette, space } from '../theme';
+import { Screen, Menu, DialogueBox, BattleStage, Platform, StatusPlate, PixelText, PixelSprite, PixelButton, GrowthCeremony, FieldCard } from '../components';
+import { palette, space, screen } from '../theme';
 import { useGame, useCompanion, useParty } from '../state';
 import { levelFromXp } from '../state/leveling';
 import { useNav } from './navContext';
@@ -546,7 +546,7 @@ export default function BattleScreen({ params }) {
             tagColor={target.isCompanion ? palette.hpHigh : palette.danger}
             style={{ flex: 1, marginRight: space.lg }}
           />
-          <Animated.View style={{ alignItems: 'center', marginTop: 2, transform: [{ translateX: wildEnter }] }}>
+          <Animated.View style={{ alignItems: 'center', marginTop: 120, transform: [{ translateX: wildEnter }] }}>
             {params.warden && params.trainer ? (
               <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
                 {/* No palette prop. Each person sprite carries its own, and
@@ -560,7 +560,7 @@ export default function BattleScreen({ params }) {
                 <PixelSprite
                   spriteKey={wild.sprite}
                   palette={wild.palette}
-                  size={84}
+                  size={120}
                   bob={!wildFaint}
                   hitCount={wildHit}
                   lungeCount={wildLunge}
@@ -572,7 +572,7 @@ export default function BattleScreen({ params }) {
               <PixelSprite
                 spriteKey={wild.sprite}
                 palette={wild.palette}
-                size={84}
+                size={120}
                 bob={!wildFaint}
                 hitCount={wildHit}
                 lungeCount={wildLunge}
@@ -591,7 +591,7 @@ export default function BattleScreen({ params }) {
               <PixelSprite
                 spriteKey={companion.creature.sprite}
                 palette={companion.creature.palette}
-                size={96}
+                size={128}
                 bob={!companionFaint}
                 hitCount={companionHit}
                 lungeCount={companionLunge}
@@ -622,8 +622,8 @@ export default function BattleScreen({ params }) {
   if (phase === 'menu') {
     const bondDisabled = knots <= 0;
     bottom = (
-      <View style={{ flex: 1, padding: space.md }}>
-        <PixelText size="tiny" color={palette.windowTextDim} style={{ marginBottom: 6 }}>
+      <View style={{ padding: space.md }}>
+        <PixelText size="tiny" color={palette.windowFill} style={{ marginBottom: 6 }}>
           Choose a move — then do it for real!
         </PixelText>
         <Menu
@@ -654,8 +654,8 @@ export default function BattleScreen({ params }) {
     );
   } else if (phase === 'items') {
     bottom = (
-      <View style={{ flex: 1, padding: space.md }}>
-        <PixelText size="tiny" color={palette.windowTextDim} style={{ marginBottom: 6 }}>
+      <View style={{ padding: space.md }}>
+        <PixelText size="tiny" color={palette.windowFill} style={{ marginBottom: 6 }}>
           Share something from the bag — the moment costs your turn.
         </PixelText>
         <Menu
@@ -677,8 +677,8 @@ export default function BattleScreen({ params }) {
     );
   } else if (phase === 'swap') {
     bottom = (
-      <View style={{ flex: 1, padding: space.md }}>
-        <PixelText size="tiny" color={palette.windowTextDim} style={{ marginBottom: 6 }}>
+      <View style={{ padding: space.md }}>
+        <PixelText size="tiny" color={palette.windowFill} style={{ marginBottom: 6 }}>
           Who takes the lead?
         </PixelText>
         <Menu
@@ -696,7 +696,7 @@ export default function BattleScreen({ params }) {
     );
   } else if (phase === 'doing') {
     bottom = (
-      <View style={{ flex: 1, padding: space.md, justifyContent: 'flex-end' }}>
+      <View style={{ padding: space.md, justifyContent: 'flex-end' }}>
         <FieldCard tone="paper" pad={14} style={{ marginBottom: space.sm }}>
           <PixelText size="body" color={palette.windowText} style={{ lineHeight: 22 }}>
             {movePrompt(move)}
@@ -715,7 +715,7 @@ export default function BattleScreen({ params }) {
     );
   } else if (phase === 'morph') {
     bottom = (
-      <View style={{ flex: 1, padding: space.md, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ padding: space.md, justifyContent: 'center', alignItems: 'center' }}>
         {ceremony ? (
           <GrowthCeremony
             fromCreature={ceremony.from}
@@ -736,7 +736,7 @@ export default function BattleScreen({ params }) {
     );
   } else {
     bottom = (
-      <View style={{ flex: 1, justifyContent: 'flex-end', padding: space.md }}>
+      <View style={{ padding: space.md }}>
         <DialogueBox lines={lines} onComplete={handleSayComplete} />
       </View>
     );
@@ -744,7 +744,10 @@ export default function BattleScreen({ params }) {
 
   return (
     <Screen padTop={false}>
-      <DualPane top={top} bottom={bottom} topFlex={1.1} bottomFlex={1} />
+      <View style={{ flex: 1, minHeight: 240 }}>{top}</View>
+      <ScrollView style={{ flexGrow: 0, height: Math.min(screen.height * 0.48, phase === 'menu' ? 260 : phase === 'items' ? 340 : phase === 'morph' ? 400 : phase === 'doing' ? 240 : 180), backgroundColor: palette.bgAlt, borderTopWidth: 3, borderTopColor: palette.windowFrameLight }}>
+        {bottom}
+      </ScrollView>
     </Screen>
   );
 }

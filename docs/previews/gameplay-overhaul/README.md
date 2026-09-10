@@ -1,30 +1,40 @@
-# Seamless-town quality correction
+# Connected-world gameplay overhaul
 
-The rejected tile recoloring has been removed. Sunkist Lane now renders a single continuous background above an invisible collision grid, with independent player and companion sprites, a follow camera and map overview. The house door/return point, pond boundary, post box and bench follow the new scene.
+Sunkist Lane, the home and Quest Fitness now use continuous landscapes or architectural floors. Furniture and gym equipment are independently positioned from the interaction map, with contact shadows and depth ordering. The collision grid remains invisible. Trails and encounters use twelve matching biome families with connected ground. The trail HUD and battle controls leave more room for the scene.
 
-The authored sprite renderer now draws 282 traced sprites as complete PNG sheets. These retain the existing art palettes, aspect ratios and idle frames; this is a rendering correction, not a claim that 282 new characters were designed. The generator is called by make_sprites.py. Other art retains the existing renderer.
+The sprite renderer draws 282 existing traced sprites as complete PNG sheets, preserving authored palettes, aspect ratios and idle frames. This improves rendering; it does not claim 282 new character designs.
 
-## Actual gameplay capture
+## Actual in-game screenshots
 
-![Sunkist Lane](town-seamless.jpg)
+Captured from real Expo web screens using an isolated development fixture. The fixture and preview save namespace are excluded from the production web bundle.
 
-Captured from the real Expo web screens with a disposable development-only save. The visualPreview query is gated by __DEV__ and excluded from release bundles. No real participant save or fitness record is changed by the fixture.
+![Town](town-seamless.jpg)
+![Gym](gym.jpg)
+![Downstairs](home.jpg)
+![Bedroom](bedroom.jpg)
+![Trail](trail.jpg)
+![Battle](battle.jpg)
 
 ## Verification
 
-- Walked into the repositioned house door and back to the matching doorstep.
-- Bumped the pond-side bench, reached Stillness and returned to the lane.
-- Lint: 0 errors, 11 existing hook warnings.
-- Documentation/art and all client rule suites passed in npm test. The server auth/friends portion remains blocked: better-sqlite3 installation fails during node-gyp header extraction with TAR_ENTRY_ERROR EINVAL: invalid argument, fchown.
-- make_sprites.py and make_audio.py reproduce their previously tracked output without differences.
-- Android Bundled 6469ms index.js (1161 modules).
-- Web Bundled 2265ms index.js (902 modules).
-- No physical-phone pedometer/GPS, native touch, or sign-in validation performed.
+- Walked into the house and returned to its matching doorstep; checked the pond-side bench and Stillness return.
+- Traversed the stairs in both directions and entered/exited a treadmill. No movement correctly produced zero credits and nothing to save.
+- Checked trail save-and-return and battle move selection/cancel.
+- All 21 commands from the repository test script passed individually, including lint, docs, art, client rules, server auth and friends. Lint has 11 existing hook warnings, zero errors.
+- Sprite/audio regeneration reproduced tracked output.
+- Final Android export: 1171 modules. Final web export: 912 modules. Both succeeded.
+- Physical-phone pedometer/GPS, native touch, performance and sign-in remain unverified.
 
-## Remaining overhaul
+## Asset provenance and maintenance
 
-Interiors, routes, battles and new character designs are not finished. They still require authored scene work and equivalent collision/interaction checks. This draft establishes the corrected town treatment; it does not label the entire graphics overhaul complete.
+Original raster assets were created with the built-in image generation tool. Direction: richly shaded late-1990s handheld RPG art, consistent top-down perspective, connected materials without checkerboard ground, dimensional objects and contact shadows. No franchise characters or UI are baked into scenes.
 
-## Town asset provenance
+- `sunkist-lane-v2.png`: continuous grass and sandy paths, red cottage, blue fitness hall, pond, bench, garden and tree border, using the previous gameplay layout as a spatial reference.
+- `home-floor-v2.png`: empty warm plank floor, cream perimeter walls and two north windows; furniture remains independent.
+- `quest-fitness-floor-v2.png`: empty rubber floor, wooden north lifting deck, lower turf and mat areas, mirrors and perimeter walls.
+- `home-furniture-v2.png`: transparent 4-by-5 atlas of kitchen, living-room, bedroom and stair furniture.
+- `gym-equipment-v2.png`: transparent 4-by-5 atlas of gym machines, racks, weights and service furniture.
+- `trail-environments-v2.png`: 3-by-4 atlas of continuous forest, earth, grassland, shade, coast, marsh, snow, cave, ember, autumn, storm and moonlit trails.
+- `battle-environments-v2.png`: corresponding 3-by-4 encounter clearings, with open space for separate combatant sprites.
 
-assets/worlds/sunkist-lane-v2.png was created with the built-in image generation tool using the previous in-game town capture as a spatial reference. Direction: an original top-down late-1990s handheld RPG town, continuous grass and connected sandy paths without checkerboard tiles, dimensional red cottage and blue fitness hall, pond and bench, garden, tree border, consistent material shading and contact shadows. No UI, people or creatures are baked into the background. The collision map was adjusted after inspecting the resulting art.
+`SceneProps` crops original RGBA atlases using source alpha bounds in `propBounds.js`; pixels are not rewritten. `worldArt.js` selects room floors. `environmentArt.js` selects biome panels. Existing interaction codes remain authoritative. The old tile atlas remains available for fallback art.
