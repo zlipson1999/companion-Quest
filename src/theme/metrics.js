@@ -1,8 +1,8 @@
-import { Dimensions } from 'react-native';
+import { Dimensions, Platform } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
-export const screen = { width, height };
+export const screen = { width: Platform.OS === 'web' ? Math.min(width, 520) : width, height };
 
 // Overworld tile size — chunky on purpose.
 export const TILE = Math.floor(Math.min(width, 420) / 11);

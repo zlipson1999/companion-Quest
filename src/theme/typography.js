@@ -4,8 +4,8 @@
 export const FONT_FAMILY = 'PressStart2P_400Regular';
 
 export const fonts = {
-  tiny: { fontFamily: FONT_FAMILY, fontSize: 7, lineHeight: 12 },
-  small: { fontFamily: FONT_FAMILY, fontSize: 9, lineHeight: 16 },
+  tiny: { fontFamily: FONT_FAMILY, fontSize: 9, lineHeight: 14 },
+  small: { fontFamily: FONT_FAMILY, fontSize: 11, lineHeight: 18 },
   body: { fontFamily: FONT_FAMILY, fontSize: 11, lineHeight: 19 },
   label: { fontFamily: FONT_FAMILY, fontSize: 12, lineHeight: 20 },
   heading: { fontFamily: FONT_FAMILY, fontSize: 16, lineHeight: 26 },

@@ -19,14 +19,14 @@ function Pad({ dir, onMove }) {
         onMove(dir);
       }}
       style={({ pressed }) => ({
-        width: 46,
-        height: 46,
-        backgroundColor: pressed ? palette.primaryDark : palette.primary,
+        width: 44,
+        height: 44,
+        backgroundColor: pressed ? '#527b83' : '#355761',
         borderWidth: 3,
-        borderColor: palette.ink,
+        borderColor: '#152d36',
         alignItems: 'center',
         justifyContent: 'center',
-        margin: 1,
+        margin: 0,
       })}
     >
       <Triangle direction={dir} size={9} color={palette.white} />
@@ -35,7 +35,7 @@ function Pad({ dir, onMove }) {
 }
 
 export default function Dpad({ onMove }) {
-  const spacer = <View style={{ width: 46, height: 46, margin: 1 }} />;
+  const spacer = <View style={{ width: 44, height: 44, margin: 0 }} />;
   return (
     <View style={{ alignItems: 'center' }}>
       <View style={{ flexDirection: 'row' }}>

@@ -34,7 +34,7 @@ const FLOORS = {
 };
 
 // Same doorstep HomeIntro uses so walking out is the reverse of walking in.
-const LANE_FROM_HOUSE = { x: 2, y: 6, facing: 'down' };
+const LANE_FROM_HOUSE = { x: 3, y: 6, facing: 'down' };
 
 export default function HomeRestScreen() {
   const { state, dispatch } = useGame();

@@ -307,7 +307,7 @@ export default function RouteScreen({ params = {} }) {
           {dist.pedDiag.error ? `\nerror: ${dist.pedDiag.error}` : ''}
         </PixelText>
       ) : null}
-      <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 12 }}>
+      <PixelText size="tiny" color={tokens.textDim} style={{ marginTop: 6, lineHeight: 12 }}>
         Until it works, these buttons stand in for real steps.
       </PixelText>
       <View style={{ flexDirection: 'row', marginTop: space.sm }}>
@@ -331,7 +331,7 @@ export default function RouteScreen({ params = {} }) {
           This phone reports motion at {dist.motionHz} Hz, which is too slow to catch every footfall — your real step count is higher than this. A development build fixes it properly; see docs/STEP_COUNTING.md.
         </PixelText>
       ) : null}
-      <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 12 }}>
+      <PixelText size="tiny" color={tokens.textDim} style={{ marginTop: 4, lineHeight: 12 }}>
         {dist.source === 'pedometer'
           ? 'Your phone counts steps even with the screen off. Tap Start Run for GPS distance.'
           : 'No step counter on this build, so the app is reading motion itself — that only works while this screen is open. Start Run uses GPS instead and works better outdoors.'}

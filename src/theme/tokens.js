@@ -12,9 +12,9 @@
 
 export const ramps = {
   // Text, outlines, and the darkest structural values.
-  ink: ['#171923', '#292B38', '#454858'],
+  ink: ['#172d36', '#294951', '#52747b'],
   // Paper stock: the journal surfaces most information sits on.
-  paper: ['#FFF4D6', '#E8D7B3', '#C2A982'],
+  paper: ['#fff8df', '#ebdfba', '#b5b58c'],
   // Growth, companions, and the outdoors.
   grove: ['#173F35', '#276451', '#4F8A62', '#91BD69'],
   // Wood, leather, path, and signage.
@@ -66,7 +66,7 @@ export const tokens = {
 export const scale = {
   unit: 4,
   gap: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 },
-  radius: { small: 3, panel: 6, ceremony: 10 },
+  radius: { small: 0, panel: 2, ceremony: 4 },
   touchMin: 44,
   // Panels get one hard offset shadow, not a diffuse web blur.
   shadowOffset: 3,

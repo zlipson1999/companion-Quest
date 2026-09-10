@@ -4795,4 +4795,6 @@ if __name__ == '__main__':
     emit_room_light()
     emit_sky_veil()
     emit_js()
+    import subprocess
+    subprocess.run(['node', '--import', './tools/register-esm.mjs', 'tools/render_sprite_bitmaps.mjs'], cwd=ROOT, check=True)
     print('Done.')

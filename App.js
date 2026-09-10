@@ -22,6 +22,14 @@ export default function App() {
     return <LoadingScreen />;
   }
 
+  if (__DEV__ && typeof window !== 'undefined') {
+    const preview = new URLSearchParams(window.location.search).get('visualPreview');
+    if (['hub', 'gym', 'rest', 'route', 'battle', 'party', 'title'].includes(preview)) {
+      const VisualPreview = require('./src/dev/VisualPreview').default;
+      return <VisualPreview route={preview} />;
+    }
+  }
+
   return (
     <GameProvider>
       <View style={{ flex: 1, backgroundColor: palette.bg }}>

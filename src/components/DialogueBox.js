@@ -83,7 +83,7 @@ export default function DialogueBox({ lines, onComplete, speed = 30, style }) {
   const speaker = line.speaker && line.speaker !== 'Narration' ? line.speaker : null;
 
   return (
-    <Pressable onPress={handlePress} style={style}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Continue dialogue" onPress={handlePress} style={style}>
       {/* One panel language.
           This used to be a `Window`: cream fill, purple frame, bevelled
           highlights — chrome that appeared nowhere else, so the game showed

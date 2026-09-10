@@ -30,7 +30,7 @@ const AREAS = {
 };
 
 // Just south of the house door on HUB, facing the lane.
-const LANE_FROM_HOUSE = { x: 2, y: 6, facing: 'down' };
+const LANE_FROM_HOUSE = { x: 3, y: 6, facing: 'down' };
 
 function persistArea(areaId, spot) {
   rememberSpot('intro:area', areaId);

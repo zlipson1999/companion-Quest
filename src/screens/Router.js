@@ -93,7 +93,7 @@ const PLACES = new Set(['hub', 'gym', 'rest', 'route', 'title', 'homeIntro']);
 
 // Only places get named on a back button. Anywhere else it is just "Back",
 // because "Back to the movement picker" is worse than saying nothing.
-export default function Router() {
+export default function Router({ initialRoute = 'title' }) {
   const { state, hydrated, saveError } = useGame();
   const [route, setRoute] = useState(null);
   const [stack, setStack] = useState([]);
@@ -103,9 +103,9 @@ export default function Router() {
     if (hydrated && route === null) {
       setMuted(!!state.settings.muted);
       setBgmMuted(!!state.settings.bgmMuted);
-      setRoute({ name: 'title', params: {} });
+      setRoute({ name: initialRoute, params: {} });
     }
-  }, [hydrated, route, state.settings]);
+  }, [hydrated, route, state.settings, initialRoute]);
 
   useEffect(() => {
     if (!route) return;

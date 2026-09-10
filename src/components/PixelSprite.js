@@ -13,7 +13,7 @@
 // three it swamped the one pixel the drawing was worth.
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, PixelRatio } from 'react-native';
+import { Animated, Easing, Image, PixelRatio, Platform, View } from 'react-native';
 import PixelArt from './PixelArt';
 import { SPRITES } from '../data/sprites';
 import { idleFrame } from '../data/idleFrame';
@@ -21,6 +21,7 @@ import useReducedMotion from '../state/useReducedMotion';
 import { lodGrid } from '../data/spriteLod';
 import { paletteFor } from '../data/spritePalette';
 import { standinSprite } from '../data/spriteStandins';
+import { CREATURE_BITMAPS } from '../data/creatureBitmaps';
 import { ITEM_IMAGES } from '../data/itemImages';
 
 // One beat of the idle. Matches the translate's leg so the drawn squash and the
@@ -182,6 +183,22 @@ export default function PixelSprite({
           fadeDuration={0}
           style={{ width: size, height: size }}
         />
+      </Animated.View>
+    );
+  }
+
+  const creatureBitmap = CREATURE_BITMAPS[resolvedKey];
+  if (creatureBitmap) {
+    const height = size * creatureBitmap.aspect;
+    const imageStyle = { width: size, height: height * 2, position: 'absolute', left: 0, top: bob && squashed && !reduce ? -height : 0, ...(Platform.OS === 'web' ? { imageRendering: 'pixelated' } : {}) };
+    return (
+      <Animated.View {...a11y} style={[{ width: size, height }, ...motionStyle]}>
+        <View style={{ width: size, height, overflow: 'hidden' }}>
+          <Image source={creatureBitmap.source} resizeMode="stretch" fadeDuration={0} style={imageStyle} />
+          <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: size, height, overflow: 'hidden', opacity: flash }}>
+            <Image source={creatureBitmap.source} resizeMode="stretch" fadeDuration={0} style={[imageStyle, { tintColor: '#ffffff' }]} />
+          </Animated.View>
+        </View>
       </Animated.View>
     );
   }
