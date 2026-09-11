@@ -15,16 +15,21 @@ const CELLS = {
   J: 15, I: 15, x: 16, m: 17, Z: 18, r: 19,
 };
 
-function Equipment({ cell, width, height, home = false }) {
+function Equipment({ cell, width, height, home = false, stretch = false }) {
   const [x, y, w, h] = (home ? HOME_RECTS : GYM_RECTS)[cell];
-  const sx = width / w;
-  const sy = height / h;
-  return <View pointerEvents="none" style={{ width, height, overflow: 'hidden' }}>
-    <Image source={home ? HOME_ATLAS : GYM_ATLAS} fadeDuration={0} resizeMode="stretch" style={{
-      position: 'absolute', left: -x * sx, top: -y * sy,
-      width: ATLAS_WIDTH * sx, height: ATLAS_HEIGHT * sy,
-      ...(Platform.OS === 'web' ? { imageRendering: 'pixelated' } : {}),
-    }} />
+  const scale = Math.min(width / w, height / h);
+  const sx = stretch ? width / w : scale;
+  const sy = stretch ? height / h : scale;
+  // Preserve the authored silhouette; the layout box is a footprint limit,
+  // not permission to squeeze round tables or stretch machine frames.
+  return <View pointerEvents="none" style={{ width, height, alignItems: 'center', justifyContent: 'flex-end' }}>
+    <View style={{ width: w * sx, height: h * sy, overflow: 'hidden' }}>
+      <Image source={home ? HOME_ATLAS : GYM_ATLAS} fadeDuration={0} resizeMode="stretch" style={{
+        position: 'absolute', left: -x * sx, top: -y * sy,
+        width: ATLAS_WIDTH * sx, height: ATLAS_HEIGHT * sy,
+        ...(Platform.OS === 'web' ? { imageRendering: 'pixelated' } : {}),
+      }} />
+    </View>
   </View>;
 }
 
@@ -58,7 +63,7 @@ export default function SceneProps({ map, s }) {
     const width = s * Math.max(span, wide);
     const height = s * (span > 1 ? 1.45 : depth > 1 ? depth : code === 'R' || code === 'U' ? 1.8 : 1.2);
     objects.push(<View key={`${x},${y}`} style={{ position: 'absolute', zIndex: (y + depth) * 10, left: (x + span / 2) * s - width / 2, top: (y + depth) * s - height }}>
-      <Equipment cell={cell} width={width} height={height} />
+      <Equipment cell={cell} width={width} height={height} stretch={span > 1} />
     </View>);
   }));
   return <>{objects}</>;
@@ -70,7 +75,7 @@ function HomeProps({ map, s }) {
   const objects = [];
   (map.zones || []).filter(zone => zone.field === 'tile_home_rug').forEach((zone, i) => {
     objects.push(<View key={`rug-${i}`} style={{ position: 'absolute', left: zone.x0 * s, top: zone.y0 * s }}>
-      <Equipment home cell={18} width={(zone.x1 - zone.x0 + 1) * s} height={(zone.y1 - zone.y0 + 1) * s} />
+      <Equipment home stretch cell={18} width={(zone.x1 - zone.x0 + 1) * s} height={(zone.y1 - zone.y0 + 1) * s} />
     </View>);
   });
   map.grid.forEach((row, y) => [...row].forEach((code, x) => {

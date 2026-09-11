@@ -54,3 +54,24 @@ Battle platforms use twelve original transparent terrain patches, selected with 
 ![Trail after distance](trail.jpg)
 
 All 22 repository test commands passed individually, including the new placement/travel suite. Native sensor cadence and performance still need a phone.
+
+## September 11: proportions and companion arrivals
+
+Individual furniture and equipment now retain their source proportions within their existing footprints, anchored at the floor. Continuous locker/counter runs and rugs still fill their designated areas. No interaction or collision code moved.
+
+Companions choose a free neighboring tile when the space behind the player is blocked. Room identity includes dimensions so the two home floors reset the follower correctly, while NPC-filtered gym maps do not reset it on every step. A small stationary contact shadow grounds the breathing companion.
+
+Fresh captures from the actual Expo web development fixture:
+
+![Home proportions and visible companion](home-proportions.jpg)
+![Gym proportions](gym-proportions.jpg)
+![Companion arriving upstairs](bedroom-arrival.jpg)
+
+Verification for this follow-up:
+- All client suites in `npm test`, art validation, and server syntax passed. Final follower suite: `10 passed, 0 failed`, covering 2,232 arrival placements.
+- Final lint: `0 errors, 11 warnings` (existing hook warnings). Documentation: all 42 figures agree.
+- Sprite and audio regeneration left tracked generated assets unchanged.
+- Walked from the home entrance to the bedroom and back downstairs using the actual movement controls. Checked the follower remained visible after turning in the gym.
+- Final exports: `Web Bundled 2345ms index.js (915 modules)`, `Android Bundled 6652ms index.js (1167 modules)`, `iOS Bundled 10820ms index.js (1175 modules)`.
+- Auth/friends integration tests could not run: the fresh workspace could not build the pinned better-sqlite3 native dependency under Node 24 (header extraction failed with `EINVAL: invalid argument, fchown`). This is not a passing full `npm test` run.
+- The browser also reported an existing QR-worker CDN import failure; QR scanning was not verified. Native sensors, touch/performance and sign-in remain unverified.

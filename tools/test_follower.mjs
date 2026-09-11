@@ -33,6 +33,7 @@ let inWall = [];
 let offMap = [];
 let tooFar = [];
 let checked = 0;
+const avoidableOverlap = [];
 
 for (const map of maps) {
   for (let y = 0; y < map.rows; y += 1) {
@@ -41,12 +42,13 @@ for (const map of maps) {
       for (const facing of FACINGS) {
         const spot = restingSpot(map, x, y, facing);
         checked += 1;
+        if (spot.x === x && spot.y === y && [[0,1],[0,-1],[1,0],[-1,0]].some(([dx,dy]) => isWalkable(map,x+dx,y+dy))) avoidableOverlap.push(`${map.id} ${x},${y} ${facing}`);
         if (!isWalkable(map, spot.x, spot.y)) inWall.push(`${map.id} ${x},${y} ${facing}`);
         if (spot.x < 0 || spot.y < 0 || spot.x >= map.cols || spot.y >= map.rows) {
           offMap.push(`${map.id} ${x},${y} ${facing}`);
         }
         // It appears WITH you, so it can only ever be the player's tile or the
-        // one behind it. Anything further is a teleport across the room.
+        // an adjacent tile. Anything further is a teleport across the room.
         const dist = Math.abs(spot.x - x) + Math.abs(spot.y - y);
         if (dist > 1) tooFar.push(`${map.id} ${x},${y} ${facing} -> ${spot.x},${spot.y}`);
       }
@@ -58,6 +60,8 @@ ok('the companion never arrives inside a wall', inWall.length === 0,
   inWall.slice(0, 4).join('; ') || `${checked} placements`);
 ok('the companion never arrives off the map', offMap.length === 0, offMap.slice(0, 4).join('; '));
 ok('it arrives beside you, never across the room', tooFar.length === 0, tooFar.slice(0, 4).join('; '));
+
+ok('doorway arrivals never overlap when an adjacent tile is free', avoidableOverlap.length === 0, avoidableOverlap.slice(0,4).join('; '));
 
 // ---- it really does stand behind you where it can ------------------------
 

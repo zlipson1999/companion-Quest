@@ -547,15 +547,18 @@ function Follower({ player, map, s }) {
   // Where the player was one step ago.
   const [at, setAt] = useState(() => restingSpot(map, player.x, player.y, player.facing));
   const prev = useRef({ x: player.x, y: player.y });
-  const mapId = useRef(map.id);
+  // Both home floors share an id but have different dimensions. A room key
+  // also stays stable when the gym rebuilds its NPC-filtered map on a step.
+  const roomKey = `${map.id}:${map.cols}:${map.rows}`;
+  const previousRoom = useRef(roomKey);
   const start = useRef(restingSpot(map, player.x, player.y, player.facing)).current;
   const pos = useRef(new Animated.ValueXY({ x: start.x * s, y: start.y * s })).current;
 
   useEffect(() => {
-    if (mapId.current !== map.id) {
+    if (previousRoom.current !== roomKey) {
       // A new room. The footprint it was standing in is in another building, so
       // it arrives with the player instead of walking there.
-      mapId.current = map.id;
+      previousRoom.current = roomKey;
       prev.current = { x: player.x, y: player.y };
       const spot = restingSpot(map, player.x, player.y, player.facing);
       setAt(spot);
@@ -567,7 +570,7 @@ function Follower({ player, map, s }) {
       setAt(before);
       prev.current = { x: player.x, y: player.y };
     }
-  }, [player.x, player.y, player.facing, map, s, pos]);
+  }, [player.x, player.y, player.facing, map, roomKey, s, pos]);
 
   useEffect(() => {
     Animated.timing(pos, {
@@ -591,6 +594,7 @@ function Follower({ player, map, s }) {
         transform: [{ translateX: pos.x }, { translateY: pos.y }],
       }}
     >
+      <View style={{ position: 'absolute', bottom: 0, width: s * 0.55, height: s * 0.15, borderRadius: s, backgroundColor: '#183b32', opacity: 0.24 }} />
       <PixelSprite
         spriteKey={spriteKey}
         palette={companion.creature.palette}

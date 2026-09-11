@@ -1105,11 +1105,12 @@ Kinship Knot.
   walked, and a creature exactly one step behind is what reads as following.
   Arrival is the case with a real decision in it — on a map change the footprint
   it was standing in is in another building, so it appears rather than walks,
-  and `restingSpot()` puts it one tile back along the player's facing. On the
+  and a room key including dimensions distinguishes the two home floors.
+  `restingSpot()` puts it one tile back along the player's facing. On the
   player's own tile it would render as one sprite drawn over another, which
   reads as a bug rather than as company; where the space behind is a wall it
-  falls back to overlapping, which looks worse than it is wrong, unlike standing
-  inside masonry. Drawn at **1.85** tiles, the same figure as the player.
+  tries the two adjacent sides, then the front. It overlaps only if every
+  adjacent tile is blocked. Drawn at **1.85** tiles, the same figure as the player.
   It began at 1.35, reasoning that creature grids are 96×96 with the subject
   filling about four fifths where a person's 32×52 is filled nearly edge to
   edge, so the same number is a much bigger creature. That arithmetic is right
@@ -1121,7 +1122,7 @@ Kinship Knot.
   one to fake a profile is exactly what `walk_set` did to the player and why the
   player had to be redrawn. `tools/test_follower.mjs` runs the placement rule
   over every walkable tile of all four hand-built maps at all four facings —
-  2,224 placements, none inside a wall, none off the map, none further than one
+  2,232 placements, none inside a wall, none off the map, none further than one
   tile, and never on top of the player where there is room to step back.
 - **Traced art owns its palette** (`data/spritePalette.js`). A `palette` prop
   used to win over the sprite's own, unconditionally. That prop exists for
