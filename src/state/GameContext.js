@@ -140,7 +140,7 @@ function seenDex(dex, targetId) {
   return { ...dex, [targetId]: dex[targetId] || 'seen' };
 }
 
-function reducer(state, action) {
+export function reducer(state, action) {
   switch (action.type) {
     case 'HYDRATE':
       return hydrateSave(action.payload);

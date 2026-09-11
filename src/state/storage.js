@@ -3,8 +3,12 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SAVE_KEY = 'companionquest:save:v1';
-const CARDIO_DRAFT_KEY = 'companionquest:cardio-draft:v1';
+// Screenshot fixtures may exercise direct save points and cardio drafts.
+// Keep every such write in a separate development-only namespace.
+const preview = typeof __DEV__ !== 'undefined' && __DEV__ && typeof window !== 'undefined' && typeof window.location?.search === 'string'
+  && ['hub', 'gym', 'rest', 'route', 'battle', 'party', 'title'].includes(new URLSearchParams(window.location.search).get('visualPreview'));
+const SAVE_KEY = preview ? 'companionquest:preview:save:v1' : 'companionquest:save:v1';
+const CARDIO_DRAFT_KEY = preview ? 'companionquest:preview:cardio-draft:v1' : 'companionquest:cardio-draft:v1';
 
 export async function loadGame() {
   try {

@@ -5,9 +5,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Screen, ProgressBar, PixelText, PixelSprite, PixelButton, TrailAction, CardioConsole, Tile, MenuButton, TOP_INSET, HorizonSky, FieldCard } from '../components';
+import { Screen, ProgressBar, PixelText, PixelSprite, PixelButton, TrailAction, CardioConsole, MenuButton, TOP_INSET, FieldCard } from '../components';
 import { palette, space, screen, tokens } from '../theme';
-import { sceneTone } from '../data/sceneSky';
+import EnvironmentLandscape from '../components/EnvironmentLandscape';
 import { useGame, useCompanion } from '../state';
 import { useNav, PLACE_LABELS } from './navContext';
 import { playSfx } from '../audio';
@@ -22,7 +22,6 @@ import {
   isRegionalWarden,
   trailOf,
   trailReady,
-  trailRow,
   wardenBattle,
 } from '../data/routes';
 import { getCreature } from '../data/creatures';
@@ -34,63 +33,12 @@ import { playerSprite } from '../data/characters';
 import { routeCheer, pickupLine } from '../coach';
 import useCardio from './useCardio';
 import { forgetSpot, recallSpot, rememberSpot } from './placeMemory';
-import { DEFAULT_BODY_WEIGHT_LB } from '../state/cardioMaths';
+import { DEFAULT_BODY_WEIGHT_LB, formatClock } from '../state/cardioMaths';
 import { saveGame } from '../state/storage';
 
-const ROUTE_TS = 22;
-
-function ScrollingScene({ width, height, moving, trailId }) {
-  const offset = useRef(new Animated.Value(0)).current;
+function ScrollingScene({ width, height, moving, trailId, distanceMiles, onInspect }) {
   const route = getRoute(trailId);
-  const scene = sceneTone(route.stageTone || trailId);
-  const skyH = Math.round(height * (route.horizon || 0.16));
-  const groundH = Math.max(ROUTE_TS * 4, height - skyH);
-  const cols = Math.ceil(width / ROUTE_TS);
-  const rows = Math.ceil(groundH / ROUTE_TS) + 1;
-  const [frame, setFrame] = useState(0);
-
-  useEffect(() => {
-    let loop;
-    if (moving) {
-      offset.setValue(0);
-      loop = Animated.loop(Animated.timing(offset, { toValue: 1, duration: 620, useNativeDriver: true }));
-      loop.start();
-    } else {
-      offset.setValue(0);
-    }
-    return () => loop && loop.stop();
-  }, [offset, moving]);
-
-  useEffect(() => {
-    const t = setInterval(() => setFrame((f) => f + 1), 620);
-    return () => clearInterval(t);
-  }, []);
-
-  const translate = offset.interpolate({ inputRange: [0, 1], outputRange: [0, ROUTE_TS] });
-  const sceneMap = useMemo(() => {
-    const grid = Array.from({ length: rows * 2 }, (_, r) => trailRow(trailId, r % rows, cols));
-    return { id: route.mapId, cols, rows: rows * 2, grid };
-  }, [rows, cols, trailId, route.mapId]);
-
-  const strip = useMemo(
-    () => sceneMap.grid.map((row, r) => (
-      <View key={r} style={{ flexDirection: 'row' }}>
-        {row.split('').map((code, x) => (
-          <Tile key={x} code={code} s={ROUTE_TS} frame={frame} x={x} y={r} map={sceneMap} />
-        ))}
-      </View>
-    )),
-    [sceneMap, frame]
-  );
-
-  return (
-    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden', backgroundColor: scene.ground }}>
-      <HorizonSky tone={route.stageTone || trailId} horizon={route.horizon || 0.16} />
-      <Animated.View style={{ position: 'absolute', top: skyH - ROUTE_TS, transform: [{ translateY: translate }] }}>
-        {strip}
-      </Animated.View>
-    </View>
-  );
+  return <EnvironmentLandscape width={width} height={height} moving={moving} distanceMiles={distanceMiles} onInspect={onInspect} tone={route.stageTone || trailId} />;
 }
 
 export default function RouteScreen({ params = {} }) {
@@ -184,7 +132,7 @@ export default function RouteScreen({ params = {} }) {
     onMilestone: (item) => setMessage(`Milestone! ${pickupLine(item.name)} ${routeCheer()}`),
   });
 
-  const running = moving || dist.running;
+  const running = moving; // GPS tracking being enabled is not proof of movement.
   const sessionMiles = Math.max(0, state.stats.distanceMi - session.current.miles);
   const sessionSteps = Math.max(0, state.stats.totalSteps - session.current.steps);
   const breakdown = useMemo(
@@ -285,7 +233,6 @@ export default function RouteScreen({ params = {} }) {
       breakdown={breakdown}
       bodyWeightLb={state.settings.bodyWeightLb || DEFAULT_BODY_WEIGHT_LB}
       moving={running}
-      onInject={dist.showInjector ? dist.injectSteps : null}
     >
       {dist.running ? <PixelText size="tiny" color={palette.hpHigh} style={{ marginTop: space.sm }}>● GPS RUN</PixelText> : null}
       <ProgressBar value={progress.miles} max={route.miles} color={palette.hpHigh} height={12} label={`${route.miles} mi for the ${gateTitle}`} showText={false} style={{ marginTop: space.sm }} />
@@ -307,7 +254,7 @@ export default function RouteScreen({ params = {} }) {
           {dist.pedDiag.error ? `\nerror: ${dist.pedDiag.error}` : ''}
         </PixelText>
       ) : null}
-      <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 6, lineHeight: 12 }}>
+      <PixelText size="tiny" color={tokens.textDim} style={{ marginTop: 6, lineHeight: 12 }}>
         Until it works, these buttons stand in for real steps.
       </PixelText>
       <View style={{ flexDirection: 'row', marginTop: space.sm }}>
@@ -331,7 +278,7 @@ export default function RouteScreen({ params = {} }) {
           This phone reports motion at {dist.motionHz} Hz, which is too slow to catch every footfall — your real step count is higher than this. A development build fixes it properly; see docs/STEP_COUNTING.md.
         </PixelText>
       ) : null}
-      <PixelText size="tiny" color={palette.windowTextDim} style={{ marginTop: 4, lineHeight: 12 }}>
+      <PixelText size="tiny" color={tokens.textDim} style={{ marginTop: 4, lineHeight: 12 }}>
         {dist.source === 'pedometer'
           ? 'Your phone counts steps even with the screen off. Tap Start Run for GPS distance.'
           : 'No step counter on this build, so the app is reading motion itself — that only works while this screen is open. Start Run uses GPS instead and works better outdoors.'}
@@ -342,26 +289,36 @@ export default function RouteScreen({ params = {} }) {
   return (
     <Screen padTop={false} style={{ padding: 0 }}>
       <View style={{ flex: 1, backgroundColor: palette.grass }}>
-        <ScrollingScene width={screen.width} height={screen.height} moving={running} trailId={route.id} />
+        <ScrollingScene width={screen.width} height={screen.height} moving={running} trailId={route.id} distanceMiles={sessionMiles} onInspect={setMessage} />
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: screen.height * 0.30, alignItems: 'center' }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
             <PixelSprite
-              spriteKey={playerSprite(state.playerGender, 'down', stride)}
-              palette={outfitPalette(state.playerOutfit, state.playerGender, playerSprite(state.playerGender, 'down', stride))}
-              size={40}
+              spriteKey={playerSprite(state.playerGender, 'up', stride)}
+              palette={outfitPalette(state.playerOutfit, state.playerGender, playerSprite(state.playerGender, 'up', stride))}
+              size={48}
               bob={running}
             />
             {companion ? (
               <>
                 <View style={{ width: 10 }} />
-                <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={92} bob={running} />
+                <PixelSprite spriteKey={companion.creature.sprite} palette={companion.creature.palette} size={companion.creature.stage === 1 ? 64 : companion.creature.stage === 2 ? 82 : 100} bob={running} />
               </>
             ) : null}
           </View>
         </View>
 
         <View style={{ position: 'absolute', top: TOP_INSET, left: space.sm, right: space.sm, flexDirection: 'row', alignItems: 'flex-start' }}>
-          <View style={{ flex: 1 }}>{trailPanel}</View>
+          <FieldCard tone="ink" pad={10} style={{ flex: 1 }}>
+            <PixelText size="small" color={tokens.textOnDark}>{route.name.toUpperCase()}</PixelText>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+              <PixelText size="small" color={palette.secondary}>{formatMiles(sessionMiles)}</PixelText>
+              <PixelText size="tiny" color={tokens.textOnDark}>{sessionSteps} steps</PixelText>
+              <PixelText size="tiny" color={tokens.textOnDark}>{formatClock(seconds)}</PixelText>
+            </View>
+            <ProgressBar value={progress.miles} max={route.miles} color={palette.hpHigh} height={8} label={`${formatMiles(progress.miles)} / ${route.miles} mi to the ${gateTitle}`} showText={false} style={{ marginTop: 10 }} />
+            <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 7 }}>{progress.reps}/{route.reps} challenge reps · {running ? 'MOVING' : 'RESTING'}</PixelText>
+            <ProgressBar value={encMeter} max={1} color={palette.secondary} height={4} showText={false} style={{ marginTop: 7 }} />
+          </FieldCard>
           <View style={{ marginLeft: space.sm }}><MenuButton onPress={() => setSheetOpen(true)} /></View>
         </View>
 
@@ -384,7 +341,7 @@ export default function RouteScreen({ params = {} }) {
           ) : null}
           <PixelButton
             label={dist.running ? 'Stop Run' : 'Start Run (GPS)'}
-            tone={dist.running ? 'danger' : 'primary'}
+            tone={dist.running ? 'danger' : 'gold'}
             sound="confirm"
             style={{ marginTop: space.sm }}
             onPress={toggleRun}
@@ -396,6 +353,8 @@ export default function RouteScreen({ params = {} }) {
         <Pressable style={{ flex: 1, backgroundColor: '#000000cc' }} onPress={() => setSheetOpen(false)}>
           <Pressable onPress={() => {}} style={{ marginTop: 'auto', backgroundColor: tokens.surface, borderTopColor: tokens.line, borderTopWidth: 3, padding: space.md, maxHeight: '78%' }}>
             <PixelText size="small" color={tokens.textOnDark} style={{ marginBottom: space.sm }}>ON THE TRAIL</PixelText>
+            <ScrollView showsVerticalScrollIndicator={false}>
+            {trailPanel}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: space.sm }}>
               {ROUTES.map((r) => {
                 const unlocked = isTrailUnlocked(r.id, state.trails);
@@ -414,7 +373,8 @@ export default function RouteScreen({ params = {} }) {
                 );
               })}
             </View>
-            <ScrollView showsVerticalScrollIndicator={false}>{stepPanel}</ScrollView>
+            {stepPanel}
+            </ScrollView>
             <TrailAction
               label={endingSession ? 'Saving trail progress...' : 'End Trail Session & Save'}
               sublabel={`Keep partial miles and challenge progress · return to ${PLACE_LABELS.hub}`}

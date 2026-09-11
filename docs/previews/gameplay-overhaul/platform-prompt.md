@@ -1,0 +1,7 @@
+# Battle platform provenance
+
+Created with the built-in image-generation tool; the original RGBA pixels are preserved in `assets/worlds/battle-platforms-v1.png`. Runtime crops are recorded in `src/data/platformArt.js`.
+
+Final prompt:
+
+Use case: stylized-concept. Asset type: transparent game sprite atlas for original Companion Quest pixel RPG. Create exactly twelve separate grounded battle terrain platforms in a regular 3 column by 4 row grid on genuinely transparent RGBA background. Each equal cell contains one wide shallow oval irregular natural patch of ground, perspective viewed from above at 45 degrees, completely isolated with generous transparent gutters. All patches same footprint and scale, no floating islands, no thick cliff underside. Detailed crisp richly shaded late-1990s pixel art, surface large and clear for two feet, subtle contact shadow, organic broken edges. Ordered left-to-right rows: 1 mossy forest grass and dirt, 2 ochre packed earth and small stones, 3 meadow short grass; row2 4 shaded fern forest loam,5 pale coastal sand and shells,6 marsh mud and reeds; row3 7 snow over rock,8 slate cave stone,9 red volcanic gravel; row4 10 golden autumn leaves and earth,11 stormy blue-gray ridge stone,12 moonlit violet moss and tiny crystals. Details concentrated along rim, walkable centers uncluttered. No text, labels, grid lines, characters, objects above knee height, UI, logos. Transparent outside each patch. Landscape wide ovals each about 2.5 times wider than tall.

@@ -9,7 +9,7 @@ export default function Screen({ children, style, padTop = true }) {
   const androidPad = Platform.OS === 'android' && padTop ? StatusBar.currentHeight || 24 : 0;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }}>
-      <View style={[{ flex: 1, paddingTop: androidPad }, style]}>{children}</View>
+      <View style={[{ flex: 1, paddingTop: androidPad, width: '100%', maxWidth: Platform.OS === 'web' ? 520 : undefined, alignSelf: 'center' }, style]}>{children}</View>
     </SafeAreaView>
   );
 }

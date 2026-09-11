@@ -14,11 +14,10 @@ import { Modal, Platform, Pressable, ScrollView, StatusBar, View } from 'react-n
 import TileMap from './TileMap';
 import MoveControl from './MoveControl';
 import FaceButtons from './FaceButtons';
-import ObjectiveRibbon from './ObjectiveRibbon';
 import TrailAction from './TrailAction';
 import PixelText from './PixelText';
 import Screen from './Screen';
-import HorizonSky from './HorizonSky';
+import FieldCard from './FieldCard';
 import { palette, space, screen, tokens, scale } from '../theme';
 import { OUTDOOR_WORLD_TONE } from '../data/sceneSky';
 import { veilFor } from '../data/daylight';
@@ -45,17 +44,7 @@ function reachableThing(map, player) {
   return null;
 }
 
-// You should be able to see the whole place you are standing in.
-//
-// Rooms, the gym and the town all CONTAIN: the tile size is whatever makes the
-// entire map fit across the phone, and nothing is ever cropped or scrolled out
-// of view. Covering the screen instead meant a camera swinging around a space
-// you could not see the shape of, which is disorienting in a room you cross in
-// six steps and no better in a hall.
-//
-// A map is roughly square and a phone is not, so containing leaves room under
-// the world. That space is not a gap — it is where the companion's condition
-// lives, on every screen rather than only on the one that remembered to draw it.
+// Initial viewport estimate before layout measurement.
 const WORLD_MAX_SHARE = 0.66;
 
 export function worldTileFor(map) {
@@ -133,28 +122,16 @@ export default function WorldScreen({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const reach = showControl ? reachableThing(map, player) : null;
-  // The band under the world grew (text, then the card, then the controls),
-  // so a tile size guessed from a fixed share of the screen overflowed and
-  // clipped the room around the player. Measure the space the world actually
-  // gets and fit the WHOLE map inside it; the guess only covers the first
-  // frame before onLayout answers.
+  // Measure the viewport so the follow camera keeps the player in view.
   const [avail, setAvail] = useState(null);
-  // The inset is PADDING on the measured container, so onLayout reports a
-  // height the room is not actually free to use. Reserve it here or a
-  // height-constrained map sizes itself to the full band and then gets pushed
-  // down by the padding, and its bottom rows run behind the panel — which is
-  // the opposite of the whole-room containment this is for. Width-constrained
-  // maps (the Hall) never noticed; the gym tour, where dialogue and status
-  // squeeze the band, is where it bites.
-  const inset = OUTDOOR_MAPS.has(map.id) ? 0 : TOP_INSET;
-  const tile = avail
-    ? Math.max(10, Math.floor(Math.min(
-      avail.w / map.cols,
-      Math.max(1, avail.h - inset) / map.rows
-    )))
-    : worldTileFor(map);
-  const worldW = map.cols * tile;
-  const worldH = map.rows * tile;
+  // A readable pixel scale with the existing follow camera. Overview is a
+  // reversible inspection mode; the default puts the player IN the world.
+  const [overview, setOverview] = useState(false);
+  const tile = overview && avail
+    ? Math.max(10, Math.floor(Math.min(avail.w / map.cols, avail.h / map.rows)))
+    : 40;
+  const worldW = avail ? avail.w : screen.width;
+  const worldH = avail ? avail.h : screen.height * WORLD_MAX_SHARE;
   const outdoor = OUTDOOR_MAPS.has(map.id);
   // The letterbox behind an outdoor map is the same ground the sky dissolves
   // into, so it has to travel with the hour or the world sits in a noon frame.
@@ -205,39 +182,23 @@ export default function WorldScreen({
 
   return (
     <Screen padTop={false} style={{ padding: 0 }}>
-      {/* Outdoors the map sits on the ground and the slack above the trees
-          is sky. Indoors stay centred in the room's own tone. */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingTop: TOP_INSET, paddingBottom: 10, backgroundColor: '#203e47', borderBottomWidth: 3, borderBottomColor: '#90b5a4' }}>
+        <View style={{ flex: 1 }}>
+          <PixelText size="tiny" color="#a8d3bd" style={{ marginBottom: 5 }}>COMPANION QUEST</PixelText>
+          <PixelText size="small" color="#fff5d6">{place}</PixelText>
+        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel={overview ? 'Follow camera' : 'View whole map'} onPress={() => setOverview(!overview)} style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', paddingHorizontal: 10, marginRight: 8, backgroundColor: '#355b61', borderWidth: 2, borderColor: '#86afa4' }}>
+          <PixelText size="tiny" color="#fff5d6">{overview ? 'FOLLOW' : 'MAP'}</PixelText>
+        </Pressable>
+        {menu.length ? <MenuButton onPress={() => setMenuOpen(true)} /> : null}
+      </View>
       <View
         onLayout={(e) => {
           const { width, height } = e.nativeEvent.layout;
           if (width && height) setAvail({ w: width, h: height });
         }}
-        style={{
-          flex: 1,
-          // Indoors the slack belongs WITH the panel, not around the room.
-          //
-          // A contained room is roughly square and a phone is not, so the map
-          // can never fill this band: the Hall is 17 tiles wide in 420 points,
-          // which pins the tile size at width and leaves the height over. That
-          // slack used to be split above and below a centred map, in a slate
-          // that matched nothing, so the room read as a small picture hung in a
-          // void — a third of the screen on the way in.
-          //
-          // Nothing is cropped to fix it; the whole room still shows. The map
-          // is anchored to the top and the leftover carries the panel's own
-          // colour, so it reads as one band of interface under the room rather
-          // than as a gap nobody filled.
-          backgroundColor: outdoor ? voidColor : palette.bgAlt,
-          alignItems: 'center',
-          justifyContent: outdoor ? 'flex-end' : 'flex-start',
-          paddingTop: inset,
-        }}
+        style={{ flex: 1, minHeight: 140, backgroundColor: voidColor, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
       >
-        {outdoor ? (
-          <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: worldH }}>
-            <HorizonSky tone={OUTDOOR_WORLD_TONE} horizon={0.82} fillBelow />
-          </View>
-        ) : null}
         <View style={{ width: worldW, height: worldH }}>
           <TileMap
             map={map}
@@ -276,28 +237,21 @@ export default function WorldScreen({
             {worldOverlay}
           </View>
         ) : null}
-        {menu.length ? (
-          <View style={{ position: 'absolute', top: TOP_INSET, right: space.sm }}>
-            <MenuButton onPress={() => setMenuOpen(true)} />
-          </View>
-        ) : null}
       </View>
-
-      {/* Under the world: where you are, what to do next, your companion's
-          condition, and the stick.
-          A contained map is roughly square and a phone is not, so there is
-          always slack above the panel. It belongs to the WORLD band, filled
-          with the world's own tone — a strip of dark grass above the town reads
-          as distance, where the same strip in interface navy read as a gap
-          somebody forgot to fill. */}
-      <View style={{ backgroundColor: palette.bgAlt, paddingHorizontal: space.md, paddingBottom: space.lg, paddingTop: space.sm }}>
-        <ObjectiveRibbon place={place} objective={objective} />
-        {dialogue ? <View style={{ marginTop: space.sm }}>{dialogue}</View> : null}
-        {status ? <View style={{ marginTop: space.sm }}>{status}</View> : null}
+      <View style={{ backgroundColor: '#203e47', borderTopWidth: 3, borderTopColor: '#90b5a4', padding: 10 }}>
+        {dialogue ? <View style={{ marginBottom: 8, maxHeight: screen.height * 0.3 }}><ScrollView>{dialogue}</ScrollView></View> : (
+          <FieldCard tone="paper" pad={8}>
+            <PixelText size="tiny" color={tokens.textOnPaper} style={{ lineHeight: 14 }}>{objective}</PixelText>
+          </FieldCard>
+        )}
+        {status ? <View style={{ marginTop: 4 }}>{status}</View> : null}
         {showControl ? (
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: space.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
             <MoveControl onMove={onMove} />
-            <FaceButtons onA={reach ? () => onMove(reach.dir) : null} onB={null} />
+            <View style={{ flex: 1, paddingHorizontal: 10 }}>
+              <PixelText size="tiny" color="#a8d3bd" align="center" numberOfLines={3}>{reach ? reach.thing.label : 'EXPLORE TOGETHER'}</PixelText>
+            </View>
+            <FaceButtons onA={reach ? () => onMove(reach.dir) : null} onB={menu.length ? () => setMenuOpen(true) : null} />
           </View>
         ) : null}
       </View>

@@ -14,7 +14,7 @@
 // they need runtime palette swaps for outfits, which an atlas cannot do.
 
 import React from 'react';
-import { Image, View } from 'react-native';
+import { Image, Platform, View } from 'react-native';
 import { TILE_ATLAS, TILE_CELL, ATLAS_WIDTH, ATLAS_HEIGHT, TILE_FRAMES } from '../data/tileAtlas';
 
 export function hasTile(name) {
@@ -43,6 +43,7 @@ export default function TileImage({ name, size, opacity, layered = false }) {
         resizeMode="stretch"
         fadeDuration={0}
         style={{
+          ...(Platform.OS === 'web' ? { imageRendering: 'pixelated' } : {}),
           position: 'absolute',
           width: ATLAS_WIDTH * k,
           height: ATLAS_HEIGHT * k,

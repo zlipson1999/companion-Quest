@@ -15,8 +15,7 @@ const FLOORS = {
   downstairs: {
     ...DOWNSTAIRS,
     name: 'Home — Downstairs',
-    // Not (6,13): that is directly under the sofa, so the first step into the
-    // room sat you down on it instead of walking.
+    // Entry and the eastern stair aisle remain clear of furniture.
     spawn: { x: 7, y: 13 },
     stairs: { x: 11, y: 1 },
     // Just south of the stairs so going down does not immediately send you back up.
@@ -34,7 +33,7 @@ const FLOORS = {
 };
 
 // Same doorstep HomeIntro uses so walking out is the reverse of walking in.
-const LANE_FROM_HOUSE = { x: 2, y: 6, facing: 'down' };
+const LANE_FROM_HOUSE = { x: 3, y: 6, facing: 'down' };
 
 export default function HomeRestScreen() {
   const { state, dispatch } = useGame();

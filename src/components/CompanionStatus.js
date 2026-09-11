@@ -11,14 +11,13 @@ import PixelSprite from './PixelSprite';
 import PixelText from './PixelText';
 import ProgressBar from './ProgressBar';
 import { palette, space, tokens } from '../theme';
-import { idleLine, encourageLine } from '../data/personality';
 
 // Creature art is a 96-row grid and it carries a face in about ten of those
 // rows. At the 44 this used to be, ten rows is twenty device pixels and there
 // is no face — the companion reads as an outline and a colour, which is exactly
 // what it looked like. Seventy-two is the most the strip can give without
 // pushing the stat lines around, and it is enough to see who it is.
-const CREATURE_SIZE = 72;
+const CREATURE_SIZE = 56;
 
 export default function CompanionStatus({ companion, stats, style }) {
   if (!companion) {
@@ -39,12 +38,9 @@ export default function CompanionStatus({ companion, stats, style }) {
   // them here would be a second source of truth for the same numbers.
   const maxHp = companion.maxHp || Math.max(1, Math.round(companion.hp));
   const hpPart = Math.max(0, Math.min(1, companion.hp / maxHp));
-  const mood = companion.creature
-    ? (idleLine(companion.creature) || encourageLine(companion.creature))
-    : null;
 
   return (
-    <View style={[{ flexDirection: 'row', alignItems: 'center' }, style]}>
+    <View style={[{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, paddingVertical: 4 }, style]}>
       <PixelSprite
         spriteKey={companion.creature.sprite}
         palette={companion.creature.palette}
@@ -97,11 +93,7 @@ export default function CompanionStatus({ companion, stats, style }) {
             ].join('  ·  ')}
           </PixelText>
         ) : null}
-        {mood ? (
-          <PixelText size="tiny" color={tokens.textOnDarkDim} style={{ marginTop: 3 }} numberOfLines={2}>
-            {mood}
-          </PixelText>
-        ) : null}
+
       </View>
     </View>
   );

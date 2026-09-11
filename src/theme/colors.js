@@ -6,8 +6,8 @@ export const palette = {
   // Base / windows
   ink: '#1a1228',
   inkSoft: '#3a2c52',
-  bg: '#0f0f1b',
-  bgAlt: '#191a2e',
+  bg: '#172d36',
+  bgAlt: '#203e47',
 
   // Window chrome (classic bordered dialogue/menu windows)
   windowFill: '#f7f3e8',
@@ -17,9 +17,9 @@ export const palette = {
   // The window frame is a bevelled band, not a flat rule: a lit top-left edge
   // and a shadowed bottom-right are what give a menu physical depth on a
   // handheld screen. Three tones, so the bevel has something to bevel with.
-  windowFrame: '#4a3a6e',
-  windowFrameLight: '#8570b8',
-  windowFrameDark: '#1d1430',
+  windowFrame: '#355b61',
+  windowFrameLight: '#8cb6aa',
+  windowFrameDark: '#172d36',
   windowStud: '#ffcf4d',
   windowFillHi: '#fffdf6',
   windowText: '#2a1e3d',

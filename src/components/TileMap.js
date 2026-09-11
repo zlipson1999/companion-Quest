@@ -1,14 +1,11 @@
-// The top-down tile overworld, plus the walking hero.
-//
-// Tiles used to be flat coloured Views — a green square for grass, a brown one
-// for a tree. That is the single biggest reason the overworld read as a mockup
-// rather than a game. They are real 16x16 pixel tiles now, drawn by
-// tools/make_sprites.py like everything else, with two-frame animation on water
-// and a scattered second grass variant so large fields do not tile visibly.
+// Collision and actors stay live above continuous scene art. Maps without an
+// authored scene retain the existing atlas renderer.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Image, View } from 'react-native';
 import TileImage, { hasTile } from './TileImage';
+import SceneProps from './SceneProps';
+import { WORLD_BACKGROUNDS } from '../data/worldArt';
 import { ROOM_LIGHT } from '../data/tileAtlas';
 import PixelSprite from './PixelSprite';
 import { palette } from '../theme';
@@ -508,6 +505,7 @@ function Walker({ walker, s }) {
       pointerEvents="none"
       style={{
         position: 'absolute',
+        zIndex: (walker.y + 1) * 10 + 1,
         width: s,
         height: s,
         alignItems: 'center',
@@ -549,15 +547,18 @@ function Follower({ player, map, s }) {
   // Where the player was one step ago.
   const [at, setAt] = useState(() => restingSpot(map, player.x, player.y, player.facing));
   const prev = useRef({ x: player.x, y: player.y });
-  const mapId = useRef(map.id);
+  // Both home floors share an id but have different dimensions. A room key
+  // also stays stable when the gym rebuilds its NPC-filtered map on a step.
+  const roomKey = `${map.id}:${map.cols}:${map.rows}`;
+  const previousRoom = useRef(roomKey);
   const start = useRef(restingSpot(map, player.x, player.y, player.facing)).current;
   const pos = useRef(new Animated.ValueXY({ x: start.x * s, y: start.y * s })).current;
 
   useEffect(() => {
-    if (mapId.current !== map.id) {
+    if (previousRoom.current !== roomKey) {
       // A new room. The footprint it was standing in is in another building, so
       // it arrives with the player instead of walking there.
-      mapId.current = map.id;
+      previousRoom.current = roomKey;
       prev.current = { x: player.x, y: player.y };
       const spot = restingSpot(map, player.x, player.y, player.facing);
       setAt(spot);
@@ -569,7 +570,7 @@ function Follower({ player, map, s }) {
       setAt(before);
       prev.current = { x: player.x, y: player.y };
     }
-  }, [player.x, player.y, player.facing, map, s, pos]);
+  }, [player.x, player.y, player.facing, map, roomKey, s, pos]);
 
   useEffect(() => {
     Animated.timing(pos, {
@@ -585,6 +586,7 @@ function Follower({ player, map, s }) {
       pointerEvents="none"
       style={{
         position: 'absolute',
+        zIndex: (at.y + 1) * 10,
         width: s,
         height: s,
         alignItems: 'center',
@@ -592,10 +594,11 @@ function Follower({ player, map, s }) {
         transform: [{ translateX: pos.x }, { translateY: pos.y }],
       }}
     >
+      <View style={{ position: 'absolute', bottom: 0, width: s * 0.55, height: s * 0.15, borderRadius: s, backgroundColor: '#183b32', opacity: 0.24 }} />
       <PixelSprite
         spriteKey={spriteKey}
         palette={companion.creature.palette}
-        size={widthForHeight(spriteKey, s * FOLLOW_HEIGHT)}
+        size={widthForHeight(spriteKey, s * FOLLOW_HEIGHT * (companion.creature.stage === 1 ? 0.62 : companion.creature.stage === 2 ? 0.8 : 1))}
         bob
         accessibilityLabel={`${companion.creature.name}, following you`}
       />
@@ -606,6 +609,7 @@ function Follower({ player, map, s }) {
 export default function TileMap({ map, player, tileSize, style, viewport, walker, playerActivity }) {
   const { state } = useGame();
   const s = tileSize;
+  const background = WORLD_BACKGROUNDS[map.id];
   const pos = useRef(new Animated.ValueXY({ x: player.x * s, y: player.y * s })).current;
   const worldW = map.cols * s;
   const worldH = map.rows * s;
@@ -634,9 +638,10 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
   const parkTimer = useRef(null);
 
   useEffect(() => {
+    if (background) return undefined;
     const t = setInterval(() => setFrame((f) => f + 1), WATER_FRAME_MS);
     return () => clearInterval(t);
-  }, []);
+  }, [background]);
 
   useEffect(() => {
     if (!playerActivity || !playerActivity.active) {
@@ -686,7 +691,7 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
   const floor = FIELD_BY_MAP[map.id];
   const wallField = WALL_FIELD_BY_MAP[map.id];
   const rows = useMemo(
-    () =>
+    () => background ? null :
       map.grid.map((row, y) => (
         <View key={y} style={{ flexDirection: 'row' }}>
           {row.split('').map((code, x) => (
@@ -706,7 +711,7 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
           ))}
         </View>
       )),
-    [map, s, frame, floor, wallField]
+    [map, s, frame, floor, wallField, background]
   );
 
   // On a machine the character faces the way that machine puts them: side-on
@@ -728,18 +733,24 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
         viewport ? null : style,
       ]}
     >
-      {rows}
+      {background ? <Image source={background} resizeMode="stretch" fadeDuration={0} style={{ position: 'absolute', left: 0, top: 0, width: worldW, height: worldH }} /> : rows}
+      {background ? <SceneProps map={map} s={s} /> : null}
+      {background ? map.grid.flatMap((row, y) => [...row].map((code, x) => code === 'C' || code === 'A' ? (
+        <View key={`person-${x}-${y}`} style={{ position: 'absolute', left: x * s, top: y * s, zIndex: (y + 1) * 10 }}>
+          <StandingSprite spriteKey={code === 'A' ? rowanSprite('down', 0) : coachSprite('down', 0)} s={s} />
+        </View>
+      ) : null)) : null}
       {/* Room lighting. Every other shading cue is baked per tile and so
           repeats with the field; this one image describes the whole space —
           open in the middle, sitting back at the edges. Drawn under the player
           so the character stays legible wherever they stand. */}
-      <Image
+      {!background ? <Image
         source={ROOM_LIGHT}
         resizeMode="stretch"
         pointerEvents="none"
         fadeDuration={0}
         style={{ position: 'absolute', left: 0, top: 0, width: map.cols * s, height: map.rows * s }}
-      />
+      /> : null}
       {walker ? <Walker walker={walker} s={s} /> : null}
       {/* Drawn before the player, so when they end up on adjacent tiles the
           player reads as the one in front. */}
@@ -747,6 +758,7 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
       <Animated.View
         style={{
           position: 'absolute',
+          zIndex: (player.y + 1) * 10 + 1,
           width: s,
           height: s,
           alignItems: 'center',
@@ -754,6 +766,7 @@ export default function TileMap({ map, player, tileSize, style, viewport, walker
           transform: [{ translateX: pos.x }, { translateY: pos.y }],
         }}
       >
+        <View pointerEvents="none" style={{ position: 'absolute', bottom: 0, width: s * 0.6, height: s * 0.2, borderRadius: s, backgroundColor: '#183b32', opacity: 0.3 }} />
         {/* A side-on rider sits into the machine rather than standing on it,
             so the sprite nudges onto the saddle and draws a touch smaller.
             Both side-on poses (bike, rower) want the same treatment. */}

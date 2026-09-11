@@ -15,13 +15,13 @@ import { isWalkable } from './maps';
 // One tile back along the way you are facing.
 const BEHIND = { up: [0, 1], down: [0, -1], left: [1, 0], right: [-1, 0] };
 
-// Falls back to the player's own tile when the space behind is a wall — which
-// happens the moment you walk into a room and turn to face back out of it.
-// Overlapping for a step is worse-looking than it is wrong; standing inside a
-// wall is both.
+// At a doorway, try either side and then the front if the space behind is
+// blocked. Only overlap when there is no free adjacent tile at all.
 export function restingSpot(map, px, py, facing) {
-  const d = BEHIND[facing || 'down'] || BEHIND.down;
-  const x = px + d[0];
-  const y = py + d[1];
-  return isWalkable(map, x, y) ? { x, y } : { x: px, y: py };
+  const [dx, dy] = BEHIND[facing || 'down'] || BEHIND.down;
+  for (const [ox, oy] of [[dx, dy], [-dy, dx], [dy, -dx], [-dx, -dy]]) {
+    const x = px + ox, y = py + oy;
+    if (isWalkable(map, x, y)) return { x, y };
+  }
+  return { x: px, y: py };
 }
